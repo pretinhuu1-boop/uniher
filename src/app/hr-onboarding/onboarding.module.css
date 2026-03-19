@@ -1,0 +1,405 @@
+/* ═══════════════════════════════════════════════════════════════
+   HR Onboarding – Multi-Step Wizard
+   Cream / Rose / Gold aesthetic
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Card ── */
+
+.card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-1);
+  padding: 40px 36px 36px;
+  animation: scaleIn 0.5s ease both;
+}
+
+/* ── Logo ── */
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.logoIcon {
+  width: 48px;
+  height: 48px;
+}
+
+.logoText {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-900);
+  letter-spacing: -0.02em;
+}
+
+.logoAccent {
+  color: var(--rose-500);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Step Indicator
+   ═══════════════════════════════════════════════════════════════ */
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 32px;
+}
+
+.stepCircle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ff-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 2px solid var(--border-2);
+  background: var(--white);
+  color: var(--text-400);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.stepActive {
+  border-color: var(--rose-500);
+  background: var(--white);
+  color: var(--rose-500);
+  box-shadow: 0 0 0 4px rgba(200, 92, 126, 0.1);
+}
+
+.stepCompleted {
+  border-color: var(--rose-500);
+  background: var(--rose-500);
+  color: var(--white);
+}
+
+.stepLine {
+  width: 48px;
+  height: 2px;
+  background: var(--border-2);
+  transition: background 0.3s ease;
+}
+
+.stepLineCompleted {
+  background: var(--rose-500);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Step Header
+   ═══════════════════════════════════════════════════════════════ */
+
+.stepHeader {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.stepIcon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 12px;
+  color: var(--rose-500);
+}
+
+.stepTitle {
+  font-family: var(--ff-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-900);
+  margin-bottom: 6px;
+}
+
+.stepSubtitle {
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  color: var(--text-600);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Form
+   ═══════════════════════════════════════════════════════════════ */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: var(--ff-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-600);
+  letter-spacing: 0.01em;
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  padding: 14px;
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  font-family: var(--ff-body);
+  font-size: 0.95rem;
+  color: var(--text-900);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input::placeholder {
+  color: var(--text-300);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--rose-300);
+  box-shadow: 0 0 0 3px rgba(200, 92, 126, 0.08);
+}
+
+.select {
+  width: 100%;
+  padding: 14px;
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  font-family: var(--ff-body);
+  font-size: 0.95rem;
+  color: var(--text-900);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23A48090' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--rose-300);
+  box-shadow: 0 0 0 3px rgba(200, 92, 126, 0.08);
+}
+
+/* ── CNPJ Validation Hint ── */
+
+.cnpjHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  color: var(--green-600);
+  margin-top: 4px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.cnpjHintVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cnpjCheck {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--green-600);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Buttons
+   ═══════════════════════════════════════════════════════════════ */
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.btnPrimary {
+  flex: 1;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--rose-400), var(--rose-500));
+  color: var(--white);
+  font-family: var(--ff-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(200, 92, 126, 0.3);
+}
+
+.btnPrimary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.btnOutline {
+  padding: 14px 24px;
+  background: var(--white);
+  color: var(--text-600);
+  font-family: var(--ff-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+}
+
+.btnOutline:hover {
+  border-color: var(--rose-300);
+  color: var(--rose-500);
+  background: var(--rose-50);
+}
+
+/* ── Spinner ── */
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Bottom Link
+   ═══════════════════════════════════════════════════════════════ */
+
+.bottomLink {
+  text-align: center;
+  font-family: var(--ff-body);
+  font-size: 0.85rem;
+  color: var(--text-400);
+  margin-top: 24px;
+}
+
+.bottomLink a {
+  color: var(--rose-500);
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.bottomLink a:hover {
+  color: var(--rose-700);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Step Transition Animation
+   ═══════════════════════════════════════════════════════════════ */
+
+.stepContent {
+  animation: fadeUp 0.35s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 480px) {
+  .card {
+    padding: 32px 24px 28px;
+    border-radius: var(--radius-md);
+  }
+
+  .logoIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .logoText {
+    font-size: 1.5rem;
+  }
+
+  .stepper {
+    margin-bottom: 24px;
+  }
+
+  .stepCircle {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .stepLine {
+    width: 32px;
+  }
+
+  .stepTitle {
+    font-size: 1.3rem;
+  }
+
+  .input,
+  .select {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  .btnPrimary,
+  .btnOutline {
+    padding: 12px 18px;
+    font-size: 0.9rem;
+  }
+
+  .buttons {
+    flex-direction: column-reverse;
+  }
+}

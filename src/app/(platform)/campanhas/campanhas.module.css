@@ -1,0 +1,605 @@
+/* ═══════════════════════════════════════════════════════════════
+   Campanhas
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  padding: 32px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header Row ── */
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-600);
+  margin-bottom: 0;
+}
+
+.newCampaignBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  background: var(--rose-500);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--ff-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.newCampaignBtn:hover {
+  background: var(--rose-700);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Filter Tabs ── */
+.filterTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--cream-100);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  width: fit-content;
+}
+
+.filterTab {
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  font-family: var(--ff-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-600);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterTab:hover {
+  color: var(--text-900);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.filterTabActive {
+  background: var(--white);
+  color: var(--rose-500);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Cards ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.cardWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border-2);
+}
+
+.cardExpanded {
+  border-color: var(--rose-300);
+  box-shadow: var(--shadow-md);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.monthTag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-400);
+}
+
+.campaignName {
+  font-family: var(--ff-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.badgeDone {
+  background: rgba(62, 125, 90, 0.1);
+  color: var(--green-600);
+}
+
+.badgeActive {
+  background: var(--rose-50);
+  color: var(--rose-500);
+}
+
+.badgeNext {
+  background: var(--gold-50);
+  color: var(--gold-700);
+}
+
+/* ── Progress Bar ── */
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 8px;
+  background: var(--cream-100);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.progressLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-600);
+  min-width: 38px;
+  text-align: right;
+}
+
+/* ── Detail Panel ── */
+.detailPanel {
+  background: var(--cream-50);
+  border: 1px solid var(--rose-300);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  padding: 24px;
+  animation: slideDown 0.3s ease both;
+}
+
+.detailDescription {
+  font-size: 0.92rem;
+  color: var(--text-600);
+  line-height: 1.65;
+  margin-bottom: 20px;
+}
+
+.statsRow {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statValue {
+  font-family: var(--ff-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detailActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detailBtn {
+  padding: 9px 20px;
+  background: var(--rose-500);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-xs);
+  font-family: var(--ff-body);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  min-width: 120px;
+  text-align: center;
+}
+
+.detailBtn:hover {
+  background: var(--rose-700);
+}
+
+.detailBtnSecondary {
+  padding: 9px 20px;
+  background: transparent;
+  color: var(--rose-500);
+  border: 1px solid var(--rose-300);
+  border-radius: var(--radius-xs);
+  font-family: var(--ff-body);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  text-align: center;
+}
+
+.detailBtnSecondary:hover {
+  background: var(--rose-50);
+  border-color: var(--rose-500);
+}
+
+/* ── Full Campaign Detail ── */
+.fullDetail {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-1);
+  animation: slideDown 0.3s ease both;
+}
+
+.fullDetailTitle {
+  font-family: var(--ff-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 12px;
+}
+
+.fullDetailObjective {
+  font-size: 0.9rem;
+  color: var(--text-600);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.fullDetailMeta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.fullDetailMetaItem {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.fullDetailMetaLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-400);
+}
+
+.fullDetailMetaValue {
+  font-family: var(--ff-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.activityList {
+  margin-bottom: 20px;
+}
+
+.activityListTitle {
+  font-family: var(--ff-display);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 10px;
+}
+
+.activityItems {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.activityItem {
+  font-size: 0.85rem;
+  color: var(--text-600);
+  padding: 10px 14px;
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-xs);
+  line-height: 1.4;
+}
+
+.closeDetailBtn {
+  padding: 9px 24px;
+  background: transparent;
+  color: var(--text-600);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-xs);
+  font-family: var(--ff-body);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeDetailBtn:hover {
+  background: var(--cream-100);
+  border-color: var(--border-3);
+}
+
+/* ── New Campaign Form ── */
+.formOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 26, 31, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+  padding: 24px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.formCard {
+  background: var(--white);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn 0.25s ease both;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.formTitle {
+  font-family: var(--ff-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.formLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-600);
+}
+
+.formInput,
+.formSelect {
+  padding: 10px 14px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-xs);
+  font-family: var(--ff-body);
+  font-size: 0.92rem;
+  color: var(--text-900);
+  background: var(--cream-50);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.formInput:focus,
+.formSelect:focus {
+  border-color: var(--rose-400);
+  box-shadow: 0 0 0 3px rgba(200, 92, 126, 0.12);
+}
+
+.formInput::placeholder {
+  color: var(--text-400);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.formCancelBtn {
+  padding: 9px 20px;
+  background: transparent;
+  color: var(--text-600);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-xs);
+  font-family: var(--ff-body);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.formCancelBtn:hover {
+  background: var(--cream-100);
+  border-color: var(--border-3);
+}
+
+.formCreateBtn {
+  padding: 9px 24px;
+  background: var(--rose-500);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-xs);
+  font-family: var(--ff-body);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.formCreateBtn:hover {
+  background: var(--rose-700);
+}
+
+/* ── Empty State ── */
+.emptyMsg {
+  text-align: center;
+  color: var(--text-400);
+  font-size: 0.92rem;
+  padding: 40px 16px;
+}
+
+/* ── Highlight Card (kept for backward compat) ── */
+.highlightCard {
+  background: linear-gradient(135deg, var(--gold-50), var(--cream-50));
+  border: 1px solid var(--gold-200);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.highlightLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-700);
+  margin-bottom: 8px;
+}
+
+.highlightName {
+  font-family: var(--ff-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 4px;
+}
+
+.highlightMonth {
+  font-size: 0.85rem;
+  color: var(--text-600);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page { padding: 20px 16px; }
+
+  .headerRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .newCampaignBtn {
+    align-self: flex-start;
+  }
+
+  .filterTabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .statsRow {
+    gap: 20px;
+  }
+
+  .formCard {
+    padding: 28px 20px;
+  }
+
+  .fullDetailMeta {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

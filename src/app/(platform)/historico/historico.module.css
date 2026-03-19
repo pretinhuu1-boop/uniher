@@ -1,0 +1,524 @@
+/* ═══════════════════════════════════════════════════════════════
+   Historico
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  padding: 32px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.title {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-600);
+  margin-bottom: 24px;
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.filterChips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  color: var(--text-600);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chip:hover {
+  border-color: var(--rose-300);
+  color: var(--rose-500);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.chipActive {
+  background: var(--rose-50);
+  border-color: var(--rose-300);
+  color: var(--rose-500);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(200, 92, 126, 0.15);
+}
+
+.chipDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rose-500);
+  flex-shrink: 0;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.periodSelect {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-1);
+  background: var(--white);
+  font-size: 0.82rem;
+  color: var(--text-600);
+  cursor: pointer;
+}
+
+.downloadBtn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--rose-500);
+  color: var(--white);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.downloadBtn:hover {
+  background: var(--rose-400);
+}
+
+/* ── Search ── */
+.searchWrap {
+  position: relative;
+  margin-bottom: 16px;
+  max-width: 380px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  color: var(--text-400);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 36px 10px 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-1);
+  background: var(--white);
+  font-size: 0.85rem;
+  color: var(--text-900);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.searchInput::placeholder {
+  color: var(--text-300);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--rose-300);
+  box-shadow: 0 0 0 3px rgba(200, 92, 126, 0.1);
+}
+
+.searchClear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--cream-100);
+  border: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--text-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.searchClear:hover {
+  background: var(--rose-100);
+  color: var(--rose-500);
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--cream-100);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 20px;
+  width: fit-content;
+}
+
+.tab {
+  padding: 8px 20px;
+  border-radius: var(--radius-xs);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-400);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+}
+
+.tabActive {
+  background: var(--white);
+  color: var(--rose-500);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+/* ── Table ── */
+.tableWrap {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-400);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 14px 18px;
+  background: var(--cream-50);
+  border-bottom: 1px solid var(--border-1);
+}
+
+.table td {
+  padding: 14px 18px;
+  font-size: 0.88rem;
+  color: var(--text-900);
+  border-bottom: 1px solid var(--border-1);
+  transition: background 0.15s ease;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Sortable headers ── */
+.sortableHeader {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.sortableHeader:hover {
+  color: var(--rose-500);
+  background: var(--cream-100);
+}
+
+.sortedHeader {
+  color: var(--rose-500) !important;
+  background: var(--rose-50);
+}
+
+/* ── Highlighted column (filtered dept) ── */
+.highlightedHeader {
+  background: var(--rose-50);
+  color: var(--rose-500) !important;
+  border-bottom: 2px solid var(--rose-300);
+}
+
+.highlightedCell {
+  background: var(--rose-50);
+  font-weight: 600;
+}
+
+/* ── Interactive rows ── */
+.interactiveRow {
+  transition: background 0.15s ease, transform 0.15s ease;
+  cursor: default;
+}
+
+.interactiveRow:hover td {
+  background: var(--cream-50);
+}
+
+.interactiveRow:hover .highlightedCell {
+  background: var(--rose-100);
+}
+
+.rowHovered td {
+  background: var(--cream-50);
+}
+
+.monthCell {
+  font-weight: 600;
+  color: var(--text-600);
+}
+
+.pointsValue {
+  font-variant-numeric: tabular-nums;
+}
+
+.pointsLabel {
+  font-size: 0.72rem;
+  color: var(--text-300);
+  font-weight: 400;
+}
+
+.emptyRow {
+  text-align: center;
+  padding: 32px 18px !important;
+  color: var(--text-400);
+  font-style: italic;
+}
+
+/* ── Ranking (card-based) ── */
+.rankingGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rankCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 18px 22px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rankCard:hover {
+  border-color: var(--rose-300);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.rankCardTop {
+  border-left: 3px solid var(--gold-500);
+}
+
+.rankCardExpanded {
+  border-color: var(--rose-300);
+  box-shadow: var(--shadow-md);
+}
+
+.rankCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.rankPosition {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: var(--cream-100);
+  color: var(--text-600);
+  flex-shrink: 0;
+}
+
+.rankGold {
+  background: var(--gold-50);
+  color: var(--gold-700);
+  border: 2px solid var(--gold-200);
+}
+
+.rankSilver {
+  background: var(--cream-200);
+  color: var(--text-600);
+  border: 2px solid var(--border-2);
+}
+
+.rankBronze {
+  background: var(--rose-50);
+  color: var(--rose-700);
+  border: 2px solid var(--rose-300);
+}
+
+.rankCardInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rankDeptName {
+  font-family: var(--ff-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.rankPoints {
+  font-size: 0.85rem;
+  color: var(--text-600);
+  font-variant-numeric: tabular-nums;
+}
+
+.rankTrend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.rankTrendLabel {
+  font-size: 0.78rem;
+}
+
+.rankExpandHint {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--text-300);
+}
+
+/* ── Rank card detail (expanded) ── */
+.rankCardDetail {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-1);
+  animation: fadeIn 0.25s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rankDetailTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-600);
+  margin-bottom: 10px;
+}
+
+.rankBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.rankBadgeTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: var(--gold-50);
+  color: var(--gold-700);
+  border: 1px solid var(--gold-200);
+}
+
+.rankDetailLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--rose-500);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.rankDetailLink:hover {
+  color: var(--rose-700);
+}
+
+/* ── Legacy support ── */
+.rankBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--cream-100);
+  color: var(--text-600);
+}
+
+.trendUp {
+  color: var(--green-600);
+  font-weight: 600;
+}
+
+.trendDown {
+  color: var(--rose-500);
+  font-weight: 600;
+}
+
+.trendStable {
+  color: var(--text-400);
+  font-weight: 600;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page { padding: 20px 16px; }
+  .tableWrap { overflow-x: auto; }
+  .table { min-width: 500px; }
+  .searchWrap { max-width: 100%; }
+
+  .rankCardHeader {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .rankTrendLabel {
+    display: none;
+  }
+}

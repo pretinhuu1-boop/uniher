@@ -1,0 +1,248 @@
+/* ═══════════════════════════════════════════════════════════════
+   Company Profile
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  padding: 32px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logoPlaceholder {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--rose-50), var(--rose-100));
+  border: 2px solid var(--rose-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: var(--rose-500);
+  flex-shrink: 0;
+}
+
+.companyName {
+  font-family: var(--ff-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.cnpj {
+  font-size: 0.82rem;
+  color: var(--text-400);
+  margin-top: 2px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editBtn {
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  border: 1px solid var(--border-2);
+  color: var(--text-600);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editBtn:hover {
+  border-color: var(--rose-300);
+  color: var(--rose-500);
+}
+
+.saveBtn {
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--rose-500);
+  border: 1px solid var(--rose-500);
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveBtn:hover {
+  background: var(--rose-600, #b8446b);
+  border-color: var(--rose-600, #b8446b);
+}
+
+.cancelBtn {
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  border: 1px solid var(--border-2);
+  color: var(--text-500);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelBtn:hover {
+  border-color: var(--text-400);
+  color: var(--text-700);
+}
+
+.saveLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--rose-500);
+}
+
+/* ── Edit Mode Inputs ── */
+.fieldInput {
+  font-size: 0.92rem;
+  color: var(--text-900);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--rose-200);
+  background: var(--rose-50, #fff5f5);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+}
+
+.fieldInput:focus {
+  border-color: var(--rose-400);
+  box-shadow: 0 0 0 3px rgba(200, 92, 126, 0.12);
+}
+
+/* ── Stats Row ── */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+  transition: box-shadow 0.2s ease;
+}
+
+.statCard:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.statValue {
+  font-family: var(--ff-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-900);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 0.78rem;
+  color: var(--text-600);
+}
+
+/* ── Two Column Sections ── */
+.sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.section {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 28px;
+}
+
+.sectionTitle {
+  font-family: var(--ff-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.fieldList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fieldLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-400);
+}
+
+.fieldValue {
+  font-size: 0.92rem;
+  color: var(--text-900);
+  font-weight: 500;
+}
+
+/* ── Plan Badge ── */
+.planBadge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--gold-50);
+  color: var(--gold-700);
+  border: 1px solid var(--gold-200);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .sections { grid-template-columns: 1fr; }
+  .statsRow { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 580px) {
+  .page { padding: 20px 16px; }
+  .statsRow { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; }
+}

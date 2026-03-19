@@ -1,0 +1,305 @@
+/* ═══════════════════════════════════════════════════════════════
+   Auth Page – Login / Register
+   Cream / Rose / Gold aesthetic
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Card ── */
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-1);
+  padding: 40px 36px 36px;
+  animation: scaleIn 0.5s ease both;
+}
+
+/* ── Logo ── */
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.logoIcon {
+  width: 56px;
+  height: 56px;
+}
+
+.logoText {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-900);
+  letter-spacing: -0.02em;
+}
+
+.logoAccent {
+  color: var(--rose-500);
+}
+
+/* ── Tab Toggle ── */
+
+.tabs {
+  display: flex;
+  background: var(--cream-50);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 28px;
+  border: 1px solid var(--border-1);
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 16px;
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-400);
+  border-radius: var(--radius-xs);
+  transition: all 0.25s ease;
+  text-align: center;
+}
+
+.tab:hover {
+  color: var(--text-600);
+}
+
+.tabActive {
+  background: var(--white);
+  color: var(--rose-500);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+}
+
+/* ── Form ── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: var(--ff-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-600);
+  letter-spacing: 0.01em;
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  padding: 14px;
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  font-family: var(--ff-body);
+  font-size: 0.95rem;
+  color: var(--text-900);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input::placeholder {
+  color: var(--text-300);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--rose-300);
+  box-shadow: 0 0 0 3px rgba(200, 92, 126, 0.08);
+}
+
+/* ── Password Toggle ── */
+
+.togglePw {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 4px;
+  color: var(--text-400);
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.togglePw:hover {
+  color: var(--rose-500);
+}
+
+/* ── Forgot Password ── */
+
+.forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -8px;
+}
+
+.forgotLink {
+  font-family: var(--ff-body);
+  font-size: 0.8rem;
+  color: var(--rose-500);
+  transition: color 0.2s ease;
+}
+
+.forgotLink:hover {
+  color: var(--rose-700);
+}
+
+/* ── Submit Button ── */
+
+.submit {
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--rose-400), var(--rose-500));
+  color: var(--white);
+  font-family: var(--ff-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(200, 92, 126, 0.3);
+}
+
+.submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* ── Spinner ── */
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* ── Social Note ── */
+
+.socialNote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  color: var(--text-400);
+}
+
+.socialDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--rose-300);
+  opacity: 0.6;
+}
+
+/* ── Switch Link ── */
+
+.switchRow {
+  text-align: center;
+  font-family: var(--ff-body);
+  font-size: 0.85rem;
+  color: var(--text-400);
+  padding-top: 4px;
+}
+
+.switchLink {
+  color: var(--rose-500);
+  font-weight: 500;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font: inherit;
+  padding: 0;
+}
+
+.switchLink:hover {
+  color: var(--rose-700);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 480px) {
+  .card {
+    padding: 32px 24px 28px;
+    border-radius: var(--radius-md);
+  }
+
+  .logoIcon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .logoText {
+    font-size: 1.5rem;
+  }
+
+  .tabs {
+    margin-bottom: 22px;
+  }
+
+  .tab {
+    font-size: 0.85rem;
+    padding: 9px 12px;
+  }
+
+  .input {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  .submit {
+    padding: 12px 20px;
+  }
+}

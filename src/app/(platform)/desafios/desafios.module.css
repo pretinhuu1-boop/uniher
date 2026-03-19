@@ -1,0 +1,462 @@
+/* ═══════════════════════════════════════════════════════════════
+   Desafios
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  padding: 32px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.title {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 0;
+}
+
+/* ── New challenge button ── */
+.newBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--rose-500);
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.newBtn:hover {
+  background: var(--rose-600, #c03a6b);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Form ── */
+.formCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.3s ease both;
+}
+
+.formTitle {
+  font-family: var(--ff-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 16px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.formGrid > :first-child {
+  grid-column: 1 / -1;
+}
+
+.formGrid > :nth-child(2) {
+  grid-column: 1 / -1;
+}
+
+.formInput,
+.formSelect {
+  padding: 10px 14px;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-xs);
+  font-size: 0.85rem;
+  color: var(--text-900);
+  background: var(--cream-50, #fefcf8);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.formInput:focus,
+.formSelect:focus {
+  border-color: var(--rose-400);
+  box-shadow: 0 0 0 3px rgba(214, 77, 132, 0.08);
+}
+
+.formInput::placeholder {
+  color: var(--text-400);
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+}
+
+.createBtn {
+  padding: 10px 28px;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: var(--rose-500);
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.createBtn:hover {
+  background: var(--rose-600, #c03a6b);
+}
+
+.cancelBtn {
+  padding: 10px 20px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-1);
+  background: var(--white);
+  color: var(--text-600);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelBtn:hover {
+  background: var(--cream-100);
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--cream-100);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 24px;
+  width: fit-content;
+}
+
+.tab {
+  padding: 8px 20px;
+  border-radius: var(--radius-xs);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-400);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+}
+
+.tab:hover {
+  color: var(--text-600);
+}
+
+.tabActive {
+  background: var(--white);
+  color: var(--rose-500);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+/* ── Cards ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--rose-200, #f5c6d0);
+}
+
+.cardExpanded {
+  border-color: var(--rose-300, #eba0b8);
+  box-shadow: 0 4px 20px rgba(214, 77, 132, 0.08);
+}
+
+.cardLocked {
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.cardLocked:hover {
+  opacity: 0.7;
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.cardTitle {
+  font-family: var(--ff-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-900);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkIcon {
+  color: var(--green-600);
+  font-size: 1rem;
+}
+
+.lockIcon {
+  color: var(--text-400);
+  font-size: 0.95rem;
+}
+
+.cardDesc {
+  font-size: 0.85rem;
+  color: var(--text-600);
+  line-height: 1.5;
+}
+
+.cardRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pointsBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--gold-50);
+  color: var(--gold-700);
+  border: 1px solid var(--gold-200);
+}
+
+.categoryTag {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--rose-50);
+  color: var(--rose-500);
+}
+
+/* ── Increment button ── */
+.incrementBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--rose-400);
+  background: var(--white);
+  color: var(--rose-500);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.incrementBtn:hover {
+  background: var(--rose-500);
+  color: var(--white);
+  transform: scale(1.1);
+}
+
+.incrementBtn:active {
+  transform: scale(0.95);
+}
+
+/* ── Progress ── */
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--cream-100);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--rose-400);
+  transition: width 0.6s ease;
+}
+
+.progressFillComplete {
+  background: var(--green-600);
+}
+
+.progressLabel {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-600);
+  min-width: 36px;
+  text-align: right;
+}
+
+.deadline {
+  font-size: 0.75rem;
+  color: var(--text-400);
+}
+
+/* ── Confetti banner ── */
+.confetti {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold-700);
+  background: linear-gradient(135deg, var(--gold-50), var(--rose-50));
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  animation: confettiPop 0.4s ease both;
+}
+
+@keyframes confettiPop {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Expanded content ── */
+.expandedContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cream-100);
+  animation: expandIn 0.3s ease both;
+}
+
+@keyframes expandIn {
+  from { opacity: 0; max-height: 0; }
+  to   { opacity: 1; max-height: 400px; }
+}
+
+.expandedStats {
+  display: flex;
+  gap: 20px;
+  font-size: 0.8rem;
+  color: var(--text-500, var(--text-400));
+  font-weight: 500;
+}
+
+.expandedDesc {
+  font-size: 0.85rem;
+  color: var(--text-600);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.actionBtn {
+  align-self: flex-start;
+  padding: 10px 24px;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: var(--rose-500);
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionBtn:hover {
+  background: var(--rose-600, #c03a6b);
+  transform: translateY(-1px);
+}
+
+.actionBtn:active {
+  transform: translateY(0);
+}
+
+.lockInfo {
+  font-size: 0.85rem;
+  color: var(--gold-700);
+  background: var(--gold-50);
+  padding: 8px 14px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--gold-200);
+}
+
+.lockExplain {
+  font-size: 0.82rem;
+  color: var(--text-600);
+  line-height: 1.6;
+}
+
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-400);
+  font-size: 0.9rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page { padding: 20px 16px; }
+  .tabs { width: 100%; }
+  .tab { flex: 1; text-align: center; }
+  .formGrid { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: stretch; }
+  .newBtn { text-align: center; justify-content: center; }
+}

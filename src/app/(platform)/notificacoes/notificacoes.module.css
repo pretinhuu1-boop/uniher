@@ -1,0 +1,238 @@
+/* ═══════════════════════════════════════════════════════════════
+   Notificacoes
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  padding: 32px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.unreadBadge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--rose-500);
+  background: var(--rose-50);
+  border: 1px solid var(--rose-200);
+  border-radius: 14px;
+  padding: 3px 12px;
+  white-space: nowrap;
+}
+
+.markAllBtn {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  border: 1px solid var(--border-2);
+  color: var(--text-600);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.markAllBtn:hover {
+  border-color: var(--rose-300);
+  color: var(--rose-500);
+}
+
+.clearAllBtn {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  border: 1px solid var(--border-2);
+  color: var(--text-400);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clearAllBtn:hover {
+  border-color: #d44;
+  color: #d44;
+}
+
+/* ── Notification List ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emptyMessage {
+  text-align: center;
+  color: var(--text-400);
+  font-size: 0.92rem;
+  padding: 40px 0;
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 18px 22px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.cardUnread {
+  background: var(--rose-50);
+  border-color: var(--rose-100);
+}
+
+/* ── Icon ── */
+.iconWrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.iconBadge {
+  background: var(--gold-50);
+}
+
+.iconLevel {
+  background: rgba(62, 125, 90, 0.1);
+}
+
+.iconCampaign {
+  background: var(--rose-50);
+}
+
+.iconChallenge {
+  background: rgba(212, 176, 96, 0.15);
+}
+
+.iconAlert {
+  background: rgba(200, 92, 126, 0.1);
+}
+
+/* ── Content ── */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardTitle {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-900);
+}
+
+.message {
+  font-size: 0.82rem;
+  color: var(--text-600);
+  line-height: 1.4;
+}
+
+.timestamp {
+  font-size: 0.72rem;
+  color: var(--text-400);
+  margin-top: 2px;
+}
+
+/* ── Card Actions ── */
+.cardActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  align-items: flex-end;
+}
+
+.actionBtn {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--text-500);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.actionBtn:hover {
+  border-color: var(--rose-300);
+  color: var(--rose-500);
+}
+
+.actionBtnDanger:hover {
+  border-color: #d44;
+  color: #d44;
+}
+
+/* ── Unread Dot ── */
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rose-500);
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page { padding: 20px 16px; }
+
+  .card {
+    flex-wrap: wrap;
+  }
+
+  .cardActions {
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+}

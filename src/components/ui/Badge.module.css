@@ -1,0 +1,21 @@
+.badge {
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.done {
+  background: #EAF4EE;
+  color: #3E7D5A;
+}
+
+.active {
+  background: var(--gold-pale);
+  color: var(--gold);
+}
+
+.next {
+  background: var(--rose-pale);
+  color: var(--rose-dark);
+}

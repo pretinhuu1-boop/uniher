@@ -1,0 +1,222 @@
+/* ═══════════════════════════════════════════════════════════════
+   Quiz Analyzing Screen
+   ═══════════════════════════════════════════════════════════════ */
+
+.wrapper {
+  padding: 3rem 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ── Spinner ── */
+
+.spinnerWrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinnerRing {
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--cream-200);
+  border-top-color: var(--rose-500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.lotus {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Title ── */
+
+.title {
+  font-family: var(--ff-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 0.35rem;
+}
+
+.titleAccent {
+  color: var(--rose-500);
+}
+
+.subtitle {
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  color: var(--text-600);
+  margin-bottom: 2rem;
+}
+
+/* ── Steps ── */
+
+.steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stepCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.stepCircleActive {
+  border-color: var(--rose-500);
+  background: var(--rose-500);
+}
+
+.stepDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-3);
+}
+
+.stepLabel {
+  font-family: var(--ff-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-400);
+  transition: color 0.3s;
+}
+
+.stepLabelActive {
+  color: var(--rose-500);
+}
+
+/* ── Progress Bar ── */
+
+.progressWrap {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.progressTrack {
+  height: 8px;
+  background: var(--cream-200);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--rose-500), var(--rose-400));
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  transition: width 0.3s ease;
+}
+
+.progressPct {
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--rose-500);
+}
+
+/* ── Stats ── */
+
+.stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding-top: 0.5rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.statValue {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statRose {
+  color: var(--rose-500);
+}
+
+.statGold {
+  color: var(--gold-700);
+}
+
+.statGreen {
+  color: var(--green-600);
+}
+
+.statLabel {
+  font-family: var(--ff-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-400);
+}
+
+/* ── Animations ── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 480px) {
+  .wrapper {
+    padding: 2rem 1.25rem 2rem;
+  }
+
+  .steps {
+    gap: 0.75rem;
+  }
+
+  .stats {
+    gap: 1.25rem;
+  }
+}

@@ -1,0 +1,309 @@
+/* ═══════════════════════════════════════════════════════════════
+   Welcome / Role Selection Page
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Logo ── */
+
+.logo {
+  margin-bottom: 16px;
+  animation: fadeUp 0.6s ease both;
+}
+
+/* ── Header ── */
+
+.title {
+  font-family: var(--ff-display);
+  font-size: 2.75rem;
+  font-weight: 600;
+  color: var(--text-900);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  animation: fadeUp 0.6s ease 0.1s both;
+}
+
+.subtitle {
+  font-family: var(--ff-body);
+  font-size: 1.125rem;
+  color: var(--text-600);
+  margin-bottom: 40px;
+  animation: fadeUp 0.6s ease 0.2s both;
+}
+
+/* ── Cards Grid ── */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 920px;
+  width: 100%;
+  animation: fadeUp 0.6s ease 0.3s both;
+}
+
+/* ── Single Card ── */
+
+.card {
+  position: relative;
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px 24px;
+  cursor: pointer;
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease,
+    border-color 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+  border-color: var(--border-2);
+}
+
+.card:active {
+  transform: translateY(-2px);
+}
+
+/* ── Card border-top colours ── */
+
+.cardRH::before {
+  background: var(--rose-500);
+}
+
+.cardLideranca::before {
+  background: var(--gold-500);
+}
+
+.cardColaboradora::before {
+  background: var(--rose-300);
+}
+
+/* ── Card internals ── */
+
+.cardIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.cardIconRH {
+  background: var(--rose-50);
+}
+
+.cardIconLideranca {
+  background: var(--gold-50);
+}
+
+.cardIconColaboradora {
+  background: var(--rose-50);
+}
+
+.cardTitle {
+  font-family: var(--ff-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-900);
+  margin-bottom: 6px;
+}
+
+.cardDescription {
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  color: var(--text-600);
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+
+.cardBullets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.bullet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ff-body);
+  font-size: 0.825rem;
+  color: var(--text-600);
+}
+
+.bulletDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bulletDotRH {
+  background: var(--rose-500);
+}
+
+.bulletDotLideranca {
+  background: var(--gold-500);
+}
+
+.bulletDotColaboradora {
+  background: var(--rose-300);
+}
+
+/* ── Arrow ── */
+
+.cardArrow {
+  align-self: flex-end;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.cardArrowRH {
+  background: var(--rose-50);
+  color: var(--rose-500);
+}
+
+.cardArrowLideranca {
+  background: var(--gold-50);
+  color: var(--gold-500);
+}
+
+.cardArrowColaboradora {
+  background: var(--rose-50);
+  color: var(--rose-300);
+}
+
+.card:hover .cardArrow {
+  transform: translateX(3px);
+}
+
+.card:hover .cardArrowRH {
+  background: var(--rose-500);
+  color: var(--white);
+}
+
+.card:hover .cardArrowLideranca {
+  background: var(--gold-500);
+  color: var(--white);
+}
+
+.card:hover .cardArrowColaboradora {
+  background: var(--rose-300);
+  color: var(--white);
+}
+
+/* ── Footer text ── */
+
+.footer {
+  margin-top: 32px;
+  font-family: var(--ff-body);
+  font-size: 0.8rem;
+  color: var(--text-400);
+  text-align: center;
+  max-width: 440px;
+  line-height: 1.5;
+  animation: fadeUp 0.6s ease 0.4s both;
+}
+
+.footerLink {
+  color: var(--rose-500);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footerLink:hover {
+  color: var(--rose-700);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .page {
+    padding: 32px 16px;
+    justify-content: flex-start;
+    padding-top: 56px;
+  }
+
+  .title {
+    font-size: 2.25rem;
+  }
+
+  .subtitle {
+    margin-bottom: 28px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    gap: 16px;
+  }
+
+  .card {
+    padding: 24px 20px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding-top: 40px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+}
+
+/* ── Animations (reuse global keyframes) ── */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

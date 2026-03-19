@@ -1,0 +1,45 @@
+.footer {
+  background: var(--text, #2A1A1F);
+  color: #fff;
+  padding: 3rem 1.5rem 2rem;
+}
+.inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+}
+.logo {
+  font-family: var(--ff-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.sub {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin-bottom: 1.5rem;
+}
+.links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+.links a {
+  font-size: 13px;
+  color: #fff;
+  text-decoration: none;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.links a:hover {
+  opacity: 1;
+}
+.copy {
+  font-size: 12px;
+  opacity: 0.35;
+}

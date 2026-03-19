@@ -1,0 +1,687 @@
+/* ═══════════════════════════════════════════════════════════════
+   Quiz Results Screen
+   ═══════════════════════════════════════════════════════════════ */
+
+.wrapper {
+  animation: fadeUp 0.4s ease;
+}
+
+/* ── Archetype Card ── */
+
+.archetypeCard {
+  padding: 2.5rem 2rem 2rem;
+  background: linear-gradient(155deg, var(--rose-50) 0%, var(--gold-50) 100%);
+  text-align: center;
+}
+
+.archetypeEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rose-500);
+  margin-bottom: 0.75rem;
+}
+
+.archetypeName {
+  font-family: var(--ff-display);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  color: var(--text-900);
+  line-height: 1.15;
+  margin-bottom: 0.75rem;
+}
+
+.archetypeDesc {
+  font-family: var(--ff-body);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-600);
+  max-width: 420px;
+  margin: 0 auto 1.25rem;
+}
+
+.scorePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: 999px;
+  padding: 6px 16px;
+  color: var(--rose-500);
+}
+
+.scorePillLabel {
+  font-family: var(--ff-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-400);
+  margin-right: 2px;
+}
+
+.scorePillValue {
+  font-family: var(--ff-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--rose-500);
+}
+
+/* ── Transformation Section ── */
+
+.transformSection {
+  padding: 2rem;
+}
+
+.sectionTitle {
+  font-family: var(--ff-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+/* ── Score Boxes ── */
+
+.scoreBoxes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.scoreBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1.5rem;
+  min-width: 100px;
+}
+
+.scoreBoxLabel {
+  font-family: var(--ff-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-400);
+}
+
+.scoreBoxValue {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.scoreBoxBefore {
+  color: var(--rose-500);
+}
+
+.scoreBoxAfter {
+  color: var(--gold-700);
+}
+
+.scoreBoxArrow {
+  flex-shrink: 0;
+}
+
+/* ── Day Tabs ── */
+
+.dayTabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.dayTab {
+  padding: 6px 16px;
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-600);
+  background: var(--cream-200);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dayTab:hover {
+  background: var(--rose-50);
+  color: var(--rose-500);
+}
+
+.dayTabActive {
+  background: var(--rose-500);
+  color: #fff;
+  border-color: var(--rose-500);
+}
+
+.dayTabActive:hover {
+  background: var(--rose-700);
+  color: #fff;
+}
+
+/* ── Legend ── */
+
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legendDotRose {
+  background: var(--rose-500);
+}
+
+.legendDotGold {
+  background: var(--gold-700);
+}
+
+.legendLabel {
+  font-family: var(--ff-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-600);
+}
+
+/* ── Chart ── */
+
+.chartWrap {
+  margin-bottom: 1.5rem;
+}
+
+/* ── Dimension Cards Grid ── */
+
+.dimGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0;
+}
+
+.dimCard {
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.875rem;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dimCard:nth-child(1) { transition-delay: 0ms; }
+.dimCard:nth-child(2) { transition-delay: 80ms; }
+.dimCard:nth-child(3) { transition-delay: 160ms; }
+.dimCard:nth-child(4) { transition-delay: 240ms; }
+.dimCard:nth-child(5) { transition-delay: 320ms; }
+.dimCard:nth-child(6) { transition-delay: 400ms; }
+.dimCard:nth-child(7) { transition-delay: 480ms; }
+
+.dimCardVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dimHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.dimName {
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-900);
+}
+
+.dimImprovement {
+  font-family: var(--ff-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--green-600);
+  background: rgba(62, 125, 90, 0.1);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.dimScores {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 0.4rem;
+}
+
+.dimBefore {
+  font-family: var(--ff-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--rose-500);
+}
+
+.dimAfter {
+  font-family: var(--ff-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold-700);
+}
+
+.dimBarTrack {
+  height: 4px;
+  background: var(--cream-200);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dimBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--rose-500), var(--gold-700));
+  width: 0 !important;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
+}
+
+.dimCardVisible .dimBarFill {
+  width: var(--bar-width) !important;
+}
+
+/* ── CTA Card ── */
+
+.ctaCard {
+  margin: 1.5rem 2rem 2rem;
+  padding: 2rem 1.5rem;
+  background: linear-gradient(135deg, var(--rose-500) 0%, var(--rose-700) 100%);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: #fff;
+}
+
+.ctaTitle {
+  font-family: var(--ff-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.ctaDesc {
+  font-family: var(--ff-body);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  max-width: 360px;
+  margin: 0 auto 1.25rem;
+}
+
+.ctaBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: #fff;
+  color: var(--rose-700);
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-2xl);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ctaBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Lead Form
+   ═══════════════════════════════════════════════════════════════ */
+
+.leadCard {
+  margin: 1.5rem 2rem 2rem;
+  padding: 2rem 1.5rem;
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.leadTitle {
+  font-family: var(--ff-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 0.5rem;
+}
+
+.leadDesc {
+  font-family: var(--ff-body);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-600);
+  margin-bottom: 1.5rem;
+}
+
+.leadForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel {
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-600);
+  letter-spacing: 0.02em;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  color: var(--text-900);
+  background: var(--cream-50);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.fieldInput::placeholder {
+  color: var(--text-400);
+}
+
+.fieldInput:focus {
+  border-color: var(--rose-400);
+  box-shadow: 0 0 0 3px rgba(200, 92, 126, 0.1);
+}
+
+.fieldInputError {
+  border-color: #e53e3e;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+}
+
+.fieldError {
+  font-family: var(--ff-body);
+  font-size: 0.72rem;
+  color: #e53e3e;
+  margin-top: 2px;
+}
+
+/* ── LGPD Consent ── */
+
+.consentLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
+.consentCheckbox {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  accent-color: var(--rose-500);
+  cursor: pointer;
+}
+
+.consentText {
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-500);
+}
+
+.consentLink {
+  color: var(--rose-500);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.consentLink:hover {
+  color: var(--rose-700);
+}
+
+/* ── Spinner ── */
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.leadSubmit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.leadSubmit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 0.5rem;
+  padding: 13px 28px;
+  background: linear-gradient(135deg, var(--rose-500), var(--rose-700));
+  color: #fff;
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-2xl);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  box-shadow: 0 4px 16px rgba(200, 92, 126, 0.3);
+}
+
+.leadSubmit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(200, 92, 126, 0.4);
+}
+
+.leadSubmit:active {
+  transform: translateY(0);
+}
+
+.leadBack {
+  margin-top: 1rem;
+  font-family: var(--ff-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-400);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.leadBack:hover {
+  color: var(--rose-500);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Success Card
+   ═══════════════════════════════════════════════════════════════ */
+
+.successCard {
+  margin: 1.5rem 2rem 2rem;
+  padding: 2.5rem 1.5rem 2rem;
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.successIcon {
+  margin-bottom: 1rem;
+}
+
+.successTitle {
+  font-family: var(--ff-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 0.75rem;
+}
+
+.successDesc {
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-600);
+  margin-bottom: 0.5rem;
+}
+
+.successProfile {
+  font-family: var(--ff-body);
+  font-size: 0.82rem;
+  color: var(--text-400);
+  margin-bottom: 1.5rem;
+}
+
+.whatsappBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  background: #25D366;
+  color: #fff;
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-2xl);
+  text-decoration: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.3);
+}
+
+.whatsappBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(37, 211, 102, 0.4);
+}
+
+.whatsappBtn:active {
+  transform: translateY(0);
+}
+
+/* ── Animation ── */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Responsive ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .wrapper {
+    animation: none;
+  }
+
+  .dimCard {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .dimBarFill {
+    width: var(--bar-width) !important;
+    transition: none;
+  }
+
+  .leadCard,
+  .successCard {
+    animation: none;
+  }
+
+  .spinner {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .archetypeCard {
+    padding: 2rem 1.25rem 1.5rem;
+  }
+
+  .transformSection {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .scoreBoxes {
+    gap: 0.5rem;
+  }
+
+  .scoreBox {
+    padding: 0.5rem 1rem;
+    min-width: 80px;
+  }
+
+  .dimGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .ctaCard {
+    margin: 1rem 1.25rem 1.5rem;
+    padding: 1.5rem 1rem;
+  }
+}

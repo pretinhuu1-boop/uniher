@@ -1,0 +1,220 @@
+/* ═══════════════════════════════════════════════════════════════
+   Conquistas
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  padding: 32px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.title {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-600);
+  margin-bottom: 28px;
+}
+
+/* ── Stats Row ── */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+}
+
+.statValue {
+  font-family: var(--ff-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-900);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 0.78rem;
+  color: var(--text-600);
+}
+
+/* ── Badge Grid ── */
+.badgeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.badgeCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.badgeCard:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.badgeExpanded {
+  border-color: var(--rose-300);
+  box-shadow: var(--shadow-md);
+  transform: translateY(0);
+}
+
+.badgeUnlocked {
+  border-color: var(--gold-200);
+  border-width: 2px;
+  background: linear-gradient(180deg, var(--gold-50), var(--white));
+}
+
+.badgeLocked {
+  opacity: 0.5;
+  filter: grayscale(0.6);
+}
+
+.badgeIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  background: var(--cream-100);
+}
+
+.badgeUnlocked .badgeIcon {
+  background: var(--gold-50);
+}
+
+.badgeName {
+  font-family: var(--ff-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.badgeDesc {
+  font-size: 0.78rem;
+  color: var(--text-600);
+  line-height: 1.4;
+}
+
+.badgePoints {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--gold-50);
+  color: var(--gold-700);
+  border: 1px solid var(--gold-200);
+}
+
+.badgeDate {
+  font-size: 0.72rem;
+  color: var(--text-400);
+}
+
+.badgeLockLabel {
+  font-size: 0.72rem;
+  color: var(--text-400);
+  font-weight: 500;
+}
+
+/* ── Badge Expanded Content ── */
+.badgeExpandedContent {
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: badgeSlideDown 0.25s ease both;
+}
+
+@keyframes badgeSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.badgeExpandedDesc {
+  font-size: 0.82rem;
+  color: var(--text-600);
+  line-height: 1.5;
+}
+
+.badgeExpandedDate {
+  font-size: 0.78rem;
+  color: var(--text-400);
+  font-weight: 500;
+}
+
+.badgeShareBtn {
+  padding: 7px 18px;
+  background: var(--rose-500);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-xs);
+  font-family: var(--ff-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 4px;
+}
+
+.badgeShareBtn:hover {
+  background: var(--rose-700);
+}
+
+.badgeWhatsMissing {
+  font-size: 0.8rem;
+  color: var(--text-400);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .badgeGrid { grid-template-columns: repeat(2, 1fr); }
+  .statsRow { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 580px) {
+  .page { padding: 20px 16px; }
+  .badgeGrid { grid-template-columns: 1fr; }
+  .statsRow { grid-template-columns: 1fr; }
+}

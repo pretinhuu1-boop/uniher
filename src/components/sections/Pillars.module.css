@@ -1,0 +1,143 @@
+/* ── Pillars Section ── */
+
+.section {
+  padding: 96px 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rose-500);
+  margin-bottom: 12px;
+}
+
+.title {
+  font-family: var(--ff-display);
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 700;
+  color: var(--text-900);
+  line-height: 1.15;
+  margin-bottom: 40px;
+}
+
+/* ── Grid ── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* ── Card ── */
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-xl);
+  padding: 2rem 1.75rem;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.featured {
+  background: linear-gradient(155deg, var(--rose-50) 0%, var(--gold-50) 100%);
+  border-color: rgba(200, 92, 126, 0.22);
+}
+
+/* ── Number ── */
+
+.number {
+  font-family: var(--ff-display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+
+.rose {
+  color: var(--rose-500);
+}
+
+.gold {
+  color: var(--gold-700);
+}
+
+.green {
+  color: var(--green-600);
+}
+
+/* ── Content ── */
+
+.pillarTitle {
+  font-family: var(--ff-display);
+  font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+  font-weight: 700;
+  color: var(--text-900);
+  line-height: 1.25;
+  margin-bottom: 12px;
+}
+
+.description {
+  font-family: var(--ff-body);
+  font-size: 0.88rem;
+  color: var(--text-600);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+/* ── Tags ── */
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.tag {
+  font-family: var(--ff-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 16px;
+  background: rgba(200, 92, 126, 0.08);
+  color: var(--rose-700);
+  letter-spacing: 0.02em;
+}
+
+.featured .tag {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .section {
+    padding: 64px 0;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

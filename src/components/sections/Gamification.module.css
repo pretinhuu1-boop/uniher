@@ -1,0 +1,512 @@
+/* ═══════════════════════════════════════════════════════════════
+   Gamification Section
+   ═══════════════════════════════════════════════════════════════ */
+
+.section {
+  padding: 96px 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+/* ── Grid ── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* ── Card base ── */
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Wide card spans 2 columns */
+.wide {
+  grid-column: span 2;
+  background: linear-gradient(160deg, var(--rose-50) 0%, #fff 60%);
+  border-color: var(--rose-300);
+  box-shadow: var(--shadow-md);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--rose-50);
+  color: var(--rose-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cardIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cardTitle {
+  font-family: var(--ff-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.cardSub {
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  color: var(--text-400);
+  margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Arena Card
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Total points */
+.totalPoints {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.totalValue {
+  font-family: var(--ff-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--rose-500);
+}
+
+.totalLabel {
+  font-family: var(--ff-body);
+  font-size: 0.8rem;
+  color: var(--text-400);
+}
+
+.levelBadge {
+  margin-left: auto;
+  background: var(--gold-50);
+  color: var(--gold-700);
+  font-family: var(--ff-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--gold-200);
+}
+
+/* ── Podium ── */
+
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.podiumPlace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.podiumAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--cream-200);
+  color: var(--text-600);
+  font-family: var(--ff-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.podiumBar {
+  width: 56px;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.podiumPos {
+  font-family: var(--ff-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.first .podiumBar {
+  height: 80px;
+  background: var(--rose-500);
+}
+
+.second .podiumBar {
+  height: 60px;
+  background: var(--rose-400);
+}
+
+.third .podiumBar {
+  height: 44px;
+  background: var(--rose-300);
+}
+
+.crown {
+  margin-bottom: -2px;
+}
+
+/* ── Ranking list ── */
+
+.rankingList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rankingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rankPos {
+  width: 20px;
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-400);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rankDept {
+  width: 80px;
+  font-family: var(--ff-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-900);
+  flex-shrink: 0;
+}
+
+.rankBarWrap {
+  flex: 1;
+  height: 8px;
+  background: var(--cream-100);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rankBar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rose-400), var(--rose-500));
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.rankPts {
+  width: 60px;
+  text-align: right;
+  font-family: var(--ff-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-600);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Streak Card
+   ═══════════════════════════════════════════════════════════════ */
+
+.streakValue {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.streakNumber {
+  font-family: var(--ff-display);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--rose-500);
+  line-height: 1;
+}
+
+.streakUnit {
+  font-family: var(--ff-body);
+  font-size: 0.85rem;
+  color: var(--text-400);
+}
+
+/* Level progress */
+.levelSection {
+  margin-top: auto;
+}
+
+.levelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.levelLabel {
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.levelXp {
+  font-family: var(--ff-body);
+  font-size: 0.72rem;
+  color: var(--text-400);
+}
+
+.levelBarWrap {
+  height: 10px;
+  background: var(--cream-100);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.levelBar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rose-400), var(--gold-500));
+  border-radius: 5px;
+  transition: width 0.6s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Badges Card
+   ═══════════════════════════════════════════════════════════════ */
+
+.badgeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.badgeSquare {
+  aspect-ratio: 1;
+  background: var(--cream-50);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: transform 0.2s;
+}
+
+.badgeSquare:hover {
+  transform: scale(1.06);
+}
+
+.badgeEmoji {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.badgeLabel {
+  font-family: var(--ff-body);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badgeMore {
+  background: var(--rose-50);
+  border-color: var(--rose-100);
+}
+
+.badgeMore .badgeEmoji {
+  font-size: 1rem;
+  font-family: var(--ff-body);
+  font-weight: 700;
+  color: var(--rose-500);
+}
+
+.badgeCount {
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  color: var(--text-400);
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Semaphore Card
+   ═══════════════════════════════════════════════════════════════ */
+
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alertRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+}
+
+.alertDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.alertText {
+  font-family: var(--ff-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-900);
+}
+
+/* Red */
+.alertRed {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.alertRed .alertDot {
+  background: #E74C3C;
+  box-shadow: 0 0 6px rgba(231, 76, 60, 0.4);
+}
+
+/* Yellow */
+.alertYellow {
+  background: #fefce8;
+  border: 1px solid #fef08a;
+}
+
+.alertYellow .alertDot {
+  background: #F1C40F;
+  box-shadow: 0 0 6px rgba(241, 196, 15, 0.4);
+}
+
+/* Green */
+.alertGreen {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.alertGreen .alertDot {
+  background: #2ECC71;
+  box-shadow: 0 0 6px rgba(46, 204, 113, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wide {
+    grid-column: span 1;
+  }
+
+  .podiumBar {
+    width: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 64px 0;
+  }
+
+  .header {
+    margin-bottom: 36px;
+  }
+
+  .card {
+    padding: 24px 20px;
+  }
+
+  .totalValue {
+    font-size: 1.6rem;
+  }
+
+  .streakNumber {
+    font-size: 2rem;
+  }
+
+  .podiumAvatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.62rem;
+  }
+
+  .podiumBar {
+    width: 44px;
+  }
+
+  .first .podiumBar {
+    height: 64px;
+  }
+
+  .second .podiumBar {
+    height: 48px;
+  }
+
+  .third .podiumBar {
+    height: 36px;
+  }
+
+  .rankDept {
+    width: 64px;
+    font-size: 0.72rem;
+  }
+
+  .rankPts {
+    width: 48px;
+    font-size: 0.68rem;
+  }
+}

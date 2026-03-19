@@ -1,0 +1,354 @@
+/* ═══════════════════════════════════════════════════════════════
+   Analytics de Emails – Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+  max-width: 1280px;
+  width: 100%;
+}
+
+/* ── Page Header ── */
+
+.headerTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pageTitle {
+  font-family: var(--ff-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-900);
+  line-height: 1.15;
+}
+
+.pageSubtitle {
+  font-size: 0.9rem;
+  color: var(--text-600);
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.periodBtns {
+  display: flex;
+  background: var(--cream-100);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-1);
+}
+
+.periodBtn {
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-600);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.periodBtn:hover {
+  color: var(--rose-500);
+}
+
+.periodBtnActive {
+  background: var(--rose-500);
+  color: var(--white);
+}
+
+/* ── KPI Cards ── */
+
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpiCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kpiIcon {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.kpiValue {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-900);
+  line-height: 1;
+}
+
+.kpiLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-600);
+}
+
+.kpiSub {
+  font-size: 0.72rem;
+  color: var(--text-400);
+}
+
+.kpiUp {
+  color: var(--green-600);
+  font-weight: 600;
+}
+
+.kpiDown {
+  color: var(--rose-500);
+  font-weight: 600;
+}
+
+/* ── Charts Section ── */
+
+.chartsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.chartCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.chartTitle {
+  font-family: var(--ff-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 16px;
+}
+
+.chartWrapper {
+  position: relative;
+  height: 260px;
+}
+
+/* ── Campaign Table ── */
+
+.tableCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tableTitle {
+  font-family: var(--ff-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 16px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-400);
+  padding: 10px 12px;
+  border-bottom: 1.5px solid var(--border-2);
+}
+
+.table td {
+  padding: 12px;
+  font-size: 0.85rem;
+  color: var(--text-900);
+  border-bottom: 1px solid var(--border-1);
+  vertical-align: middle;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: var(--cream-50);
+}
+
+.campaignName {
+  font-weight: 600;
+}
+
+.subValue {
+  color: var(--text-400);
+  font-size: 0.75rem;
+  margin-left: 4px;
+}
+
+/* Status badges */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.badgeAlta {
+  background: rgba(62, 125, 90, 0.1);
+  color: var(--green-600);
+}
+
+.badgeMedia {
+  background: var(--gold-50);
+  color: var(--gold-500);
+}
+
+.badgeBaixa {
+  background: var(--rose-50);
+  color: var(--rose-500);
+}
+
+/* ── Top Content ── */
+
+.topContentCard {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.topContentTitle {
+  font-family: var(--ff-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 16px;
+}
+
+.topContentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.topContentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.topContentItem:last-child {
+  border-bottom: none;
+}
+
+.topContentLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topContentRank {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--rose-50);
+  color: var(--rose-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topContentName {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-900);
+}
+
+.topContentClicks {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--rose-500);
+  background: var(--rose-50);
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 900px) {
+  .kpiRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chartsRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .page {
+    padding: 20px 16px;
+    gap: 18px;
+  }
+
+  .kpiRow {
+    grid-template-columns: 1fr;
+  }
+
+  .headerTop {
+    flex-direction: column;
+  }
+
+  .table {
+    font-size: 0.78rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 8px;
+  }
+}
