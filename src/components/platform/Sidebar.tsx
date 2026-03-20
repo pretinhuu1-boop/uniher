@@ -20,6 +20,7 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { href: '/semaforo', label: 'Semáforo de Saúde', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
+    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios/gerenciar', label: 'Gerenciar Desafios', icon: 'desafios' },
     { href: '/liga/gerenciar', label: 'Gerenciar Ligas', icon: 'liga' },
     { href: '/convites', label: 'Convites', icon: 'invite' },
@@ -31,6 +32,7 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { href: '/semaforo', label: 'Semáforo da Equipe', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
+    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios', label: 'Desafios', icon: 'desafios' },
     { href: '/historico', label: 'Histórico', icon: 'historico' },
   ],
@@ -38,6 +40,7 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { href: '/colaboradora', label: 'Meu Painel', icon: 'dashboard' },
     { href: '/semaforo', label: 'Meu Semáforo', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
+    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios', label: 'Desafios', icon: 'desafios' },
     { href: '/conquistas', label: 'Conquistas', icon: 'conquistas' },
     { href: '/liga', label: 'Liga Semanal', icon: 'liga' },
@@ -139,6 +142,11 @@ function NavIcon({ name }: { name: string }) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
         <circle cx="12" cy="12" r="3" />
+      </svg>
+    ),
+    objetivos: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 3.9 2.4-7.4L2 9.4h7.6L12 2z" />
       </svg>
     ),
     invite: (
