@@ -2,213 +2,150 @@
 
 import { useState } from 'react';
 import { COMPANY } from '@/data/mock-company';
-import styles from './company.module.css';
+import { cn } from '@/lib/utils';
+
+function EditField({ label, value, onChange, isEditing, type = 'text' }: {
+  label: string; value: string; onChange: (v: string) => void; isEditing: boolean; type?: string;
+}) {
+  return (
+    <div>
+      <dt className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400 mb-1">{label}</dt>
+      {isEditing ? (
+        <input
+          type={type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="w-full h-10 px-3 text-sm font-medium text-uni-text-900 bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all"
+        />
+      ) : (
+        <dd className="text-sm font-semibold text-uni-text-900">{value || '–'}</dd>
+      )}
+    </div>
+  );
+}
 
 export default function CompanyProfilePage() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [saveLabel, setSaveLabel] = useState('');
+  const [isEditing, setIsEditing]     = useState(false);
+  const [saveLabel, setSaveLabel]     = useState('');
 
-  // Editable fields
-  const [companyName, setCompanyName] = useState(COMPANY.name);
-  const [tradeName, setTradeName] = useState(COMPANY.tradeName);
-  const [cnpj, setCnpj] = useState(COMPANY.cnpj);
-  const [sector, setSector] = useState(COMPANY.sector);
-  const [contactName, setContactName] = useState(COMPANY.contact.name);
-  const [contactEmail, setContactEmail] = useState(COMPANY.contact.email);
-  const [contactPhone, setContactPhone] = useState(COMPANY.contact.phone);
+  const [companyName,   setCompanyName]   = useState(COMPANY.name);
+  const [tradeName,     setTradeName]     = useState(COMPANY.tradeName);
+  const [cnpj,          setCnpj]          = useState(COMPANY.cnpj);
+  const [sector,        setSector]        = useState(COMPANY.sector);
+  const [contactName,   setContactName]   = useState(COMPANY.contact.name);
+  const [contactEmail,  setContactEmail]  = useState(COMPANY.contact.email);
+  const [contactPhone,  setContactPhone]  = useState(COMPANY.contact.phone);
 
-  // Snapshot for cancel
-  const [snapshot, setSnapshot] = useState({
-    companyName: COMPANY.name,
-    tradeName: COMPANY.tradeName,
-    cnpj: COMPANY.cnpj,
-    sector: COMPANY.sector,
-    contactName: COMPANY.contact.name,
-    contactEmail: COMPANY.contact.email,
-    contactPhone: COMPANY.contact.phone,
-  });
+  const [snap, setSnap] = useState({ companyName, tradeName, cnpj, sector, contactName, contactEmail, contactPhone });
 
   const startEditing = () => {
-    setSnapshot({ companyName, tradeName, cnpj, sector, contactName, contactEmail, contactPhone });
+    setSnap({ companyName, tradeName, cnpj, sector, contactName, contactEmail, contactPhone });
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
-    setCompanyName(snapshot.companyName);
-    setTradeName(snapshot.tradeName);
-    setCnpj(snapshot.cnpj);
-    setSector(snapshot.sector);
-    setContactName(snapshot.contactName);
-    setContactEmail(snapshot.contactEmail);
-    setContactPhone(snapshot.contactPhone);
+    setCompanyName(snap.companyName); setTradeName(snap.tradeName); setCnpj(snap.cnpj);
+    setSector(snap.sector); setContactName(snap.contactName); setContactEmail(snap.contactEmail); setContactPhone(snap.contactPhone);
     setIsEditing(false);
   };
 
   const saveEditing = () => {
     setSaveLabel('Salvando...');
     setTimeout(() => {
-      setSaveLabel('\u2713 Salvo!');
+      setSaveLabel('✓ Salvo!');
       setIsEditing(false);
       setTimeout(() => setSaveLabel(''), 2000);
     }, 800);
   };
 
   const stats = [
-    { label: 'Colaboradoras', value: COMPANY.collaboratorCount.toLocaleString('pt-BR') },
-    { label: 'Missoes Ativas', value: COMPANY.missionsActive },
-    { label: 'Pontos Totais', value: COMPANY.totalPoints.toLocaleString('pt-BR') },
-    { label: 'Plano Atual', value: COMPANY.plan, isBadge: true },
+    { label: 'Colaboradoras', value: COMPANY.collaboratorCount.toLocaleString('pt-BR'), icon: '👥', color: 'bg-rose-50 text-rose-500' },
+    { label: 'Missões Ativas', value: String(COMPANY.missionsActive), icon: '🎯', color: 'bg-violet-50 text-violet-500' },
+    { label: 'Pontos Totais', value: COMPANY.totalPoints.toLocaleString('pt-BR'), icon: '⭐', color: 'bg-amber-50 text-amber-500' },
+    { label: 'Plano Atual', value: COMPANY.plan, icon: '📈', color: 'bg-emerald-50 text-emerald-500', isBadge: true },
   ];
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div className={styles.logoPlaceholder}>&#127970;</div>
+    <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 font-body animate-fadeIn">
+
+      {/* Hero Header */}
+      <div className="bg-white rounded-2xl p-8 border border-border-1 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
+          <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-border-1 bg-cream-50 flex flex-col items-center justify-center text-uni-text-400 text-xs font-medium text-center gap-1 cursor-pointer hover:border-rose-300 hover:text-rose-400 transition-colors group">
+            <span className="text-3xl group-hover:scale-110 transition-transform">🏢</span>
+            <span className="text-[10px]">Adicionar logo</span>
+            <span className="text-[8px] opacity-60">PNG, JPG até 2MB</span>
+          </div>
           <div>
-            <h1 className={styles.companyName}>{companyName}</h1>
-            <p className={styles.cnpj}>CNPJ: {cnpj}</p>
+            <h1 className="text-3xl font-display font-bold text-uni-text-900">{companyName}</h1>
+            <p className="text-sm text-uni-text-400 mt-1">CNPJ: {cnpj}</p>
           </div>
         </div>
-        <div className={styles.headerActions}>
-          {saveLabel && <span className={styles.saveLabel}>{saveLabel}</span>}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {saveLabel && <span className="text-sm font-bold text-emerald-600 animate-fadeIn">{saveLabel}</span>}
           {isEditing ? (
             <>
-              <button className={styles.saveBtn} onClick={saveEditing}>
-                Salvar
-              </button>
-              <button className={styles.cancelBtn} onClick={cancelEditing}>
-                Cancelar
-              </button>
+              <button onClick={cancelEditing} className="px-4 py-2 rounded-lg border border-border-1 text-sm font-bold text-uni-text-600 hover:border-uni-text-400 transition-all">Cancelar</button>
+              <button onClick={saveEditing}   className="px-5 py-2 rounded-lg bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-sm">Salvar</button>
             </>
           ) : (
-            <button className={styles.editBtn} onClick={startEditing}>
-              Editar Dados
+            <button onClick={startEditing} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-md shadow-rose/20">
+              ✏️ Editar Dados
             </button>
           )}
         </div>
       </div>
 
-      <div className={styles.statsRow}>
-        {stats.map((stat) => (
-          <div key={stat.label} className={styles.statCard}>
-            <span className={styles.statValue}>
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map(stat => (
+          <div key={stat.label} className="bg-white rounded-2xl p-5 border border-border-1 shadow-sm">
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-3", stat.color)}>
+              {stat.icon}
+            </div>
+            <div className="text-2xl font-display font-bold text-uni-text-900">
               {stat.isBadge ? (
-                <span className={styles.planBadge}>{stat.value}</span>
-              ) : (
-                stat.value
-              )}
-            </span>
-            <span className={styles.statLabel}>{stat.label}</span>
+                <span className="text-lg font-bold text-emerald-600 bg-emerald-50 px-3 py-0.5 rounded-full">{stat.value}</span>
+              ) : stat.value}
+            </div>
+            <div className="text-xs font-medium text-uni-text-500 mt-1">{stat.label}</div>
           </div>
         ))}
       </div>
 
-      <div className={styles.sections}>
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Informacoes da Empresa</h2>
-          <div className={styles.fieldList}>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Razao Social</span>
-              {isEditing ? (
-                <input
-                  className={styles.fieldInput}
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                />
-              ) : (
-                <span className={styles.fieldValue}>{companyName}</span>
-              )}
+      {/* Info Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Company Info */}
+        <div className="bg-white rounded-2xl p-7 border border-border-1 shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-uni-text-900 mb-6">
+            <span className="text-rose-500">🏛</span> Informações da Empresa
+          </h2>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
+            <EditField label="Razão Social"  value={companyName}  onChange={setCompanyName}  isEditing={isEditing} />
+            <EditField label="Nome Fantasia" value={tradeName}    onChange={setTradeName}    isEditing={isEditing} />
+            <EditField label="CNPJ"          value={cnpj}         onChange={setCnpj}         isEditing={isEditing} />
+            <EditField label="Setor"         value={sector}       onChange={setSector}       isEditing={isEditing} />
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400 mb-1">Nº de Colaboradoras</dt>
+              <dd className="text-sm font-semibold text-uni-text-900">{COMPANY.collaboratorCount}</dd>
             </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Nome Fantasia</span>
-              {isEditing ? (
-                <input
-                  className={styles.fieldInput}
-                  value={tradeName}
-                  onChange={(e) => setTradeName(e.target.value)}
-                />
-              ) : (
-                <span className={styles.fieldValue}>{tradeName}</span>
-              )}
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400 mb-1">Membro desde</dt>
+              <dd className="text-sm font-semibold text-uni-text-900">{COMPANY.memberSince}</dd>
             </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>CNPJ</span>
-              {isEditing ? (
-                <input
-                  className={styles.fieldInput}
-                  value={cnpj}
-                  onChange={(e) => setCnpj(e.target.value)}
-                />
-              ) : (
-                <span className={styles.fieldValue}>{cnpj}</span>
-              )}
-            </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Setor</span>
-              {isEditing ? (
-                <input
-                  className={styles.fieldInput}
-                  value={sector}
-                  onChange={(e) => setSector(e.target.value)}
-                />
-              ) : (
-                <span className={styles.fieldValue}>{sector}</span>
-              )}
-            </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>N. de Colaboradoras</span>
-              <span className={styles.fieldValue}>{COMPANY.collaboratorCount}</span>
-            </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Membro desde</span>
-              <span className={styles.fieldValue}>{COMPANY.memberSince}</span>
-            </div>
-          </div>
+          </dl>
         </div>
 
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Contato RH</h2>
-          <div className={styles.fieldList}>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Nome</span>
-              {isEditing ? (
-                <input
-                  className={styles.fieldInput}
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                />
-              ) : (
-                <span className={styles.fieldValue}>{contactName}</span>
-              )}
-            </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>E-mail</span>
-              {isEditing ? (
-                <input
-                  className={styles.fieldInput}
-                  type="email"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                />
-              ) : (
-                <span className={styles.fieldValue}>{contactEmail}</span>
-              )}
-            </div>
-            <div className={styles.field}>
-              <span className={styles.fieldLabel}>Telefone</span>
-              {isEditing ? (
-                <input
-                  className={styles.fieldInput}
-                  type="tel"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                />
-              ) : (
-                <span className={styles.fieldValue}>{contactPhone}</span>
-              )}
-            </div>
-          </div>
+        {/* RH Contact */}
+        <div className="bg-white rounded-2xl p-7 border border-border-1 shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-uni-text-900 mb-6">
+            <span className="text-rose-500">✉️</span> Contato RH
+          </h2>
+          <dl className="space-y-5">
+            <EditField label="Nome do Responsável" value={contactName}  onChange={setContactName}  isEditing={isEditing} />
+            <EditField label="E-mail"              value={contactEmail} onChange={setContactEmail} isEditing={isEditing} type="email" />
+            <EditField label="Telefone"            value={contactPhone} onChange={setContactPhone} isEditing={isEditing} type="tel" />
+          </dl>
         </div>
       </div>
     </div>

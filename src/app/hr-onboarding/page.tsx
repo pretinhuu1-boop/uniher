@@ -3,31 +3,12 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import s from './onboarding.module.css';
-
-/* ── Types ── */
-
-interface Step1Data {
-  nome: string;
-  email: string;
-  telefone: string;
-  senha: string;
-  confirmarSenha: string;
-}
-
-interface Step2Data {
-  cnpj: string;
-  razaoSocial: string;
-  nomeFantasia: string;
-  setor: string;
-}
-
-interface Step3Data {
-  nomeResponsavel: string;
-  emailCorporativo: string;
-  telefone: string;
-  qtdColaboradoras: string;
-}
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card } from '@/components/ui/Card';
+import { Toast } from '@/components/ui/Toast';
+import { cn } from '@/lib/utils';
 
 const SETORES = [
   'Saúde',
@@ -41,493 +22,235 @@ const SETORES = [
 
 const QTD_OPTIONS = ['1-50', '51-200', '201-500', '501-1000', '1000+'];
 
-/* ── Logo SVG Component ── */
-
-function LogoSVG({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="48"
-      height="48"
-      viewBox="0 0 36 36"
-      fill="none"
-    >
-      <path
-        d="M18 32C18 32 8 24 8 15C8 11 11 8 14.5 8C16.5 8 17.5 9.5 18 11C18.5 9.5 19.5 8 21.5 8C25 8 28 11 28 15C28 24 18 32 18 32Z"
-        fill="#F9EEF3"
-        stroke="#C85C7E"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M18 30C18 30 10.5 22 12 13.5C13 9 15.5 6.5 18 6C20.5 6.5 23 9 24 13.5C25.5 22 18 30 18 30Z"
-        fill="#EAB8CB"
-        stroke="#C85C7E"
-        strokeWidth="0.9"
-      />
-      <circle cx="18" cy="6" r="1.5" fill="#B8922A" />
-    </svg>
-  );
-}
-
-/* ── Step Icons ── */
-
-function BuildingIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="4" y="2" width="16" height="20" rx="2" />
-      <path d="M9 22V12h6v10" />
-      <path d="M8 6h.01M16 6h.01M12 6h.01M8 10h.01M16 10h.01M12 10h.01" />
-    </svg>
-  );
-}
-
-function PeopleIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   Main Component
-   ══════════════════════════════════════════════════════════════════ */
-
 export default function HROnboardingPage() {
   const router = useRouter();
+  const { register } = useAuth();
   const [step, setStep] = useState(1);
-  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   /* ── Form State ── */
-  const [step1, setStep1] = useState<Step1Data>({
-    nome: '',
+  const [formData, setFormData] = useState({
+    // Step 1: Admin
+    name: '',
     email: '',
-    telefone: '',
-    senha: '',
-    confirmarSenha: '',
-  });
-
-  const [step2, setStep2] = useState<Step2Data>({
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    // Step 2: Company
     cnpj: '',
     razaoSocial: '',
     nomeFantasia: '',
     setor: '',
-  });
-
-  const [step3, setStep3] = useState<Step3Data>({
-    nomeResponsavel: '',
-    emailCorporativo: '',
-    telefone: '',
+    // Step 3: Specifics
     qtdColaboradoras: '',
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   /* ── Handlers ── */
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrs = { ...prev };
+        delete newErrs[field];
+        return newErrs;
+      });
+    }
+  };
 
-  function handleNext(e: FormEvent) {
+  const validateStep = () => {
+    const newErrors: Record<string, string> = {};
+    if (step === 1) {
+      if (!formData.name) newErrors.name = 'Nome é obrigatório';
+      if (!formData.email) newErrors.email = 'Email é obrigatório';
+      if (formData.password.length < 8) newErrors.password = 'Mínimo 8 caracteres';
+      if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'As senhas não coincidem';
+    } else if (step === 2) {
+      if (!formData.cnpj) newErrors.cnpj = 'CNPJ é obrigatório';
+      if (!formData.razaoSocial) newErrors.razaoSocial = 'Razão Social é obrigatória';
+      if (!formData.setor) newErrors.setor = 'Selecione um setor';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = (e: FormEvent) => {
     e.preventDefault();
-    if (step < 3) {
-      setStep(step + 1);
-    } else {
-      handleSubmit();
+    if (validateStep()) {
+      if (step < 3) setStep(step + 1);
+      else handleSubmit();
     }
-  }
+  };
 
-  function handleBack() {
+  const handleBack = () => {
     if (step > 1) setStep(step - 1);
-  }
+  };
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('uniher-role', 'rh');
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const success = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: 'rh',
+        company: {
+          name: formData.razaoSocial,
+          tradeName: formData.nomeFantasia || formData.razaoSocial,
+          cnpj: formData.cnpj,
+          sector: formData.setor,
+          contactPhone: formData.phone,
+        }
+      });
+
+      if (success) {
+        setToast({ message: 'Empresa cadastrada com sucesso!', type: 'success' });
+        setTimeout(() => router.push('/dashboard'), 1500);
+      } else {
+        setToast({ message: 'Erro ao cadastrar. Verifique os dados.', type: 'error' });
+      }
+    } catch {
+      setToast({ message: 'Erro de conexão.', type: 'error' });
+    } finally {
+      setLoading(false);
     }
-    router.push('/dashboard');
-  }
-
-  /* ── Step Indicator ── */
-
-  function renderStepper() {
-    return (
-      <div className={s.stepper}>
-        {[1, 2, 3].map((n, i) => (
-          <div key={n} style={{ display: 'flex', alignItems: 'center' }}>
-            <div
-              className={`${s.stepCircle} ${
-                step === n ? s.stepActive : ''
-              } ${step > n ? s.stepCompleted : ''}`}
-            >
-              {step > n ? (
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M3 7L6 10L11 4"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : (
-                n
-              )}
-            </div>
-            {i < 2 && (
-              <div
-                className={`${s.stepLine} ${
-                  step > n ? s.stepLineCompleted : ''
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  /* ── Step 1: Criar Conta ── */
-
-  function renderStep1() {
-    return (
-      <div className={s.stepContent} key="step1">
-        <div className={s.stepHeader}>
-          <h2 className={s.stepTitle}>Criar sua Conta RH</h2>
-          <p className={s.stepSubtitle}>
-            Primeiro, crie sua conta de administrador RH.
-          </p>
-        </div>
-
-        <form className={s.form} onSubmit={handleNext}>
-          <div className={s.field}>
-            <label className={s.label}>Nome Completo</label>
-            <input
-              className={s.input}
-              type="text"
-              placeholder="Seu nome completo"
-              value={step1.nome}
-              onChange={(e) => setStep1({ ...step1, nome: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Email Corporativo</label>
-            <input
-              className={s.input}
-              type="email"
-              placeholder="seu@empresa.com.br"
-              value={step1.email}
-              onChange={(e) => setStep1({ ...step1, email: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Telefone</label>
-            <input
-              className={s.input}
-              type="tel"
-              placeholder="(11) 99999-9999"
-              value={step1.telefone}
-              onChange={(e) => setStep1({ ...step1, telefone: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Senha</label>
-            <input
-              className={s.input}
-              type="password"
-              placeholder="Mínimo 8 caracteres"
-              value={step1.senha}
-              onChange={(e) => setStep1({ ...step1, senha: e.target.value })}
-              required
-              minLength={8}
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Confirmar Senha</label>
-            <input
-              className={s.input}
-              type="password"
-              placeholder="Repita a senha"
-              value={step1.confirmarSenha}
-              onChange={(e) =>
-                setStep1({ ...step1, confirmarSenha: e.target.value })
-              }
-              required
-              minLength={8}
-            />
-          </div>
-
-          <div className={s.buttons}>
-            <a href="/welcome" className={s.btnOutline}>
-              <span aria-hidden="true">&lsaquo;</span> Voltar
-            </a>
-            <button type="submit" className={s.btnPrimary}>
-              Continuar <span aria-hidden="true">&rarr;</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
-  /* ── Step 2: Dados da Empresa ── */
-
-  function renderStep2() {
-    const cnpjFilled = step2.cnpj.replace(/\D/g, '').length >= 14;
-
-    return (
-      <div className={s.stepContent} key="step2">
-        <div className={s.stepHeader}>
-          <BuildingIcon className={s.stepIcon} />
-          <h2 className={s.stepTitle}>Dados da Empresa</h2>
-          <p className={s.stepSubtitle}>
-            Informações básicas da organização
-          </p>
-        </div>
-
-        <form className={s.form} onSubmit={handleNext}>
-          <div className={s.field}>
-            <label className={s.label}>CNPJ da Empresa</label>
-            <input
-              className={s.input}
-              type="text"
-              placeholder="00.000.000/0000-00"
-              value={step2.cnpj}
-              onChange={(e) => setStep2({ ...step2, cnpj: e.target.value })}
-              required
-            />
-            <div
-              className={`${s.cnpjHint} ${cnpjFilled ? s.cnpjHintVisible : ''}`}
-            >
-              <span className={s.cnpjCheck}>&#10003;</span>
-              CNPJ válido e disponível
-            </div>
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Razão Social</label>
-            <input
-              className={s.input}
-              type="text"
-              placeholder="Razão social da empresa"
-              value={step2.razaoSocial}
-              onChange={(e) =>
-                setStep2({ ...step2, razaoSocial: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Nome Fantasia</label>
-            <input
-              className={s.input}
-              type="text"
-              placeholder="Nome fantasia"
-              value={step2.nomeFantasia}
-              onChange={(e) =>
-                setStep2({ ...step2, nomeFantasia: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Setor de Atuação</label>
-            <select
-              className={s.select}
-              value={step2.setor}
-              onChange={(e) => setStep2({ ...step2, setor: e.target.value })}
-              required
-            >
-              <option value="" disabled>
-                Selecione o setor
-              </option>
-              {SETORES.map((setor) => (
-                <option key={setor} value={setor}>
-                  {setor}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={s.buttons}>
-            <button
-              type="button"
-              className={s.btnOutline}
-              onClick={handleBack}
-            >
-              <span aria-hidden="true">&lsaquo;</span> Voltar
-            </button>
-            <button type="submit" className={s.btnPrimary}>
-              Próximo <span aria-hidden="true">&rsaquo;</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
-  /* ── Step 3: Contato RH ── */
-
-  function renderStep3() {
-    return (
-      <div className={s.stepContent} key="step3">
-        <div className={s.stepHeader}>
-          <PeopleIcon className={s.stepIcon} />
-          <h2 className={s.stepTitle}>Contato RH</h2>
-          <p className={s.stepSubtitle}>
-            Dados do responsável pelo programa
-          </p>
-        </div>
-
-        <form className={s.form} onSubmit={handleNext}>
-          <div className={s.field}>
-            <label className={s.label}>Nome do Responsável</label>
-            <input
-              className={s.input}
-              type="text"
-              placeholder="Nome completo do responsável"
-              value={step3.nomeResponsavel}
-              onChange={(e) =>
-                setStep3({ ...step3, nomeResponsavel: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>E-mail Corporativo</label>
-            <input
-              className={s.input}
-              type="email"
-              placeholder="responsavel@empresa.com.br"
-              value={step3.emailCorporativo}
-              onChange={(e) =>
-                setStep3({ ...step3, emailCorporativo: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Telefone</label>
-            <input
-              className={s.input}
-              type="tel"
-              placeholder="(11) 99999-9999"
-              value={step3.telefone}
-              onChange={(e) =>
-                setStep3({ ...step3, telefone: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <div className={s.field}>
-            <label className={s.label}>Quantidade de Colaboradoras</label>
-            <select
-              className={s.select}
-              value={step3.qtdColaboradoras}
-              onChange={(e) =>
-                setStep3({ ...step3, qtdColaboradoras: e.target.value })
-              }
-              required
-            >
-              <option value="" disabled>
-                Selecione a faixa
-              </option>
-              {QTD_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={s.buttons}>
-            <button
-              type="button"
-              className={s.btnOutline}
-              onClick={handleBack}
-              disabled={submitting}
-            >
-              <span aria-hidden="true">&lsaquo;</span> Voltar
-            </button>
-            <button
-              type="submit"
-              className={s.btnPrimary}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <div className={s.spinner} />
-                  Finalizando...
-                </>
-              ) : (
-                <>
-                  Próximo <span aria-hidden="true">&rsaquo;</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
-  /* ── Render ── */
+  };
 
   return (
-    <main className={s.page}>
-      <div className={s.card}>
-        {/* Logo */}
-        <div className={s.logo}>
-          <LogoSVG className={s.logoIcon} />
-          <span className={s.logoText}>
-            Uni<span className={s.logoAccent}>HER</span>
-          </span>
+    <main className="min-h-screen bg-cream-50 flex items-center justify-center p-6 relative overflow-hidden font-body">
+      {/* Background Decorative */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-rose-100/20 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-gold-50/30 blur-3xl pointer-events-none" />
+
+      <Card className="w-full max-w-xl p-8 md:p-12 animate-scaleIn bg-white/90 backdrop-blur-md relative z-10 shadow-2xl rounded-lg">
+        {/* Header */}
+        <div className="flex flex-col items-center mb-10 text-center">
+          <svg width="48" height="48" viewBox="0 0 36 36" fill="none" className="mb-4 animate-float">
+            <path d="M18 32C18 32 8 24 8 15C8 11 11 8 14.5 8C16.5 8 17.5 9.5 18 11C18.5 9.5 19.5 8 21.5 8C25 8 28 11 28 15C28 24 18 32 18 32Z" fill="#F9EEF3" stroke="#C85C7E" strokeWidth="1.4" strokeLinejoin="round"/>
+            <path d="M18 30C18 30 10.5 22 12 13.5C13 9 15.5 6.5 18 6C20.5 6.5 23 9 24 13.5C25.5 22 18 30 18 30Z" fill="#EAB8CB" stroke="#C85C7E" strokeWidth="0.9"/>
+            <circle cx="18" cy="6" r="1.5" fill="#B8922A"/>
+          </svg>
+          <h1 className="text-3xl font-display font-bold text-uni-text-900 leading-tight">Uni<span className="text-rose-500">HER</span> Onboarding</h1>
+          <p className="text-uni-text-600 mt-2">Vamos configurar o ambiente para sua empresa.</p>
         </div>
 
         {/* Stepper */}
-        {renderStepper()}
+        <div className="flex items-center justify-center gap-4 mb-10">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="flex items-center">
+              <div className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2",
+                step === n ? "bg-rose-500 text-white border-rose-500 shadow-md transform scale-110" : 
+                step > n ? "bg-uni-green text-white border-uni-green" : "bg-cream-100 text-uni-text-300 border-cream-200"
+              )}>
+                {step > n ? "✓" : n}
+              </div>
+              {n < 3 && (
+                <div className={cn(
+                  "w-12 h-0.5 mx-2 rounded-full transition-colors duration-500",
+                  step > n ? "bg-uni-green" : "bg-cream-200"
+                )} />
+              )}
+            </div>
+          ))}
+        </div>
 
-        {/* Steps */}
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
+        <form onSubmit={handleNext} className="space-y-6 animate-fadeIn">
+          {step === 1 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-display font-semibold text-uni-text-900 mb-4">Seus Dados de Administradora</h2>
+              <Input label="Nome Completo" value={formData.name} onChange={e => updateField('name', e.target.value)} error={errors.name} required />
+              <Input label="Email Corporativo" type="email" value={formData.email} onChange={e => updateField('email', e.target.value)} error={errors.email} required />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="Senha" type="password" value={formData.password} onChange={e => updateField('password', e.target.value)} error={errors.password} required />
+                <Input label="Confirmar Senha" type="password" value={formData.confirmPassword} onChange={e => updateField('confirmPassword', e.target.value)} error={errors.confirmPassword} required />
+              </div>
+            </div>
+          )}
 
-        {/* Bottom link */}
-        <p className={s.bottomLink}>
-          Já tem uma conta?{' '}
-          <Link href="/auth">Fazer login</Link>
+          {step === 2 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-display font-semibold text-uni-text-900 mb-4">Informações da Empresa</h2>
+              <Input label="CNPJ" placeholder="00.000.000/0000-00" value={formData.cnpj} onChange={e => updateField('cnpj', e.target.value)} error={errors.cnpj} required />
+              <Input label="Razão Social" value={formData.razaoSocial} onChange={e => updateField('razaoSocial', e.target.value)} error={errors.razaoSocial} required />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="Nome Fantasia" value={formData.nomeFantasia} onChange={e => updateField('nomeFantasia', e.target.value)} />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-uni-text-600 pl-1 block">Setor de Atuação</label>
+                  <select 
+                    className="w-full h-11 px-4 rounded-md border-2 border-border-1 bg-white focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-300 transition-all text-uni-text-900 text-sm font-medium"
+                    value={formData.setor} 
+                    onChange={e => updateField('setor', e.target.value)}
+                    required
+                  >
+                    <option value="">Selecione...</option>
+                    {SETORES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {errors.setor && <p className="text-xs text-rose-700 pl-1">{errors.setor}</p>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-display font-semibold text-uni-text-900 mb-4">Últimos Detalhes</h2>
+              <Input label="Telefone de Contato" placeholder="(00) 00000-0000" value={formData.phone} onChange={e => updateField('phone', e.target.value)} />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-uni-text-600 pl-1 block">Quantidade de Colaboradoras</label>
+                <select 
+                  className="w-full h-11 px-4 rounded-md border-2 border-border-1 bg-white focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-300 transition-all text-uni-text-900 text-sm font-medium"
+                  value={formData.qtdColaboradoras} 
+                  onChange={e => updateField('qtdColaboradoras', e.target.value)}
+                  required
+                >
+                  <option value="">Selecione a faixa...</option>
+                  {QTD_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div className="p-4 bg-rose-50 rounded-md border border-rose-100 mt-4">
+                <p className="text-xs text-rose-800 leading-relaxed font-medium transition-all">
+                  Ao finalizar, sua empresa entrará no período de Trial de 14 dias com acesso total a todas as ferramentas de saúde e engajamento.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-6 border-t border-border-1 mt-8">
+            <Button 
+              type="button" 
+              variant="ghost" 
+              onClick={handleBack} 
+              disabled={step === 1 || loading}
+              className={step === 1 ? "invisible" : ""}
+            >
+              ← Voltar
+            </Button>
+            
+            <Button type="submit" className="min-w-[140px] shadow-lg hover:shadow-xl active:scale-[0.98]" disabled={loading}>
+              {loading ? (
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                step === 3 ? "Finalizar Cadastro" : "Continuar →"
+              )}
+            </Button>
+          </div>
+        </form>
+
+        <p className="mt-8 text-center text-xs text-uni-text-400">
+          Já possui conta? <Link href="/auth" className="text-rose-500 font-bold hover:underline">Fazer Login</Link>
         </p>
-      </div>
+      </Card>
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </main>
   );
 }

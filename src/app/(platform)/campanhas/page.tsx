@@ -1,343 +1,285 @@
 'use client';
 
 import { useState } from 'react';
-import { CAMPAIGNS_DASHBOARD } from '@/data/mock-dashboard';
-import type { CampaignStatus } from '@/types/platform';
-import styles from './campanhas.module.css';
+import { useCampaigns } from '@/hooks/useCampaigns';
+import { useAuth } from '@/hooks/useAuth';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { cn } from '@/lib/utils';
 
-const TEMAS = ['Saúde Mental', 'Prevenção', 'Hábitos', 'Nutrição'] as const;
+const TEMAS = [
+  { label: 'Saúde Mental', color: '#A48090', icon: '🧠' },
+  { label: 'Prevenção', color: '#C85C7E', icon: '🌸' },
+  { label: 'Hábitos Saudáveis', color: '#3E7D5A', icon: '🌿' },
+  { label: 'Nutrição', color: '#EF9F27', icon: '🍎' },
+] as const;
+
 const MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ] as const;
 
-const THEME_COLORS: Record<string, string> = {
-  'Saúde Mental': '#A48090',
-  'Prevenção': '#C85C7E',
-  'Hábitos': '#3E7D5A',
-  'Nutrição': '#EF9F27',
-};
-
-type FilterTab = 'all' | 'active' | 'done' | 'next';
-
-const MOCK_DESCRIPTIONS: Record<string, string> = {
-  'Outubro Rosa': 'Campanha de conscientização sobre a prevenção do câncer de mama, com atividades educativas, exames preventivos e rodas de conversa sobre saúde feminina.',
-  'Novembro Azul': 'Foco na saúde masculina e prevenção do câncer de próstata, com palestras, check-ups e desafios de bem-estar para os colaboradores.',
-  'Dezembro Laranja': 'Prevenção e controle do diabetes, com orientação nutricional, monitoramento de glicemia e atividades físicas em grupo.',
-  'Janeiro Branco': 'Promoção da saúde mental e emocional, com sessões de mindfulness, apoio psicológico e workshops sobre equilíbrio vida-trabalho.',
-};
-
-function badgeClass(status: string) {
-  if (status === 'done') return styles.badgeDone;
-  if (status === 'active') return styles.badgeActive;
-  return styles.badgeNext;
-}
+type FilterStatus = 'all' | 'active' | 'done' | 'next';
 
 export default function CampanhasPage() {
-  const [campaigns, setCampaigns] = useState<CampaignStatus[]>(CAMPAIGNS_DASHBOARD);
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-  const [showForm, setShowForm] = useState(false);
-  const [formName, setFormName] = useState('');
-  const [formTema, setFormTema] = useState<string>(TEMAS[0]);
-  const [formMes, setFormMes] = useState<string>(MESES[0]);
-  const [actionFeedback, setActionFeedback] = useState<Record<string, string>>({});
-  const [detailOpen, setDetailOpen] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { campaigns, isLoading, createCampaign, joinCampaign, mutate } = useCampaigns();
+  const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const filteredCampaigns = campaigns.filter((c) => {
+  const [formName, setFormName] = useState('');
+  const [formTema, setFormTema] = useState<typeof TEMAS[number]['label']>(TEMAS[0].label);
+  const [formMes, setFormMes] = useState<typeof MESES[number]>(MESES[new Date().getMonth()]);
+
+  const isRH = user?.role === 'rh';
+
+  const filteredCampaigns = campaigns.filter((c: any) => {
     if (activeFilter === 'all') return true;
-    if (activeFilter === 'active') return c.status === 'active';
-    if (activeFilter === 'done') return c.status === 'done';
-    return c.status === 'next';
+    return c.status === activeFilter;
   });
 
-  function handleCardClick(name: string) {
-    setExpandedCard(expandedCard === name ? null : name);
-  }
-
-  function handleCreateCampaign() {
-    if (!formName.trim()) return;
-    const newCampaign: CampaignStatus = {
-      name: formName.trim(),
-      month: `${formMes} · ${formTema}`,
-      progress: 0,
-      status: 'next',
-      statusLabel: 'Próxima',
-      color: THEME_COLORS[formTema] || '#A48090',
-    };
-    setCampaigns([...campaigns, newCampaign]);
-    setFormName('');
-    setFormTema(TEMAS[0]);
-    setFormMes(MESES[0]);
-    setShowForm(false);
-  }
-
-  function handleAction(campaignName: string, action: 'detalhes' | 'compartilhar') {
-    if (action === 'detalhes') {
-      setActionFeedback((prev) => ({ ...prev, [campaignName]: 'loading' }));
-      setTimeout(() => {
-        setActionFeedback((prev) => {
-          const next = { ...prev };
-          delete next[campaignName];
-          return next;
-        });
-        setDetailOpen(campaignName);
-      }, 1500);
-    } else {
-      setActionFeedback((prev) => ({ ...prev, [`${campaignName}-share`]: 'copied' }));
-      setTimeout(() => {
-        setActionFeedback((prev) => {
-          const next = { ...prev };
-          delete next[`${campaignName}-share`];
-          return next;
-        });
-      }, 2000);
+  const handleCreate = async () => {
+    if (!formName) return;
+    try {
+      const temaObj = TEMAS.find(t => t.label === formTema);
+      await createCampaign({
+        name: formName,
+        month: `${formMes} · ${formTema}`,
+        color: temaObj?.color || '#C85C7E',
+        status: 'next'
+      });
+      setIsModalOpen(false);
+      setFormName('');
+    } catch (err) {
+      console.error(err);
     }
-  }
+  };
 
-  const filterTabs: { key: FilterTab; label: string }[] = [
-    { key: 'all', label: 'Todas' },
-    { key: 'active', label: 'Ativas' },
-    { key: 'done', label: 'Finalizadas' },
-    { key: 'next', label: 'Próximas' },
-  ];
+  const handleUpdateStatus = async (id: string, currentStatus: string) => {
+    const next = currentStatus === 'next' ? 'active' : currentStatus === 'active' ? 'done' : 'next';
+    const labelMap: Record<string, string> = { next: 'Próxima', active: 'Ativa', done: 'Concluída' };
+    setLoadingAction(`status-${id}`);
+    try {
+      const res = await fetch(`/api/campaigns/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next, status_label: labelMap[next] }),
+      });
+      if (!res.ok) throw new Error('Falha ao atualizar status');
+      mutate();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta campanha?')) return;
+    setLoadingAction(`delete-${id}`);
+    try {
+      const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Falha ao excluir campanha');
+      mutate();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleJoin = async (id: string) => {
+    setLoadingAction(id);
+    try {
+      await joinCampaign(id);
+      // O hook mutate revalida
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-emerald-100 text-emerald-700';
+      case 'done': return 'bg-rose-100 text-rose-700';
+      default: return 'bg-cream-200 text-uni-text-500';
+    }
+  };
 
   return (
-    <div className={styles.page}>
-      {/* Header row */}
-      <div className={styles.headerRow}>
+    <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 animate-fadeIn font-body">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className={styles.title}>Campanhas</h1>
-          <p className={styles.subtitle}>
-            Campanhas de saúde temáticas para engajar colaboradoras
-          </p>
+          <h1 className="text-3xl font-display font-bold text-uni-text-900">Campanhas Temáticas</h1>
+          <p className="text-uni-text-500 mt-1">Conscientização e engajamento em saúde feminina ao longo do ano.</p>
         </div>
-        <button
-          className={styles.newCampaignBtn}
-          onClick={() => setShowForm(true)}
-        >
-          + Nova Campanha
-        </button>
+        
+        {isRH && (
+          <Button 
+            className="rounded-2xl shadow-lg shadow-rose-500/20"
+            onClick={() => setIsModalOpen(true)}
+          >
+            + Criar Campanha
+          </Button>
+        )}
       </div>
 
-      {/* New Campaign Form */}
-      {showForm && (
-        <div className={styles.formOverlay}>
-          <div className={styles.formCard}>
-            <h2 className={styles.formTitle}>Nova Campanha</h2>
-
-            <label className={styles.formLabel}>
-              Nome da campanha
-              <input
-                type="text"
-                className={styles.formInput}
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder="Ex: Fevereiro Roxo"
-                autoFocus
-              />
-            </label>
-
-            <label className={styles.formLabel}>
-              Tema
-              <select
-                className={styles.formSelect}
-                value={formTema}
-                onChange={(e) => setFormTema(e.target.value)}
-              >
-                {TEMAS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className={styles.formLabel}>
-              Mês
-              <select
-                className={styles.formSelect}
-                value={formMes}
-                onChange={(e) => setFormMes(e.target.value)}
-              >
-                {MESES.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </label>
-
-            <div className={styles.formActions}>
-              <button
-                className={styles.formCancelBtn}
-                onClick={() => {
-                  setShowForm(false);
-                  setFormName('');
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                className={styles.formCreateBtn}
-                onClick={handleCreateCampaign}
-              >
-                Criar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filter Tabs */}
-      <div className={styles.filterTabs}>
-        {filterTabs.map((tab) => (
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 p-1.5 bg-white/50 backdrop-blur-sm border border-border-1 rounded-2xl w-fit">
+        {['all', 'active', 'next', 'done'].map((f) => (
           <button
-            key={tab.key}
-            className={`${styles.filterTab} ${activeFilter === tab.key ? styles.filterTabActive : ''}`}
-            onClick={() => setActiveFilter(tab.key)}
+            key={f}
+            onClick={() => setActiveFilter(f as FilterStatus)}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-bold transition-all truncate uppercase tracking-widest",
+              activeFilter === f 
+                ? "bg-white text-rose-500 shadow-sm border border-rose-100" 
+                : "text-uni-text-400 hover:text-uni-text-900"
+            )}
           >
-            {tab.label}
+            {f === 'all' ? 'Todas' : f === 'active' ? 'Ativas' : f === 'next' ? 'Próximas' : 'Concluídas'}
           </button>
         ))}
       </div>
 
-      {/* Campaign List */}
-      <div className={styles.list}>
-        {filteredCampaigns.length === 0 && (
-          <p className={styles.emptyMsg}>Nenhuma campanha encontrada neste filtro.</p>
-        )}
-        {filteredCampaigns.map((campaign) => (
-          <div key={campaign.name} className={styles.cardWrapper}>
-            <div
-              className={`${styles.card} ${expandedCard === campaign.name ? styles.cardExpanded : ''}`}
-              onClick={() => handleCardClick(campaign.name)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleCardClick(campaign.name);
-                }
-              }}
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading ? (
+          <div className="col-span-full py-20 text-center animate-pulse">Carregando campanhas...</div>
+        ) : filteredCampaigns.length === 0 ? (
+          <div className="col-span-full py-20 text-center text-uni-text-400">Nenhuma campanha encontrada para este filtro.</div>
+        ) : (
+          filteredCampaigns.map((c: any) => (
+            <div 
+              key={c.id} 
+              className="group relative bg-white border border-border-1 rounded-[2rem] p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
             >
-              <div className={styles.cardTop}>
-                <div className={styles.cardInfo}>
-                  <span className={styles.monthTag}>{campaign.month}</span>
-                  <span className={styles.campaignName}>{campaign.name}</span>
-                </div>
-                <span className={`${styles.badge} ${badgeClass(campaign.status)}`}>
-                  {campaign.statusLabel}
+              <div className="flex justify-between items-start mb-4">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400">{c.month}</span>
+                <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", getStatusBadgeClass(c.status))}>
+                  {c.status_label || (c.status === 'active' ? 'Ativa' : c.status === 'done' ? 'Concluída' : 'Próxima')}
                 </span>
               </div>
-              <div className={styles.progressRow}>
-                <div className={styles.progressTrack}>
-                  <div
-                    className={styles.progressFill}
-                    style={{
-                      width: `${campaign.progress}%`,
-                      background: campaign.color,
-                    }}
-                  />
+
+              <h3 className="text-xl font-display font-bold text-uni-text-900 mb-2">{c.name}</h3>
+              <p className="text-xs text-uni-text-500 leading-relaxed mb-6 flex-grow">
+                Junte-se à nossa missão de saúde e autocuidado focada em {c.month.split('·')[1] || 'você'}.
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-[11px] font-bold">
+                  <span className="text-uni-text-400">Progresso Geral</span>
+                  <span className="text-rose-500">{c.progress}%</span>
                 </div>
-                <span className={styles.progressLabel}>{campaign.progress}%</span>
+                <div className="h-1.5 w-full bg-cream-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-rose-400 transition-all duration-1000" style={{ width: `${c.progress}%`, background: c.color }} />
+                </div>
               </div>
-            </div>
 
-            {/* Expanded Detail Panel */}
-            {expandedCard === campaign.name && (
-              <div className={styles.detailPanel}>
-                <p className={styles.detailDescription}>
-                  {MOCK_DESCRIPTIONS[campaign.name] ||
-                    `Campanha temática de ${campaign.month.split('·')[1]?.trim() || 'saúde'}, com atividades interativas, conteúdo educativo e metas de engajamento para todas as colaboradoras.`}
-                </p>
-                <div className={styles.statsRow}>
-                  <div className={styles.statItem}>
-                    <span className={styles.statValue}>324</span>
-                    <span className={styles.statLabel}>Participantes</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statValue}>500</span>
-                    <span className={styles.statLabel}>Meta</span>
-                  </div>
-                  <div className={styles.statItem}>
-                    <span className={styles.statValue}>01/10</span>
-                    <span className={styles.statLabel}>Início</span>
-                  </div>
-                </div>
-                <div className={styles.detailActions}>
-                  <button
-                    className={styles.detailBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAction(campaign.name, 'detalhes');
-                    }}
+              <div className="mt-6">
+                {!isRH ? (
+                  <Button
+                    onClick={() => handleJoin(c.id)}
+                    disabled={c.joined || c.status !== 'active' || loadingAction === c.id}
+                    variant={c.joined ? 'outline' : 'primary'}
+                    className={cn(
+                      "w-full rounded-2xl",
+                      c.joined && "border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-50"
+                    )}
                   >
-                    {actionFeedback[campaign.name] === 'loading' ? 'Carregando...' : 'Ver detalhes'}
-                  </button>
-                  <button
-                    className={styles.detailBtnSecondary}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAction(campaign.name, 'compartilhar');
-                    }}
-                  >
-                    {actionFeedback[`${campaign.name}-share`] === 'copied'
-                      ? '\u2713 Link copiado!'
-                      : 'Compartilhar'}
-                  </button>
-                </div>
-
-                {/* Full Campaign Detail */}
-                {detailOpen === campaign.name && (
-                  <div className={styles.fullDetail}>
-                    <h3 className={styles.fullDetailTitle}>Detalhes da Campanha</h3>
-                    <p className={styles.fullDetailObjective}>
-                      {MOCK_DESCRIPTIONS[campaign.name] ||
-                        `Campanha temática de ${campaign.month.split('·')[1]?.trim() || 'saúde'}, com atividades interativas, conteúdo educativo e metas de engajamento para todas as colaboradoras.`}
-                    </p>
-
-                    <div className={styles.fullDetailMeta}>
-                      <div className={styles.fullDetailMetaItem}>
-                        <span className={styles.fullDetailMetaLabel}>Periodo</span>
-                        <span className={styles.fullDetailMetaValue}>01/10 - 31/10</span>
-                      </div>
-                      <div className={styles.fullDetailMetaItem}>
-                        <span className={styles.fullDetailMetaLabel}>Participacao</span>
-                        <span className={styles.fullDetailMetaValue}>65%</span>
-                      </div>
-                      <div className={styles.fullDetailMetaItem}>
-                        <span className={styles.fullDetailMetaLabel}>Satisfacao</span>
-                        <span className={styles.fullDetailMetaValue}>4.2/5</span>
-                      </div>
-                      <div className={styles.fullDetailMetaItem}>
-                        <span className={styles.fullDetailMetaLabel}>Acoes completadas</span>
-                        <span className={styles.fullDetailMetaValue}>892</span>
-                      </div>
-                    </div>
-
-                    <div className={styles.activityList}>
-                      <h4 className={styles.activityListTitle}>Atividades</h4>
-                      <ul className={styles.activityItems}>
-                        <li className={styles.activityItem}>Palestra: Prevencao ao Cancer de Mama - 234 participantes</li>
-                        <li className={styles.activityItem}>Quiz: Autoexame - 456 completadas</li>
-                        <li className={styles.activityItem}>Roda de Conversa: Saude Feminina - 128 participantes</li>
-                        <li className={styles.activityItem}>Desafio: 30 dias de autocuidado - 74 inscritas</li>
-                      </ul>
-                    </div>
-
-                    <button
-                      className={styles.closeDetailBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDetailOpen(null);
-                      }}
+                    {loadingAction === c.id ? 'Aderindo...' : c.joined ? '✔ Participando' : 'Participar Agora'}
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "flex-1 rounded-2xl text-xs",
+                        c.status === 'next' && "border-emerald-200 text-emerald-600 hover:bg-emerald-50",
+                        c.status === 'active' && "border-rose-200 text-rose-500 hover:bg-rose-50",
+                        c.status === 'done' && "border-amber-200 text-amber-600 hover:bg-amber-50"
+                      )}
+                      disabled={loadingAction === `status-${c.id}`}
+                      onClick={() => handleUpdateStatus(c.id, c.status)}
                     >
-                      Fechar
-                    </button>
+                      {loadingAction === `status-${c.id}`
+                        ? '...'
+                        : c.status === 'next'
+                        ? '▶ Ativar'
+                        : c.status === 'active'
+                        ? '✓ Concluir'
+                        : '↩ Reabrir'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="rounded-2xl border-red-200 text-red-400 hover:bg-red-50 px-3"
+                      disabled={loadingAction === `delete-${c.id}`}
+                      onClick={() => handleDelete(c.id)}
+                      aria-label="Excluir campanha"
+                    >
+                      {loadingAction === `delete-${c.id}` ? '...' : '🗑'}
+                    </Button>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          ))
+        )}
       </div>
+
+      {/* Creation Modal */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        title="Agendar Nova Campanha"
+      >
+        <div className="space-y-6">
+          <div>
+            <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Nome da Campanha</label>
+            <input 
+              type="text" 
+              className="w-full px-4 py-3 rounded-2xl border border-border-1 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all"
+              placeholder="Ex: Primavera Saudável"
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Tema</label>
+              <select 
+                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none appearance-none bg-white"
+                value={formTema}
+                onChange={(e) => setFormTema(e.target.value as typeof TEMAS[number]['label'])}
+              >
+                {TEMAS.map(t => <option key={t.label} value={t.label}>{t.icon} {t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Mês</label>
+              <select 
+                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none appearance-none bg-white"
+                value={formMes}
+                onChange={(e) => setFormMes(e.target.value as typeof MESES[number])}
+              >
+                {MESES.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="pt-4 flex gap-3">
+            <Button variant="outline" className="flex-1 rounded-2xl" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+            <Button className="flex-1 rounded-2xl" onClick={handleCreate}>Criar Agora</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

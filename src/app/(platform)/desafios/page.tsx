@@ -1,284 +1,225 @@
 'use client';
 
-import { useState } from 'react';
-import { CHALLENGES } from '@/data/mock-collaborator';
-import type { Challenge } from '@/types/platform';
-import styles from './desafios.module.css';
+import { useState, useMemo } from 'react';
+import { useCollaboratorChallenges, useCollaboratorHome } from '@/hooks/useCollaborator';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
+import { cn } from '@/lib/utils';
 
 type TabKey = 'active' | 'completed' | 'locked';
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'active', label: 'Ativos' },
+  { key: 'active', label: 'Em Andamento' },
   { key: 'completed', label: 'Concluidos' },
-  { key: 'locked', label: 'Bloqueados' },
+  { key: 'locked', label: 'Próximos' },
 ];
 
 const CATEGORIES = ['Hábitos', 'Saúde Mental', 'Prevenção', 'Sono', 'Nutrição'];
 
 export default function DesafiosPage() {
+  const { challenges, isLoading, mutate: mutateChallenges } = useCollaboratorChallenges();
+  const { mutate: mutateHome } = useCollaboratorHome();
   const [activeTab, setActiveTab] = useState<TabKey>('active');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [challenges, setChallenges] = useState<Challenge[]>([...CHALLENGES]);
-  const [justCompleted, setJustCompleted] = useState<string | null>(null);
-  const [sharedId, setSharedId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: CATEGORIES[0],
-    total: '',
-    points: '',
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const filtered = challenges.filter((c) => {
-    if (activeTab === 'active') return c.status === 'active';
-    if (activeTab === 'completed') return c.status === 'completed';
-    return c.status === 'locked';
-  });
+  // Form State para Novo Desafio (RH ou Auto-desafio)
+  const [form, setForm] = useState({ title: '', desc: '', cat: CATEGORIES[0], total: 5, pts: 100 });
 
-  function handleIncrement(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    setChallenges((prev) =>
-      prev.map((c) => {
-        if (c.id !== id || c.status !== 'active') return c;
-        const newProgress = c.progress + 1;
-        if (newProgress >= c.total) {
-          setJustCompleted(id);
-          setTimeout(() => setJustCompleted(null), 2500);
-          return { ...c, progress: c.total, status: 'completed' as const };
-        }
-        return { ...c, progress: newProgress };
-      })
-    );
-  }
+  const filtered = useMemo(() => {
+    return (challenges || []).filter((c: any) => c.status === activeTab);
+  }, [challenges, activeTab]);
 
-  function handleShare(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    setSharedId(id);
-    setTimeout(() => setSharedId(null), 2000);
-  }
+  const handleIncrement = async (id: string, total: number, cur: number) => {
+    if (cur >= total) return;
+    setLoadingId(id);
+    try {
+      await fetch('/api/collaborator/challenges', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challengeId: id, increment: 1 })
+      });
+      mutateChallenges();
+      mutateHome(); 
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
-  function handleCreate() {
-    if (!formData.title.trim() || !formData.total || !formData.points) return;
-    const newChallenge: Challenge = {
-      id: `c-${Date.now()}`,
-      title: formData.title,
-      description: formData.description || 'Novo desafio personalizado',
-      progress: 0,
-      total: parseInt(formData.total, 10) || 5,
-      points: parseInt(formData.points, 10) || 50,
-      status: 'active',
-      category: formData.category,
-    };
-    setChallenges((prev) => [newChallenge, ...prev]);
-    setFormData({ title: '', description: '', category: CATEGORIES[0], total: '', points: '' });
-    setShowForm(false);
-    setActiveTab('active');
-  }
+  const handleCreate = async () => {
+    if (!form.title) return;
+    try {
+      await fetch('/api/collaborator/challenges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.desc,
+          category: form.cat,
+          points: form.pts,
+          totalSteps: form.total
+        })
+      });
+      mutateChallenges();
+      setIsModalOpen(false);
+      setForm({ title: '', desc: '', cat: CATEGORIES[0], total: 5, pts: 100 });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Desafios</h1>
-        <button className={styles.newBtn} onClick={() => setShowForm(!showForm)}>
+    <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 animate-fadeIn font-body">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-uni-text-900">Meus Desafios</h1>
+          <p className="text-uni-text-500 mt-1">Pequenos passos diários para grandes conquistas em saúde.</p>
+        </div>
+        <Button 
+          variant="outline" 
+          className="rounded-2xl border-rose-200 text-rose-600 hover:bg-rose-50"
+          onClick={() => setIsModalOpen(true)}
+        >
           + Novo Desafio
-        </button>
+        </Button>
       </div>
 
-      {showForm && (
-        <div className={styles.formCard}>
-          <h3 className={styles.formTitle}>Criar Novo Desafio</h3>
-          <div className={styles.formGrid}>
-            <input
-              className={styles.formInput}
-              placeholder="Nome do desafio"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            />
-            <input
-              className={styles.formInput}
-              placeholder="Descrição"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            />
-            <select
-              className={styles.formSelect}
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-            <input
-              className={styles.formInput}
-              placeholder="Meta (total)"
-              type="number"
-              min={1}
-              value={formData.total}
-              onChange={(e) => setFormData({ ...formData, total: e.target.value })}
-            />
-            <input
-              className={styles.formInput}
-              placeholder="Pontos"
-              type="number"
-              min={1}
-              value={formData.points}
-              onChange={(e) => setFormData({ ...formData, points: e.target.value })}
-            />
-          </div>
-          <div className={styles.formActions}>
-            <button className={styles.createBtn} onClick={handleCreate}>Criar</button>
-            <button className={styles.cancelBtn} onClick={() => setShowForm(false)}>Cancelar</button>
-          </div>
-        </div>
-      )}
-
-      <div className={styles.tabs}>
+      {/* Tabs */}
+      <div className="flex gap-2 p-1.5 bg-white/50 backdrop-blur-sm border border-border-1 rounded-2xl w-fit">
         {TABS.map((tab) => (
           <button
             key={tab.key}
-            className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
             onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              "px-6 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-widest",
+              activeTab === tab.key 
+                ? "bg-white text-rose-500 shadow-sm border border-rose-100" 
+                : "text-uni-text-400 hover:text-uni-text-900"
+            )}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className={styles.list}>
-        {filtered.length === 0 && (
-          <div className={styles.empty}>Nenhum desafio nesta categoria.</div>
-        )}
-        {filtered.map((challenge) => {
-          const isExpanded = expandedId === challenge.id;
-          const wasJustCompleted = justCompleted === challenge.id;
-
-          return (
-            <div
-              key={challenge.id}
-              className={`${styles.card} ${challenge.status === 'locked' ? styles.cardLocked : ''} ${isExpanded ? styles.cardExpanded : ''}`}
-              onClick={() => setExpandedId(isExpanded ? null : challenge.id)}
-            >
-              {wasJustCompleted && (
-                <div className={styles.confetti}>🎉 Concluído!</div>
+      {/* Challenges List */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {isLoading ? (
+          <div className="col-span-full py-20 text-center animate-pulse">Carregando seus desafios...</div>
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full py-20 text-center bg-white rounded-[2rem] border border-dashed border-border-1 text-uni-text-400 font-medium">
+            Nenhum desafio encontrado em "{TABS.find(t => t.key === activeTab)?.label}".
+          </div>
+        ) : (
+          filtered.map((c: any) => (
+            <div 
+              key={c.id}
+              className={cn(
+                "group relative bg-white border border-border-1 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all duration-300",
+                expandedId === c.id && "ring-2 ring-rose-100"
               )}
-
-              <div className={styles.cardTop}>
-                <div className={styles.cardInfo}>
-                  <span className={styles.cardTitle}>
-                    {challenge.status === 'completed' && <span className={styles.checkIcon}>&#10003;</span>}
-                    {challenge.status === 'locked' && <span className={styles.lockIcon}>&#128274;</span>}
-                    {challenge.title}
-                  </span>
-                  <span className={styles.cardDesc}>{challenge.description}</span>
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex gap-4 items-center">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                    {c.category === 'Saúde Mental' ? '🧘' : c.category === 'Prevenção' ? '🏥' : c.category === 'Nutrição' ? '🍎' : '💧'}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-display font-bold text-uni-text-900 leading-tight">{c.title}</h3>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400">{c.category}</span>
+                  </div>
                 </div>
-                <div className={styles.cardRight}>
-                  <span className={styles.categoryTag}>{challenge.category}</span>
-                  <span className={styles.pointsBadge}>&#9733; {challenge.points} pts</span>
-                  {challenge.status === 'active' && (
-                    <button
-                      className={styles.incrementBtn}
-                      onClick={(e) => handleIncrement(challenge.id, e)}
-                      title="Registrar progresso"
-                    >
-                      +
-                    </button>
-                  )}
+                <div className="flex flex-col items-end">
+                  <span className="text-sm font-bold text-emerald-600">+{c.points} pts</span>
+                  {c.status === 'completed' && <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-tighter">Concluído!</span>}
                 </div>
               </div>
 
-              {challenge.status === 'active' && (
-                <div className={styles.progressRow}>
-                  <div className={styles.progressTrack}>
-                    <div
-                      className={styles.progressFill}
-                      style={{ width: `${(challenge.progress / challenge.total) * 100}%` }}
-                    />
-                  </div>
-                  <span className={styles.progressLabel}>
-                    {challenge.progress}/{challenge.total}
-                  </span>
+              <p className="text-sm text-uni-text-600 mb-8 leading-relaxed">
+                {c.description}
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-uni-text-400 uppercase tracking-widest">Seu Progresso</span>
+                  <span className="text-sm font-bold text-uni-text-900">{c.progress} / {c.total}</span>
                 </div>
-              )}
-
-              {challenge.status === 'completed' && (
-                <div className={styles.progressRow}>
-                  <div className={styles.progressTrack}>
-                    <div
-                      className={`${styles.progressFill} ${styles.progressFillComplete}`}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <span className={styles.progressLabel}>
-                    {challenge.total}/{challenge.total}
-                  </span>
+                <div className="h-3 w-full bg-cream-100 rounded-full overflow-hidden p-0.5">
+                  <div 
+                    className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full transition-all duration-700 shadow-sm"
+                    style={{ width: `${(c.progress / c.total) * 100}%` }} 
+                  />
                 </div>
-              )}
+              </div>
 
-              {challenge.deadline && (
-                <span className={styles.deadline}>Prazo: {challenge.deadline}</span>
-              )}
-
-              {/* ── Expanded content ── */}
-              {isExpanded && (
-                <div className={styles.expandedContent}>
-                  <div className={styles.expandedStats}>
-                    <span>Início: 01/02</span>
-                    <span>Participantes: 156</span>
-                  </div>
-
-                  {challenge.status === 'active' && (
-                    <>
-                      <p className={styles.expandedDesc}>
-                        Acompanhe seu progresso diário e mantenha a consistência. Cada registro
-                        conta como um passo em direção ao seu objetivo de bem-estar.
-                      </p>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={(e) => handleIncrement(challenge.id, e)}
-                      >
-                        Registrar progresso
-                      </button>
-                    </>
-                  )}
-
-                  {challenge.status === 'completed' && (
-                    <>
-                      <p className={styles.expandedDesc}>
-                        Parabéns por concluir este desafio! Compartilhe sua conquista com suas
-                        colegas e inspire mais pessoas.
-                      </p>
-                      <button
-                        className={styles.actionBtn}
-                        onClick={(e) => handleShare(challenge.id, e)}
-                      >
-                        {sharedId === challenge.id ? '✓ Compartilhado!' : 'Compartilhar conquista'}
-                      </button>
-                    </>
-                  )}
-
-                  {challenge.status === 'locked' && (
-                    <>
-                      <p className={styles.expandedDesc}>
-                        Este desafio requer um nível maior de engajamento na plataforma.
-                        Continue participando para desbloquear novos desafios.
-                      </p>
-                      <div className={styles.lockInfo}>
-                        <strong>Desbloqueio em: Nível 8</strong>
-                      </div>
-                      <div className={styles.lockExplain}>
-                        <strong>O que é preciso?</strong> Complete mais 3 desafios ativos e
-                        alcance 500 pontos para atingir o Nível 8.
-                      </div>
-                    </>
-                  )}
+              {c.status === 'active' && (
+                <div className="mt-8 flex gap-3">
+                  <Button 
+                    className="flex-1 rounded-2xl shadow-lg shadow-rose-500/10"
+                    disabled={loadingId === c.id}
+                    onClick={() => handleIncrement(c.id, c.total, c.progress)}
+                  >
+                    {loadingId === c.id ? 'Registrando...' : 'Registrar Progresso'}
+                  </Button>
                 </div>
               )}
             </div>
-          );
-        })}
+          ))
+        )}
       </div>
+
+      {/* Creation Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Novo Desafio">
+        <div className="space-y-5">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Título</label>
+            <input 
+              className="w-full px-4 py-3 rounded-2xl border border-border-1 focus:ring-2 focus:ring-rose-200 outline-none"
+              placeholder="Ex: Beber 2L de água"
+              value={form.title}
+              onChange={e => setForm({...form, title: e.target.value})}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Descrição</label>
+            <textarea 
+              className="w-full px-4 py-3 rounded-2xl border border-border-1 focus:ring-2 focus:ring-rose-200 outline-none h-24 resize-none"
+              placeholder="Detalhes para te motivar..."
+              value={form.desc}
+              onChange={e => setForm({...form, desc: e.target.value})}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-1">
+              <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Meta (Passos)</label>
+              <input 
+                type="number"
+                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none"
+                value={form.total}
+                onChange={e => setForm({...form, total: parseInt(e.target.value) || 1})}
+              />
+            </div>
+             <div className="space-y-1">
+              <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Pontos</label>
+              <input 
+                type="number"
+                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none"
+                value={form.pts}
+                onChange={e => setForm({...form, pts: parseInt(e.target.value) || 10})}
+              />
+            </div>
+          </div>
+          <div className="pt-4">
+            <Button className="w-full rounded-2xl py-4 text-lg" onClick={handleCreate}>Começar Desafio!</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

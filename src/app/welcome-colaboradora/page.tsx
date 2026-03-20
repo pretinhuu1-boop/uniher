@@ -1,161 +1,122 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import styles from './welcome-colaboradora.module.css';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 export default function WelcomeColaboradoraPage() {
   const router = useRouter();
 
+  const handleStartCheckin = () => {
+    // Para demo, o papel é setado localmente
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('uniher-role', 'colaboradora');
+    }
+    router.push('/welcome-colaboradora/quiz');
+  };
+
+  const handleGoToLogin = () => {
+    router.push('/auth');
+  };
+
   return (
-    <main className={styles.page}>
-      {/* Back link */}
-      <button
-        type="button"
-        className={styles.backLink}
-        onClick={() => router.push('/welcome')}
-        aria-label="Voltar para seleção de perfil"
-      >
-        <span className={styles.backArrow}>&#8592;</span>
-        Voltar
-      </button>
+    <main className="min-h-screen bg-cream-50 flex items-center justify-center p-6 relative overflow-hidden font-body">
+      {/* Visual background layers */}
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-rose-50/50 via-cream-50 to-gold-50/20 pointer-events-none" />
+      <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-rose-100/30 blur-3xl pointer-events-none" />
 
-      <div className={styles.content}>
-        {/* Person silhouette icon */}
-        <div className={styles.iconWrapper}>
-          <svg
-            className={styles.personIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
+      <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+        {/* Brand Presence Column */}
+        <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
+          <div 
+            className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center border border-border-2 animate-float cursor-pointer hover:scale-110 transition-transform duration-500"
+            onClick={() => router.push('/')}
           >
-            <circle cx="12" cy="7" r="4" fill="currentColor" opacity="0.25" />
-            <path
-              d="M12 13c-4.42 0-8 1.79-8 4v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1c0-2.21-3.58-4-8-4Z"
-              fill="currentColor"
-              opacity="0.25"
-            />
-            <circle
-              cx="12"
-              cy="7"
-              r="4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              fill="none"
-            />
-            <path
-              d="M12 13c-4.42 0-8 1.79-8 4v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1c0-2.21-3.58-4-8-4Z"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              fill="none"
-            />
-          </svg>
+            <svg width="48" height="48" viewBox="0 0 36 36" fill="none">
+              <path d="M18 32C18 32 8 24 8 15C8 11 11 8 14.5 8C16.5 8 17.5 9.5 18 11C18.5 9.5 19.5 8 21.5 8C25 8 28 11 28 15C28 24 18 32 18 32Z" fill="#F9EEF3" stroke="#C85C7E" strokeWidth="1.4" strokeLinejoin="round"/>
+              <path d="M18 30C18 30 10.5 22 12 13.5C13 9 15.5 6.5 18 6C20.5 6.5 23 9 24 13.5C25.5 22 18 30 18 30Z" fill="#EAB8CB" stroke="#C85C7E" strokeWidth="0.9"/>
+              <circle cx="18" cy="6" r="1.5" fill="#B8922A"/>
+            </svg>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-uni-text-900 leading-tight">
+            Bem-vinda, <br />
+            <span className="text-rose-500 italic">Colaboradora!</span>
+          </h1>
+          <p className="text-lg text-uni-text-600 max-w-md">
+            Você é a protagonista da sua saúde. Já tem uma conta ou deseja fazer seu primeiro check-in de saúde?
+          </p>
+          <div className="flex items-center gap-6 pt-4 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md mb-2 border border-border-1 text-xl">🏥</div>
+              <span className="text-[10px] font-bold uppercase text-uni-text-400 tracking-wider">Saúde</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md mb-2 border border-border-1 text-xl">🧘‍♀️</div>
+              <span className="text-[10px] font-bold uppercase text-uni-text-400 tracking-wider">Foco</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md mb-2 border border-border-1 text-xl">⚡</div>
+              <span className="text-[10px] font-bold uppercase text-uni-text-400 tracking-wider">Energia</span>
+            </div>
+          </div>
         </div>
 
-        {/* Title */}
-        <h1 className={styles.title}>Bem-vinda, Colaboradora!</h1>
-        <p className={styles.subtitle}>
-          Você já tem uma conta ou deseja fazer seu primeiro check-in de saúde?
-        </p>
-
-        {/* Option cards */}
-        <div className={styles.optionCards}>
-          {/* Card 1 — Check-in */}
-          <button
-            type="button"
-            className={`${styles.optionCard} ${styles.optionCardCheckin}`}
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('uniher-role', 'colaboradora');
-              }
-              router.push('/colaboradora');
-            }}
-            aria-label="Iniciar Check-in de Saúde"
+        {/* Action Cards Column */}
+        <div className="space-y-6 animate-fadeUp">
+          {/* Check-in Card */}
+          <Card 
+            className="group p-8 flex flex-col items-start gap-4 cursor-pointer hover:bg-rose-50/40 transition-all duration-300 border-border-2 animate-fadeIn"
+            onClick={handleStartCheckin}
+            variant="flat"
           >
-            <div className={`${styles.optionIcon} ${styles.optionIconCheckin}`}>
-              <span role="img" aria-hidden="true">&#10024;</span>
+            <div className="w-12 h-12 rounded-xl bg-uni-green text-white flex items-center justify-center text-2xl shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+              ✨
             </div>
-            <div className={styles.optionText}>
-              <h2 className={styles.optionTitle}>Iniciar Check-in de Saúde</h2>
-              <p className={styles.optionDescription}>
-                Primeira vez? Complete seu perfil e receba recomendações personalizadas.
+            <div>
+              <h2 className="text-xl font-display font-bold text-uni-text-900 group-hover:text-rose-700 transition-colors">Iniciar Check-in de Saúde</h2>
+              <p className="text-sm text-uni-text-500 mt-1 leading-relaxed">
+                Primeira vez? Descubra seu arquétipo de saúde e receba recomendações exclusivas e personalizadas.
               </p>
             </div>
-            <div className={`${styles.optionArrow} ${styles.optionArrowCheckin}`}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path
-                  d="M6 3L11 8L6 13"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+            <div className="flex items-center gap-2 text-sm font-bold text-rose-500 group-hover:translate-x-2 transition-transform">
+              Começar agora 
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </div>
-          </button>
+          </Card>
 
-          {/* Card 2 — Login */}
-          <button
-            type="button"
-            className={`${styles.optionCard} ${styles.optionCardLogin}`}
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('uniher-role', 'colaboradora');
-              }
-              router.push('/auth');
-            }}
-            aria-label="Já tenho uma conta"
+          {/* Login Card */}
+          <Card 
+            className="group p-8 flex flex-col items-start gap-4 cursor-pointer hover:bg-cream-100/50 transition-all duration-300 border-border-1 animate-fadeIn"
+            onClick={handleGoToLogin}
+            style={{ animationDelay: '0.2s' }}
           >
-            <div className={`${styles.optionIcon} ${styles.optionIconLogin}`}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path
-                  d="M4 10h12M12 6l4 4-4 4"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+            <div className="w-12 h-12 rounded-xl bg-gold-200 text-gold-700 flex items-center justify-center text-2xl shadow-md transform group-hover:scale-110 transition-all duration-500">
+              🔑
             </div>
-            <div className={styles.optionText}>
-              <h2 className={styles.optionTitle}>Já tenho uma conta</h2>
-              <p className={styles.optionDescription}>
-                Entre com seu email e senha para acessar sua área.
+            <div>
+              <h2 className="text-xl font-display font-bold text-uni-text-900">Já tenho uma conta</h2>
+              <p className="text-sm text-uni-text-500 mt-1 leading-relaxed">
+                Entre com seu email corporativo para acessar seus desafios, pontos e histórico.
               </p>
             </div>
-            <div className={`${styles.optionArrow} ${styles.optionArrowLogin}`}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path
-                  d="M6 3L11 8L6 13"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+            <div className="flex items-center gap-2 text-sm font-bold text-uni-text-400 group-hover:text-gold-700 group-hover:translate-x-2 transition-all">
+              Acessar minha área
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </div>
-          </button>
-        </div>
+          </Card>
 
-        {/* Feature icons strip */}
-        <div className={styles.features}>
-          <div className={styles.featureItem}>
-            <div className={styles.featureIcon}>
-              <span role="img" aria-label="Prevenção">&#129658;</span>
-            </div>
-            <span className={styles.featureLabel}>Prevenção</span>
-          </div>
-          <div className={styles.featureItem}>
-            <div className={styles.featureIcon}>
-              <span role="img" aria-label="Monitoramento">&#128202;</span>
-            </div>
-            <span className={styles.featureLabel}>Monitoramento</span>
-          </div>
-          <div className={styles.featureItem}>
-            <div className={styles.featureIcon}>
-              <span role="img" aria-label="Personalizado">&#127919;</span>
-            </div>
-            <span className={styles.featureLabel}>Personalizado</span>
-          </div>
+          <button 
+            type="button" 
+            onClick={() => router.push('/welcome')}
+            className="text-xs text-uni-text-400 hover:text-rose-500 transition-colors flex items-center gap-1 mx-auto lg:mx-0 w-fit pl-2"
+          >
+            ← Voltar para seleção de perfil
+          </button>
         </div>
       </div>
     </main>

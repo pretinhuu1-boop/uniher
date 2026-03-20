@@ -71,7 +71,6 @@ export default function Navbar({ onQuizOpen }: NavbarProps) {
           ))}
         </div>
         <div className={styles.ctaGroup}>
-          <a className={styles.ctaOutline} href="/proposta">Proposta Comercial</a>
           <a className={styles.ctaOutline} href="/welcome">Acessar Plataforma</a>
           <button className={styles.cta} onClick={onQuizOpen}>Diagnóstico Gratuito</button>
         </div>
@@ -94,9 +93,6 @@ export default function Navbar({ onQuizOpen }: NavbarProps) {
               {LABELS[id]}
             </a>
           ))}
-          <a href="/proposta" className={styles.mobileAccess} onClick={closeMenu}>
-            Proposta Comercial →
-          </a>
           <a href="/welcome" className={styles.mobileAccess} onClick={closeMenu}>
             Acessar Plataforma →
           </a>

@@ -2,7 +2,9 @@
    UniHER Platform Types — Full Demo
    ═══════════════════════════════════════════════════════════════ */
 
-export type UserRole = 'rh' | 'lideranca' | 'colaboradora';
+export type UserRole = 'admin' | 'rh' | 'lideranca' | 'colaboradora';
+
+export type ArchetypeKey = 'guardia' | 'protetora' | 'guerreira' | 'equilibrista';
 
 export interface MockUser {
   id: string;

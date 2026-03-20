@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
+import AuthProvider from '@/components/platform/AuthProvider';
 import './globals.css';
 
 const cormorant = Cormorant_Garamond({
@@ -181,7 +182,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-scroll-behavior="smooth">
       <head>
         {jsonLd.map((schema, i) => (
           <script
@@ -191,8 +192,8 @@ export default function RootLayout({
           />
         ))}
       </head>
-      <body className={`${cormorant.variable} ${dmSans.variable}`}>
-        {children}
+      <body className={`${cormorant.variable} ${dmSans.variable}`} suppressHydrationWarning>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

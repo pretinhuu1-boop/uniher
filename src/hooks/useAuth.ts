@@ -1,90 +1,166 @@
 'use client';
-import { useState, useCallback, createContext, useContext } from 'react';
+import { useState, useCallback, createContext, useContext, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MockUser, UserRole } from '@/types/platform';
-import { MOCK_USERS } from '@/data/mock-users';
 
-const STORAGE_KEY_ROLE = 'uniher-role';
 const STORAGE_KEY_USER = 'uniher-user';
 
 function getStoredUser(): MockUser | null {
   if (typeof window === 'undefined') return null;
   try {
-    const role = localStorage.getItem(STORAGE_KEY_ROLE) as UserRole | null;
-    if (role && MOCK_USERS[role]) {
-      return MOCK_USERS[role];
-    }
     const raw = localStorage.getItem(STORAGE_KEY_USER);
-    if (raw) {
-      return JSON.parse(raw) as MockUser;
-    }
-  } catch {
-    // Ignore parse errors or restricted storage access
-  }
+    if (raw) return JSON.parse(raw) as MockUser;
+  } catch {}
   return null;
 }
 
-function persistUser(user: MockUser, role: UserRole) {
+function persistUser(user: MockUser) {
   try {
-    localStorage.setItem(STORAGE_KEY_ROLE, role);
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-  } catch {
-    // Ignore storage errors
-  }
+  } catch {}
 }
 
 function clearStoredUser() {
   try {
-    localStorage.removeItem(STORAGE_KEY_ROLE);
     localStorage.removeItem(STORAGE_KEY_USER);
-  } catch {
-    // Ignore storage errors
-  }
+  } catch {}
 }
 
 interface AuthContextValue {
   user: MockUser | null;
   isAuthenticated: boolean;
+  approved: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  register: (data: any) => Promise<boolean>;
   selectRole: (role: UserRole) => void;
   logout: () => void;
 }
 
 export function useAuthState(): AuthContextValue {
-  const [user, setUser] = useState<MockUser | null>(() => getStoredUser());
+  // Start with null on both server and client to avoid hydration mismatch.
+  // localStorage is read in useEffect (client-only).
+  const [user, setUser] = useState<MockUser | null>(null);
+  const [approved, setApproved] = useState<boolean>(true);
+  const router = useRouter();
 
-  const login = useCallback(async (_email: string, _password: string): Promise<boolean> => {
-    // Simulated delay
-    await new Promise(r => setTimeout(r, 800));
-    // Default to RH user for demo
-    const loggedUser = MOCK_USERS.rh;
-    setUser(loggedUser);
-    persistUser(loggedUser, 'rh');
-    return true;
+  // Verificar sessao ao montar (via /api/auth/me)
+  useEffect(() => {
+    // Restore from localStorage immediately for instant UI, then validate
+    const stored = getStoredUser();
+    if (stored) setUser(stored);
+
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.user) {
+          const u = data.user;
+          const updated: MockUser = {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role as UserRole,
+            level: u.level,
+            points: u.points,
+            streak: u.streak,
+            joinedAt: u.created_at,
+          };
+          setUser(updated);
+          setApproved(u.approved !== 0);
+          persistUser(updated);
+          if (u.mustChangePassword === true) {
+            router.push('/primeiro-acesso');
+          }
+        } else {
+          setUser(null);
+          setApproved(true);
+          clearStoredUser();
+        }
+      })
+      .catch(() => {});
+  }, [router]);
+
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) return false;
+
+      const data = await res.json();
+      const u = data.user;
+
+      const loggedUser: MockUser = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role as UserRole,
+        level: u.level,
+        points: u.points,
+        streak: u.streak,
+        joinedAt: u.created_at,
+      };
+
+      setUser(loggedUser);
+      persistUser(loggedUser);
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
-  const register = useCallback(async (_name: string, _email: string, _password: string): Promise<boolean> => {
-    await new Promise(r => setTimeout(r, 800));
-    const registeredUser = MOCK_USERS.rh;
-    setUser(registeredUser);
-    persistUser(registeredUser, 'rh');
-    return true;
+  const register = useCallback(async (data: any): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return false;
+
+      const responseData = await res.json();
+      const u = responseData.user;
+
+      const registered: MockUser = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role as UserRole,
+        level: u.level,
+        points: u.points,
+        streak: u.streak,
+        joinedAt: u.created_at,
+      };
+
+      setUser(registered);
+      persistUser(registered);
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
   const selectRole = useCallback((role: UserRole) => {
-    const selected = MOCK_USERS[role] || MOCK_USERS.rh;
-    setUser(selected);
-    persistUser(selected, MOCK_USERS[role] ? role : 'rh');
-  }, []);
+    if (!user) return;
+    const updated = { ...user, role };
+    setUser(updated);
+    persistUser(updated);
+  }, [user]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {}
     setUser(null);
     clearStoredUser();
+    window.location.href = '/';
   }, []);
 
   return {
     user,
     isAuthenticated: user !== null,
+    approved,
     login,
     register,
     selectRole,
@@ -92,10 +168,10 @@ export function useAuthState(): AuthContextValue {
   };
 }
 
-// React Context for sharing auth across pages
 export const AuthContext = createContext<AuthContextValue>({
   user: null,
   isAuthenticated: false,
+  approved: true,
   login: async () => false,
   register: async () => false,
   selectRole: () => {},

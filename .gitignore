@@ -33,6 +33,18 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# database
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# presentation artifacts
+*.pptx
+
+# temp
+/tmp/
+
 # vercel
 .vercel
 

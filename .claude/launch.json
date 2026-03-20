@@ -3,10 +3,16 @@
   "configurations": [
     {
       "name": "UniHER Dev Server",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "Slides Preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const http=require('http'),fs=require('fs'),path=require('path');http.createServer((req,res)=>{const f=path.join('C:/Users/User/projetoss/uniher/tmp','slides_preview.html');fs.readFile(f,(e,d)=>{if(e){res.writeHead(404);res.end('Not found');}else{res.writeHead(200,{'Content-Type':'text/html;charset=utf-8'});res.end(d);}});}).listen(4444,()=>console.log('Slides preview at http://localhost:4444'));"],
+      "port": 4444
     }
   ]
 }
