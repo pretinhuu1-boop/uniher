@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
 import { objectiveRepo } from '@/repositories/objective.repository';
 import { createObjective } from '@/services/objectives.service';
+import { getReadDb } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { z } from 'zod';
 
@@ -20,34 +21,36 @@ const CreateSchema = z.object({
   ends_at: z.string().datetime({ offset: true }).optional(),
 });
 
-export async function GET(req: NextRequest) {
-  return withRole(req, ['rh', 'lideranca', 'admin'], async (user) => {
-    const objectives = objectiveRepo.getByCompany(user.company_id);
-    return NextResponse.json({ objectives });
-  });
-}
+export const GET = withRole('rh', 'lideranca', 'admin')(async (_req, context) => {
+  const db = getReadDb();
+  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(context.auth.userId) as { company_id: string } | undefined;
+  if (!user?.company_id) return NextResponse.json({ objectives: [] });
 
-export async function POST(req: NextRequest) {
-  return withRole(req, ['rh', 'admin'], async (user) => {
-    const body = await req.json().catch(() => null);
-    const parsed = CreateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues }, { status: 422 });
-    }
+  const objectives = objectiveRepo.getByCompany(user.company_id);
+  return NextResponse.json({ objectives });
+});
 
-    const d = parsed.data;
-    if (d.reward_type === 'points' && !d.reward_points) {
-      return NextResponse.json({ error: 'reward_points obrigatório para tipo points' }, { status: 422 });
-    }
-    if (d.reward_type === 'custom' && !d.reward_custom) {
-      return NextResponse.json({ error: 'reward_custom obrigatório para tipo custom' }, { status: 422 });
-    }
-    if (d.type === 'campaign' && !d.campaign_id) {
-      return NextResponse.json({ error: 'campaign_id obrigatório para tipo campaign' }, { status: 422 });
-    }
+export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) => {
+  const db = getReadDb();
+  const u = db.prepare('SELECT company_id, role FROM users WHERE id = ?').get(context.auth.userId) as { company_id: string; role: string } | undefined;
+  if (!u?.company_id) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
 
-    const obj = await createObjective({ ...d, company_id: user.company_id, created_by: user.id });
-    await logAudit(user.id, user.company_id, 'objective_create', 'company_objectives', obj.id);
-    return NextResponse.json({ objective: obj }, { status: 201 });
-  });
-}
+  const body = await req.json().catch(() => null);
+  const parsed = CreateSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues }, { status: 422 });
+
+  const d = parsed.data;
+  if (d.reward_type === 'points' && !d.reward_points) {
+    return NextResponse.json({ error: 'reward_points obrigatório para tipo points' }, { status: 422 });
+  }
+  if (d.reward_type === 'custom' && !d.reward_custom) {
+    return NextResponse.json({ error: 'reward_custom obrigatório para tipo custom' }, { status: 422 });
+  }
+  if (d.type === 'campaign' && !d.campaign_id) {
+    return NextResponse.json({ error: 'campaign_id obrigatório para tipo campaign' }, { status: 422 });
+  }
+
+  const obj = await createObjective({ ...d, company_id: u.company_id, created_by: context.auth.userId });
+  await logAudit(context.auth.userId, u.company_id, 'objective_create', 'company_objectives', obj.id);
+  return NextResponse.json({ objective: obj }, { status: 201 });
+});

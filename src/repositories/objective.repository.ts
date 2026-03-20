@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/db';
+import { getReadDb as getDb } from '@/lib/db';
 import crypto from 'crypto';
 
 export interface Objective {
