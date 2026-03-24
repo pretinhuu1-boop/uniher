@@ -20,7 +20,7 @@ export async function setAuthCookies(accessToken: string, refreshToken: string):
 
   cookieStore.set(REFRESH_TOKEN_NAME, refreshToken, {
     ...COOKIE_OPTIONS,
-    maxAge: 7 * 24 * 60 * 60, // 7 dias
+    maxAge: 48 * 60 * 60, // 48 horas
   });
 }
 

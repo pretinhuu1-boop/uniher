@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 const TEMAS = [
   { label: 'Saúde Mental', color: '#A48090', icon: '🧠' },
-  { label: 'Prevenção', color: '#C85C7E', icon: '🌸' },
+  { label: 'Prevenção', color: '#C9A264', icon: '🌸' },
   { label: 'Hábitos Saudáveis', color: '#3E7D5A', icon: '🌿' },
   { label: 'Nutrição', color: '#EF9F27', icon: '🍎' },
 ] as const;
@@ -47,7 +47,7 @@ export default function CampanhasPage() {
       await createCampaign({
         name: formName,
         month: `${formMes} · ${formTema}`,
-        color: temaObj?.color || '#C85C7E',
+        color: temaObj?.color || '#C9A264',
         status: 'next'
       });
       setIsModalOpen(false);
@@ -151,9 +151,26 @@ export default function CampanhasPage() {
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
-          <div className="col-span-full py-20 text-center animate-pulse">Carregando campanhas...</div>
+          <>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="animate-pulse bg-white border border-border-1 rounded-[2rem] p-6">
+                <div className="flex justify-between mb-4">
+                  <div className="h-3 w-24 bg-gray-200 rounded" />
+                  <div className="h-4 w-16 bg-gray-200 rounded-full" />
+                </div>
+                <div className="h-6 w-2/3 bg-gray-200 rounded mb-2" />
+                <div className="h-3 w-full bg-gray-200 rounded mb-1" />
+                <div className="h-3 w-3/4 bg-gray-200 rounded mb-6" />
+                <div className="h-2 w-full bg-gray-200 rounded-full" />
+              </div>
+            ))}
+          </>
         ) : filteredCampaigns.length === 0 ? (
-          <div className="col-span-full py-20 text-center text-uni-text-400">Nenhuma campanha encontrada para este filtro.</div>
+          <div className="col-span-full py-16 text-center space-y-2">
+            <span className="text-4xl block">📢</span>
+            <p className="text-uni-text-700 font-medium">Nenhuma campanha encontrada</p>
+            <p className="text-sm text-uni-text-400">As campanhas de saúde e bem-estar da sua empresa aparecerão aqui. Tente outro filtro ou aguarde novas campanhas.</p>
+          </div>
         ) : (
           filteredCampaigns.map((c: any) => (
             <div 

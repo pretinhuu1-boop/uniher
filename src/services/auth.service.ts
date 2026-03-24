@@ -7,6 +7,7 @@ import * as refreshTokenRepo from '@/repositories/refresh-token.repository';
 import { ConflictError, UnauthorizedError, ValidationError } from '@/lib/errors';
 import type { RegisterInput, LoginInput } from '@/lib/validation/schemas';
 import { sanitizeObject } from '@/lib/security/sanitize';
+import { logAudit } from '@/lib/audit';
 
 interface AuthResult {
   user: userRepo.PublicUser;
@@ -16,10 +17,10 @@ interface AuthResult {
 export async function register(input: RegisterInput): Promise<AuthResult> {
   const sanitized = sanitizeObject(input as Record<string, unknown>) as RegisterInput;
 
-  // Verificar se email ja existe
+  // Verificar se email ja existe (mensagem genérica para evitar enumeração)
   const existing = userRepo.getUserByEmail(sanitized.email);
   if (existing) {
-    throw new ConflictError('Este email já está cadastrado');
+    throw new ConflictError('Não foi possível criar a conta. Verifique os dados e tente novamente.');
   }
 
   // Se role = rh e nao tem companyId, precisa criar empresa
@@ -73,23 +74,38 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
 }
 
 export async function login(input: LoginInput): Promise<AuthResult> {
-  console.log('[debug-login] Attempt:', input.email);
   const user = userRepo.getUserByEmail(input.email);
-  
+
   if (!user) {
-    console.log('[debug-login] User not found:', input.email);
+    // Timing attack mitigation: always hash even when user not found
+    // This ensures the response time is the same whether user exists or not
+    await verifyPassword(input.password, '$2a$12$000000000000000000000000000000000000000000000000000000');
+    logAudit({
+      actorId: 'anonymous',
+      actorEmail: input.email,
+      actorRole: 'unknown',
+      action: 'login_failed',
+      entityType: 'auth',
+      entityId: '',
+      details: { reason: 'User not found' },
+    });
     throw new UnauthorizedError('Email ou senha incorretos');
   }
 
-  console.log('[debug-login] User found:', user.email);
   const valid = await verifyPassword(input.password, user.password_hash);
-  
+
   if (!valid) {
-    console.log('[debug-login] Invalid password for:', input.email);
+    logAudit({
+      actorId: user.id,
+      actorEmail: user.email,
+      actorRole: user.role,
+      action: 'login_failed',
+      entityType: 'auth',
+      entityId: user.id,
+      details: { reason: 'Invalid password' },
+    });
     throw new UnauthorizedError('Email ou senha incorretos');
   }
-
-  console.log('[debug-login] Login successful:', input.email);
 
   // Verificar se a empresa está ativa (exceto admin que não tem company)
   if (user.company_id) {

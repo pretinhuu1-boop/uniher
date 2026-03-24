@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { ArchetypeKey } from '@/types';
 import { ARCHETYPES } from '@/data/archetypes';
 import styles from './QuizAnalyzing.module.css';
@@ -86,22 +87,7 @@ export default function QuizAnalyzing({ archetype, onComplete }: QuizAnalyzingPr
       {/* Spinner with Lotus */}
       <div className={styles.spinnerWrap}>
         <div className={styles.spinnerRing} />
-        <svg className={styles.lotus} width="36" height="36" viewBox="0 0 36 36" fill="none">
-          <path
-            d="M18 6c-3 3-6 7.5-6 12s3 9 6 12c3-3 6-7.5 6-12s-3-9-6-12z"
-            fill="#C85C7E"
-            opacity="0.2"
-            stroke="#C85C7E"
-            strokeWidth="1"
-          />
-          <path
-            d="M8 18c3-3 7.5-6 10-6s7 3 10 6c-3 3-7.5 6-10 6s-7-3-10-6z"
-            fill="#C85C7E"
-            opacity="0.3"
-            stroke="#C85C7E"
-            strokeWidth="1"
-          />
-        </svg>
+        <Image className={styles.lotus} src="/logo-uniher.png" alt="" width={36} height={30} style={{ width: 36, height: 'auto', objectFit: 'contain' }} />
       </div>
 
       {/* Title */}

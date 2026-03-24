@@ -71,9 +71,10 @@ export function listAllCompanies(): CompanyWithStats[] {
   const db = getReadDb();
   return db.prepare(`
     SELECT c.*,
-      (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id) AS user_count,
+      (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.deleted_at IS NULL) AS user_count,
       (SELECT COUNT(*) FROM departments d WHERE d.company_id = c.id) AS department_count
     FROM companies c
+    WHERE c.deleted_at IS NULL
     ORDER BY c.created_at DESC
   `).all() as CompanyWithStats[];
 }

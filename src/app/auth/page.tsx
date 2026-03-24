@@ -7,6 +7,19 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { Toast } from '@/components/ui/Toast';
+import Image from 'next/image';
+
+/** Only allow safe internal redirect paths (prevent open redirect attacks) */
+function getSafeRedirect(redirect: string | null): string | null {
+  if (!redirect) return null;
+  // Only allow relative paths starting with /
+  if (!redirect.startsWith('/')) return null;
+  // Block protocol-relative URLs
+  if (redirect.startsWith('//')) return null;
+  // Block known external patterns
+  if (redirect.includes('://')) return null;
+  return redirect;
+}
 
 function AuthContent() {
   const router = useRouter();
@@ -27,10 +40,10 @@ function AuthContent() {
       if (user.role === 'admin') {
         router.push('/admin');
       } else if (user.role === 'colaboradora') {
-        const redirect = searchParams.get('redirect');
+        const redirect = getSafeRedirect(searchParams.get('redirect'));
         router.push(redirect || '/colaboradora');
       } else {
-        const redirect = searchParams.get('redirect');
+        const redirect = getSafeRedirect(searchParams.get('redirect'));
         router.push(redirect || '/dashboard');
       }
     }
@@ -57,7 +70,7 @@ function AuthContent() {
       if (u.role === 'admin') {
         target = '/admin';
       } else {
-        target = searchParams.get('redirect') || (u.role === 'rh' || u.role === 'lideranca' ? '/dashboard' : '/colaboradora');
+        target = getSafeRedirect(searchParams.get('redirect')) || (u.role === 'rh' || u.role === 'lideranca' ? '/dashboard' : '/colaboradora');
       }
       router.push(target);
     } catch {
@@ -76,21 +89,8 @@ function AuthContent() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-8 group cursor-pointer" onClick={() => router.push('/')}>
           <div className="relative transform transition-transform group-hover:scale-110 duration-500">
-            <svg width="56" height="56" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-              <path
-                d="M18 32C18 32 8 24 8 15C8 11 11 8 14.5 8C16.5 8 17.5 9.5 18 11C18.5 9.5 19.5 8 21.5 8C25 8 28 11 28 15C28 24 18 32 18 32Z"
-                fill="#F9EEF3" stroke="#C85C7E" strokeWidth="1.4" strokeLinejoin="round"
-              />
-              <path
-                d="M18 30C18 30 10.5 22 12 13.5C13 9 15.5 6.5 18 6C20.5 6.5 23 9 24 13.5C25.5 22 18 30 18 30Z"
-                fill="#EAB8CB" stroke="#C85C7E" strokeWidth="0.9"
-              />
-              <circle cx="18" cy="6" r="1.5" fill="#B8922A" />
-            </svg>
+            <Image src="/logo-uniher.png" alt="UniHER" width={180} height={150} priority className="object-contain" style={{ width: 180, height: 'auto' }} />
           </div>
-          <span className="text-2xl font-display font-bold text-uni-text-900 tracking-tight">
-            Uni<span className="text-rose-500">HER</span>
-          </span>
         </div>
 
         {/* Form */}
@@ -150,8 +150,17 @@ function AuthContent() {
           </Button>
         </form>
 
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => router.push('/esqueci-senha')}
+            className="text-xs text-uni-text-300 hover:text-rose-500 transition-colors"
+          >
+            Esqueceu sua senha?
+          </button>
+        </div>
 
-        <div className="mt-6 text-center">
+        <div className="mt-4 text-center">
           <button
             type="button"
             onClick={() => router.push('/')}

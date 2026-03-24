@@ -1,6 +1,5 @@
 'use client';
 import useSWR from 'swr';
-import { COLLABORATOR_HOME, BADGES, CHALLENGES, NOTIFICATIONS } from '@/data/mock-collaborator';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -9,21 +8,29 @@ export function useCollaboratorHome() {
     revalidateOnFocus: false,
     dedupingInterval: 30_000,
   });
-  return { data: data ?? COLLABORATOR_HOME, isLoading, mutate };
+  return { data: data ?? null, isLoading, mutate };
 }
 
 export function useCollaboratorBadges() {
   const { data, isLoading, mutate } = useSWR('/api/collaborator/badges', fetcher, {
     revalidateOnFocus: false,
   });
-  return { badges: data ?? BADGES, isLoading, mutate };
+  return { badges: data ?? [], isLoading, mutate };
 }
 
 export function useCollaboratorChallenges() {
   const { data, isLoading, mutate } = useSWR('/api/collaborator/challenges', fetcher, {
     revalidateOnFocus: false,
   });
-  return { challenges: data ?? CHALLENGES, isLoading, mutate };
+  return { challenges: data ?? [], isLoading, mutate };
+}
+
+export function useDailyMissions() {
+  const { data, isLoading, mutate } = useSWR('/api/gamification/daily-missions', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60_000, // 1 minute
+  });
+  return { missions: data?.missions ?? [], isLoading, mutate };
 }
 
 export function useNotifications() {
@@ -31,5 +38,5 @@ export function useNotifications() {
     revalidateOnFocus: false,
     refreshInterval: 60_000,
   });
-  return { notifications: data ?? NOTIFICATIONS, isLoading, mutate };
+  return { notifications: data ?? [], isLoading, mutate };
 }

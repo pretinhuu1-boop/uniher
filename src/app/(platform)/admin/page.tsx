@@ -91,7 +91,7 @@ const RARITY_COLORS: Record<string, string> = {
   legendary: 'bg-amber-100 text-amber-700',
 };
 
-const TABS = ['Visão Geral', 'Empresas', 'Usuários', 'Badges', 'Sistema', 'Alertas', 'Auditoria'] as const;
+const TABS = ['Visão Geral', 'Empresas', 'Usuários', 'Admin Master', 'Badges', 'Sistema', 'Alertas', 'Auditoria'] as const;
 type Tab = (typeof TABS)[number];
 
 // ─── Shared Components ────────────────────────────────────────────────────────
@@ -127,18 +127,26 @@ function Spinner({ className }: { className?: string }) {
   );
 }
 
-function TabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function TabButton({ label, active, onClick, count }: { label: string; active: boolean; onClick: () => void; count?: number }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'px-4 py-2 text-sm font-semibold rounded-lg transition-all whitespace-nowrap',
+        'px-4 py-2 text-sm font-semibold rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5',
         active
           ? 'bg-rose-500 text-white shadow-sm'
           : 'text-uni-text-600 hover:bg-cream-100 hover:text-uni-text-900'
       )}
     >
       {label}
+      {count !== undefined && count > 0 && (
+        <span className={cn(
+          'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none',
+          active ? 'bg-white/25 text-white' : 'bg-rose-100 text-rose-600'
+        )}>
+          {count}
+        </span>
+      )}
     </button>
   );
 }
@@ -201,7 +209,11 @@ function OverviewTab() {
             <Spinner /> Carregando...
           </div>
         ) : recentCompanies.length === 0 ? (
-          <div className="p-10 text-center text-sm text-uni-text-400">Nenhuma empresa cadastrada.</div>
+          <div className="text-center py-12 space-y-2">
+            <span className="text-4xl block">🏢</span>
+            <p className="text-uni-text-700 font-medium text-sm">Nenhuma empresa cadastrada</p>
+            <p className="text-xs text-uni-text-400">As empresas recentes aparecerão aqui.</p>
+          </div>
         ) : (
           <div className="divide-y divide-border-1">
             {recentCompanies.map((c) => (
@@ -270,23 +282,43 @@ function CompanyUsersPanel({ companyId }: { companyId: string }) {
 
   if (users.length === 0)
     return (
-      <div className="p-6 text-center text-uni-text-400 text-sm">Nenhum usuário nesta empresa.</div>
+      <div className="text-center py-10 space-y-2">
+        <span className="text-3xl block">👤</span>
+        <p className="text-uni-text-700 font-medium text-sm">Nenhum usuário nesta empresa</p>
+        <p className="text-xs text-uni-text-400">Adicione usuários para que possam acessar a plataforma.</p>
+      </div>
     );
 
   return (
     <div className="border-t border-border-1 bg-cream-50/50">
       {tempPass && (
-        <div className="mx-4 mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 flex items-start justify-between gap-3">
-          <span>
-            Senha temporária:{' '}
-            <strong className="font-mono break-all">{tempPass.pass}</strong> — compartilhe com o usuário.
-          </span>
-          <button
-            onClick={() => setTempPass(null)}
-            className="text-amber-500 hover:text-amber-700 flex-shrink-0 text-lg leading-none"
-          >
-            ×
-          </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
+          <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-center gap-2">
+                <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(tempPass.pass);
+                  }}
+                  className="flex-shrink-0 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-all"
+                >
+                  Copiar Senha
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
+              <span className="flex-shrink-0">&#9888;&#65039;</span>
+              Anote esta senha! Ela não será mostrada novamente.
+            </p>
+            <button
+              onClick={() => setTempPass(null)}
+              className="w-full py-2.5 bg-uni-text-900 text-white rounded-xl text-sm font-bold hover:bg-uni-text-600 transition-all"
+            >
+              Entendi, fechar
+            </button>
+          </div>
         </div>
       )}
 
@@ -553,7 +585,16 @@ function CompaniesTab() {
 
         {isLoading && <div className="p-12 flex items-center justify-center gap-3 text-sm text-uni-text-400"><Spinner /> Carregando...</div>}
         {error && <div className="p-8 text-center text-rose-600 text-sm">Erro ao carregar empresas.</div>}
-        {!isLoading && !error && companies.length === 0 && <div className="p-12 text-center text-uni-text-400 text-sm">Nenhuma empresa cadastrada ainda.</div>}
+        {!isLoading && !error && companies.length === 0 && (
+          <div className="text-center py-12 space-y-3">
+            <span className="text-4xl block">🏢</span>
+            <p className="text-uni-text-700 font-medium">Nenhuma empresa cadastrada</p>
+            <p className="text-sm text-uni-text-400">Crie a primeira empresa para começar a usar a plataforma.</p>
+            <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 bg-rose-500 text-white rounded-lg text-sm font-medium hover:bg-rose-600 transition-all">
+              + Criar Empresa
+            </button>
+          </div>
+        )}
 
         {!isLoading && companies.length > 0 && (
           <div>
@@ -939,14 +980,33 @@ function UsersTab() {
       </div>
 
       {tempPass && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 flex items-start justify-between gap-3">
-          <span>
-            Senha temporária:{' '}
-            <strong className="font-mono break-all">{tempPass.pass}</strong> — compartilhe com a usuária.
-          </span>
-          <button onClick={() => setTempPass(null)} className="text-amber-500 hover:text-amber-700 text-lg leading-none flex-shrink-0">
-            ×
-          </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
+          <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-center gap-2">
+                <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(tempPass.pass);
+                  }}
+                  className="flex-shrink-0 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-all"
+                >
+                  Copiar Senha
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
+              <span className="flex-shrink-0">&#9888;&#65039;</span>
+              Anote esta senha! Ela não será mostrada novamente.
+            </p>
+            <button
+              onClick={() => setTempPass(null)}
+              className="w-full py-2.5 bg-uni-text-900 text-white rounded-xl text-sm font-bold hover:bg-uni-text-600 transition-all"
+            >
+              Entendi, fechar
+            </button>
+          </div>
         </div>
       )}
 
@@ -961,7 +1021,11 @@ function UsersTab() {
             <Spinner /> Carregando usuárias...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-10 text-center text-sm text-uni-text-400">Nenhuma usuária encontrada.</div>
+          <div className="text-center py-12 space-y-2">
+            <span className="text-4xl block">👥</span>
+            <p className="text-uni-text-700 font-medium">Nenhuma usuária encontrada</p>
+            <p className="text-sm text-uni-text-400">Tente ajustar os filtros ou crie uma nova usuária.</p>
+          </div>
         ) : (
           <>
             {/* Mobile */}
@@ -1088,6 +1152,398 @@ function UsersTab() {
                                 loading === resetKey && 'opacity-50 cursor-wait'
                               )}
                             >
+                              {loading === resetKey ? '...' : 'Resetar Senha'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Admin Master Tab ─────────────────────────────────────────────────────────
+
+interface AdminMasterUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  level: number;
+  points: number;
+  blocked: number;
+  created_at: string;
+  company_id: string | null;
+}
+
+const EMPTY_MASTER_FORM = { name: '', email: '', password: '', confirmPassword: '', confirmCurrentPassword: '' };
+
+function AdminMasterTab() {
+  const { user: currentUser } = useAuth();
+  const { data, mutate, isLoading } = useSWR<{ users: AdminMasterUser[] }>('/api/admin/users', fetcher, {
+    revalidateOnFocus: false,
+  });
+  const masters = data?.users ?? [];
+
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_MASTER_FORM);
+  const [saving, setSaving] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [copiedPass, setCopiedPass] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [tempPass, setTempPass] = useState<{ userId: string; pass: string } | null>(null);
+
+  function generatePassword() {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const special = '!@#$%&*';
+    const all = upper + lower + digits + special;
+    const rand = (src: string) => src[Math.floor(Math.random() * src.length)];
+    const required = [rand(upper), rand(lower), rand(digits), rand(special)];
+    const rest = Array.from({ length: 8 }, () => rand(all));
+    const pass = [...required, ...rest].sort(() => Math.random() - 0.5).join('');
+    setForm(f => ({ ...f, password: pass, confirmPassword: pass }));
+  }
+
+  async function copyPassword() {
+    if (!form.password) return;
+    try { await navigator.clipboard.writeText(form.password); } catch { }
+    setCopiedPass(true);
+    setTimeout(() => setCopiedPass(false), 2000);
+  }
+
+  function resetForm() {
+    setForm(EMPTY_MASTER_FORM);
+    setShowPass(false);
+    setShowCurrentPass(false);
+    setShowForm(false);
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (form.password !== form.confirmPassword) {
+      setFeedback({ type: 'error', msg: 'As senhas do novo admin não coincidem.' });
+      return;
+    }
+    if (!form.confirmCurrentPassword) {
+      setFeedback({ type: 'error', msg: 'Confirme com sua senha atual.' });
+      return;
+    }
+    setSaving(true);
+    setFeedback(null);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          role: 'admin',
+          confirmCurrentPassword: form.confirmCurrentPassword,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setFeedback({ type: 'success', msg: 'Admin Master criado com sucesso!' });
+        resetForm();
+        mutate();
+      } else {
+        setFeedback({ type: 'error', msg: json.error || 'Erro ao criar Admin Master' });
+      }
+    } catch {
+      setFeedback({ type: 'error', msg: 'Erro de conexão' });
+    } finally {
+      setSaving(false);
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  }
+
+  async function doAction(userId: string, action: string) {
+    setLoading(`${userId}-${action}`);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const json = await res.json();
+      if (action === 'reset_password' && json.tempPassword) {
+        setTempPass({ userId, pass: json.tempPassword });
+      }
+      mutate();
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  const inputCls = 'w-full border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 bg-white';
+
+  return (
+    <div className="space-y-4">
+      {feedback && (
+        <div className={cn('p-3 rounded-xl text-sm font-bold border', feedback.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700')}>
+          {feedback.msg}
+        </div>
+      )}
+
+      {tempPass && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
+          <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-center gap-2">
+                <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(tempPass.pass);
+                  }}
+                  className="flex-shrink-0 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-all"
+                >
+                  Copiar Senha
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
+              <span className="flex-shrink-0">&#9888;&#65039;</span>
+              Anote esta senha! Ela não será mostrada novamente.
+            </p>
+            <button
+              onClick={() => setTempPass(null)}
+              className="w-full py-2.5 bg-uni-text-900 text-white rounded-xl text-sm font-bold hover:bg-uni-text-600 transition-all"
+            >
+              Entendi, fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Create Form */}
+      {showForm && (
+        <div className="bg-white rounded-xl border border-rose-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-border-1 flex items-center justify-between">
+            <div>
+              <h3 className="font-display font-bold text-uni-text-900">Novo Admin Master</h3>
+              <p className="text-[11px] text-uni-text-400 mt-0.5">Não vinculado a nenhuma empresa — acesso total ao sistema</p>
+            </div>
+            <button onClick={resetForm} className="text-uni-text-400 hover:text-uni-text-700 text-xl leading-none">×</button>
+          </div>
+
+          <form onSubmit={handleCreate} className="p-6 space-y-5">
+            {/* Dados do novo admin */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-uni-text-400 mb-3">Dados do novo Admin Master</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Nome *</label>
+                  <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Nome completo" className={inputCls} required />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Email *</label>
+                  <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@uniher.com.br" className={inputCls} required />
+                </div>
+              </div>
+            </div>
+
+            {/* Senha do novo admin */}
+            <div>
+              <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Senha do novo Admin *</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    value={form.password}
+                    onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                    placeholder="Mínimo 8 caracteres"
+                    className={cn(inputCls, 'pr-10 font-mono')}
+                    required
+                  />
+                  <button type="button" onClick={() => setShowPass(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-uni-text-400 hover:text-uni-text-700 text-xs">
+                    {showPass ? '🙈' : '👁'}
+                  </button>
+                </div>
+                <button type="button" onClick={generatePassword} className="px-3 py-2 rounded-lg text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 whitespace-nowrap transition-all">
+                  Gerar
+                </button>
+                <button type="button" onClick={copyPassword} disabled={!form.password} className="px-3 py-2 rounded-lg text-xs font-bold bg-cream-100 text-uni-text-600 hover:bg-cream-200 border border-border-1 transition-all disabled:opacity-40">
+                  {copiedPass ? '✓' : 'Copiar'}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Confirmar Senha do novo Admin *</label>
+              <input
+                type={showPass ? 'text' : 'password'}
+                value={form.confirmPassword}
+                onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                placeholder="Repita a senha acima"
+                className={cn(inputCls, 'font-mono', form.confirmPassword && form.password !== form.confirmPassword ? 'border-red-400 ring-1 ring-red-200' : '')}
+                required
+              />
+              {form.confirmPassword && form.password !== form.confirmPassword && (
+                <p className="text-[11px] text-red-500 mt-1">As senhas não coincidem</p>
+              )}
+            </div>
+
+            {/* Divider de confirmação */}
+            <div className="border-t border-amber-200 pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-amber-500 text-base">🔐</span>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700">Confirmação de identidade</p>
+                  <p className="text-[11px] text-uni-text-400">Por segurança, confirme com <strong>sua senha atual</strong> para criar um Admin Master</p>
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type={showCurrentPass ? 'text' : 'password'}
+                  value={form.confirmCurrentPassword}
+                  onChange={e => setForm(f => ({ ...f, confirmCurrentPassword: e.target.value }))}
+                  placeholder={`Sua senha atual (${currentUser?.email ?? 'admin logado'})`}
+                  className={cn(inputCls, 'pr-10 border-amber-200 focus:ring-amber-200')}
+                  required
+                />
+                <button type="button" onClick={() => setShowCurrentPass(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-uni-text-400 hover:text-uni-text-700 text-xs">
+                  {showCurrentPass ? '🙈' : '👁'}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={resetForm} className="flex-1 py-2.5 rounded-xl border border-border-1 text-sm font-bold text-uni-text-600 hover:bg-cream-50 transition-all">
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving || !form.name || !form.email || !form.password || form.password !== form.confirmPassword || !form.confirmCurrentPassword}
+                className="flex-1 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              >
+                {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                {saving ? 'Criando...' : 'Criar Admin Master'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Lista */}
+      <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
+        <SectionHeader
+          title="Admins Master"
+          count={masters.length}
+          action={
+            !showForm ? (
+              <button onClick={() => setShowForm(true)} className="px-4 py-2 rounded-lg bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 transition-all">
+                + Novo Admin Master
+              </button>
+            ) : undefined
+          }
+        />
+
+        {isLoading ? (
+          <div className="p-10 flex items-center justify-center gap-3 text-sm text-uni-text-400">
+            <Spinner /> Carregando...
+          </div>
+        ) : masters.length === 0 ? (
+          <div className="p-10 text-center text-sm text-uni-text-400">
+            <div className="text-2xl mb-2">🔑</div>
+            Nenhum Admin Master cadastrado.
+          </div>
+        ) : (
+          <>
+            {/* Mobile */}
+            <div className="md:hidden divide-y divide-border-1">
+              {masters.map(u => {
+                const isBlocked = u.blocked === 1;
+                return (
+                  <div key={u.id} className={cn('p-4 space-y-2', isBlocked && 'bg-red-50/40')}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-uni-text-900 text-sm">{u.name}</span>
+                          {u.company_id === null && (
+                            <span className="text-[10px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full border border-rose-100">Sistema</span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-uni-text-400">{u.email}</div>
+                        <div className="text-[11px] text-uni-text-400 mt-0.5">{new Date(u.created_at).toLocaleDateString('pt-BR')}</div>
+                      </div>
+                      <span className={cn('inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0', isBlocked ? 'bg-red-100 text-red-700' : 'bg-emerald-50 text-emerald-700')}>
+                        <span className={cn('w-1.5 h-1.5 rounded-full', isBlocked ? 'bg-red-500' : 'bg-emerald-500')} />
+                        {isBlocked ? 'Bloqueado' : 'Ativo'}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => doAction(u.id, isBlocked ? 'unblock' : 'block')} disabled={!!loading}
+                        className={cn('flex-1 py-2 rounded-lg text-[11px] font-bold transition-all', isBlocked ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-red-50 text-red-700 hover:bg-red-100', loading && 'opacity-50 cursor-wait')}>
+                        {isBlocked ? 'Desbloquear' : 'Bloquear'}
+                      </button>
+                      <button onClick={() => doAction(u.id, 'reset_password')} disabled={!!loading}
+                        className="flex-1 py-2 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50">
+                        Resetar Senha
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border-1">
+                    <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Admin Master</th>
+                    <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Tipo</th>
+                    <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Criado em</th>
+                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
+                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-1">
+                  {masters.map(u => {
+                    const isBlocked = u.blocked === 1;
+                    const blockKey = `${u.id}-${isBlocked ? 'unblock' : 'block'}`;
+                    const resetKey = `${u.id}-reset_password`;
+                    return (
+                      <tr key={u.id} className={cn('transition-colors', isBlocked ? 'bg-red-50/40' : 'hover:bg-cream-50/30')}>
+                        <td className="px-6 py-3">
+                          <div className="font-medium text-uni-text-900">{u.name}</div>
+                          <div className="text-[11px] text-uni-text-400">{u.email}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full border border-rose-100">
+                            Sistema · Sem empresa
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[11px] text-uni-text-500">
+                          {new Date(u.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={cn('inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full', isBlocked ? 'bg-red-100 text-red-700' : 'bg-emerald-50 text-emerald-700')}>
+                            <span className={cn('w-1.5 h-1.5 rounded-full', isBlocked ? 'bg-red-500' : 'bg-emerald-500')} />
+                            {isBlocked ? 'Bloqueado' : 'Ativo'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => doAction(u.id, isBlocked ? 'unblock' : 'block')} disabled={loading === blockKey}
+                              className={cn('px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all', isBlocked ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-red-50 text-red-700 hover:bg-red-100', loading === blockKey && 'opacity-50 cursor-wait')}>
+                              {loading === blockKey ? '...' : isBlocked ? 'Desbloquear' : 'Bloquear'}
+                            </button>
+                            <button onClick={() => doAction(u.id, 'reset_password')} disabled={loading === resetKey}
+                              className={cn('px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all', loading === resetKey && 'opacity-50 cursor-wait')}>
                               {loading === resetKey ? '...' : 'Resetar Senha'}
                             </button>
                           </div>
@@ -1307,7 +1763,14 @@ function BadgesTab() {
             <Spinner /> Carregando badges...
           </div>
         ) : badges.length === 0 ? (
-          <div className="p-10 text-center text-sm text-uni-text-400">Nenhum badge cadastrado ainda.</div>
+          <div className="text-center py-12 space-y-3">
+            <span className="text-4xl block">🏅</span>
+            <p className="text-uni-text-700 font-medium">Nenhum badge cadastrado</p>
+            <p className="text-sm text-uni-text-400">Crie badges para reconhecer as conquistas das colaboradoras.</p>
+            <button onClick={() => setShowForm(true)} className="mt-2 px-4 py-2 bg-rose-500 text-white rounded-lg text-sm font-medium hover:bg-rose-600 transition-all">
+              + Criar Badge
+            </button>
+          </div>
         ) : (
           <div className="divide-y divide-border-1">
             {badges.map((b) => (
@@ -1436,7 +1899,7 @@ function BrandingEditor() {
         {/* Preview strip */}
         <div
           className="rounded-xl p-4 flex items-center gap-3 border"
-          style={{ background: form.accent_color || '#EAB8CB', borderColor: form.primary_color || '#F43F5E' }}
+          style={{ background: form.accent_color || '#E8D5A3', borderColor: form.primary_color || '#C9A264' }}
         >
           {form.app_logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -1444,12 +1907,12 @@ function BrandingEditor() {
           ) : (
             <div
               className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow"
-              style={{ background: form.primary_color || '#F43F5E' }}
+              style={{ background: form.primary_color || '#C9A264' }}
             >
               {(form.app_name || 'U')[0]}
             </div>
           )}
-          <span className="font-bold text-lg" style={{ color: form.primary_color || '#F43F5E' }}>
+          <span className="font-bold text-lg" style={{ color: form.primary_color || '#C9A264' }}>
             {form.app_name || 'UniHER'}
           </span>
           <span className="ml-auto text-xs opacity-60">pré-visualização</span>
@@ -1467,8 +1930,8 @@ function BrandingEditor() {
           <div>
             <label className={labelCls}>Cor Primária</label>
             <div className="flex items-center gap-2">
-              <input type="color" value={form.primary_color ?? '#F43F5E'} onChange={e => set('primary_color', e.target.value)} className="h-10 w-14 rounded-lg border border-border-1 cursor-pointer p-0.5" />
-              <input className={`${inputCls} flex-1`} value={form.primary_color ?? ''} onChange={e => set('primary_color', e.target.value)} placeholder="#F43F5E" />
+              <input type="color" value={form.primary_color ?? '#C9A264'} onChange={e => set('primary_color', e.target.value)} className="h-10 w-14 rounded-lg border border-border-1 cursor-pointer p-0.5" />
+              <input className={`${inputCls} flex-1`} value={form.primary_color ?? ''} onChange={e => set('primary_color', e.target.value)} placeholder="#C9A264" />
             </div>
           </div>
           <div>
@@ -1481,8 +1944,8 @@ function BrandingEditor() {
           <div>
             <label className={labelCls}>Cor de Destaque (Accent)</label>
             <div className="flex items-center gap-2">
-              <input type="color" value={form.accent_color ?? '#EAB8CB'} onChange={e => set('accent_color', e.target.value)} className="h-10 w-14 rounded-lg border border-border-1 cursor-pointer p-0.5" />
-              <input className={`${inputCls} flex-1`} value={form.accent_color ?? ''} onChange={e => set('accent_color', e.target.value)} placeholder="#EAB8CB" />
+              <input type="color" value={form.accent_color ?? '#E8D5A3'} onChange={e => set('accent_color', e.target.value)} className="h-10 w-14 rounded-lg border border-border-1 cursor-pointer p-0.5" />
+              <input className={`${inputCls} flex-1`} value={form.accent_color ?? ''} onChange={e => set('accent_color', e.target.value)} placeholder="#E8D5A3" />
             </div>
           </div>
           <div>
@@ -1511,11 +1974,77 @@ function BrandingEditor() {
   );
 }
 
+function MasterActionButton({ label, icon, onClick, loading, variant = 'default' }: {
+  label: string; icon: string; onClick: () => void; loading?: boolean;
+  variant?: 'default' | 'warning' | 'danger';
+}) {
+  const colors = {
+    default: 'border-border-1 text-uni-text-700 hover:bg-cream-50',
+    warning: 'border-amber-300 text-amber-700 hover:bg-amber-50',
+    danger: 'border-red-300 text-red-700 hover:bg-red-50',
+  };
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border rounded-lg transition-all ${colors[variant]} disabled:opacity-50`}
+    >
+      <span className="text-base">{icon}</span>
+      {loading ? <Spinner /> : label}
+    </button>
+  );
+}
+
 function SystemTab() {
   const { data, isLoading, mutate } = useSWR<SystemStats>('/api/admin/system', fetcher, {
     revalidateOnFocus: false,
     refreshInterval: 30000,
   });
+
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [backupMsg, setBackupMsg] = useState('');
+  const [integrityLoading, setIntegrityLoading] = useState(false);
+  const [integrityResult, setIntegrityResult] = useState<any>(null);
+  const [clearLogsLoading, setClearLogsLoading] = useState(false);
+
+  const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  async function handleBackup() {
+    setBackupLoading(true);
+    setBackupMsg('');
+    try {
+      const res = await fetch('/api/admin/system/backup', { method: 'POST' });
+      const d = await res.json();
+      if (d.success) setBackupMsg(`Backup criado: ${d.backup} (${d.sizeKB} KB)`);
+      else setBackupMsg(`Erro: ${d.error}`);
+    } catch { setBackupMsg('Erro ao criar backup'); }
+    setBackupLoading(false);
+  }
+
+  async function handleIntegrity() {
+    setIntegrityLoading(true);
+    setIntegrityResult(null);
+    try {
+      const res = await fetch('/api/admin/system/integrity', { method: 'POST' });
+      setIntegrityResult(await res.json());
+    } catch { setIntegrityResult({ error: true }); }
+    setIntegrityLoading(false);
+  }
+
+  async function handleClearLogs(type: 'errors' | 'server' | 'all') {
+    setClearLogsLoading(true);
+    try {
+      await fetch('/api/admin/system/clear-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      });
+      mutate();
+    } catch { /* */ }
+    setClearLogsLoading(false);
+  }
+
+  const m = (data as any)?.master;
 
   return (
     <div className="space-y-6">
@@ -1572,6 +2101,139 @@ function SystemTab() {
           </div>
         )}
       </div>
+
+      {/* Master Control Panel — only on localhost */}
+      {isDev && m && (
+        <>
+          {/* Resources */}
+          <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
+            <SectionHeader title="Recursos do Servidor" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border-1">
+              {/* Memory */}
+              <div className="bg-white p-5 space-y-3">
+                <h4 className="text-xs font-bold text-uni-text-500 uppercase tracking-wider">Memória</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">Node.js Heap</span>
+                    <span className="font-mono text-uni-text-800">{m.memory.heapUsedMB} / {m.memory.heapTotalMB} MB</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">RSS (Total Node)</span>
+                    <span className="font-mono text-uni-text-800">{m.memory.rssMB} MB</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">Sistema</span>
+                    <span className="font-mono text-uni-text-800">
+                      {(m.memory.systemTotalGB - m.memory.systemFreeGB).toFixed(1)} / {m.memory.systemTotalGB} GB ({m.memory.systemUsedPercent}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                    <div
+                      className={cn('h-2 rounded-full transition-all', m.memory.systemUsedPercent > 85 ? 'bg-red-500' : m.memory.systemUsedPercent > 70 ? 'bg-amber-500' : 'bg-emerald-500')}
+                      style={{ width: `${Math.min(m.memory.systemUsedPercent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* CPU & System */}
+              <div className="bg-white p-5 space-y-3">
+                <h4 className="text-xs font-bold text-uni-text-500 uppercase tracking-wider">Sistema</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">CPU</span>
+                    <span className="font-mono text-uni-text-800 text-right text-xs max-w-[200px] truncate">{m.cpu.model}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">Cores</span>
+                    <span className="font-mono text-uni-text-800">{m.cpu.cores}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">Node.js</span>
+                    <span className="font-mono text-uni-text-800">{m.system.nodeVersion}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">OS</span>
+                    <span className="font-mono text-uni-text-800 text-right text-xs max-w-[200px] truncate">{m.system.platform}</span>
+                  </div>
+                </div>
+              </div>
+              {/* Database */}
+              <div className="bg-white p-5 space-y-3">
+                <h4 className="text-xs font-bold text-uni-text-500 uppercase tracking-wider">Banco de Dados</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">Tamanho DB</span>
+                    <span className="font-mono text-uni-text-800">{m.db.sizeMB} MB</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">WAL</span>
+                    <span className="font-mono text-uni-text-800">{m.db.walSizeMB} MB</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">Backups</span>
+                    <span className="font-mono text-uni-text-800">{m.backups.count} ({m.backups.totalSizeMB} MB)</span>
+                  </div>
+                </div>
+              </div>
+              {/* Logs */}
+              <div className="bg-white p-5 space-y-3">
+                <h4 className="text-xs font-bold text-uni-text-500 uppercase tracking-wider">Logs</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">Erros registrados</span>
+                    <span className={cn('font-mono', m.logs.errorLogEntries > 0 ? 'text-red-600 font-bold' : 'text-uni-text-800')}>{m.logs.errorLogEntries}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">errors.log</span>
+                    <span className="font-mono text-uni-text-800">{m.logs.errorLogSizeKB} KB</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-uni-text-600">server.log</span>
+                    <span className="font-mono text-uni-text-800">{m.logs.serverLogSizeKB} KB</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
+            <SectionHeader title="Ações do Sistema" />
+            <div className="p-5 space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <MasterActionButton icon="💾" label="Backup do Banco" onClick={handleBackup} loading={backupLoading} />
+                <MasterActionButton icon="🔍" label="Verificar Integridade" onClick={handleIntegrity} loading={integrityLoading} />
+                <MasterActionButton icon="🧹" label="Limpar Logs de Erro" onClick={() => handleClearLogs('errors')} loading={clearLogsLoading} variant="warning" />
+                <MasterActionButton icon="🗑️" label="Limpar Todos os Logs" onClick={() => handleClearLogs('all')} loading={clearLogsLoading} variant="danger" />
+              </div>
+              {backupMsg && (
+                <div className="px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">{backupMsg}</div>
+              )}
+              {integrityResult && !integrityResult.error && (
+                <div className="px-4 py-3 bg-gray-50 border border-border-1 rounded-lg space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={cn('w-2 h-2 rounded-full', integrityResult.integrity.status === 'ok' ? 'bg-emerald-500' : 'bg-red-500')} />
+                    <span className="font-medium">Integridade: {integrityResult.integrity.result}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={cn('w-2 h-2 rounded-full', integrityResult.foreignKeys.status === 'ok' ? 'bg-emerald-500' : 'bg-red-500')} />
+                    <span className="font-medium">Foreign Keys: {integrityResult.foreignKeys.status === 'ok' ? 'OK' : `${integrityResult.foreignKeys.violations} violações`}</span>
+                  </div>
+                  <div className="text-xs text-uni-text-500">Tabelas: {integrityResult.tables}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Environment badge */}
+          <div className="text-center py-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              Modo Desenvolvimento — Painel Master visível apenas em localhost
+            </span>
+          </div>
+        </>
+      )}
 
       {/* Migrations */}
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
@@ -2088,6 +2750,7 @@ export default function AdminPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('Visão Geral');
+  const { data: sysStats } = useSWR<SystemStats>('/api/admin/system', fetcher, { revalidateOnFocus: false });
 
   useEffect(() => {
     if (isAuthenticated && user && user.role !== 'admin') {
@@ -2096,6 +2759,12 @@ export default function AdminPage() {
   }, [isAuthenticated, user, router]);
 
   if (user?.role !== 'admin') return null;
+
+  const tabCounts: Partial<Record<Tab, number>> = {
+    'Empresas': sysStats?.companies,
+    'Usuários': sysStats?.users,
+    'Badges': sysStats?.badges,
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
@@ -2121,6 +2790,7 @@ export default function AdminPage() {
             label={tab}
             active={activeTab === tab}
             onClick={() => setActiveTab(tab)}
+            count={tabCounts[tab]}
           />
         ))}
       </div>
@@ -2130,6 +2800,7 @@ export default function AdminPage() {
         {activeTab === 'Visão Geral' && <OverviewTab />}
         {activeTab === 'Empresas' && <CompaniesTab />}
         {activeTab === 'Usuários' && <UsersTab />}
+        {activeTab === 'Admin Master' && <AdminMasterTab />}
         {activeTab === 'Badges' && <BadgesTab />}
         {activeTab === 'Sistema' && <SystemTab />}
         {activeTab === 'Alertas' && <AlertasTab />}

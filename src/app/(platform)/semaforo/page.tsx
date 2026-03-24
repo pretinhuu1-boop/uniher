@@ -1,20 +1,67 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { SEMAFORO } from '@/data/mock-collaborator';
 import useSWR from 'swr';
 import { cn } from '@/lib/utils';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-const DETAIL_DATA: Record<string, { history: string[]; tips: string[] }> = {
-  'Prevenção': { history: ['Sem 1: 2.8', 'Sem 2: 3.0', 'Sem 3: 3.1', 'Sem 4: 3.2'], tips: ['Agende mamografia anual', 'Consulte ginecologista a cada 6 meses', 'Mantenha exames de sangue em dia'] },
-  'Sono': { history: ['Sem 1: 5.0', 'Sem 2: 5.3', 'Sem 3: 5.6', 'Sem 4: 5.8'], tips: ['Evite telas 1h antes de dormir', 'Mantenha horário regular de sono'] },
-  'Energia': { history: ['Sem 1: 4.8', 'Sem 2: 5.0', 'Sem 3: 5.2', 'Sem 4: 5.5'], tips: ['Faça pausas de 5 min a cada 2h', 'Hidrate-se com 2L de água por dia', 'Pratique alongamento entre reuniões'] },
-  'Saúde Mental': { history: ['Sem 1: 6.5', 'Sem 2: 6.8', 'Sem 3: 7.0', 'Sem 4: 7.2'], tips: ['Continue com práticas de mindfulness', 'Reserve 10 min diários para respiração guiada'] },
-  'Hábitos': { history: ['Sem 1: 6.0', 'Sem 2: 6.3', 'Sem 3: 6.5', 'Sem 4: 6.8'], tips: ['Mantenha a hidratação ao longo do dia', 'Inclua frutas e verduras em todas as refeições', 'Caminhe pelo menos 30 min por dia'] },
-  'Engajamento': { history: ['Sem 1: 7.4', 'Sem 2: 7.8', 'Sem 3: 8.0', 'Sem 4: 8.1'], tips: ['Continue participando dos desafios semanais', 'Convide colegas para participar da plataforma'] },
+const TIPS_DATA: Record<string, string[]> = {
+  'Prevenção': ['Agende mamografia anual', 'Consulte ginecologista a cada 6 meses', 'Mantenha exames de sangue em dia'],
+  'Sono': ['Evite telas 1h antes de dormir', 'Mantenha horário regular de sono'],
+  'Energia': ['Faça pausas de 5 min a cada 2h', 'Hidrate-se com 2L de água por dia', 'Pratique alongamento entre reuniões'],
+  'Saúde Mental': ['Continue com práticas de mindfulness', 'Reserve 10 min diários para respiração guiada'],
+  'Hábitos': ['Mantenha a hidratação ao longo do dia', 'Inclua frutas e verduras em todas as refeições', 'Caminhe pelo menos 30 min por dia'],
+  'Engajamento': ['Continue participando dos desafios semanais', 'Convide colegas para participar da plataforma'],
 };
+
+const SCORE_GUIDANCE: Record<string, { low: string; medium: string; high: string }> = {
+  'Prevenção': {
+    low: 'Agende um check-up preventivo. Exames em dia reduzem riscos!',
+    medium: 'Bom progresso! Continue com exames regulares.',
+    high: 'Excelente! Seus exames estão em dia. Continue assim!'
+  },
+  'Sono': {
+    low: 'Tente dormir 7-8h por noite. Evite telas 1h antes de dormir.',
+    medium: 'Seu sono está melhorando! Mantenha uma rotina regular.',
+    high: 'Ótima qualidade de sono! Continue com hábitos saudáveis.'
+  },
+  'Energia': {
+    low: 'Faça pausas ativas a cada 2h. Beba água regularmente.',
+    medium: 'Boa energia! Adicione caminhadas curtas ao seu dia.',
+    high: 'Energia excelente! Você está no caminho certo.'
+  },
+  'Saúde Mental': {
+    low: 'Reserve 10 min diários para meditação ou respiração.',
+    medium: 'Continue praticando autocuidado. Está fazendo diferença!',
+    high: 'Saúde mental forte! Continue com suas práticas.'
+  },
+  'Hábitos': {
+    low: 'Comece com 1 hábito novo por semana. Pequenos passos!',
+    medium: 'Bons hábitos se formando! Mantenha a consistência.',
+    high: 'Hábitos exemplares! Você é uma inspiração.'
+  },
+  'Engajamento': {
+    low: 'Participe de 1 desafio ativo para aumentar seu engajamento.',
+    medium: 'Bom engajamento! Explore as campanhas disponíveis.',
+    high: 'Engajamento máximo! Continue participando ativamente.'
+  }
+};
+
+function getScoreGuidance(dimension: string, score: number): string {
+  const guidance = SCORE_GUIDANCE[dimension];
+  if (!guidance) return '';
+  if (score < 4) return guidance.low;
+  if (score <= 7) return guidance.medium;
+  return guidance.high;
+}
+
+function formatHistoryEntries(entries: { score: number; recorded_at: string }[]): string[] {
+  return entries
+    .slice(0, 4)
+    .reverse()
+    .map((e, i) => `Sem ${i + 1}: ${e.score.toFixed(1)}`);
+}
 
 type FilterType = 'all' | 'red' | 'yellow' | 'green';
 
@@ -26,7 +73,8 @@ const STATUS_CONFIG = {
 
 export default function SemaforoPage() {
   const { data: apiData } = useSWR('/api/collaborator/semaforo', fetcher, { revalidateOnFocus: false });
-  const semaforoData: any[] = apiData ?? SEMAFORO;
+  const { data: historyData } = useSWR('/api/collaborator/semaforo/history', fetcher, { revalidateOnFocus: false });
+  const semaforoData: any[] = apiData ?? [];
 
   const greenCount  = semaforoData.filter(s => s.status === 'green').length;
   const yellowCount = semaforoData.filter(s => s.status === 'yellow').length;
@@ -36,6 +84,32 @@ export default function SemaforoPage() {
   const [activeFilter, setActiveFilter]     = useState<FilterType>('all');
   const [animatedScores, setAnimatedScores] = useState<Record<string, number>>({});
   const [reminderFeedback, setReminderFeedback] = useState<string | null>(null);
+  const [currentReminders, setCurrentReminders] = useState<Record<string, boolean>>({});
+
+  // Fetch current notification preferences
+  useEffect(() => {
+    fetch('/api/users/me/notification-preferences')
+      .then(r => r.json())
+      .then(d => {
+        if (d?.prefs?.mission_reminders) setCurrentReminders(d.prefs.mission_reminders);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleScheduleReminder(dimension: string) {
+    const key = dimension.toLowerCase().replace(/\s/g, '_');
+    setReminderFeedback(dimension);
+    try {
+      const updated = { ...currentReminders, [key]: true };
+      await fetch('/api/users/me/notification-preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mission_reminders: updated }),
+      });
+      setCurrentReminders(updated);
+    } catch { /* silently fail */ }
+    setTimeout(() => setReminderFeedback(null), 2000);
+  }
 
   useEffect(() => {
     const initial: Record<string, number> = {};
@@ -65,6 +139,16 @@ export default function SemaforoPage() {
       <div>
         <h1 className="text-4xl font-display font-bold text-uni-text-900">Semáforo de Saúde</h1>
         <p className="text-uni-text-500 mt-1">Acompanhe suas dimensões de saúde e bem-estar.</p>
+      </div>
+
+      {/* How it works */}
+      <div className="bg-cream-100 border border-border-1 rounded-xl p-4">
+        <p className="text-sm text-uni-text-600">
+          <strong>Como funciona:</strong> Cada dimensão é avaliada de 0 a 10.{' '}
+          <span className="text-red-500">Vermelho (&lt;4)</span> = atenção urgente,{' '}
+          <span className="text-amber-500">Amarelo (4-7)</span> = melhorando,{' '}
+          <span className="text-green-600">Verde (&gt;7)</span> = excelente.
+        </p>
       </div>
 
       {/* Summary chips */}
@@ -102,7 +186,11 @@ export default function SemaforoPage() {
         {filteredItems.map((item: any) => {
           const cfg = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.green;
           const isExpanded = expandedCard === item.dimension;
-          const detail = DETAIL_DATA[item.dimension];
+          const historyEntries = historyData?.[item.dimension];
+          const detail = {
+            history: historyEntries ? formatHistoryEntries(historyEntries) : [],
+            tips: TIPS_DATA[item.dimension] || [],
+          };
           const displayScore = animatedScores[item.dimension] ?? 0;
 
           return (
@@ -148,13 +236,18 @@ export default function SemaforoPage() {
 
               <div className="px-5 py-3">
                 <p className="text-xs text-uni-text-500 leading-relaxed">{item.recommendation}</p>
+                {getScoreGuidance(item.dimension, item.score) && (
+                  <p className="text-xs text-uni-text-600 mt-2 bg-cream-50 border border-border-1 rounded-lg px-3 py-2">
+                    {getScoreGuidance(item.dimension, item.score)}
+                  </p>
+                )}
                 <div className={cn("mt-2 text-xs font-bold transition-all flex items-center gap-1", cfg.text)}>
                   {isExpanded ? '▲ Ver menos' : '▾ Ver detalhes e dicas'}
                 </div>
               </div>
 
               {/* Expanded panel */}
-              {isExpanded && detail && (
+              {isExpanded && (detail.history.length > 0 || detail.tips.length > 0) && (
                 <div
                   className="border-t border-border-1 px-5 py-4 space-y-4 bg-gray-50/50"
                   onClick={e => e.stopPropagation()}
@@ -187,7 +280,7 @@ export default function SemaforoPage() {
                     <p className="text-xs font-bold text-emerald-600">✓ Lembrete agendado!</p>
                   ) : (
                     <button
-                      onClick={() => { setReminderFeedback(item.dimension); setTimeout(() => setReminderFeedback(null), 2000); }}
+                      onClick={() => handleScheduleReminder(item.dimension)}
                       className="text-xs font-bold text-uni-text-500 border border-border-1 rounded-lg px-4 py-2 hover:border-rose-300 hover:text-rose-500 transition-all"
                     >
                       🔔 Agendar lembrete

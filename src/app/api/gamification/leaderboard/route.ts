@@ -18,8 +18,17 @@ export const GET = withAuth(async (req, context) => {
     return NextResponse.json({ ranking, type: 'league' });
   }
 
-  // Department leaderboard
+  // Department leaderboard with pagination
+  const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '20', 10) || 20, 1), 100);
+  const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10) || 0, 0);
+
   const ws = getWeekStart();
+
+  const totalRow = db.prepare(`
+    SELECT COUNT(*) as total FROM users
+    WHERE company_id = ? AND role = 'colaboradora'
+  `).get(user?.company_id) as { total: number };
+
   const rows = db.prepare(`
     SELECT u.id, u.name, u.avatar_url, u.points, u.level, u.league,
            COALESCE(ul.week_points, 0) as week_points,
@@ -29,9 +38,9 @@ export const GET = withAuth(async (req, context) => {
     LEFT JOIN departments d ON d.id = u.department_id
     WHERE u.company_id = ? AND u.role = 'colaboradora'
     ORDER BY ul.week_points DESC NULLS LAST, u.points DESC
-    LIMIT 20
-  `).all(ws, user?.company_id) as any[];
+    LIMIT ? OFFSET ?
+  `).all(ws, user?.company_id, limit, offset) as any[];
 
-  const ranking = rows.map((r, i) => ({ rank: i + 1, ...r }));
-  return NextResponse.json({ ranking, type: 'department' });
+  const ranking = rows.map((r, i) => ({ rank: offset + i + 1, ...r }));
+  return NextResponse.json({ rankings: ranking, total: totalRow.total, limit, offset, type: 'department' });
 });

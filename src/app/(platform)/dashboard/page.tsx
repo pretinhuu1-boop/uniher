@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,25 +13,17 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import { Line, Doughnut } from 'react-chartjs-2';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import StatCard from '@/components/platform/StatCard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/AvatarBadge';
-import {
-  DEPARTMENTS,
-  DASHBOARD_KPIS,
-  ROI_DATA,
-  CAMPAIGNS_DASHBOARD,
-  ENGAGEMENT_OVER_TIME,
-  AGE_DISTRIBUTION,
-  HEALTH_RISK_EVOLUTION,
-  CONVITES,
-  REPORTS,
-} from '@/data/mock-dashboard';
 import { useDashboard } from '@/hooks/useDashboard';
-import type { DashboardKPI, ROIProjection, EngagementDataPoint, HealthRisk } from '@/types/platform';
+import { useAuth } from '@/hooks/useAuth';
+import type { DashboardKPI } from '@/types/platform';
 import { cn } from '@/lib/utils';
 
 ChartJS.register(
@@ -49,18 +41,27 @@ ChartJS.register(
 const PERIOD_OPTIONS = ['1m', '3m', '6m', '1a'];
 
 export default function DashboardPage() {
-  const { kpis: apiKpis, departments: apiDepts, isLoading } = useDashboard();
+  const { kpis, departments, roi, campaigns, engagement, ageDistribution, isLoading } = useDashboard();
+  const { user } = useAuth();
+  const router = useRouter();
   const [activePeriod, setActivePeriod] = useState('1m');
   const [filterDept, setFilterDept] = useState('');
   const [filterHealth, setFilterHealth] = useState('');
 
-  /* ── Derived Data ── */
-  const activeKpis = useMemo(() => {
-    if (activePeriod === '1m' && apiKpis?.length) return apiKpis;
-    return DASHBOARD_KPIS; // Fallback
-  }, [activePeriod, apiKpis]);
+  // Smart redirect for new RH users to onboarding
+  useEffect(() => {
+    if (user?.role !== 'rh') return;
+    fetch('/api/rh/onboarding-status')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.isNewRH) {
+          router.push('/onboarding-rh');
+        }
+      })
+      .catch(() => {});
+  }, [user?.role, router]);
 
-  const activeRoi = ROI_DATA; // Mocked for now
+  const activeRoi = roi;
 
   return (
     <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-10 font-body animate-fadeIn">
@@ -97,15 +98,17 @@ export default function DashboardPage() {
 
       {/* Filter Row */}
       <div className="flex flex-wrap items-center gap-4 py-4 border-y border-border-1 mt-6">
-        <select 
+        <select
+          aria-label="Filtrar por departamento"
           className="h-10 px-4 rounded-lg bg-white border border-border-1 text-xs font-bold text-uni-text-600 focus:border-rose-300 focus:ring-1 focus:ring-rose-200 transition-all outline-none"
           value={filterDept}
           onChange={e => setFilterDept(e.target.value)}
         >
           <option value="">DEPARTAMENTO</option>
-          {DEPARTMENTS.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+          {departments.map((d: any) => <option key={d.id} value={d.name}>{d.name}</option>)}
         </select>
-        <select 
+        <select
+          aria-label="Filtrar por status de saúde"
           className="h-10 px-4 rounded-lg bg-white border border-border-1 text-xs font-bold text-uni-text-600 focus:border-rose-300 focus:ring-1 focus:ring-rose-200 transition-all outline-none"
           value={filterHealth}
           onChange={e => setFilterHealth(e.target.value)}
@@ -122,9 +125,22 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        {(activeKpis || []).map((kpi: DashboardKPI, i: number) => (
+        {isLoading ? (
+          [1, 2, 3, 4].map(i => (
+            <div key={i} className="animate-pulse bg-white rounded-2xl p-5 border border-border-1">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-10 w-10 bg-gray-200 rounded-lg" />
+                <div className="h-5 w-14 bg-gray-200 rounded-full" />
+              </div>
+              <div className="h-8 bg-gray-200 rounded w-1/2 mb-2" />
+              <div className="h-4 bg-gray-200 rounded w-2/3" />
+            </div>
+          ))
+        ) : kpis.length > 0 ? kpis.map((kpi: DashboardKPI, i: number) => (
           <StatCard key={i} kpi={kpi} className="animate-scaleIn h-full" />
-        ))}
+        )) : (
+          <div className="col-span-full text-center text-uni-text-400 text-sm py-8">Sem dados de KPI disponíveis</div>
+        )}
       </div>
 
       {/* ROI Banner */}
@@ -151,6 +167,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Section */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {[1, 2].map(i => (
+            <div key={i} className="animate-pulse bg-white rounded-2xl p-8 border border-border-1 min-h-[400px]">
+              <div className="h-5 bg-gray-200 rounded w-1/3 mb-2" />
+              <div className="h-3 bg-gray-200 rounded w-1/2 mb-8" />
+              <div className="h-64 bg-gray-200 rounded-xl" />
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="p-8 pb-12 flex flex-col min-h-[400px]">
           <div className="flex items-center justify-between mb-8">
@@ -161,23 +188,24 @@ export default function DashboardPage() {
             <Badge variant="success">Tendência de Alta</Badge>
           </div>
           <div className="flex-grow">
-             <Line 
+            {engagement.length > 0 ? (
+             <Line
                data={{
-                 labels: ENGAGEMENT_OVER_TIME.map(d => d.month),
+                 labels: engagement.map((d: any) => d.month),
                  datasets: [
-                   { 
-                     label: 'Engajamento %', 
-                     data: ENGAGEMENT_OVER_TIME.map(d => d.engagement), 
-                     borderColor: '#C85C7E', 
-                     backgroundColor: 'rgba(200,92,126,0.1)', 
+                   {
+                     label: 'Engajamento %',
+                     data: engagement.map((d: any) => d.engagement),
+                     borderColor: '#C9A264',
+                     backgroundColor: 'rgba(200,92,126,0.1)',
                      fill: true,
                      tension: 0.4
                    },
-                   { 
-                    label: 'Retenção %', 
-                    data: ENGAGEMENT_OVER_TIME.map(d => d.retention), 
-                    borderColor: '#3E7D5A', 
-                    backgroundColor: 'rgba(62,125,90,0.1)', 
+                   {
+                    label: 'Retenção %',
+                    data: engagement.map((d: any) => d.retention),
+                    borderColor: '#3E7D5A',
+                    backgroundColor: 'rgba(62,125,90,0.1)',
                     fill: true,
                     tension: 0.4
                   }
@@ -185,6 +213,9 @@ export default function DashboardPage() {
                }}
                options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }}
              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-uni-text-400 text-sm">Sem dados de engajamento</div>
+            )}
           </div>
         </Card>
 
@@ -193,31 +224,38 @@ export default function DashboardPage() {
             <h3 className="text-lg font-bold text-uni-text-900">Distribuição Demográfica</h3>
             <p className="text-xs text-uni-text-500">População ativa por faixa etária.</p>
           </div>
-          <div className="flex-grow flex items-center justify-center relative">
-            <div className="w-64 h-64">
-              <Doughnut 
-                data={{
-                  labels: AGE_DISTRIBUTION.map(d => d.label),
-                  datasets: [{ data: AGE_DISTRIBUTION.map(d => d.percent), backgroundColor: AGE_DISTRIBUTION.map(d => d.color) }]
-                }}
-                options={{ cutout: '70%', plugins: { legend: { display: false } } }}
-              />
-            </div>
-            <div className="absolute text-center">
-              <div className="text-xs font-bold text-uni-text-400 uppercase tracking-widest">Total</div>
-              <div className="text-3xl font-display font-bold text-uni-text-900">1.2k</div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-border-1">
-             {AGE_DISTRIBUTION.map(d => (
-               <div key={d.label} className="flex items-center gap-2">
-                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
-                 <span className="text-[10px] font-bold text-uni-text-600 uppercase tracking-wide">{d.label}: {d.percent}%</span>
-               </div>
-             ))}
-          </div>
+          {ageDistribution.length > 0 ? (
+            <>
+              <div className="flex-grow flex items-center justify-center relative">
+                <div className="w-64 h-64">
+                  <Doughnut
+                    data={{
+                      labels: ageDistribution.map((d: any) => d.label),
+                      datasets: [{ data: ageDistribution.map((d: any) => d.percent), backgroundColor: ageDistribution.map((d: any) => d.color) }]
+                    }}
+                    options={{ cutout: '70%', plugins: { legend: { display: false } } }}
+                  />
+                </div>
+                <div className="absolute text-center">
+                  <div className="text-xs font-bold text-uni-text-400 uppercase tracking-widest">Total</div>
+                  <div className="text-3xl font-display font-bold text-uni-text-900">{ageDistribution.reduce((s: number, d: any) => s + d.percent, 0)}%</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-border-1">
+                {ageDistribution.map((d: any) => (
+                  <div key={d.label} className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
+                    <span className="text-[10px] font-bold text-uni-text-600 uppercase tracking-wide">{d.label}: {d.percent}%</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex-grow flex items-center justify-center text-uni-text-400 text-sm">Sem dados demográficos</div>
+          )}
         </Card>
       </div>
+      )}
 
       {/* Campaign / Ranking Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -230,7 +268,7 @@ export default function DashboardPage() {
             <Button variant="ghost" className="text-xs text-rose-500 p-0 hover:bg-transparent">Ver Ranking Global →</Button>
           </div>
           <div className="space-y-4">
-            {DEPARTMENTS.slice(0, 5).map((dept, i) => (
+            {departments.length > 0 ? departments.slice(0, 5).map((dept: any, i: number) => (
               <div key={dept.id} className="group flex items-center gap-4 hover:translate-x-1 transition-transform">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs" style={{ background: `${dept.color}20`, color: dept.color }}>
                   {i+1}
@@ -241,21 +279,23 @@ export default function DashboardPage() {
                     <span className="text-uni-text-400 font-medium">{dept.engagementPercent}% Engajado</span>
                   </div>
                   <div className="h-1.5 w-full bg-cream-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-uni-green transition-all" 
-                      style={{ width: `${dept.engagementPercent}%`, backgroundColor: dept.color }} 
+                    <div
+                      className="h-full bg-uni-green transition-all"
+                      style={{ width: `${dept.engagementPercent}%`, backgroundColor: dept.color }}
                     />
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center text-uni-text-400 text-sm py-8">Sem departamentos cadastrados</div>
+            )}
           </div>
         </Card>
 
         <Card className="p-8">
           <h3 className="text-lg font-bold text-uni-text-900 mb-6">Campanhas Ativas</h3>
           <div className="space-y-6">
-            {CAMPAIGNS_DASHBOARD.map((camp: any, idx: number) => (
+            {campaigns.length > 0 ? campaigns.map((camp: any, idx: number) => (
               <div key={camp.id ?? camp.name ?? idx} className="p-4 rounded-xl border border-border-1 bg-cream-50/20 hover:border-rose-200 transition-colors">
                 <div className="flex items-center justify-between mb-3">
                   <Badge variant="outline" className="text-[8px] uppercase">{camp.month}</Badge>
@@ -274,7 +314,9 @@ export default function DashboardPage() {
                   <span className="text-[10px] font-bold text-uni-text-500">{camp.progress}%</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center text-uni-text-400 text-sm py-8">Sem campanhas</div>
+            )}
           </div>
         </Card>
       </div>

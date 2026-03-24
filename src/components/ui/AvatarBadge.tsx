@@ -1,4 +1,5 @@
 import * as React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /** ─── BADGE ─── */
@@ -69,7 +70,7 @@ export const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
         {...props}
       >
         {src ? (
-          <img src={src} alt={alt} className="aspect-square h-full w-full object-cover" />
+          <Image src={src} alt={alt || ''} fill className="object-cover" unoptimized />
         ) : (
           <span suppressHydrationWarning>{fallback || '?'}</span>
         )}

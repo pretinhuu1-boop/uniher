@@ -223,7 +223,7 @@
 }
 
 .filterClearBtn {
-  color: var(--rose-600, #C85C7E);
+  color: var(--rose-600, #C9A264);
   background: none;
   border: none;
   cursor: pointer;
@@ -248,7 +248,7 @@
 /* ── ROI Banner ── */
 
 .roiBanner {
-  background: linear-gradient(135deg, #C85C7E 0%, #E8849E 40%, #A855F7 100%);
+  background: linear-gradient(135deg, #C9A264 0%, #E8849E 40%, #A855F7 100%);
   border-radius: var(--radius-lg);
   padding: 32px;
   display: flex;

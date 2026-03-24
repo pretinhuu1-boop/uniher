@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 export default function PrimeiroAcessoPage() {
   const router = useRouter();
   const [form, setForm] = useState({ newPassword: '', confirm: '' });
-  const [show, setShow] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -50,28 +51,36 @@ export default function PrimeiroAcessoPage() {
             <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Nova Senha *</label>
             <div className="relative">
               <input
-                type={show ? 'text' : 'password'}
+                type={showPassword ? 'text' : 'password'}
                 value={form.newPassword}
                 onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))}
                 placeholder="Crie sua nova senha"
                 className="w-full border border-border-1 rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:border-rose-400 font-mono"
               />
-              <button type="button" onClick={() => setShow(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-uni-text-400 hover:text-uni-text-700 text-xs">
-                {show ? '🙈' : '👁️'}
+              <button type="button" onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-uni-text-400 hover:text-uni-text-700 text-xs"
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}>
+                {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Confirmar Senha *</label>
-            <input
-              type={show ? 'text' : 'password'}
-              value={form.confirm}
-              onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
-              placeholder="Repita a nova senha"
-              className="w-full border border-border-1 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-rose-400 font-mono"
-            />
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={form.confirm}
+                onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
+                placeholder="Repita a nova senha"
+                className="w-full border border-border-1 rounded-lg px-3 py-2.5 pr-10 text-sm focus:outline-none focus:border-rose-400 font-mono"
+              />
+              <button type="button" onClick={() => setShowConfirm(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-uni-text-400 hover:text-uni-text-700 text-xs"
+                aria-label={showConfirm ? 'Ocultar senha' : 'Mostrar senha'}>
+                {showConfirm ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
 
           {/* Rules checklist */}
@@ -91,7 +100,12 @@ export default function PrimeiroAcessoPage() {
             disabled={loading || rules.some(r => !r.ok) || !form.confirm}
             className="w-full py-3 rounded-xl bg-rose-500 text-white font-bold text-sm hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Salvando...' : 'Definir minha senha'}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Salvando...
+              </span>
+            ) : 'Definir minha senha'}
           </button>
         </div>
       </div>

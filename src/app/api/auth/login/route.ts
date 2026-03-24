@@ -11,11 +11,9 @@ export async function POST(req: Request) {
     await checkAuthRateLimit(req);
 
     const body = await req.json();
-    console.log('[debug-route] POST /api/auth/login:', body.email);
     const input = loginSchema.parse(body);
 
     const result = await login(input);
-    console.log('[debug-route] SUCCESS:', body.email);
 
     return NextResponse.json(result);
   } catch (error) {

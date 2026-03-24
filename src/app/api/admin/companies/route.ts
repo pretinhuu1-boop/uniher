@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
 import { listAllCompanies, createCompany } from '@/repositories/company.repository';
+import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
 import { logAudit } from '@/lib/audit';
@@ -16,10 +17,25 @@ const CreateSchema = z.object({
   contact_phone: z.string().max(20).optional(),
 });
 
-export const GET = withRole('admin')(async (_req: NextRequest) => {
+export const GET = withRole('admin')(async (req: NextRequest) => {
   await initDb();
-  const companies = listAllCompanies();
-  return NextResponse.json({ companies });
+  const url = new URL(req.url);
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '50', 10) || 50, 1), 200);
+  const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
+
+  const db = getReadDb();
+  const total = (db.prepare('SELECT COUNT(*) as cnt FROM companies WHERE deleted_at IS NULL').get() as { cnt: number }).cnt;
+  const companies = db.prepare(`
+    SELECT c.*,
+      (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id AND u.deleted_at IS NULL) AS user_count,
+      (SELECT COUNT(*) FROM departments d WHERE d.company_id = c.id) AS department_count
+    FROM companies c
+    WHERE c.deleted_at IS NULL
+    ORDER BY c.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(limit, offset);
+
+  return NextResponse.json({ companies, total, limit, offset });
 });
 
 export const POST = withRole('admin')(async (req: NextRequest, context) => {

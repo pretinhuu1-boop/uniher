@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniHER — Painel de Controle</title>
+  <style>
+    :root { --gold:#C9A264;--gold-dark:#9A7520;--gold-light:#E8C97A;--navy:#1A3A6B;--navy-light:#2A5A9B;--bg:#FAF7F2;--card:#FFF;--border:#E8DFD0;--text:#3D2E22;--muted:#8C7B6B;--green:#10B981;--red:#EF4444;--amber:#F59E0B; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .header{background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;padding:20px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .header-left{display:flex;align-items:center;gap:14px}
+    .header h1{font-size:20px;font-weight:600} .header .sub{font-size:12px;opacity:.7}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;font-size:13px;font-weight:600}
+    .badge.on{background:rgba(16,185,129,.2);color:#6EE7B7} .badge.off{background:rgba(239,68,68,.2);color:#FCA5A5}
+    .dot{width:8px;height:8px;border-radius:50%} .badge.on .dot{background:#10B981;animation:pulse 2s infinite} .badge.off .dot{background:#EF4444}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px} .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px} .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    @media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}}
+    @media(min-width:901px) and (max-width:1100px){.g3,.g4{grid-template-columns:1fr 1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:visible}
+    .card-h{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .card-h h3{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .card-b{padding:18px}
+    .sc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+    .sc .l{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .sc .v{font-size:26px;font-weight:700;margin:3px 0;font-variant-numeric:tabular-nums}
+    .sc .s{font-size:12px;color:var(--muted)}
+    .ir{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f0ebe3;font-size:14px}
+    .ir:last-child{border:none} .ir .l{color:var(--muted)} .ir .v{font-family:Consolas,Monaco,monospace;font-weight:600}
+    .pb{width:100%;height:8px;background:#e8e0d4;border-radius:99px;overflow:hidden;margin-top:8px}
+    .pf{height:100%;border-radius:99px;transition:width .5s} .pf.g{background:var(--green)} .pf.a{background:var(--amber)} .pf.r{background:var(--red)}
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;transition:all .15s}
+    .btn:hover{background:#f5f0e8;transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.08)} .btn:active{transform:translateY(0)} .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .btn.p{background:var(--gold);color:#fff;border-color:var(--gold-dark)} .btn.p:hover{background:var(--gold-dark)}
+    .btn.d{border-color:#FCA5A5;color:var(--red)} .btn.d:hover{background:#FEF2F2}
+    .btn.s{border-color:#86EFAC;color:#059669} .btn.s:hover{background:#F0FDF4}
+    .btn.w{border-color:#FDE68A;color:#92400E} .btn.w:hover{background:#FFF7ED}
+    .btn.navy{background:var(--navy);color:#fff;border-color:var(--navy)} .btn.navy:hover{background:var(--navy-light)}
+    .bg{display:flex;flex-wrap:wrap;gap:10px}
+    .hi{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0ebe3}
+    .hi:last-child{border:none} .hi .left{display:flex;align-items:center;gap:10px}
+    .hd{width:8px;height:8px;border-radius:50%;flex-shrink:0} .hd.ok{background:var(--green)} .hd.err{background:var(--red)}
+    .al{padding:11px 15px;border-radius:8px;font-size:13px;margin-top:10px;display:none}
+    .al.show{display:block} .al.ok{background:#F0FDF4;border:1px solid #86EFAC;color:#059669} .al.err{background:#FEF2F2;border:1px solid #FCA5A5;color:#DC2626} .al.info{background:#FFF7ED;border:1px solid #FDE68A;color:#92400E}
+    .rb{display:flex;align-items:center;justify-content:space-between;padding:10px 22px;background:#f8f4ee;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)}
+    .rb button{background:none;border:none;color:var(--gold-dark);cursor:pointer;font-weight:600;font-size:12px} .rb button:hover{text-decoration:underline}
+    .sec{margin-bottom:22px}
+    .st{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid var(--gold);display:inline-block}
+    .foot{text-align:center;padding:20px;font-size:12px;color:var(--muted)}
+    .dbg{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:#FFF7ED;border:1px solid #FDE68A;border-radius:99px;color:#92400E;font-weight:600}
+    .dbg .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse 2s infinite}
+    .sp{display:inline-block;width:15px;height:15px;border:2px solid #e8e0d4;border-top-color:var(--gold);border-radius:50%;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .logo{width:34px;height:34px}
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center;display:none}
+    .modal-bg.show{display:flex}
+    .modal{background:var(--card);border-radius:14px;max-width:700px;width:95%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+    .modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .modal-head h2{font-size:16px;font-weight:700;color:var(--navy)}
+    .modal-head button{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1}
+    .modal-body{padding:20px;overflow-y:auto;flex:1}
+    .log-box{background:#1a1a2e;color:#a8d8ea;font-family:Consolas,Monaco,monospace;font-size:12px;padding:16px;border-radius:8px;max-height:50vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all;line-height:1.6}
+    .log-box .err{color:#ff6b6b} .log-box .warn{color:#ffd93d}
+    /* Tooltip */
+    .tip{position:relative;display:inline-flex}
+    .tip .tt{visibility:hidden;opacity:0;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:12px;font-weight:400;padding:8px 12px;border-radius:8px;white-space:nowrap;max-width:280px;white-space:normal;text-align:left;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.2);pointer-events:none;transition:opacity .15s,visibility .15s;line-height:1.4}
+    .tip .tt::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--navy)}
+    .tip:hover .tt{visibility:visible;opacity:1}
+    .info-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:help;flex-shrink:0;margin-left:4px}
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;max-width:380px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,0.08)">
+      <div style="text-align:center;margin-bottom:24px">
+        <svg style="width:48px;height:48px;margin-bottom:8px" viewBox="0 0 200 160" fill="none">
+          <path d="M100,148 C84,134 74,108 74,80 C74,52 84,22 100,10 C116,22 126,52 126,80 C126,108 116,134 100,148 Z" stroke="#C9A264" stroke-width="3" fill="none"/>
+          <path d="M100,148 C86,132 56,122 34,104 C14,88 8,62 20,46 C34,30 62,38 76,62 C88,82 94,114 100,148 Z" stroke="#C9A264" stroke-width="3" fill="none"/>
+          <path d="M100,148 C114,132 144,122 166,104 C186,88 192,62 180,46 C166,30 138,38 124,62 C112,82 106,114 100,148 Z" stroke="#C9A264" stroke-width="3" fill="none"/>
+        </svg>
+        <h2 style="font-size:18px;color:var(--navy);margin-bottom:4px">Painel de Controle</h2>
+        <p style="font-size:13px;color:var(--muted)">Login de administrador necessário</p>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:6px">Email</label>
+        <input id="loginEmail" type="email" placeholder="admin@email.com" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:var(--bg)">
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:6px">Senha</label>
+        <input id="loginPass" type="password" placeholder="••••••••" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:var(--bg)" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button onclick="doLogin()" id="loginBtn" class="btn p" style="width:100%;justify-content:center;padding:12px;font-size:14px">Entrar</button>
+      <div id="loginError" style="color:var(--red);font-size:13px;text-align:center;margin-top:10px;display:none"></div>
+    </div>
+  </div>
+
+  <!-- Main Panel (hidden until login) -->
+  <div id="mainPanel" style="display:none">
+  <div class="header">
+    <div class="header-left">
+      <svg class="logo" viewBox="0 0 200 160" fill="none">
+        <path d="M100,148 C84,134 74,108 74,80 C74,52 84,22 100,10 C116,22 126,52 126,80 C126,108 116,134 100,148 Z" stroke="#E8C97A" stroke-width="3" fill="none"/>
+        <path d="M100,148 C86,132 56,122 34,104 C14,88 8,62 20,46 C34,30 62,38 76,62 C88,82 94,114 100,148 Z" stroke="#E8C97A" stroke-width="3" fill="none"/>
+        <path d="M100,148 C114,132 144,122 166,104 C186,88 192,62 180,46 C166,30 138,38 124,62 C112,82 106,114 100,148 Z" stroke="#E8C97A" stroke-width="3" fill="none"/>
+      </svg>
+      <div><h1>UniHER — Painel de Controle</h1><div class="sub">Gerenciamento local do sistema</div></div>
+    </div>
+    <div id="statusBadge" class="badge off"><span class="dot"></span><span id="statusText">Verificando...</span></div>
+  </div>
+
+  <div class="rb">
+    <span>Atualizado: <strong id="lastUpdate">—</strong> | Auto-refresh: 10s</span>
+    <button onclick="refreshAll()">Atualizar agora</button>
+  </div>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="sec"><div class="g4">
+      <div class="sc"><div class="l">Status</div><div class="v" id="s-status">—</div><div class="s">do servidor</div></div>
+      <div class="sc"><div class="l">Uptime</div><div class="v" id="s-uptime">—</div><div class="s">tempo ativo</div></div>
+      <div class="sc"><div class="l">Banco de Dados</div><div class="v" id="s-db">—</div><div class="s">tamanho</div></div>
+      <div class="sc"><div class="l">Usuárias</div><div class="v" id="s-users">—</div><div class="s">cadastradas</div></div>
+    </div></div>
+
+    <!-- SERVER ACTIONS -->
+    <div class="sec">
+      <span class="st">Servidor</span>
+      <div class="card"><div class="card-b"><div class="bg">
+        <span class="tip"><button class="btn navy" onclick="doRestart()">🔄 Reiniciar Sistema</button><span class="tt">Encerra o processo Node.js e o watchdog reinicia automaticamente em ~3s. O sistema fica fora por alguns segundos.</span></span>
+        <span class="tip"><button class="btn" onclick="openModal('status')">📊 Status Detalhado</button><span class="tt">Mostra o JSON completo do health check: status, memória, banco, uptime.</span></span>
+        <span class="tip"><button class="btn" onclick="openModal('monitor')">📡 Monitor ao Vivo</button><span class="tt">Abre um terminal que consulta o servidor a cada 5 segundos e mostra se está online ou offline em tempo real.</span></span>
+      </div><div id="serverAlert" class="al"></div></div></div>
+    </div>
+
+    <!-- Health Check -->
+    <div class="sec"><div class="card">
+      <div class="card-h"><h3>Health Check</h3><button class="btn" onclick="refreshAll()" style="padding:5px 10px;font-size:11px">Atualizar</button></div>
+      <div class="card-b" id="healthChecks"><div style="text-align:center;padding:16px;color:var(--muted)"><span class="sp"></span> Carregando...</div></div>
+    </div></div>
+
+    <!-- Resources -->
+    <div class="sec">
+      <span class="st">Recursos do Servidor</span>
+      <div class="g2">
+        <div class="card"><div class="card-h"><h3>Memória</h3><span class="tip"><span class="info-icon">!</span><span class="tt">Heap = memória usada pelo JS. RSS = total do processo Node. Sistema = RAM total da máquina.</span></span></div><div class="card-b" id="memoryInfo"><span class="sp"></span></div></div>
+        <div class="card"><div class="card-h"><h3>Sistema</h3><span class="tip"><span class="info-icon">!</span><span class="tt">Informações do hardware e software da máquina onde o servidor está rodando.</span></span></div><div class="card-b" id="systemInfo"><span class="sp"></span></div></div>
+        <div class="card"><div class="card-h"><h3>Banco de Dados</h3><span class="tip"><span class="info-icon">!</span><span class="tt">SQLite: DB principal + WAL (write-ahead log). Backups ficam em data/backups/.</span></span></div><div class="card-b" id="dbInfo"><span class="sp"></span></div></div>
+        <div class="card"><div class="card-h"><h3>Logs</h3><span class="tip"><span class="info-icon">!</span><span class="tt">errors.log = erros de API capturados. server.log = inicializações, restarts e shutdowns.</span></span></div><div class="card-b" id="logsInfo"><span class="sp"></span></div></div>
+      </div>
+    </div>
+
+    <!-- LOGS & MONITORING -->
+    <div class="sec">
+      <span class="st">Logs & Monitoramento</span>
+      <div class="card"><div class="card-b"><div class="bg">
+        <span class="tip"><button class="btn" onclick="openModal('logs-server')">📄 Ver Logs do Servidor</button><span class="tt">Exibe as últimas 50 linhas do server.log: inicializações, shutdowns e restarts do sistema.</span></span>
+        <span class="tip"><button class="btn d" onclick="openModal('logs-errors')">🐛 Ver Logs de Erros</button><span class="tt">Exibe as últimas 50 linhas do errors.log: erros de API não tratados, com stack trace e timestamp.</span></span>
+        <span class="tip"><button class="btn" onclick="openModal('ports')">🔌 Portas em uso</button><span class="tt">Lista todas as portas TCP abertas no sistema (3000+) com o PID do processo que está usando.</span></span>
+        <span class="tip"><button class="btn" onclick="openModal('disk')">💿 Uso de Disco</button><span class="tt">Mostra o tamanho das pastas do projeto (data/, src/, public/) e o espaço livre no disco C:\.</span></span>
+        <span class="tip"><button class="btn" onclick="openModal('sysinfo')">🖥️ Info Completa do Sistema</button><span class="tt">Informações detalhadas: CPU, RAM, OS, Node.js, IP da máquina, diretório do projeto, ambiente.</span></span>
+      </div></div></div>
+    </div>
+
+    <!-- DB ACTIONS -->
+    <div class="sec">
+      <span class="st">Banco de Dados</span>
+      <div class="card"><div class="card-b"><div class="bg">
+        <span class="tip"><button class="btn p" id="btnBackup" onclick="doBackup()">💾 Backup do Banco</button><span class="tt">Cria uma cópia do banco de dados em data/backups/ com a data atual. Não altera nada no banco ativo.</span></span>
+        <span class="tip"><button class="btn s" id="btnIntegrity" onclick="doIntegrity()">🔍 Verificar Integridade</button><span class="tt">Executa PRAGMA integrity_check e foreign_key_check no SQLite. Verifica se os dados estão íntegros e se não há violações de chaves.</span></span>
+        <!-- Resetar Banco oculto por segurança -->
+        <!-- <span class="tip"><button class="btn d" id="btnResetDb" onclick="doResetDb()">⚠️ Resetar Banco (seed)</button><span class="tt">⚠️ DESTRUTIVO: Apaga TODOS os dados do banco e recria do zero com dados de teste. Use apenas em desenvolvimento.</span></span> -->
+      </div><div id="dbAlert" class="al"></div><div id="integrityResult" style="margin-top:10px;display:none"></div></div></div>
+    </div>
+
+    <!-- SYSTEM MASTER -->
+    <div class="sec">
+      <span class="st">Sistema (Master)</span>
+      <div class="card"><div class="card-b"><div class="bg">
+        <span class="tip"><button class="btn w" onclick="doClearLogs('errors')">🧹 Limpar Logs de Erro</button><span class="tt">Apaga o conteúdo do arquivo errors.log. Os erros futuros serão registrados normalmente.</span></span>
+        <span class="tip"><button class="btn d" onclick="doClearLogs('all')">🗑️ Limpar Todos os Logs</button><span class="tt">Apaga errors.log e server.log. O servidor continua funcionando e novos logs serão criados.</span></span>
+        <span class="tip"><button class="btn w" onclick="doClearCache()">🧹 Limpar Cache (.next)</button><span class="tt">Remove a pasta .next (cache do Next.js/Turbopack). O servidor vai recompilar tudo no próximo acesso — pode levar alguns segundos.</span></span>
+      </div><div id="masterAlert" class="al"></div></div></div>
+    </div>
+
+    <!-- Deploy / Produção -->
+    <div class="sec">
+      <span class="st">Deploy / Produção (VPS Linux)</span>
+      <div class="card">
+        <div class="card-h"><h3>Informações para o Provedor</h3><span class="tip"><span class="info-icon">!</span><span class="tt">Dados coletados automaticamente do seu sistema. Copie e envie ao provedor ou use como referência na configuração da VPS.</span></span></div>
+        <div class="card-b" id="deployInfo"><span class="sp"></span> Coletando dados...</div>
+      </div>
+      <div style="margin-top:14px" class="card">
+        <div class="card-h"><h3>Checklist de Deploy</h3><span class="tip"><span class="info-icon">!</span><span class="tt">Passo a passo para colocar em produção em qualquer VPS Linux. Marque os itens conforme for concluindo.</span></span></div>
+        <div class="card-b">
+          <div id="deployChecklist" style="font-size:14px;line-height:2">
+            <div style="margin-bottom:16px">
+              <h4 style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">1. Preparar a VPS</h4>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Contratar VPS com Ubuntu 22.04+ (mínimo 1GB RAM, 1 vCPU)</span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Acessar via SSH: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">ssh root@IP_DA_VPS</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Atualizar sistema: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">apt update && apt upgrade -y</code></span></label>
+            </div>
+            <div style="margin-bottom:16px">
+              <h4 style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">2. Instalar Node.js + PM2</h4>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Instalar Node.js 20+: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt install -y nodejs</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Instalar PM2 (gerenciador de processos): <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">npm install -g pm2</code></span></label>
+            </div>
+            <div style="margin-bottom:16px">
+              <h4 style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">3. Enviar Projeto</h4>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Enviar projeto via Git ou SCP para <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">/var/www/uniher</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Instalar dependências: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">cd /var/www/uniher && npm install</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Criar arquivo <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">.env.production</code> com as variáveis (ver abaixo)</span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Criar pasta data e rodar seed: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">mkdir -p data && npm run db:seed</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Build de produção: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">npm run build</code></span></label>
+            </div>
+            <div style="margin-bottom:16px">
+              <h4 style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">4. Iniciar com PM2</h4>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Iniciar: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">pm2 start npm --name "uniher" -- start</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Salvar para auto-start: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">pm2 save && pm2 startup</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Testar: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">curl http://localhost:3000/api/health</code></span></label>
+            </div>
+            <div style="margin-bottom:16px">
+              <h4 style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">5. Configurar Nginx (Reverse Proxy)</h4>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Instalar Nginx: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">apt install -y nginx</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Criar config (ver botão "Gerar Nginx Config" abaixo)</span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Testar e reiniciar: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">nginx -t && systemctl restart nginx</code></span></label>
+            </div>
+            <div style="margin-bottom:16px">
+              <h4 style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">6. Domínio + SSL</h4>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>No painel do domínio: criar registro A apontando para o IP da VPS</span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Instalar Certbot: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">apt install -y certbot python3-certbot-nginx</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Gerar SSL: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">certbot --nginx -d seudominio.com.br</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Testar renovação: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">certbot renew --dry-run</code></span></label>
+            </div>
+            <div style="margin-bottom:16px">
+              <h4 style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">7. Segurança</h4>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Firewall: <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:12px">ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw enable</code></span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Criar usuário não-root para rodar o app</span></label>
+              <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" style="margin-top:5px"><span>Configurar backup automático do banco (cron job)</span></label>
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px">
+            <span class="tip"><button class="btn p" onclick="openModal('nginx-config')">📝 Gerar Nginx Config</button><span class="tt">Gera o arquivo de configuração do Nginx pronto para copiar. Só precisa trocar o domínio.</span></span>
+            <span class="tip"><button class="btn" onclick="openModal('env-file')">🔐 Gerar .env.production</button><span class="tt">Gera o template do arquivo de variáveis de ambiente para produção com valores seguros.</span></span>
+            <span class="tip"><button class="btn" onclick="openModal('pm2-commands')">⚙️ Comandos PM2</button><span class="tt">Lista dos comandos PM2 mais usados: start, restart, logs, monit, etc.</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Migrations -->
+    <div class="sec"><div class="card">
+      <div class="card-h"><h3>Migrations Aplicadas</h3><span id="migCount" style="font-size:12px;color:var(--muted)"></span></div>
+      <div class="card-b" id="migrationsInfo"><span class="sp"></span></div>
+    </div></div>
+
+    <div class="foot"><div class="dbg"><span class="dot"></span> Modo Desenvolvimento — visível apenas em localhost</div></div>
+  </div>
+  </div><!-- /mainPanel -->
+
+  <!-- Modal -->
+  <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-head"><h2 id="modalTitle">—</h2><button onclick="closeModal()">&times;</button></div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const B = location.origin;
+    let hD = null, sD = null, monitorInterval = null;
+
+    async function fGet(url) { try { const r = await fetch(url, {credentials:'include'}); return r.ok ? await r.json() : null; } catch { return null; } }
+    async function fPost(url, body) { try { const r = await fetch(url, {method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); } catch { return null; } }
+
+    // ─── Login ───
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPass').value;
+      const errEl = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+      if (!email || !pass) { errEl.textContent='Preencha todos os campos'; errEl.style.display='block'; return; }
+      btn.disabled = true; btn.innerHTML = '<span class="sp"></span> Entrando...';
+      errEl.style.display = 'none';
+      try {
+        const r = await fetch(B+'/api/auth/login', {
+          method:'POST', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({email, password: pass})
+        });
+        const d = await r.json();
+        if (!r.ok || d.error) {
+          errEl.textContent = d.error || 'Email ou senha incorretos';
+          errEl.style.display = 'block';
+          btn.disabled = false; btn.innerHTML = 'Entrar';
+          return;
+        }
+        // Check if admin
+        const sysCheck = await fGet(B+'/api/admin/system');
+        if (!sysCheck || sysCheck.error) {
+          errEl.textContent = 'Acesso negado. Apenas administradores.';
+          errEl.style.display = 'block';
+          btn.disabled = false; btn.innerHTML = 'Entrar';
+          return;
+        }
+        // Success — show panel
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainPanel').style.display = 'block';
+        refreshAll();
+      } catch (e) {
+        errEl.textContent = 'Erro de conexão';
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.innerHTML = 'Entrar';
+      }
+    }
+
+    // Try auto-login (if already has cookie)
+    (async () => {
+      const test = await fGet(B+'/api/admin/system');
+      if (test && !test.error) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainPanel').style.display = 'block';
+        refreshAll();
+      }
+    })();
+
+    // ─── Renders ───
+    function renderStatus(h) {
+      const b = document.getElementById('statusBadge'), t = document.getElementById('statusText');
+      if (h?.status==='healthy') { b.className='badge on'; t.textContent='Online'; }
+      else if (h) { b.className='badge on'; t.textContent='Degradado'; }
+      else { b.className='badge off'; t.textContent='Offline'; }
+    }
+    function renderStats(h, s) {
+      document.getElementById('s-status').textContent = h ? (h.status==='healthy'?'✅':'⚠️') : '❌';
+      document.getElementById('s-uptime').textContent = h?.uptime || '—';
+      document.getElementById('s-db').textContent = h?.db?.sizeMB ? h.db.sizeMB+' MB' : (s ? s.db_size_kb+' KB' : '—');
+      document.getElementById('s-users').textContent = h?.db?.users ?? s?.users ?? '—';
+    }
+    function renderHealth(h, s) {
+      const items = [];
+      if (h) { items.push({l:'API Health',ok:1,v:h.status},{l:'Banco de Dados',ok:h.db?.status==='ok',v:(h.db?.sizeMB||'?')+' MB'},{l:'Processo Node.js',ok:1,v:'Uptime: '+h.uptime},{l:'Memória Node',ok:h.memory?.percentUsed<80,v:h.memory?.rssMB+' MB ('+h.memory?.percentUsed+'%)'}); }
+      if (s) { items.push({l:'Empresas',ok:1,v:s.companies+' cadastradas'},{l:'Usuárias',ok:1,v:s.users+' ativas'},{l:'Campanhas',ok:1,v:s.campaigns+' em andamento'}); }
+      if (!items.length) items.push({l:'Servidor',ok:0,v:'Indisponível'});
+      document.getElementById('healthChecks').innerHTML = items.map(i=>`<div class="hi"><div class="left"><span class="hd ${i.ok?'ok':'err'}"></span><span style="font-size:14px;font-weight:500">${i.l}</span></div><span style="font-size:13px;color:var(--muted);font-family:monospace">${i.v}</span></div>`).join('');
+    }
+    function renderMemory(h, s) {
+      const m=s?.master?.memory, hm=h?.memory;
+      if(!m&&!hm){document.getElementById('memoryInfo').innerHTML='<p style="color:var(--muted);font-size:13px">Faça login como admin para ver</p>';return;}
+      const hu=m?.heapUsedMB||hm?.heapUsedMB||'?',ht=m?.heapTotalMB||'?',rss=m?.rssMB||hm?.rssMB||'?',st=m?.systemTotalGB||hm?.totalSystemGB||'?',sf=m?.systemFreeGB||'?',p=m?.systemUsedPercent||hm?.percentUsed||0;
+      const c=p>85?'r':p>70?'a':'g';
+      document.getElementById('memoryInfo').innerHTML=`<div class="ir"><span class="l">Node.js Heap</span><span class="v">${hu} / ${ht} MB</span></div><div class="ir"><span class="l">RSS (Total Node)</span><span class="v">${rss} MB</span></div><div class="ir"><span class="l">Sistema</span><span class="v">${sf!=='?'?(st-sf).toFixed(1):'?'} / ${st} GB (${p}%)</span></div><div class="pb"><div class="pf ${c}" style="width:${Math.min(p,100)}%"></div></div>`;
+    }
+    function renderSystem(s) {
+      const m=s?.master; if(!m){document.getElementById('systemInfo').innerHTML='<p style="color:var(--muted);font-size:13px">Faça login como admin</p>';return;}
+      document.getElementById('systemInfo').innerHTML=`<div class="ir"><span class="l">CPU</span><span class="v" style="font-size:11px;max-width:200px;text-align:right;overflow:hidden;text-overflow:ellipsis">${m.cpu.model}</span></div><div class="ir"><span class="l">Cores</span><span class="v">${m.cpu.cores}</span></div><div class="ir"><span class="l">Node.js</span><span class="v">${m.system.nodeVersion}</span></div><div class="ir"><span class="l">OS</span><span class="v" style="font-size:11px">${m.system.platform}</span></div><div class="ir"><span class="l">Host</span><span class="v" style="font-size:11px">${m.system.hostname}</span></div>`;
+    }
+    function renderDb(s) {
+      const m=s?.master; if(!m){document.getElementById('dbInfo').innerHTML='<p style="color:var(--muted);font-size:13px">Indisponível</p>';return;}
+      document.getElementById('dbInfo').innerHTML=`<div class="ir"><span class="l">Tamanho DB</span><span class="v">${m.db.sizeMB} MB</span></div><div class="ir"><span class="l">WAL</span><span class="v">${m.db.walSizeMB} MB</span></div><div class="ir"><span class="l">Pasta data/</span><span class="v">${m.disk.dataDirMB} MB</span></div><div class="ir"><span class="l">Backups</span><span class="v">${m.backups.count} (${m.backups.totalSizeMB} MB)</span></div>`;
+    }
+    function renderLogs(s) {
+      const m=s?.master; if(!m){document.getElementById('logsInfo').innerHTML='<p style="color:var(--muted);font-size:13px">Indisponível</p>';return;}
+      const e=m.logs.errorLogEntries>0;
+      document.getElementById('logsInfo').innerHTML=`<div class="ir"><span class="l">Erros registrados</span><span class="v" style="${e?'color:var(--red);font-weight:700':''}">${m.logs.errorLogEntries}</span></div><div class="ir"><span class="l">errors.log</span><span class="v">${m.logs.errorLogSizeKB} KB</span></div><div class="ir"><span class="l">server.log</span><span class="v">${m.logs.serverLogSizeKB} KB</span></div>`;
+    }
+    function renderMigrations(s) {
+      if(!s?.applied_migrations){document.getElementById('migrationsInfo').innerHTML='<p style="color:var(--muted);font-size:13px">Indisponível</p>';return;}
+      const ms=s.applied_migrations; document.getElementById('migCount').textContent=ms.length+' aplicadas';
+      document.getElementById('migrationsInfo').innerHTML=ms.length?ms.map(m=>`<div class="hi"><div class="left"><span class="hd ok"></span><span style="font-size:13px;font-family:monospace">${m}</span></div></div>`).join(''):'<p style="color:var(--muted);font-size:13px">Nenhuma</p>';
+    }
+
+    // ─── Modal ───
+    function openModal(type) { document.getElementById('modalBg').classList.add('show'); loadModal(type); }
+    function closeModal() { document.getElementById('modalBg').classList.remove('show'); if(monitorInterval){clearInterval(monitorInterval);monitorInterval=null;} }
+
+    async function loadModal(type) {
+      const title = document.getElementById('modalTitle'), body = document.getElementById('modalBody');
+      body.innerHTML = '<div style="text-align:center;padding:30px"><span class="sp"></span> Carregando...</div>';
+
+      if (type === 'logs-server') {
+        title.textContent = '📄 Logs do Servidor';
+        const d = await fPost(B+'/api/admin/system/ops', {action:'logs-server'});
+        body.innerHTML = d?.lines?.length ? `<div class="log-box">${d.lines.join('\n')}</div><p style="margin-top:8px;font-size:12px;color:var(--muted)">${d.total} linhas total (mostrando últimas 50)</p>` : '<p style="color:var(--muted)">Nenhum log encontrado</p>';
+      }
+      else if (type === 'logs-errors') {
+        title.textContent = '🐛 Logs de Erros';
+        const d = await fPost(B+'/api/admin/system/ops', {action:'logs-errors'});
+        body.innerHTML = d?.lines?.length ? `<div class="log-box">${d.lines.map(l=>l.includes('Error')||l.includes('error')?`<span class="err">${esc(l)}</span>`:esc(l)).join('\n')}</div><p style="margin-top:8px;font-size:12px;color:var(--muted)">${d.total} linhas</p>` : '<p style="color:var(--muted)">Nenhum erro registrado ✅</p>';
+      }
+      else if (type === 'ports') {
+        title.textContent = '🔌 Portas em Uso';
+        const d = await fPost(B+'/api/admin/system/ops', {action:'ports'});
+        if (d?.ports?.length) {
+          body.innerHTML = `<table style="width:100%;font-size:14px;border-collapse:collapse"><tr style="border-bottom:2px solid var(--border)"><th style="text-align:left;padding:8px;color:var(--muted)">Endereço</th><th style="text-align:left;padding:8px;color:var(--muted)">PID</th></tr>${d.ports.map(p=>`<tr style="border-bottom:1px solid #f0ebe3"><td style="padding:8px;font-family:monospace">${p.address}</td><td style="padding:8px;font-family:monospace">${p.pid}</td></tr>`).join('')}</table>`;
+        } else body.innerHTML = '<p style="color:var(--muted)">Nenhuma porta relevante encontrada</p>';
+      }
+      else if (type === 'disk') {
+        title.textContent = '💿 Uso de Disco';
+        const d = await fPost(B+'/api/admin/system/ops', {action:'disk'});
+        if (d?.sizes) {
+          let html = '';
+          for (const [k,v] of Object.entries(d.sizes)) {
+            html += `<div class="ir"><span class="l">${k}</span><span class="v">${v==='exists'?'(presente)':v+' MB'}</span></div>`;
+          }
+          if (d.disk?.totalGB) html += `<div style="margin-top:12px;padding-top:12px;border-top:2px solid var(--border)"><div class="ir"><span class="l">Disco C:\\</span><span class="v">${d.disk.freeGB} GB livres de ${d.disk.totalGB} GB</span></div><div class="pb"><div class="pf ${((1-d.disk.freeGB/d.disk.totalGB)*100)>85?'r':((1-d.disk.freeGB/d.disk.totalGB)*100)>70?'a':'g'}" style="width:${((1-d.disk.freeGB/d.disk.totalGB)*100).toFixed(0)}%"></div></div></div>`;
+          body.innerHTML = html;
+        } else body.innerHTML = '<p style="color:var(--muted)">Indisponível</p>';
+      }
+      else if (type === 'sysinfo') {
+        title.textContent = '🖥️ Info Completa do Sistema';
+        const d = await fPost(B+'/api/admin/system/ops', {action:'system-info'});
+        if (d) {
+          const fmtUp = s => { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?h+'h '+m+'m':m+'m'; };
+          body.innerHTML = `
+            <div class="ir"><span class="l">Hostname</span><span class="v">${d.hostname}</span></div>
+            <div class="ir"><span class="l">OS</span><span class="v">${d.osType} ${d.osRelease}</span></div>
+            <div class="ir"><span class="l">Arch</span><span class="v">${d.arch}</span></div>
+            <div class="ir"><span class="l">CPU</span><span class="v" style="font-size:11px">${d.cpu}</span></div>
+            <div class="ir"><span class="l">Cores</span><span class="v">${d.cpuCores}</span></div>
+            <div class="ir"><span class="l">RAM Total</span><span class="v">${d.totalMemGB} GB</span></div>
+            <div class="ir"><span class="l">RAM Livre</span><span class="v">${d.freeMemGB} GB</span></div>
+            <div class="ir"><span class="l">Node.js</span><span class="v">${d.nodeVersion}</span></div>
+            <div class="ir"><span class="l">Ambiente</span><span class="v">${d.env}</span></div>
+            <div class="ir"><span class="l">Uptime OS</span><span class="v">${fmtUp(d.uptime)}</span></div>
+            <div class="ir"><span class="l">Uptime Processo</span><span class="v">${fmtUp(d.processUptime)}</span></div>
+            <div class="ir"><span class="l">IPs</span><span class="v">${d.ips?.join(', ')||'—'}</span></div>
+            <div class="ir"><span class="l">Diretório</span><span class="v" style="font-size:11px">${d.cwd}</span></div>
+          `;
+        } else body.innerHTML = '<p style="color:var(--muted)">Indisponível</p>';
+      }
+      else if (type === 'status') {
+        title.textContent = '📊 Status Detalhado';
+        const h = await fGet(B+'/api/health');
+        if (h) {
+          body.innerHTML = `<pre style="background:#f8f4ee;padding:16px;border-radius:8px;font-size:13px;overflow-x:auto">${JSON.stringify(h,null,2)}</pre>`;
+        } else body.innerHTML = '<p style="color:var(--red);font-weight:600">Servidor offline!</p>';
+      }
+      else if (type === 'nginx-config') {
+        title.textContent = '📝 Configuração Nginx';
+        body.innerHTML = `
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Salve como <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px">/etc/nginx/sites-available/uniher</code> e crie o symlink com <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px">ln -s /etc/nginx/sites-available/uniher /etc/nginx/sites-enabled/</code></p>
+          <div class="log-box" style="color:#a8d8ea;user-select:all">server {
+    listen 80;
+    server_name seudominio.com.br www.seudominio.com.br;
+
+    # Redireciona para HTTPS (após configurar SSL)
+    # return 301 https://$server_name$request_uri;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_read_timeout 86400;
+    }
+
+    # Cache de arquivos estáticos
+    location /_next/static {
+        proxy_pass http://127.0.0.1:3000;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location /public {
+        proxy_pass http://127.0.0.1:3000;
+        add_header Cache-Control "public, max-age=86400";
+    }
+
+    # Bloquear acesso ao painel de controle em produção
+    location /uniher-control.html {
+        deny all;
+        return 404;
+    }
+
+    # Limitar tamanho de upload
+    client_max_body_size 10M;
+}</div>
+          <div style="margin-top:12px;padding:10px 14px;background:#FFF7ED;border:1px solid #FDE68A;border-radius:8px;font-size:12px;color:#92400E">
+            <strong>Lembre-se:</strong> Troque <code>seudominio.com.br</code> pelo seu domínio real. Após configurar o SSL com Certbot, descomente a linha de redirect HTTPS.
+          </div>
+        `;
+      }
+      else if (type === 'env-file') {
+        title.textContent = '🔐 Variáveis de Ambiente (.env.production)';
+        const secret1 = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+        const secret2 = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+        body.innerHTML = `
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Crie o arquivo <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px">.env.production</code> na raiz do projeto na VPS. Os secrets abaixo foram gerados aleatoriamente — use estes ou gere novos.</p>
+          <div class="log-box" style="color:#a8d8ea;user-select:all"># UniHER — Variáveis de Produção
+NODE_ENV=production
+
+# Banco de dados
+DATABASE_PATH=./data/uniher.db
+
+# JWT Secrets (NUNCA compartilhe estes valores)
+JWT_SECRET=${secret1}
+JWT_REFRESH_SECRET=${secret2}
+
+# Servidor
+PORT=3000
+HOSTNAME=0.0.0.0
+
+# Domínio (usado para CORS e cookies)
+NEXT_PUBLIC_APP_URL=https://seudominio.com.br</div>
+          <div style="margin-top:12px;padding:10px 14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;font-size:12px;color:#DC2626">
+            <strong>⚠️ Segurança:</strong> NUNCA versione este arquivo no Git. Os JWT_SECRET são únicos — se trocar, todos os usuários serão deslogados.
+          </div>
+          <div style="margin-top:8px;padding:10px 14px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;font-size:12px;color:#059669">
+            <strong>Dica:</strong> Cada vez que abrir este modal, novos secrets são gerados. Copie e salve em local seguro.
+          </div>
+        `;
+      }
+      else if (type === 'pm2-commands') {
+        title.textContent = '⚙️ Comandos PM2';
+        body.innerHTML = `
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Comandos mais usados para gerenciar o UniHER em produção com PM2.</p>
+          <div style="font-size:14px;line-height:2.2">
+            <div class="ir"><span class="l">Iniciar</span><span class="v" style="font-size:12px">pm2 start npm --name "uniher" -- start</span></div>
+            <div class="ir"><span class="l">Parar</span><span class="v" style="font-size:12px">pm2 stop uniher</span></div>
+            <div class="ir"><span class="l">Reiniciar</span><span class="v" style="font-size:12px">pm2 restart uniher</span></div>
+            <div class="ir"><span class="l">Ver logs</span><span class="v" style="font-size:12px">pm2 logs uniher</span></div>
+            <div class="ir"><span class="l">Monitor</span><span class="v" style="font-size:12px">pm2 monit</span></div>
+            <div class="ir"><span class="l">Status</span><span class="v" style="font-size:12px">pm2 status</span></div>
+            <div class="ir"><span class="l">Salvar config</span><span class="v" style="font-size:12px">pm2 save</span></div>
+            <div class="ir"><span class="l">Auto-start no boot</span><span class="v" style="font-size:12px">pm2 startup</span></div>
+            <div class="ir"><span class="l">Reload sem downtime</span><span class="v" style="font-size:12px">pm2 reload uniher</span></div>
+            <div class="ir"><span class="l">Deletar processo</span><span class="v" style="font-size:12px">pm2 delete uniher</span></div>
+          </div>
+          <div style="margin-top:16px;padding:10px 14px;background:#FFF7ED;border:1px solid #FDE68A;border-radius:8px;font-size:12px;color:#92400E">
+            <strong>Dica:</strong> Use <code>pm2 reload</code> em vez de <code>restart</code> para atualizar sem downtime (zero-downtime deploy).
+          </div>
+        `;
+      }
+      else if (type === 'monitor') {
+        title.textContent = '📡 Monitor ao Vivo';
+        body.innerHTML = '<div id="monitorLog" class="log-box" style="min-height:200px">Iniciando monitoramento...\n</div>';
+        const log = document.getElementById('monitorLog');
+        async function check() {
+          const t = new Date().toLocaleTimeString('pt-BR');
+          try {
+            const r = await fetch(B+'/api/health');
+            const d = await r.json();
+            log.innerHTML += `<span style="color:#6EE7B7">[${t}] ✅ ${d.status} | Uptime: ${d.uptime} | Mem: ${d.memory?.rssMB}MB | DB: ${d.db?.sizeMB}MB</span>\n`;
+          } catch {
+            log.innerHTML += `<span class="err">[${t}] ❌ OFFLINE — Servidor não responde!</span>\n`;
+          }
+          log.scrollTop = log.scrollHeight;
+        }
+        check();
+        monitorInterval = setInterval(check, 5000);
+      }
+    }
+
+    function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+    // ─── Actions ───
+    function showAlert(id, msg, type='ok') { const e=document.getElementById(id); e.textContent=msg; e.className=`al show ${type}`; setTimeout(()=>e.className='al',6000); }
+
+    async function doRestart() {
+      if (!confirm('Reiniciar o servidor? O sistema ficará indisponível por alguns segundos.')) return;
+      showAlert('serverAlert','Reiniciando servidor...','info');
+      await fPost(B+'/api/admin/system/ops',{action:'restart'});
+      setTimeout(()=>{ showAlert('serverAlert','Aguardando servidor voltar...','info'); }, 1000);
+      setTimeout(refreshAll, 5000);
+    }
+
+    async function doBackup() {
+      const btn=document.getElementById('btnBackup'); btn.disabled=true; btn.innerHTML='<span class="sp"></span> Criando...';
+      const d=await fPost(B+'/api/admin/system/backup',{});
+      if(d?.success) showAlert('dbAlert',`Backup criado: ${d.backup} (${d.sizeKB} KB)`,'ok');
+      else showAlert('dbAlert','Erro: '+(d?.error||'desconhecido'),'err');
+      btn.disabled=false; btn.innerHTML='💾 Backup do Banco'; refreshAll();
+    }
+
+    async function doIntegrity() {
+      const btn=document.getElementById('btnIntegrity'); btn.disabled=true; btn.innerHTML='<span class="sp"></span> Verificando...';
+      const d=await fPost(B+'/api/admin/system/integrity',{});
+      const el=document.getElementById('integrityResult'); el.style.display='block';
+      if(d?.integrity) {
+        el.innerHTML=`<div style="background:#f8f4ee;border:1px solid var(--border);border-radius:8px;padding:14px"><div class="hi" style="border:none;padding:3px 0"><div class="left"><span class="hd ${d.integrity.status==='ok'?'ok':'err'}"></span><span style="font-weight:600">Integridade: ${d.integrity.result}</span></div></div><div class="hi" style="border:none;padding:3px 0"><div class="left"><span class="hd ${d.foreignKeys?.status==='ok'?'ok':'err'}"></span><span style="font-weight:600">FK: ${d.foreignKeys?.status==='ok'?'OK':d.foreignKeys?.violations+' violações'}</span></div></div><div style="font-size:12px;color:var(--muted);margin-top:6px">Tabelas: ${d.tables||'?'}</div></div>`;
+      } else el.innerHTML='<p style="color:var(--red)">Erro na verificação</p>';
+      btn.disabled=false; btn.innerHTML='🔍 Verificar Integridade';
+    }
+
+    async function doResetDb() {
+      if(!confirm('⚠️ ATENÇÃO: Isso vai APAGAR todos os dados e recriar o banco!\nUm backup será criado automaticamente.\n\nContinuar?')) return;
+      if(!confirm('Tem certeza? Essa ação não pode ser desfeita.')) return;
+      showAlert('dbAlert','Resetando banco...','info');
+      const d=await fPost(B+'/api/admin/system/ops',{action:'reset-db'});
+      if(d?.success) showAlert('dbAlert',d.message,'ok');
+      else showAlert('dbAlert','Erro: '+(d?.message||'desconhecido'),'err');
+      refreshAll();
+    }
+
+    async function doClearLogs(type) {
+      if(!confirm(`Limpar ${type==='all'?'TODOS os logs':'logs de erro'}?`)) return;
+      await fPost(B+'/api/admin/system/clear-logs',{type});
+      showAlert('masterAlert','Logs limpos','ok'); refreshAll();
+    }
+
+    async function doClearCache() {
+      if(!confirm('Limpar cache .next? O servidor pode precisar recompilar.')) return;
+      showAlert('masterAlert','Limpando cache...','info');
+      const d=await fPost(B+'/api/admin/system/ops',{action:'clear-cache'});
+      if(d?.success) showAlert('masterAlert',d.message,'ok');
+      else showAlert('masterAlert','Erro: '+(d?.message||'desconhecido'),'err');
+    }
+
+    // ─── Deploy Info ───
+    function renderDeploy(h, s) {
+      const m = s?.master;
+      const node = m?.system?.nodeVersion || h?.version || '?';
+      const os = m?.system?.platform || '?';
+      const host = m?.system?.hostname || '?';
+      const dbSize = m?.db?.sizeMB || '?';
+      const users = s?.users ?? h?.db?.users ?? '?';
+      const companies = s?.companies ?? h?.db?.companies ?? '?';
+      const ram = m?.memory?.rssMB || h?.memory?.rssMB || '?';
+
+      document.getElementById('deployInfo').innerHTML = `
+        <div class="g2" style="gap:12px">
+          <div>
+            <div class="ir"><span class="l">Node.js necessário</span><span class="v">${node}+</span></div>
+            <div class="ir"><span class="l">Porta do servidor</span><span class="v">3000</span></div>
+            <div class="ir"><span class="l">Comando build</span><span class="v" style="font-size:12px">npm run build</span></div>
+            <div class="ir"><span class="l">Comando start</span><span class="v" style="font-size:12px">npm start</span></div>
+            <div class="ir"><span class="l">Banco de dados</span><span class="v">SQLite (arquivo local)</span></div>
+          </div>
+          <div>
+            <div class="ir"><span class="l">RAM estimada</span><span class="v">${ram} MB</span></div>
+            <div class="ir"><span class="l">Tamanho do DB</span><span class="v">${dbSize} MB</span></div>
+            <div class="ir"><span class="l">Usuárias atuais</span><span class="v">${users}</span></div>
+            <div class="ir"><span class="l">Empresas</span><span class="v">${companies}</span></div>
+            <div class="ir"><span class="l">Sistema origem</span><span class="v" style="font-size:11px">${os}</span></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;font-size:12px;color:#059669">
+          <strong>Requisitos mínimos VPS:</strong> 1 vCPU, 1GB RAM, 20GB disco, Ubuntu 22.04+
+        </div>
+      `;
+    }
+
+    // ─── Refresh ───
+    async function refreshAll() {
+      hD = await fGet(B+'/api/health');
+      sD = await fGet(B+'/api/admin/system');
+      renderStatus(hD); renderStats(hD,sD); renderHealth(hD,sD);
+      renderMemory(hD,sD); renderSystem(sD); renderDb(sD); renderLogs(sD); renderMigrations(sD); renderDeploy(hD,sD);
+      document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('pt-BR');
+    }
+
+    // Auto-refresh after login (started by doLogin or auto-login)
+    setInterval(() => { if(document.getElementById('mainPanel').style.display !== 'none') refreshAll(); }, 10000);
+  </script>
+</body>
+</html>

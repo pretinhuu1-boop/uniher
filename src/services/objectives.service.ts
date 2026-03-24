@@ -1,6 +1,6 @@
 import { objectiveRepo, CreateObjectiveData } from '@/repositories/objective.repository';
 import { getReadDb, getWriteQueue } from '@/lib/db';
-import crypto from 'crypto';
+import { nanoid } from 'nanoid';
 
 function currentWeekKey(): string {
   const now = new Date();
@@ -59,7 +59,7 @@ export async function updateObjectivesProgress(
 
       const completed = currentValue >= obj.target_value;
       const wk = obj.type === 'weekly' ? weekKey : null;
-      const id = crypto.randomUUID();
+      const id = nanoid();
       db.prepare(`
         INSERT INTO user_objective_progress (id, user_id, objective_id, current_value, completed, completed_at, week_key)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -81,7 +81,7 @@ export function claimObjectiveReward(
   companyId: string,
   objectiveId: string,
   weekKey?: string
-): { ok: boolean; reward_type?: string; reward_points?: number; reward_custom?: string; reward_badge_name?: string } {
+): Promise<{ ok: boolean; reward_type?: string; reward_points?: number; reward_custom?: string; reward_badge_name?: string }> {
   return getWriteQueue().enqueue((db) => {
     const obj = objectiveRepo.getById(objectiveId);
     if (!obj || obj.company_id !== companyId) return { ok: false };
@@ -101,7 +101,7 @@ export function claimObjectiveReward(
       db.prepare(`
         INSERT INTO activity_log (id, user_id, action, points, created_at)
         VALUES (?, ?, 'objective_reward', ?, datetime('now'))
-      `).run(crypto.randomUUID(), userId, obj.reward_points);
+      `).run(nanoid(), userId, obj.reward_points);
     }
 
     if (obj.reward_type === 'badge' && obj.reward_badge_id) {

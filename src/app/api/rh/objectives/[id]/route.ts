@@ -31,8 +31,21 @@ export const PATCH = withRole('rh', 'admin')(async (req: NextRequest, context) =
   const parsed = UpdateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues }, { status: 422 });
 
-  getWriteQueue().enqueue(() => objectiveRepo.update(id, parsed.data));
-  await logAudit(context.auth.userId, u.company_id, 'objective_update', 'company_objectives', id);
+  const updateData = {
+    ...parsed.data,
+    starts_at: parsed.data.starts_at === null ? undefined : parsed.data.starts_at,
+    ends_at: parsed.data.ends_at === null ? undefined : parsed.data.ends_at,
+  };
+  getWriteQueue().enqueue(() => objectiveRepo.update(id, updateData));
+  await logAudit({
+    actorId: context.auth.userId,
+    actorEmail: context.auth.userId,
+    actorRole: context.auth.role,
+    action: 'objective_update',
+    entityType: 'company_objectives',
+    entityId: id,
+    entityLabel: obj.title,
+  });
   return NextResponse.json({ ok: true });
 });
 
@@ -46,6 +59,14 @@ export const DELETE = withRole('rh', 'admin')(async (_req: NextRequest, context)
   if (!obj || obj.company_id !== u.company_id) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });
 
   getWriteQueue().enqueue(() => objectiveRepo.delete(id));
-  await logAudit(context.auth.userId, u.company_id, 'objective_delete', 'company_objectives', id);
+  await logAudit({
+    actorId: context.auth.userId,
+    actorEmail: context.auth.userId,
+    actorRole: context.auth.role,
+    action: 'objective_delete',
+    entityType: 'company_objectives',
+    entityId: id,
+    entityLabel: obj.title,
+  });
   return NextResponse.json({ ok: true });
 });

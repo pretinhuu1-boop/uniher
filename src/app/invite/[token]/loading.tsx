@@ -6,7 +6,7 @@ const spin = `
     width: 40px;
     height: 40px;
     border: 3px solid #e8e0d8;
-    border-top-color: #C85C7E;
+    border-top-color: #C9A264;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }

@@ -7,10 +7,16 @@ const PUBLIC_ROUTES = [
   '/',
   '/auth',
   '/proposta',
+  '/esqueci-senha',
+  '/redefinir-senha',
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/refresh',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
   '/api/leads',
+  '/api/health',
+  '/api/push/vapid-key',
 ];
 
 // Prefixos publicos
@@ -28,7 +34,7 @@ function isPublicRoute(pathname: string): boolean {
   return false;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Rotas publicas passam direto
@@ -58,22 +64,28 @@ export async function middleware(request: NextRequest) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(accessToken, secret);
 
-    // Redirecionar para troca obrigatoria de senha se necessario
-    if (
-      (payload as any).mustChangePassword === true &&
-      pathname !== '/primeiro-acesso' &&
-      !pathname.startsWith('/api/auth/')
-    ) {
+    // Redirect non-admin users trying to access admin routes
+    if ((payload as any).role !== 'admin' && pathname.startsWith('/admin')) {
       if (pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'Troca de senha obrigatória', mustChangePassword: true }, { status: 403 });
+        return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
       }
-      return NextResponse.redirect(new URL('/primeiro-acesso', request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
+    // Redirecionar para troca obrigatoria de senha se necessario
+    if ((payload as any).mustChangePassword === true) {
+      const allowedPaths = ['/primeiro-acesso', '/api/auth/change-password', '/api/auth/me', '/api/auth/logout'];
+      if (!allowedPaths.some(p => pathname.startsWith(p))) {
+        if (pathname.startsWith('/api/')) {
+          return NextResponse.json({ error: 'Troca de senha obrigatória', mustChangePassword: true }, { status: 403 });
+        }
+        return NextResponse.redirect(new URL('/primeiro-acesso', request.url));
+      }
     }
 
     return NextResponse.next();
   } catch {
     // Token invalido ou expirado
-    // Tentar refresh automatico via redirect
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
@@ -85,13 +97,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico (favicon)
-     * - public folder files
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|ico)$).*)',
   ],
 };

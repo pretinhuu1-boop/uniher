@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
+import { useAuth } from '@/hooks/useAuth';
 import styles from './convites.module.css';
 
 type Tab = 'invites' | 'pending';
@@ -57,6 +58,9 @@ function getDefaultExpiry() {
 }
 
 export default function ConvitesPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const roleOptions = isAdmin ? ROLE_OPTIONS : ROLE_OPTIONS.filter(r => r.value !== 'rh');
   const [tab, setTab] = useState<Tab>('invites');
 
   const { data, mutate } = useSWR<{ invites: any[] }>('/api/invites', fetcher, {
@@ -82,6 +86,16 @@ export default function ConvitesPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
+
+  // Bulk invite state
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkEmails, setBulkEmails] = useState('');
+  const [bulkRole, setBulkRole] = useState('colaboradora');
+  const [bulkDept, setBulkDept] = useState('');
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ sent: number; total: number } | null>(null);
+  const [bulkResults, setBulkResults] = useState<{ total: number; successCount: number; errorCount: number; results: { email: string; success: boolean; error?: string }[] } | null>(null);
+  const [bulkError, setBulkError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -166,6 +180,38 @@ export default function ConvitesPage() {
     } else {
       prompt('Copie o link do convite:', url);
     }
+  }
+
+  async function handleBulkSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setBulkError('');
+    setBulkResults(null);
+    const emails = bulkEmails
+      .split(/[,\n;]+/)
+      .map(s => s.trim().toLowerCase())
+      .filter(s => s.length > 0 && s.includes('@'));
+    if (emails.length === 0) { setBulkError('Insira pelo menos um email válido'); return; }
+    if (emails.length > 50) { setBulkError('Máximo de 50 emails por vez'); return; }
+    setBulkSubmitting(true);
+    setBulkProgress({ sent: 0, total: emails.length });
+    try {
+      const res = await fetch('/api/invites/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails, role: bulkRole, department_id: bulkDept || null }),
+      });
+      const d = await res.json();
+      if (d.results) {
+        setBulkResults(d);
+        setBulkProgress({ sent: d.total, total: d.total });
+        mutate();
+      } else {
+        setBulkError(d.error || 'Erro ao enviar convites');
+      }
+    } catch {
+      setBulkError('Erro de conexão');
+    }
+    setBulkSubmitting(false);
   }
 
   const inviteOrigin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -329,7 +375,7 @@ export default function ConvitesPage() {
               value={form.role}
               onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
             >
-              {ROLE_OPTIONS.map(r => (
+              {roleOptions.map(r => (
                 <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
@@ -375,6 +421,120 @@ export default function ConvitesPage() {
             {submitting ? 'Enviando...' : '+ Convidar'}
           </button>
         </form>
+      </div>
+
+      {/* ── Convite em Massa ── */}
+      <div className={styles.formCard}>
+        <button
+          onClick={() => setShowBulk(!showBulk)}
+          className={styles.formTitle}
+          style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0, width: '100%', justifyContent: 'space-between' }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>📨</span> Convidar em massa
+          </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-400)', fontWeight: 400 }}>
+            {showBulk ? '▲ Fechar' : '▼ Expandir'}
+          </span>
+        </button>
+
+        {showBulk && (
+          <div style={{ marginTop: 16 }}>
+            {bulkError && <div className={`${styles.alert} ${styles.alertError}`}>{bulkError}</div>}
+
+            {bulkResults && (
+              <div style={{ marginBottom: 16 }}>
+                <div className={`${styles.alert} ${bulkResults.errorCount === 0 ? styles.alertSuccess : styles.alertError}`}>
+                  {bulkResults.successCount} convite{bulkResults.successCount !== 1 ? 's' : ''} enviado{bulkResults.successCount !== 1 ? 's' : ''} com sucesso
+                  {bulkResults.errorCount > 0 && ` / ${bulkResults.errorCount} erro${bulkResults.errorCount !== 1 ? 's' : ''}`}
+                </div>
+                {bulkResults.results.filter(r => !r.success).length > 0 && (
+                  <div style={{ marginTop: 8, fontSize: '0.78rem', color: 'var(--text-500)' }}>
+                    {bulkResults.results.filter(r => !r.success).map((r, i) => (
+                      <div key={i} style={{ padding: '4px 0' }}>
+                        <strong>{r.email}</strong>: {r.error}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <form onSubmit={handleBulkSubmit}>
+              <div className={styles.fieldGroup} style={{ marginBottom: 12 }}>
+                <label className={styles.label}>
+                  Emails (um por linha ou separados por vírgula) *
+                </label>
+                <textarea
+                  value={bulkEmails}
+                  onChange={e => setBulkEmails(e.target.value)}
+                  placeholder={'maria@empresa.com\nana@empresa.com\njulia@empresa.com'}
+                  rows={5}
+                  className={styles.input}
+                  style={{ resize: 'vertical', minHeight: 100 }}
+                />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-400)', marginTop: 4 }}>
+                  {bulkEmails.split(/[,\n;]+/).filter(s => s.trim().includes('@')).length} email(s) detectado(s) · Máximo 50
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Papel *</label>
+                  <select
+                    className={styles.select}
+                    value={bulkRole}
+                    onChange={e => setBulkRole(e.target.value)}
+                  >
+                    {roleOptions.filter(r => r.value !== 'rh').map(r => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Setor (opcional)</label>
+                  <select
+                    className={styles.select}
+                    value={bulkDept}
+                    onChange={e => setBulkDept(e.target.value)}
+                  >
+                    <option value="">— Nenhum —</option>
+                    {departments.map((d: any) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {bulkProgress && bulkSubmitting && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ height: 6, borderRadius: 3, background: 'var(--cream-100, #f5f0eb)', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 3,
+                      background: 'linear-gradient(135deg, var(--rose-500), #ec4899)',
+                      width: `${Math.round((bulkProgress.sent / bulkProgress.total) * 100)}%`,
+                      transition: 'width 0.3s ease',
+                    }} />
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-400)', marginTop: 4, display: 'block' }}>
+                    Enviando... {bulkProgress.sent}/{bulkProgress.total}
+                  </span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={bulkSubmitting || !bulkEmails.trim()}
+                className={styles.submitBtn}
+              >
+                {bulkSubmitting
+                  ? 'Enviando...'
+                  : `Enviar ${bulkEmails.split(/[,\n;]+/).filter(s => s.trim().includes('@')).length} convite(s)`
+                }
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       {/* ── Lista de convites ── */}

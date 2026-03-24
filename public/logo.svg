@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#E8C97A"/>
+      <stop offset="45%" stop-color="#C9A264"/>
+      <stop offset="100%" stop-color="#9A7520"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Pétala central -->
+  <path
+    d="M100 18 C84 40, 78 68, 80 92 C82 108, 90 122, 100 130 C110 122, 118 108, 120 92 C122 68, 116 40, 100 18 Z"
+    stroke="url(#g1)" stroke-width="3.2" stroke-linejoin="round" fill="none"
+  />
+
+  <!-- Pétala esquerda -->
+  <path
+    d="M100 130 C90 118, 68 108, 50 94 C32 80, 26 54, 40 36 C52 20, 74 38, 84 64 C90 80, 94 105, 100 130 Z"
+    stroke="url(#g1)" stroke-width="3.2" stroke-linejoin="round" fill="none"
+  />
+
+  <!-- Pétala direita -->
+  <path
+    d="M100 130 C110 118, 132 108, 150 94 C168 80, 174 54, 160 36 C148 20, 126 38, 116 64 C110 80, 106 105, 100 130 Z"
+    stroke="url(#g1)" stroke-width="3.2" stroke-linejoin="round" fill="none"
+  />
+
+  <!-- Texto UniHER -->
+  <text
+    x="100" y="176"
+    text-anchor="middle"
+    font-family="'Playfair Display', Georgia, serif"
+    font-size="38"
+    font-weight="500"
+    letter-spacing="3"
+    fill="url(#g1)"
+  >UniHER</text>
+</svg>

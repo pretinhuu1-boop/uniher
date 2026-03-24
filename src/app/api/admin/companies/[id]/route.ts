@@ -119,12 +119,27 @@ export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
   return NextResponse.json({ success: true });
 });
 
-export const DELETE = withRole('admin')(async (_req: NextRequest, context) => {
+export const DELETE = withRole('admin')(async (req: NextRequest, context) => {
   await initDb();
   const { id } = await context.params;
+  const db2 = getReadDb();
+  const company = db2.prepare('SELECT name, trade_name FROM companies WHERE id = ? AND deleted_at IS NULL').get(id) as { name: string; trade_name: string | null } | undefined;
+  if (!company) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 404 });
+
   const wq = getWriteQueue();
   await wq.enqueue((db) => {
-    db.prepare('DELETE FROM companies WHERE id = ?').run(id);
+    db.prepare("UPDATE companies SET deleted_at = datetime('now') WHERE id = ?").run(id);
+    db.prepare("UPDATE users SET deleted_at = datetime('now') WHERE company_id = ?").run(id);
+  });
+  await logAudit({
+    actorId: context.auth.userId,
+    actorEmail: context.auth.userId,
+    actorRole: context.auth.role,
+    action: 'company_delete',
+    entityType: 'company',
+    entityId: id,
+    entityLabel: company.trade_name ?? company.name,
+    ip: req.headers.get('x-forwarded-for') ?? undefined,
   });
   return NextResponse.json({ success: true });
 });

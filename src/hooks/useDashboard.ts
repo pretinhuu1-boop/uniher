@@ -1,16 +1,5 @@
 'use client';
 import useSWR from 'swr';
-import {
-  DASHBOARD_KPIS,
-  DEPARTMENTS,
-  ROI_DATA,
-  CAMPAIGNS_DASHBOARD,
-  ENGAGEMENT_OVER_TIME,
-  AGE_DISTRIBUTION,
-  HEALTH_RISK_EVOLUTION,
-  CONVITES,
-  REPORTS,
-} from '@/data/mock-dashboard';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -21,15 +10,15 @@ export function useDashboard() {
   });
 
   return {
-    kpis: data?.kpis ?? DASHBOARD_KPIS,
-    departments: data?.departments ?? DEPARTMENTS,
-    roi: data?.roi ?? ROI_DATA,
-    campaigns: data?.campaigns ?? CAMPAIGNS_DASHBOARD,
-    engagement: data?.engagement ?? ENGAGEMENT_OVER_TIME,
-    ageDistribution: data?.ageDistribution ?? AGE_DISTRIBUTION,
-    healthRisk: data?.healthRisk ?? HEALTH_RISK_EVOLUTION,
-    invites: data?.invites ?? CONVITES,
-    reports: data?.reports ?? REPORTS,
+    kpis: data?.kpis ?? [],
+    departments: data?.departments ?? [],
+    roi: data?.roi ?? { roiMultiplier: 0, savings: 'R$ 0', absenteeismReduction: '—' },
+    campaigns: data?.campaigns ?? [],
+    engagement: data?.engagement ?? [],
+    ageDistribution: data?.ageDistribution ?? [],
+    healthRisk: data?.healthRisk ?? [],
+    invites: data?.invites ?? { total: 0, pending: 0, accepted: 0, expired: 0 },
+    reports: data?.reports ?? [],
     isLoading,
     error,
   };

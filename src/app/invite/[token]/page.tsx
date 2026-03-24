@@ -26,6 +26,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   const [form, setForm] = useState({ name: '', password: '', confirm: '' });
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     params.then(({ token: t }) => {
@@ -155,14 +156,21 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
             </div>
             <div>
               <label className="block text-xs font-bold text-uni-text-600 mb-1.5 uppercase tracking-wider">Confirmar senha *</label>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={form.confirm}
-                onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
-                placeholder="Repita a senha"
-                className="w-full border border-border-1 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-400 transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  required
+                  value={form.confirm}
+                  onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
+                  placeholder="Repita a senha"
+                  className="w-full border border-border-1 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-400 transition-colors pr-12"
+                />
+                <button type="button" onClick={() => setShowConfirm(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-uni-text-400 hover:text-uni-text-700 text-lg"
+                  aria-label={showConfirm ? 'Ocultar senha' : 'Mostrar senha'}>
+                  {showConfirm ? '🙈' : '👁'}
+                </button>
+              </div>
             </div>
 
             <button
@@ -170,7 +178,12 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
               disabled={saving || !form.name || !form.password || !form.confirm}
               className="w-full py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-rose-500/25 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? 'Criando sua conta...' : '🌸 Criar minha conta'}
+              {saving ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Criando sua conta...
+                </span>
+              ) : '🌸 Criar minha conta'}
             </button>
           </form>
 

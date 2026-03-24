@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const PatchSchema = z.object({
   reminder_times: z.array(z.string().regex(/^\d{2}:\d{2}$/)).max(5).optional(),
-  mission_reminders: z.record(z.boolean()).optional(),
+  mission_reminders: z.record(z.string(), z.boolean()).optional(),
   browser_enabled: z.boolean().optional(),
 });
 

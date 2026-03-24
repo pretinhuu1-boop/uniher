@@ -1,0 +1,9 @@
+CREATE INDEX IF NOT EXISTS idx_invites_invited_by ON invites(invited_by);
+CREATE INDEX IF NOT EXISTS idx_invites_email ON invites(email);
+CREATE INDEX IF NOT EXISTS idx_activity_log_user ON activity_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_activity_log_created ON activity_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+CREATE INDEX IF NOT EXISTS idx_user_challenges_user ON user_challenges(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_campaigns_user ON user_campaigns(user_id);
+CREATE INDEX IF NOT EXISTS idx_health_scores_user ON health_scores(user_id);

@@ -1,52 +1,72 @@
 @import "tailwindcss";
 
-/* ── Tailwind v4: adicionar cores genuinamente customizadas ── */
+/* ── Tailwind v4: Nova Identidade Visual UniHER ── */
 @theme inline {
-  /* Cream – não existe no Tailwind padrão */
-  --color-cream-50:  #F7F3EE;
-  --color-cream-100: #EDE7DC;
-  --color-cream-200: #E8E0D4;
+  /* Cream / Off-white */
+  --color-cream-50:  #FAF7F2;
+  --color-cream-100: #F3EDE2;
+  --color-cream-200: #EDE3D4;
 
-  /* Gold – não existe no Tailwind padrão */
+  /* Gold – cor primária (logo + CTAs) */
   --color-gold-50:  #FAF5E8;
   --color-gold-100: #F5EDD5;
   --color-gold-200: #E8D5A3;
   --color-gold-300: #DCBD75;
   --color-gold-400: #CFA84A;
-  --color-gold-500: #D4B060;
-  --color-gold-600: #C49A30;
-  --color-gold-700: #B8922A;
-  --color-gold-800: #9A7520;
-  --color-gold-900: #7A5A14;
+  --color-gold-500: #C9A264;
+  --color-gold-600: #8B6914;
+  --color-gold-700: #7A5C12;
+  --color-gold-800: #5E4610;
+  --color-gold-900: #3D2D08;
 
-  /* Uni tokens */
+  /* Navy – cor secundária (contraste, cartões escuros) */
+  --color-navy-50:  #EEF2F8;
+  --color-navy-100: #D5DFF0;
+  --color-navy-200: #A8BDD8;
+  --color-navy-300: #6A8DB8;
+  --color-navy-400: #3D6090;
+  --color-navy-500: #1A3A6B;
+  --color-navy-600: #142E58;
+  --color-navy-700: #0F2245;
+  --color-navy-800: #091632;
+  --color-navy-900: #040D1F;
+
+  /* Nude rosado – tom feminino suave */
+  --color-nude-50:  #FAF3EE;
+  --color-nude-100: #F2E5DC;
+  --color-nude-200: #E8CFC3;
+  --color-nude-300: #D4B5A8;
+  --color-nude-400: #C09A8C;
+  --color-nude-500: #A87D70;
+
+  /* Uni tokens – textos com paleta quente/marrom */
   --color-uni-green:    #3E7D5A;
-  --color-uni-text-900: #2A1A1F;
-  --color-uni-text-600: #6B4D57;
-  --color-uni-text-500: #876070;
-  --color-uni-text-400: #A48090;
-  --color-uni-text-300: #C4AEBA;
+  --color-uni-text-900: #1E2B3C;
+  --color-uni-text-600: #5C4A3A;
+  --color-uni-text-500: #7A6050;
+  --color-uni-text-400: #A08878;
+  --color-uni-text-300: #C4B0A5;
 
-  /* Border tokens */
-  --color-border-1: color-mix(in srgb, #C85C7E 16%, transparent);
-  --color-border-2: color-mix(in srgb, #C85C7E 28%, transparent);
-  --color-border-3: color-mix(in srgb, #C85C7E 42%, transparent);
+  /* Border tokens – baseados em gold */
+  --color-border-1: color-mix(in srgb, #C9A264 18%, transparent);
+  --color-border-2: color-mix(in srgb, #C9A264 30%, transparent);
+  --color-border-3: color-mix(in srgb, #C9A264 45%, transparent);
 
-  /* Rose palette customizada (sobrescreve os defaults) */
-  --color-rose-50:  #F9EEF3;
-  --color-rose-100: #F2DDE6;
-  --color-rose-200: #EAB8CB;
-  --color-rose-300: #E8849E;
-  --color-rose-400: #E8849E;
-  --color-rose-500: #C85C7E;
-  --color-rose-600: #A84868;
-  --color-rose-700: #8C3255;
-  --color-rose-800: #6E2040;
-  --color-rose-900: #4E102A;
+  /* Rose palette → remapeado para nude rosado sofisticado */
+  --color-rose-50:  #FAF3EE;
+  --color-rose-100: #F2E5DC;
+  --color-rose-200: #E8CFC3;
+  --color-rose-300: #D4B5A8;
+  --color-rose-400: #C29480;
+  --color-rose-500: #C9A264;
+  --color-rose-600: #8B6914;
+  --color-rose-700: #7A5C12;
+  --color-rose-800: #5E4610;
+  --color-rose-900: #3D2D08;
 
-  /* Font families */
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body:    'DM Sans', system-ui, sans-serif;
+  /* Font families – Nova identidade */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Montserrat', system-ui, sans-serif;
 
   /* Custom animations */
   --animate-fadeIn:  fadeIn 0.3s ease-in-out;
@@ -66,47 +86,70 @@
 
 
 :root {
-  /* ── Cream palette ── */
-  --cream-50:  #F7F3EE;
-  --cream-100: #EDE7DC;
-  --cream-200: #E8E0D4;
+  /* ── Nova Identidade Visual UniHER ── */
 
-  /* ── Rose palette ── */
-  --rose-500:  #C85C7E;
-  --rose-400:  #E8849E;
-  --rose-300:  #EAB8CB;
-  --rose-700:  #8C3255;
-  --rose-50:   #F9EEF3;
-  --rose-100:  #F2DDE6;
+  /* Cream / Off-white */
+  --cream-50:  #FAF7F2;
+  --cream-100: #F3EDE2;
+  --cream-200: #EDE3D4;
 
-  /* ── Gold palette ── */
-  --gold-700:  #B8922A;
-  --gold-500:  #D4B060;
+  /* Gold – primário */
   --gold-50:   #FAF5E8;
+  --gold-100:  #F5EDD5;
   --gold-200:  #E8D5A3;
+  --gold-300:  #DCBD75;
+  --gold-400:  #CFA84A;
+  --gold-500:  #C9A264;
+  --gold-600:  #8B6914;
+  --gold-700:  #7A5C12;
+  --gold-800:  #5E4610;
+
+  /* Navy – secundário */
+  --navy-900:  #040D1F;
+  --navy-800:  #091632;
+  --navy-700:  #0F2245;
+  --navy-600:  #142E58;
+  --navy-500:  #1A3A6B;
+  --navy-400:  #3D6090;
+  --navy-100:  #D5DFF0;
+  --navy-50:   #EEF2F8;
+
+  /* Nude rosado */
+  --nude-500:  #A87D70;
+  --nude-300:  #D4B5A8;
+  --nude-100:  #F2E5DC;
+  --nude-50:   #FAF3EE;
+
+  /* Rose → remapeado para gold (compatibilidade) */
+  --rose-500:  #C9A264;
+  --rose-400:  #CFA84A;
+  --rose-300:  #DCBD75;
+  --rose-700:  #7A5C12;
+  --rose-50:   #FAF5E8;
+  --rose-100:  #F5EDD5;
 
   /* ── Accent ── */
   --green-600: #3E7D5A;
 
-  /* ── Text ── */
-  --text-900:  #2A1A1F;
-  --text-600:  #6B4D57;
-  --text-400:  #A48090;
-  --text-300:  #C4AEBA;
+  /* ── Text – paleta marrom/navy ── */
+  --text-900:  #1E2B3C;
+  --text-600:  #5C4A3A;
+  --text-400:  #A08878;
+  --text-300:  #C4B0A5;
 
-  /* ── Borders ── */
-  --border-1:  rgba(180, 130, 150, 0.16);
-  --border-2:  rgba(180, 130, 150, 0.28);
-  --border-3:  rgba(180, 130, 150, 0.42);
+  /* ── Borders – gold-based ── */
+  --border-1:  rgba(201, 162, 100, 0.20);
+  --border-2:  rgba(201, 162, 100, 0.32);
+  --border-3:  rgba(201, 162, 100, 0.48);
 
-  /* ── Shadows ── */
-  --shadow-xl: 0 12px 48px rgba(140, 50, 85, 0.12);
-  --shadow-md: 0 3px 18px rgba(140, 50, 85, 0.09);
-  --shadow-sm: 0 1px 6px rgba(140, 50, 85, 0.07);
+  /* ── Shadows – gold-based ── */
+  --shadow-xl: 0 12px 48px rgba(154, 117, 32, 0.14);
+  --shadow-md: 0 3px 18px rgba(154, 117, 32, 0.10);
+  --shadow-sm: 0 1px 6px rgba(154, 117, 32, 0.07);
 
   /* ── Typography ── */
-  --ff-display: 'Cormorant Garamond', Georgia, serif;
-  --ff-body:    'DM Sans', system-ui, sans-serif;
+  --ff-display: 'Playfair Display', Georgia, serif;
+  --ff-body:    'Montserrat', system-ui, sans-serif;
 
   /* ── Radius ── */
   --radius-xs:  6px;
@@ -116,16 +159,16 @@
   --radius-xl:  32px;
   --radius-2xl: 48px;
 
-  /* ── Aliases (short names) ── */
+  /* ── Aliases ── */
   --cream:       var(--cream-50);
   --cream-2:     var(--cream-100);
   --cream-3:     var(--cream-200);
-  --rose:        var(--rose-500);
-  --rose-2:      var(--rose-400);
-  --rose-light:  var(--rose-300);
-  --rose-dark:   var(--rose-700);
-  --rose-pale:   var(--rose-50);
-  --rose-pale-2: var(--rose-100);
+  --rose:        var(--gold-500);
+  --rose-2:      var(--gold-400);
+  --rose-light:  var(--gold-300);
+  --rose-dark:   var(--gold-700);
+  --rose-pale:   var(--gold-50);
+  --rose-pale-2: var(--gold-100);
   --gold:        var(--gold-700);
   --gold-light:  var(--gold-500);
   --gold-pale:   var(--gold-50);
@@ -195,8 +238,8 @@
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(234, 184, 203, 0.12), transparent 70%),
-      radial-gradient(ellipse 60% 50% at 80% 100%, rgba(212, 176, 96, 0.08), transparent 60%);
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201, 162, 100, 0.08), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 80% 100%, rgba(26, 58, 107, 0.06), transparent 60%);
     pointer-events: none;
     z-index: 0;
   }
@@ -338,7 +381,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--rose-500);
+  color: var(--gold-600);
   margin-bottom: 12px;
 }
 
@@ -383,6 +426,21 @@
 /* ═══════════════════════════════════════════════════════════════
    Reduced Motion
    ═══════════════════════════════════════════════════════════════ */
+
+/* Page entrance animation */
+.animate-pageIn {
+  animation: pageIn 0.2s ease-out;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gold-300, #E8DFD0); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-500, #C9A264); }
 
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 export default function WelcomeColaboradoraPage() {
@@ -33,11 +34,7 @@ export default function WelcomeColaboradoraPage() {
             className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center border border-border-2 animate-float cursor-pointer hover:scale-110 transition-transform duration-500"
             onClick={() => router.push('/')}
           >
-            <svg width="48" height="48" viewBox="0 0 36 36" fill="none">
-              <path d="M18 32C18 32 8 24 8 15C8 11 11 8 14.5 8C16.5 8 17.5 9.5 18 11C18.5 9.5 19.5 8 21.5 8C25 8 28 11 28 15C28 24 18 32 18 32Z" fill="#F9EEF3" stroke="#C85C7E" strokeWidth="1.4" strokeLinejoin="round"/>
-              <path d="M18 30C18 30 10.5 22 12 13.5C13 9 15.5 6.5 18 6C20.5 6.5 23 9 24 13.5C25.5 22 18 30 18 30Z" fill="#EAB8CB" stroke="#C85C7E" strokeWidth="0.9"/>
-              <circle cx="18" cy="6" r="1.5" fill="#B8922A"/>
-            </svg>
+            <Image src="/logo-uniher.png" alt="UniHER" width={48} height={40} priority className="object-contain" style={{ width: 48, height: 'auto' }} />
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold text-uni-text-900 leading-tight">
             Bem-vinda, <br />

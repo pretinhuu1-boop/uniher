@@ -11,7 +11,19 @@ const TYPE_ICONS: Record<string, { emoji: string; className: string }> = {
   challenge: { emoji: '🎯', className: styles.iconChallenge },
   system:    { emoji: 'ℹ️', className: styles.iconAlert },
   alert:     { emoji: '⚠️', className: styles.iconAlert },
+  security:  { emoji: '🔒', className: styles.iconAlert },
 };
+
+const NOTIF_FILTERS = [
+  { key: 'all', label: 'Todas', icon: '📋' },
+  { key: 'badge', label: 'Badges', icon: '🏅' },
+  { key: 'campaign', label: 'Campanhas', icon: '📢' },
+  { key: 'challenge', label: 'Desafios', icon: '🎯' },
+  { key: 'system', label: 'Sistema', icon: '⚙️' },
+  { key: 'security', label: 'Segurança', icon: '🔒' },
+] as const;
+
+type NotifFilterKey = typeof NOTIF_FILTERS[number]['key'];
 
 function formatTimestamp(ts: string): string {
   try {
@@ -26,6 +38,7 @@ export default function NotificacoesPage() {
   const { notifications: apiNotifications, mutate } = useNotifications();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<NotifFilterKey>('all');
 
   useEffect(() => {
     setNotifications(apiNotifications as any[]);
@@ -103,14 +116,49 @@ export default function NotificacoesPage() {
         </div>
       </div>
 
+      {/* Filter tabs */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {NOTIF_FILTERS.map((f) => {
+          const count = f.key === 'all' ? notifications.length : notifications.filter(n => n.type === f.key).length;
+          return (
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeFilter === f.key
+                  ? 'bg-rose-500 text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-rose-300 hover:text-rose-500'
+              }`}
+            >
+              <span>{f.icon}</span>
+              <span>{f.label}</span>
+              {count > 0 && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  activeFilter === f.key ? 'bg-white/20' : 'bg-gray-100'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       <div className={styles.list}>
         {notifications.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-4xl mb-3">🔔</div>
-            <p className={styles.emptyMessage}>Nenhuma notificação.</p>
+          <div className="text-center py-16 space-y-2">
+            <div className="text-4xl">🔔</div>
+            <p className="text-gray-700 font-medium">Nenhuma notificação</p>
+            <p className="text-sm text-gray-400">Suas notificações de badges, campanhas e desafios aparecerão aqui.</p>
           </div>
         )}
-        {notifications.map((notif) => {
+        {notifications.filter(n => activeFilter === 'all' || n.type === activeFilter).length === 0 && notifications.length > 0 && (
+          <div className="text-center py-12 space-y-2">
+            <div className="text-3xl">{NOTIF_FILTERS.find(f => f.key === activeFilter)?.icon}</div>
+            <p className="text-gray-500 text-sm">Nenhuma notificação de {NOTIF_FILTERS.find(f => f.key === activeFilter)?.label.toLowerCase()}</p>
+          </div>
+        )}
+        {notifications.filter(n => activeFilter === 'all' || n.type === activeFilter).map((notif) => {
           const typeInfo = TYPE_ICONS[notif.type] || TYPE_ICONS.alert;
           const isPending = pendingIds.has(notif.id);
           return (

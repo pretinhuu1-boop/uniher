@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import useSWR from 'swr';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,7 +13,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 
 import styles from './analytics.module.css';
 
@@ -27,125 +28,69 @@ ChartJS.register(
   Legend
 );
 
-/* ── Mock Data by Period ── */
+const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-const PERIODS = ['7 dias', '30 dias', '90 dias'] as const;
+const PERIODS = [
+  { label: '7 dias', value: 7 },
+  { label: '30 dias', value: 30 },
+  { label: '90 dias', value: 90 },
+] as const;
 
-type KpiItem = { icon: string; value: string; label: string; sub: string; trend: string | null };
+interface AnalyticsData {
+  period: number;
+  kpis: {
+    invitesSent: number;
+    notificationsCreated: number;
+    alertsSent: number;
+    acceptRate: number;
+  };
+  invitesByStatus: Record<string, number>;
+  notificationsByType: { type: string; count: number }[];
+  activityByAction: { action: string; count: number }[];
+  timeline: { day: string; count: number }[];
+}
 
-const KPIS_BY_PERIOD: Record<string, KpiItem[]> = {
-  '7 dias': [
-    { icon: '\u{1F4E7}', value: '312', label: 'Emails Enviados', sub: 'ultimos 7 dias', trend: null },
-    { icon: '\u{1F4EC}', value: '72%', label: 'Taxa de Abertura', sub: '\u2191 +8% vs periodo anterior', trend: 'up' },
-    { icon: '\u{1F5B1}\uFE0F', value: '38%', label: 'Taxa de Clique', sub: '\u2191 +5% vs periodo anterior', trend: 'up' },
-    { icon: '\u{1F6AB}', value: '1.8%', label: 'Taxa de Bounce', sub: '\u2193 -0.3% vs periodo anterior', trend: 'down' },
-  ],
-  '30 dias': [
-    { icon: '\u{1F4E7}', value: '1.247', label: 'Emails Enviados', sub: 'ultimos 30 dias', trend: null },
-    { icon: '\u{1F4EC}', value: '68%', label: 'Taxa de Abertura', sub: '\u2191 +5% vs periodo anterior', trend: 'up' },
-    { icon: '\u{1F5B1}\uFE0F', value: '34%', label: 'Taxa de Clique', sub: '\u2191 +3% vs periodo anterior', trend: 'up' },
-    { icon: '\u{1F6AB}', value: '2.1%', label: 'Taxa de Bounce', sub: '\u2193 -0.5% vs periodo anterior', trend: 'down' },
-  ],
-  '90 dias': [
-    { icon: '\u{1F4E7}', value: '3.842', label: 'Emails Enviados', sub: 'ultimos 90 dias', trend: null },
-    { icon: '\u{1F4EC}', value: '63%', label: 'Taxa de Abertura', sub: '\u2191 +2% vs periodo anterior', trend: 'up' },
-    { icon: '\u{1F5B1}\uFE0F', value: '29%', label: 'Taxa de Clique', sub: '\u2193 -1% vs periodo anterior', trend: 'down' },
-    { icon: '\u{1F6AB}', value: '2.6%', label: 'Taxa de Bounce', sub: '\u2191 +0.2% vs periodo anterior', trend: 'up' },
-  ],
-};
+export default function AnalyticsCommunicationsPage() {
+  const [activePeriod, setActivePeriod] = useState<number>(30);
 
-const OPEN_RATE_BY_PERIOD: Record<string, { labels: string[]; data: number[]; yMin: number; yMax: number }> = {
-  '7 dias': {
-    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'],
-    data: [68, 70, 72, 71, 74, 65, 62],
-    yMin: 55,
-    yMax: 80,
-  },
-  '30 dias': {
-    labels: Array.from({ length: 30 }, (_, i) => `${i + 1}`),
-    data: [
-      60, 61, 59, 62, 63, 61, 64, 63, 65, 64,
-      66, 65, 67, 66, 68, 67, 65, 66, 68, 69,
-      67, 68, 70, 69, 68, 69, 70, 71, 69, 70,
-    ],
-    yMin: 50,
-    yMax: 80,
-  },
-  '90 dias': {
-    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8', 'Sem 9', 'Sem 10', 'Sem 11', 'Sem 12', 'Sem 13'],
-    data: [55, 57, 58, 60, 59, 61, 62, 63, 61, 64, 65, 63, 66],
-    yMin: 45,
-    yMax: 75,
-  },
-};
+  const { data, isLoading } = useSWR<AnalyticsData>(
+    `/api/analytics/communications?period=${activePeriod}`,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
 
-const HOUR_LABELS = [
-  '6h', '7h', '8h', '9h', '10h', '11h', '12h',
-  '13h', '14h', '15h', '16h', '17h', '18h', '19h', '20h',
-];
+  const kpis = useMemo(() => {
+    if (!data) return [];
+    const k = data.kpis;
+    return [
+      { icon: '\u{1F4E8}', value: String(k.invitesSent), label: 'Convites Enviados', sub: `ultimos ${activePeriod} dias` },
+      { icon: '\u{1F514}', value: String(k.notificationsCreated), label: 'Notificacoes Criadas', sub: `ultimos ${activePeriod} dias` },
+      { icon: '\u{26A0}\uFE0F', value: String(k.alertsSent), label: 'Alertas Enviados', sub: `ultimos ${activePeriod} dias` },
+      { icon: '\u{2705}', value: `${k.acceptRate}%`, label: 'Taxa de Aceitacao', sub: 'convites aceitos / total' },
+    ];
+  }, [data, activePeriod]);
 
-const HOUR_DATA_BY_PERIOD: Record<string, number[]> = {
-  '7 dias': [15, 28, 75, 48, 40, 32, 70, 38, 30, 34, 32, 38, 68, 42, 20],
-  '30 dias': [12, 25, 72, 45, 38, 30, 68, 35, 28, 32, 30, 35, 65, 40, 18],
-  '90 dias': [10, 22, 68, 42, 35, 28, 64, 32, 26, 30, 28, 32, 60, 36, 15],
-};
+  const timeline = data?.timeline ?? [];
 
-const CAMPAIGNS_BY_PERIOD: Record<string, { name: string; enviados: number; aberturas: number; aberturasPct: string; cliques: number; cliquesPct: string; taxa: string }[]> = {
-  '7 dias': [
-    { name: 'Janeiro Branco', enviados: 312, aberturas: 225, aberturasPct: '72%', cliques: 118, cliquesPct: '38%', taxa: 'Alta' },
-  ],
-  '30 dias': [
-    { name: 'Outubro Rosa', enviados: 812, aberturas: 587, aberturasPct: '72%', cliques: 245, cliquesPct: '30%', taxa: 'Alta' },
-    { name: 'Novembro Azul', enviados: 798, aberturas: 542, aberturasPct: '68%', cliques: 198, cliquesPct: '25%', taxa: 'Media' },
-    { name: 'Dezembro Laranja', enviados: 825, aberturas: 536, aberturasPct: '65%', cliques: 176, cliquesPct: '21%', taxa: 'Media' },
-    { name: 'Janeiro Branco', enviados: 810, aberturas: 510, aberturasPct: '63%', cliques: 162, cliquesPct: '20%', taxa: 'Baixa' },
-  ],
-  '90 dias': [
-    { name: 'Outubro Rosa', enviados: 812, aberturas: 587, aberturasPct: '72%', cliques: 245, cliquesPct: '30%', taxa: 'Alta' },
-    { name: 'Novembro Azul', enviados: 798, aberturas: 542, aberturasPct: '68%', cliques: 198, cliquesPct: '25%', taxa: 'Media' },
-    { name: 'Dezembro Laranja', enviados: 825, aberturas: 536, aberturasPct: '65%', cliques: 176, cliquesPct: '21%', taxa: 'Media' },
-    { name: 'Janeiro Branco', enviados: 810, aberturas: 510, aberturasPct: '63%', cliques: 162, cliquesPct: '20%', taxa: 'Baixa' },
-    { name: 'Setembro Amarelo', enviados: 780, aberturas: 468, aberturasPct: '60%', cliques: 148, cliquesPct: '19%', taxa: 'Baixa' },
-    { name: 'Agosto Lilás', enviados: 750, aberturas: 435, aberturasPct: '58%', cliques: 135, cliquesPct: '18%', taxa: 'Baixa' },
-  ],
-};
-
-const TOP_CONTENT = [
-  { title: 'Guia: Exames Preventivos Essenciais', clicks: 156 },
-  { title: '5 Dicas para Melhorar o Sono', clicks: 134 },
-  { title: 'Meditação em 5 Minutos', clicks: 112 },
-  { title: 'Alimentação e Energia no Trabalho', clicks: 98 },
-  { title: 'Check-up: Quando Fazer?', clicks: 87 },
-];
-
-/* ── Component ── */
-
-export default function AnalyticsEmailsPage() {
-  const [activePeriod, setActivePeriod] = useState<string>('30 dias');
-
-  const kpis = KPIS_BY_PERIOD[activePeriod];
-  const openRateConfig = OPEN_RATE_BY_PERIOD[activePeriod];
-  const hourData = HOUR_DATA_BY_PERIOD[activePeriod];
-  const campaigns = CAMPAIGNS_BY_PERIOD[activePeriod];
-
-  /* ── Chart configs ── */
   const lineData = useMemo(() => ({
-    labels: openRateConfig.labels,
+    labels: timeline.map(t => t.day),
     datasets: [
       {
-        label: 'Taxa de Abertura (%)',
-        data: openRateConfig.data,
-        borderColor: '#C85C7E',
+        label: 'Notificacoes',
+        data: timeline.map(t => t.count),
+        borderColor: '#C9A264',
         backgroundColor: 'rgba(200, 92, 126, 0.08)',
         borderWidth: 2.5,
         pointRadius: 0,
         pointHoverRadius: 5,
-        pointHoverBackgroundColor: '#C85C7E',
+        pointHoverBackgroundColor: '#C9A264',
         tension: 0.35,
         fill: true,
       },
     ],
-  }), [openRateConfig]);
+  }), [timeline]);
+
+  const maxY = Math.max(...timeline.map(t => t.count), 5);
 
   const lineOptions = useMemo(() => ({
     responsive: true,
@@ -158,197 +103,149 @@ export default function AnalyticsEmailsPage() {
         bodyFont: { family: 'DM Sans' },
         cornerRadius: 8,
         padding: 10,
-        callbacks: {
-          label: (ctx: { parsed: { y: number | null } }) => `${ctx.parsed.y ?? 0}%`,
-        },
       },
     },
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: '#A48090', font: { size: 11 } },
-      },
-      y: {
-        min: openRateConfig.yMin,
-        max: openRateConfig.yMax,
-        grid: { color: 'rgba(180,130,150,0.1)' },
-        ticks: {
-          color: '#A48090',
-          font: { size: 11 },
-          callback: (v: string | number) => `${v}%`,
-        },
-      },
-    },
-  }), [openRateConfig]);
-
-  const barData = useMemo(() => ({
-    labels: HOUR_LABELS,
-    datasets: [
-      {
-        label: 'Taxa de Abertura (%)',
-        data: hourData,
-        backgroundColor: hourData.map((v) =>
-          v >= 60 ? '#C85C7E' : v >= 40 ? '#D4B060' : 'rgba(200,92,126,0.25)'
-        ),
-        borderRadius: 6,
-        borderSkipped: false as const,
-      },
-    ],
-  }), [hourData]);
-
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#2A1A1F',
-        titleFont: { family: 'DM Sans' },
-        bodyFont: { family: 'DM Sans' },
-        cornerRadius: 8,
-        padding: 10,
-        callbacks: {
-          label: (ctx: { parsed: { y: number | null } }) => `${ctx.parsed.y ?? 0}%`,
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: '#A48090', font: { size: 11 } },
+        ticks: { color: '#A48090', font: { size: 11 }, maxTicksLimit: 15 },
       },
       y: {
         min: 0,
-        max: 80,
+        max: maxY + Math.ceil(maxY * 0.2),
         grid: { color: 'rgba(180,130,150,0.1)' },
-        ticks: {
-          color: '#A48090',
-          font: { size: 11 },
-          callback: (v: string | number) => `${v}%`,
-        },
+        ticks: { color: '#A48090', font: { size: 11 } },
       },
     },
-  };
+  }), [maxY]);
 
-  const badgeClass = (taxa: string) => {
-    if (taxa === 'Alta') return styles.badgeAlta;
-    if (taxa === 'Media') return styles.badgeMedia;
-    return styles.badgeBaixa;
-  };
-
-  const badgeLabel = (taxa: string) => {
-    if (taxa === 'Alta') return 'Alta';
-    if (taxa === 'Media') return 'Média';
-    return 'Baixa';
-  };
+  const notifByType = data?.notificationsByType ?? [];
+  const activityByAction = data?.activityByAction ?? [];
 
   return (
     <div className={styles.page}>
-      {/* ── Header ── */}
+      {/* Header */}
       <div className={styles.headerTop}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>Analytics de Emails</h1>
-          <p className={styles.pageSubtitle}>Métricas de engajamento por email</p>
+          <h1 className={styles.pageTitle}>Analytics de Comunicacao</h1>
+          <p className={styles.pageSubtitle}>Metricas de convites, notificacoes e atividades</p>
         </div>
         <div className={styles.periodBtns}>
           {PERIODS.map((p) => (
             <button
-              key={p}
-              className={`${styles.periodBtn} ${activePeriod === p ? styles.periodBtnActive : ''}`}
-              onClick={() => setActivePeriod(p)}
+              key={p.value}
+              className={`${styles.periodBtn} ${activePeriod === p.value ? styles.periodBtnActive : ''}`}
+              onClick={() => setActivePeriod(p.value)}
             >
-              {p}
+              {p.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── KPI Cards ── */}
-      <div className={styles.kpiRow}>
-        {kpis.map((kpi) => (
-          <div key={kpi.label} className={styles.kpiCard}>
-            <span className={styles.kpiIcon}>{kpi.icon}</span>
-            <span className={styles.kpiValue}>{kpi.value}</span>
-            <span className={styles.kpiLabel}>{kpi.label}</span>
-            <span
-              className={`${styles.kpiSub} ${
-                kpi.trend === 'up' ? styles.kpiUp : kpi.trend === 'down' ? styles.kpiDown : ''
-              }`}
-            >
-              {kpi.sub}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Charts ── */}
-      <div className={styles.chartsRow}>
-        <div className={styles.chartCard}>
-          <h2 className={styles.chartTitle}>Abertura ao Longo do Tempo</h2>
-          <div className={styles.chartWrapper}>
-            <Line data={lineData} options={lineOptions} />
-          </div>
-        </div>
-        <div className={styles.chartCard}>
-          <h2 className={styles.chartTitle}>Melhores Horários de Abertura</h2>
-          <div className={styles.chartWrapper}>
-            <Bar data={barData} options={barOptions} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Campaign Table ── */}
-      <div className={styles.tableCard}>
-        <h2 className={styles.tableTitle}>Desempenho por Campanha</h2>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Campanha</th>
-              <th>Enviados</th>
-              <th>Aberturas</th>
-              <th>Cliques</th>
-              <th>Taxa</th>
-            </tr>
-          </thead>
-          <tbody>
-            {campaigns.map((c) => (
-              <tr key={c.name}>
-                <td className={styles.campaignName}>{c.name}</td>
-                <td>{c.enviados.toLocaleString('pt-BR')}</td>
-                <td>
-                  {c.aberturas.toLocaleString('pt-BR')}
-                  <span className={styles.subValue}>({c.aberturasPct})</span>
-                </td>
-                <td>
-                  {c.cliques.toLocaleString('pt-BR')}
-                  <span className={styles.subValue}>({c.cliquesPct})</span>
-                </td>
-                <td>
-                  <span className={`${styles.badge} ${badgeClass(c.taxa)}`}>
-                    {badgeLabel(c.taxa)}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ── Top Content ── */}
-      <div className={styles.topContentCard}>
-        <h2 className={styles.topContentTitle}>Conteúdos Mais Clicados</h2>
-        <div className={styles.topContentList}>
-          {TOP_CONTENT.map((item, idx) => (
-            <div key={item.title} className={styles.topContentItem}>
-              <div className={styles.topContentLeft}>
-                <span className={styles.topContentRank}>{idx + 1}</span>
-                <span className={styles.topContentName}>{item.title}</span>
-              </div>
-              <span className={styles.topContentClicks}>{item.clicks} cliques</span>
+      {isLoading && (
+        <div className={styles.kpiRow}>
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className={styles.kpiCard} style={{ opacity: 0.5 }}>
+              <span className={styles.kpiValue}>--</span>
+              <span className={styles.kpiLabel}>Carregando...</span>
             </div>
           ))}
         </div>
-      </div>
+      )}
+
+      {!isLoading && data && (
+        <>
+          {/* KPI Cards */}
+          <div className={styles.kpiRow}>
+            {kpis.map((kpi) => (
+              <div key={kpi.label} className={styles.kpiCard}>
+                <span className={styles.kpiIcon}>{kpi.icon}</span>
+                <span className={styles.kpiValue}>{kpi.value}</span>
+                <span className={styles.kpiLabel}>{kpi.label}</span>
+                <span className={styles.kpiSub}>{kpi.sub}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Timeline Chart */}
+          <div className={styles.chartsRow}>
+            <div className={styles.chartCard} style={{ gridColumn: '1 / -1' }}>
+              <h2 className={styles.chartTitle}>Notificacoes ao Longo do Tempo</h2>
+              {timeline.length > 0 ? (
+                <div className={styles.chartWrapper}>
+                  <Line data={lineData} options={lineOptions} />
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-400)' }}>
+                  <p style={{ fontSize: '2rem', marginBottom: 8 }}>📊</p>
+                  <p style={{ fontWeight: 600 }}>Sem dados no periodo</p>
+                  <p style={{ fontSize: '0.85rem' }}>Nenhuma notificacao encontrada nos ultimos {activePeriod} dias.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Tables: Notifications by Type + Activity by Action */}
+          <div className={styles.chartsRow}>
+            <div className={styles.tableCard}>
+              <h2 className={styles.tableTitle}>Notificacoes por Tipo</h2>
+              {notifByType.length > 0 ? (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Tipo</th>
+                      <th>Quantidade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {notifByType.map((n) => (
+                      <tr key={n.type}>
+                        <td className={styles.campaignName}>{n.type}</td>
+                        <td>{n.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-400)', fontSize: '0.85rem' }}>Sem dados no periodo</p>
+              )}
+            </div>
+
+            <div className={styles.tableCard}>
+              <h2 className={styles.tableTitle}>Atividades por Acao</h2>
+              {activityByAction.length > 0 ? (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Acao</th>
+                      <th>Quantidade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activityByAction.map((a) => (
+                      <tr key={a.action}>
+                        <td className={styles.campaignName}>{a.action}</td>
+                        <td>{a.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ textAlign: 'center', padding: '24px', color: 'var(--text-400)', fontSize: '0.85rem' }}>Sem dados no periodo</p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {!isLoading && !data && (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-400)' }}>
+          <p style={{ fontSize: '3rem', marginBottom: 12 }}>📡</p>
+          <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-600)' }}>Erro ao carregar dados</p>
+          <p style={{ fontSize: '0.85rem' }}>Verifique sua conexao e tente novamente.</p>
+        </div>
+      )}
     </div>
   );
 }

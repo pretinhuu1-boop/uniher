@@ -5,7 +5,13 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(255),
   email: z.string().email('Email inválido').max(255),
-  password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres').max(128),
+  password: z.string()
+    .min(8, 'Senha deve ter pelo menos 8 caracteres')
+    .max(100)
+    .regex(/[A-Z]/, 'Senha precisa de pelo menos 1 letra maiúscula')
+    .regex(/[a-z]/, 'Senha precisa de pelo menos 1 letra minúscula')
+    .regex(/[0-9]/, 'Senha precisa de pelo menos 1 número')
+    .regex(/[!@#$%&*]/, 'Senha precisa de 1 caractere especial (!@#$%&*)'),
   role: z.enum(['admin', 'rh', 'lideranca', 'colaboradora']),
   companyId: z.string().optional(),
   departmentId: z.string().optional(),

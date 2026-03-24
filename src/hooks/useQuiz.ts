@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback } from 'react';
-import { QuizState, ArchetypeKey } from '@/types';
+import { QuizState } from '@/types';
 import { calculateArchetype } from '@/lib/quiz-engine';
 
 const INITIAL_STATE: QuizState = {

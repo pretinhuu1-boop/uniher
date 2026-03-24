@@ -74,13 +74,13 @@ export default function PlatformError({
             fontWeight: 600,
             border: 'none',
             borderRadius: '8px',
-            background: 'var(--rose-500, #C85C7E)',
+            background: 'var(--rose-500, #C9A264)',
             color: '#fff',
             cursor: 'pointer',
             transition: 'background 0.15s',
           }}
           onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--rose-700, #a03c5a)')}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--rose-500, #C85C7E)')}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--rose-500, #C9A264)')}
         >
           Tentar novamente
         </button>
@@ -93,7 +93,7 @@ export default function PlatformError({
             fontWeight: 600,
             border: '1.5px solid var(--rose-400, #E8849E)',
             borderRadius: '8px',
-            color: 'var(--rose-500, #C85C7E)',
+            color: 'var(--rose-500, #C9A264)',
             textDecoration: 'none',
             transition: 'background 0.15s',
             display: 'inline-flex',

@@ -262,7 +262,7 @@ function SolutionSection() {
 
   return (
     <section ref={ref} className={`${s.section} ${s.solutionSection}`}>
-      <ParticleCanvas color="#C85C7E" count={20} />
+      <ParticleCanvas color="#C9A264" count={20} />
       <div className={s.sectionInner}>
         <div className={`${s.tagLine} ${inView ? s.visible : ''}`}>A SOLUCAO</div>
         <h2 className={`${s.sectionTitle} ${inView ? s.visible : ''}`}>
@@ -298,7 +298,7 @@ function MetricsSection() {
   const metrics = [
     { display: roi, label: 'ROI Projetado', color: '#D4B060' },
     { display: savings, label: 'Economia Anual', color: '#4CAF50' },
-    { display: absence, label: 'Absenteismo', color: '#C85C7E' },
+    { display: absence, label: 'Absenteismo', color: '#C9A264' },
     { display: engagement, label: 'Engajamento', color: '#D4B060' },
   ];
 

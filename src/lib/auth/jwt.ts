@@ -12,6 +12,9 @@ function getSecret(envKey: string): Uint8Array {
   if (!secret) {
     throw new Error(`Missing environment variable: ${envKey}`);
   }
+  if (secret.length < 32) {
+    throw new Error(`${envKey} must be at least 32 characters. Current: ${secret.length}. Generate with: node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`);
+  }
   return new TextEncoder().encode(secret);
 }
 
@@ -41,7 +44,7 @@ export async function signRefreshToken(payload: {
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime('48h')
     .sign(getSecret('JWT_REFRESH_SECRET'));
 }
 

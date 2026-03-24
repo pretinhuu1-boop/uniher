@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { Toast } from '@/components/ui/Toast';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 const SETORES = [
@@ -127,12 +128,8 @@ export default function HROnboardingPage() {
       <Card className="w-full max-w-xl p-8 md:p-12 animate-scaleIn bg-white/90 backdrop-blur-md relative z-10 shadow-2xl rounded-lg">
         {/* Header */}
         <div className="flex flex-col items-center mb-10 text-center">
-          <svg width="48" height="48" viewBox="0 0 36 36" fill="none" className="mb-4 animate-float">
-            <path d="M18 32C18 32 8 24 8 15C8 11 11 8 14.5 8C16.5 8 17.5 9.5 18 11C18.5 9.5 19.5 8 21.5 8C25 8 28 11 28 15C28 24 18 32 18 32Z" fill="#F9EEF3" stroke="#C85C7E" strokeWidth="1.4" strokeLinejoin="round"/>
-            <path d="M18 30C18 30 10.5 22 12 13.5C13 9 15.5 6.5 18 6C20.5 6.5 23 9 24 13.5C25.5 22 18 30 18 30Z" fill="#EAB8CB" stroke="#C85C7E" strokeWidth="0.9"/>
-            <circle cx="18" cy="6" r="1.5" fill="#B8922A"/>
-          </svg>
-          <h1 className="text-3xl font-display font-bold text-uni-text-900 leading-tight">Uni<span className="text-rose-500">HER</span> Onboarding</h1>
+          <Image src="/logo-uniher.png" alt="UniHER" width={120} height={100} priority className="object-contain mb-2" style={{ width: 120, height: 'auto' }} />
+          <h1 className="text-3xl font-display font-bold leading-tight text-gold-600">UniHER <span className="text-uni-text-900">Onboarding</span></h1>
           <p className="text-uni-text-600 mt-2">Vamos configurar o ambiente para sua empresa.</p>
         </div>
 

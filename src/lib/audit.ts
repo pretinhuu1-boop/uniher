@@ -3,13 +3,14 @@ import { nanoid } from 'nanoid';
 
 export type AuditAction =
   // Master / Admin actions
-  | 'login' | 'logout' | 'first_access_password_change'
-  | 'user_create' | 'user_edit' | 'user_block' | 'user_unblock' | 'password_reset'
-  | 'company_create' | 'company_edit' | 'company_block' | 'company_unblock'
+  | 'login' | 'login_failed' | 'logout' | 'first_access_password_change'
+  | 'user_create' | 'user_edit' | 'user_block' | 'user_unblock' | 'user_delete' | 'password_reset'
+  | 'company_create' | 'company_edit' | 'company_block' | 'company_unblock' | 'company_delete'
   | 'system_settings_update'
   // User actions (all roles)
   | 'profile_update' | 'quiz_submit' | 'challenge_complete' | 'challenge_create'
-  | 'campaign_join' | 'badge_unlock' | 'invite_sent' | 'invite_approved';
+  | 'campaign_join' | 'badge_unlock' | 'invite_sent' | 'invite_approved'
+  | 'objective_create' | 'objective_update' | 'objective_delete';
 
 export interface AuditEntry {
   id: string;
@@ -66,45 +67,57 @@ export interface AuditFilters {
   offset?: number;
 }
 
-function buildDateFilter(filters: AuditFilters): string {
-  if (filters.period === 'day') return "AND created_at >= datetime('now', '-1 day')";
-  if (filters.period === 'week') return "AND created_at >= datetime('now', '-7 days')";
-  if (filters.period === 'month') return "AND created_at >= datetime('now', '-30 days')";
-  if (filters.period === 'custom' && filters.from && filters.to)
-    return `AND created_at >= '${filters.from}' AND created_at <= '${filters.to} 23:59:59'`;
-  return "AND created_at >= datetime('now', '-90 days')";
-}
+/** Build parameterized WHERE conditions (prevents SQL injection) */
+function buildConditions(filters: AuditFilters): { conditions: string[]; params: unknown[] } {
+  const conditions: string[] = ['1=1'];
+  const params: unknown[] = [];
 
-function buildWhere(filters: AuditFilters): string {
-  const date = buildDateFilter(filters);
-  const action = filters.action ? `AND action = '${filters.action.replace(/'/g, "''")}'` : '';
-  const search = filters.search
-    ? `AND (actor_email LIKE '%${filters.search.replace(/'/g, "''")}%'
-         OR entity_label LIKE '%${filters.search.replace(/'/g, "''")}%'
-         OR details LIKE '%${filters.search.replace(/'/g, "''")}%'
-         OR actor_role LIKE '%${filters.search.replace(/'/g, "''")}%'
-         OR action LIKE '%${filters.search.replace(/'/g, "''")}%')`
-    : '';
-  return `WHERE 1=1 ${date} ${action} ${search}`;
+  // Date filter
+  if (filters.period) {
+    switch (filters.period) {
+      case 'day': conditions.push("created_at >= datetime('now', '-1 day')"); break;
+      case 'week': conditions.push("created_at >= datetime('now', '-7 days')"); break;
+      case 'month': conditions.push("created_at >= datetime('now', '-30 days')"); break;
+      case 'custom':
+        if (filters.from) { conditions.push('created_at >= ?'); params.push(filters.from); }
+        if (filters.to) { conditions.push('created_at <= ? || \' 23:59:59\''); params.push(filters.to); }
+        break;
+    }
+  } else {
+    conditions.push("created_at >= datetime('now', '-90 days')");
+  }
+
+  // Action filter
+  if (filters.action) { conditions.push('action = ?'); params.push(filters.action); }
+
+  // Search filter
+  if (filters.search) {
+    conditions.push('(actor_email LIKE ? OR entity_label LIKE ? OR details LIKE ? OR actor_role LIKE ? OR action LIKE ?)');
+    const searchParam = `%${filters.search}%`;
+    params.push(searchParam, searchParam, searchParam, searchParam, searchParam);
+  }
+
+  return { conditions, params };
 }
 
 export function queryAuditLogs(filters: AuditFilters = {}): AuditEntry[] {
   const db = getReadDb();
-  const limit = filters.limit ?? 100;
-  const offset = filters.offset ?? 0;
-  return db.prepare(`
-    SELECT * FROM audit_logs
-    ${buildWhere(filters)}
-    ORDER BY created_at DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `).all() as AuditEntry[];
+  const { conditions, params } = buildConditions(filters);
+
+  const limit = Math.min(Math.max(1, filters.limit ?? 100), 500);
+  const offset = Math.max(0, filters.offset ?? 0);
+
+  const query = `SELECT * FROM audit_logs WHERE ${conditions.join(' AND ')} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  params.push(limit, offset);
+
+  return db.prepare(query).all(...params) as AuditEntry[];
 }
 
 export function countAuditLogs(filters: AuditFilters = {}): number {
   const db = getReadDb();
-  const row = db.prepare(`
-    SELECT COUNT(*) as count FROM audit_logs
-    ${buildWhere(filters)}
-  `).get() as { count: number };
+  const { conditions, params } = buildConditions(filters);
+
+  const query = `SELECT COUNT(*) as count FROM audit_logs WHERE ${conditions.join(' AND ')}`;
+  const row = db.prepare(query).get(...params) as { count: number };
   return row.count;
 }

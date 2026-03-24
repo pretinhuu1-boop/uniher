@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { getCompanyById, updateCompany } from '@/repositories/company.repository';
 import { getUserById } from '@/repositories/user.repository';
+import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
 
@@ -15,7 +16,31 @@ export const GET = withAuth(async (_req: NextRequest, context) => {
   if (!company) {
     return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 404 });
   }
-  return NextResponse.json({ company });
+
+  // Fetch additional stats
+  const db = getReadDb();
+  const statsRow = db.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM users WHERE company_id = ?) AS user_count,
+      (SELECT COUNT(*) FROM departments WHERE company_id = ?) AS department_count,
+      (SELECT COALESCE(SUM(points), 0) FROM users WHERE company_id = ?) AS total_points,
+      (SELECT COUNT(*) FROM campaigns WHERE company_id = ? AND status = 'active') AS missions_active
+  `).get(user.company_id, user.company_id, user.company_id, user.company_id) as {
+    user_count: number;
+    department_count: number;
+    total_points: number;
+    missions_active: number;
+  };
+
+  return NextResponse.json({
+    company: {
+      ...company,
+      user_count: statsRow.user_count,
+      department_count: statsRow.department_count,
+      total_points: statsRow.total_points,
+      missions_active: statsRow.missions_active,
+    },
+  });
 });
 
 const UpdateSchema = z.object({

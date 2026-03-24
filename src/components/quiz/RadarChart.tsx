@@ -24,10 +24,10 @@ export default function RadarChart({ before, after }: RadarChartProps) {
       {
         label: 'Hoje',
         data: before,
-        borderColor: '#C85C7E',
+        borderColor: '#C9A264',
         backgroundColor: 'rgba(200, 92, 126, 0.10)',
         borderWidth: 2,
-        pointBackgroundColor: '#C85C7E',
+        pointBackgroundColor: '#C9A264',
         pointRadius: 3,
         pointHoverRadius: 5,
       },

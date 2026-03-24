@@ -2,7 +2,8 @@
 
 import { useState, ReactNode } from 'react';
 import Sidebar from './Sidebar';
-import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { ScrollToTop } from '@/components/ui/ScrollToTop';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -11,6 +12,19 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children, title }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isLoading } = useAuth();
+
+  // Show loading screen while auth state is being resolved to prevent flash of unauthorized content
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cream-50">
+        <div className="flex flex-col items-center gap-4">
+          <img src="/logo-uniher.png" alt="UniHER" width={120} height={100} className="object-contain animate-pulse" style={{ width: 120, height: 'auto' }} />
+          <span className="w-6 h-6 border-2 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-cream-50 font-body">
@@ -34,10 +48,11 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
         </header>
 
         {/* Content Container */}
-        <div className="flex-1 p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full animate-fadeIn">
+        <div className="flex-1 p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full animate-pageIn">
           {children}
         </div>
       </main>
+      <ScrollToTop />
     </div>
   );
 }

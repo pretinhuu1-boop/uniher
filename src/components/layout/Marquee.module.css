@@ -25,7 +25,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--rose, #C85C7E);
+  background: var(--rose, #C9A264);
   flex-shrink: 0;
 }
 @keyframes marquee {

@@ -31,7 +31,7 @@ export function getUserById(id: string): UserRow | undefined {
 
 export function getUserByEmail(email: string): UserRow | undefined {
   const db = getReadDb();
-  return db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined;
+  return db.prepare('SELECT * FROM users WHERE email = ? AND deleted_at IS NULL').get(email) as UserRow | undefined;
 }
 
 export function getUsersByCompany(companyId: string, cursor?: string, limit = 20): UserRow[] {
@@ -74,6 +74,16 @@ export async function createUser(data: {
   });
 }
 
+// Whitelist of fields that can be dynamically updated
+const ALLOWED_USER_UPDATE_FIELDS: Record<string, string> = {
+  name: 'name',
+  avatarUrl: 'avatar_url',
+  level: 'level',
+  points: 'points',
+  streak: 'streak',
+  lastActive: 'last_active',
+};
+
 export async function updateUser(id: string, data: Partial<{
   name: string;
   avatarUrl: string;
@@ -88,12 +98,14 @@ export async function updateUser(id: string, data: Partial<{
     const fields: string[] = [];
     const values: unknown[] = [];
 
-    if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
-    if (data.avatarUrl !== undefined) { fields.push('avatar_url = ?'); values.push(data.avatarUrl); }
-    if (data.level !== undefined) { fields.push('level = ?'); values.push(data.level); }
-    if (data.points !== undefined) { fields.push('points = ?'); values.push(data.points); }
-    if (data.streak !== undefined) { fields.push('streak = ?'); values.push(data.streak); }
-    if (data.lastActive !== undefined) { fields.push('last_active = ?'); values.push(data.lastActive); }
+    // Only process fields present in the whitelist
+    for (const [key, column] of Object.entries(ALLOWED_USER_UPDATE_FIELDS)) {
+      const value = (data as Record<string, unknown>)[key];
+      if (value !== undefined) {
+        fields.push(`${column} = ?`);
+        values.push(value);
+      }
+    }
 
     fields.push("updated_at = datetime('now')");
     values.push(id);

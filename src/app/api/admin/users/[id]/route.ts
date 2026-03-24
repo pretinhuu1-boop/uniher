@@ -139,3 +139,28 @@ export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
     }
   }
 });
+
+export const DELETE = withRole('admin')(async (req: NextRequest, context) => {
+  const params = await context.params;
+  const { id: userId } = params;
+  const db = getReadDb();
+  const targetUser = db.prepare('SELECT name, email FROM users WHERE id = ? AND deleted_at IS NULL').get(userId) as { name: string; email: string } | undefined;
+  if (!targetUser) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+
+  const writeQueue = getWriteQueue();
+  await writeQueue.enqueue((d) => {
+    d.prepare("UPDATE users SET deleted_at = datetime('now') WHERE id = ?").run(userId);
+  });
+  await logAudit({
+    actorId: context.auth.userId,
+    actorEmail: context.auth.userId,
+    actorRole: context.auth.role,
+    action: 'user_delete',
+    entityType: 'user',
+    entityId: userId,
+    entityLabel: targetUser.name,
+    details: { email: targetUser.email },
+    ip: req.headers.get('x-forwarded-for') ?? undefined,
+  });
+  return NextResponse.json({ success: true, message: 'Usuário removido' });
+});

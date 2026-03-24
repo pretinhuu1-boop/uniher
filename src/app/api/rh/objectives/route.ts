@@ -51,6 +51,14 @@ export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) =>
   }
 
   const obj = await createObjective({ ...d, company_id: u.company_id, created_by: context.auth.userId });
-  await logAudit(context.auth.userId, u.company_id, 'objective_create', 'company_objectives', obj.id);
+  await logAudit({
+    actorId: context.auth.userId,
+    actorEmail: context.auth.userId,
+    actorRole: context.auth.role,
+    action: 'objective_create',
+    entityType: 'company_objectives',
+    entityId: obj.id,
+    entityLabel: d.title,
+  });
   return NextResponse.json({ objective: obj }, { status: 201 });
 });

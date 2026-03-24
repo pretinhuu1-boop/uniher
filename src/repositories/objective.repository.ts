@@ -1,5 +1,5 @@
 import { getReadDb as getDb } from '@/lib/db';
-import crypto from 'crypto';
+import { nanoid } from 'nanoid';
 
 export interface Objective {
   id: string;
@@ -106,7 +106,7 @@ export const objectiveRepo = {
 
   create(data: CreateObjectiveData): Objective {
     const db = getDb();
-    const id = crypto.randomUUID();
+    const id = nanoid();
     db.prepare(`
       INSERT INTO company_objectives
         (id, company_id, title, description, type, target_type, target_value,
@@ -159,7 +159,7 @@ export const objectiveRepo = {
 
   upsertProgress(userId: string, objectiveId: string, currentValue: number, completed: boolean, weekKey?: string | null): void {
     const db = getDb();
-    const id = crypto.randomUUID();
+    const id = nanoid();
     db.prepare(`
       INSERT INTO user_objective_progress (id, user_id, objective_id, current_value, completed, completed_at, week_key)
       VALUES (?, ?, ?, ?, ?, ?, ?)

@@ -1,20 +1,21 @@
 import type { Metadata, Viewport } from 'next';
-import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
+import { Playfair_Display, Montserrat } from 'next/font/google';
 import AuthProvider from '@/components/platform/AuthProvider';
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import './globals.css';
 
-const cormorant = Cormorant_Garamond({
+const playfair = Playfair_Display({
   variable: '--ff-display',
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
   style: ['normal', 'italic'],
   display: 'swap',
 });
 
-const dmSans = DM_Sans({
+const montserrat = Montserrat({
   variable: '--ff-body',
   subsets: ['latin'],
-  weight: ['300', '400', '500'],
+  weight: ['300', '400', '500', '600'],
   display: 'swap',
 });
 
@@ -23,7 +24,7 @@ const SITE_URL = 'https://uniher.com.br';
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#C85C7E',
+  themeColor: '#C9A264',
 };
 
 export const metadata: Metadata = {
@@ -184,6 +185,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" data-scroll-behavior="smooth">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         {jsonLd.map((schema, i) => (
           <script
             key={i}
@@ -192,7 +196,8 @@ export default function RootLayout({
           />
         ))}
       </head>
-      <body className={`${cormorant.variable} ${dmSans.variable}`} suppressHydrationWarning>
+      <body className={`${playfair.variable} ${montserrat.variable}`} suppressHydrationWarning>
+        <ServiceWorkerRegistration />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

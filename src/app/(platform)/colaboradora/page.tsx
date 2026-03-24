@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useCollaboratorHome, useCollaboratorBadges, useCollaboratorChallenges, useNotifications } from '@/hooks/useCollaborator';
+import { useCollaboratorHome, useCollaboratorBadges, useCollaboratorChallenges, useNotifications, useDailyMissions } from '@/hooks/useCollaborator';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -27,10 +27,11 @@ export default function ColaboradoraPage() {
   const { badges: allBadges } = useCollaboratorBadges();
   const { challenges } = useCollaboratorChallenges();
   const { notifications } = useNotifications();
+  const { missions: swrMissions, mutate: mutateMissions } = useDailyMissions();
 
-  const unreadNotification = notifications.find((n: any) => !n.read && n.type === 'badge');
+  const unreadNotification = (notifications || []).find((n: any) => !n.read && n.type === 'badge');
   const [showToast, setShowToast] = useState(false);
-  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
   const [challengeProgress, setChallengeProgress] = useState<Record<string, number>>({});
   const [challengeFeedback, setChallengeFeedback] = useState<string | null>(null);
   const [panicContact, setPanicContact] = useState<{ name: string; phone: string } | null>(null);
@@ -43,6 +44,12 @@ export default function ColaboradoraPage() {
   const [activeMission, setActiveMission] = useState<DailyMission | null>(null);
   const [missionPayload, setMissionPayload] = useState<{ mood?: string; glasses?: number; challengeId?: string; badgeId?: string; note?: string; confirmed?: boolean }>({});
   const [missionSubmitting, setMissionSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  function showError(msg: string) {
+    setErrorMsg(msg);
+    setTimeout(() => setErrorMsg(null), 4000);
+  }
 
   useEffect(() => {
     fetch('/api/users/me')
@@ -54,15 +61,19 @@ export default function ColaboradoraPage() {
       })
       .catch(() => {});
 
-    // Load gamification data
+    // Load gamification data (daily missions handled by SWR hook)
     fetch('/api/gamification/streak-status').then(r => r.json()).then(setStreakStatus).catch(() => {});
-    fetch('/api/gamification/daily-missions').then(r => r.json()).then(d => setDailyMissions(d.missions || [])).catch(() => {});
     fetch('/api/gamification/league').then(r => r.json()).then(d => setLeagueStatus(d.status)).catch(() => {});
   }, []);
 
+  // Sync SWR missions into local state
+  useEffect(() => {
+    if (swrMissions.length > 0) setDailyMissions(swrMissions);
+  }, [swrMissions]);
+
   useEffect(() => {
     const map: Record<string, number> = {};
-    challenges.forEach((c: any) => { map[c.id] = c.progress ?? 0; });
+    (challenges || []).forEach((c: any) => { map[c.id] = c.progress ?? 0; });
     setChallengeProgress(map);
   }, [challenges]);
 
@@ -71,12 +82,12 @@ export default function ColaboradoraPage() {
     return () => clearTimeout(t);
   }, []);
 
-  const unlockedBadges = allBadges.filter((b: any) => b.unlockedAt);
-  const lockedBadges = allBadges.filter((b: any) => !b.unlockedAt);
-  const activeChallenges = challenges.filter((c: any) => c.status === 'active');
+  const unlockedBadges = (allBadges || []).filter((b: any) => b.unlockedAt);
+  const lockedBadges = (allBadges || []).filter((b: any) => !b.unlockedAt);
+  const activeChallenges = (challenges || []).filter((c: any) => c.status === 'active');
 
-  const totalForLevel = data.points + data.pointsNextLevel;
-  const progressPercent = Math.round((data.points / totalForLevel) * 100);
+  const totalForLevel = (data?.points ?? 0) + (data?.pointsNextLevel ?? 0);
+  const progressPercent = totalForLevel > 0 ? Math.round(((data?.points ?? 0) / totalForLevel) * 100) : 0;
 
   const { mutate: mutateHome } = useCollaboratorHome();
   const { mutate: mutateChallenges } = useCollaboratorChallenges();
@@ -98,26 +109,27 @@ export default function ColaboradoraPage() {
       setChallengeProgress(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
       mutateHome(); 
       mutateChallenges();
-    } catch (err) {
-      console.error('Erro ao atualizar desafio:', err);
+    } catch {
+      showError('Erro ao registrar progresso. Tente novamente.');
     } finally {
       setTimeout(() => setChallengeFeedback(null), 2000);
     }
   }
 
   async function handleCheckIn() {
-    if (checkedIn || streakStatus?.checkedInToday) return;
+    if (checkingIn || streakStatus?.checkedInToday) return;
+    setCheckingIn(true);
     try {
       const res = await fetch('/api/gamification/check-in', { method: 'POST' });
       const result = await res.json();
-      setCheckedIn(true);
-      if (result.leveledUp) { setLevelUpBurst(true); setTimeout(() => setLevelUpBurst(false), 3000); }
-      // Refresh streak & missions
+      // Update streakStatus from API response to be single source of truth
       fetch('/api/gamification/streak-status').then(r => r.json()).then(setStreakStatus).catch(() => {});
-      fetch('/api/gamification/daily-missions').then(r => r.json()).then(d => setDailyMissions(d.missions || [])).catch(() => {});
+      if (result.leveledUp) { setLevelUpBurst(true); setTimeout(() => setLevelUpBurst(false), 3000); }
+      mutateMissions();
       mutateHome();
-    } catch (err) {
-      console.error('Erro no check-in:', err);
+    } catch {
+      setCheckingIn(false);
+      showError('Erro ao registrar check-in. Tente novamente.');
     }
   }
 
@@ -142,10 +154,13 @@ export default function ColaboradoraPage() {
         setActiveMission(null);
         if (result.leveledUp) { setLevelUpBurst(true); setTimeout(() => setLevelUpBurst(false), 3000); }
         fetch('/api/gamification/streak-status').then(r => r.json()).then(setStreakStatus).catch(() => {});
+        mutateMissions();
         mutateChallenges();
         mutateHome();
       }
-    } catch { /* noop */ } finally {
+    } catch {
+      showError('Erro ao completar missão. Tente novamente.');
+    } finally {
       setMissionSubmitting(false);
     }
   }
@@ -160,19 +175,52 @@ export default function ColaboradoraPage() {
     setShowPanicConfirm(false);
   }
 
-  const isCheckedIn = checkedIn || (streakStatus?.checkedInToday ?? false);
+  const isCheckedIn = checkingIn || (streakStatus?.checkedInToday ?? false);
   const dailyXpPct = streakStatus ? Math.min(100, Math.round((streakStatus.dailyXpEarned / streakStatus.dailyXpGoal) * 100)) : 0;
   const levelXpPct = streakStatus?.levelInfo ? Math.round((streakStatus.levelInfo.currentXP / streakStatus.levelInfo.nextLevelXP) * 100) : 0;
 
-  const statCards = [
-    { key: 'exams', icon: '📈', value: `${data.examsPercent}%`, label: 'Exames em Dia', sub: `${Math.round((data.examsPercent / 100) * (data.examsTotal || 5))}/${data.examsTotal || 5}`, color: 'bg-rose-50 text-rose-500' },
+  const statCards = data ? [
+    { key: 'exams', icon: '📈', value: data.examsTotal > 0 ? `${data.examsPercent}%` : '—', label: 'Exames em Dia', sub: data.examsTotal > 0 ? `${Math.round((data.examsPercent / 100) * data.examsTotal)}/${data.examsTotal}` : 'Nenhum exame', color: 'bg-rose-50 text-rose-500' },
     { key: 'content', icon: '📖', value: `${data.contentViewed}`, label: 'Conteúdos Vistos', sub: 'Este mês', color: 'bg-violet-50 text-violet-500' },
     { key: 'campaigns', icon: '📅', value: `${data.campaignsActive}`, label: 'Campanhas', sub: `de ${data.campaignsTotal || 4}`, color: 'bg-amber-50 text-amber-500' },
     { key: 'streak', icon: '🔥', value: `${data.streakDays}`, label: 'Dias de Streak', sub: '\u00A0', color: 'bg-orange-50 text-orange-500' },
-  ];
+  ] : [];
 
   return (
     <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 font-body animate-fadeIn">
+
+      {/* ── Error Toast ── */}
+      {errorMsg && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] bg-red-500 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-bold animate-slideDown">
+          {errorMsg}
+        </div>
+      )}
+
+      {/* ── Daily Check-in Hero — always first ── */}
+      <div className="bg-gradient-to-r from-rose-500 to-rose-400 rounded-2xl p-6 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold font-display">Check-in Diário</h2>
+            <p className="text-sm opacity-90 mt-1">
+              {isCheckedIn ? 'Você já fez check-in hoje!' : 'Registre sua presença e ganhe XP!'}
+            </p>
+            {!isCheckedIn && <p className="text-xs opacity-75 mt-1">Sequência: {streakStatus?.streak ?? 0} dias</p>}
+          </div>
+          <button
+            onClick={handleCheckIn}
+            disabled={isCheckedIn || checkingIn}
+            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+              isCheckedIn ? 'bg-white/20 cursor-default' : 'bg-white text-rose-500 hover:scale-105 shadow-md'
+            }`}
+          >
+            {checkingIn ? '...' : isCheckedIn ? 'Feito' : 'Check-in'}
+          </button>
+        </div>
+        <div className="mt-4 bg-white/20 rounded-full h-2">
+          <div className="bg-white rounded-full h-2 transition-all" style={{width: `${Math.min(dailyXpPct, 100)}%`}} />
+        </div>
+        <p className="text-xs opacity-75 mt-1">{streakStatus?.dailyXpEarned ?? 0}/{streakStatus?.dailyXpGoal ?? 20} XP hoje</p>
+      </div>
 
       {/* ── Greeting Header ── */}
       <section className="relative bg-gradient-to-br from-rose-400 via-rose-500 to-pink-600 rounded-2xl p-8 text-white overflow-hidden shadow-xl shadow-rose/20">
@@ -186,12 +234,14 @@ export default function ColaboradoraPage() {
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <p className="text-rose-100 text-sm font-medium mb-1" suppressHydrationWarning>📅 {data.date}</p>
-            <h1 className="text-3xl md:text-4xl font-display font-bold" suppressHydrationWarning>{data.greeting}, <span className="text-yellow-200">{data.userName}</span> 👋</h1>
-            <a href="/semaforo" className="mt-2 inline-flex items-center gap-2 text-white/90 text-sm bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 hover:bg-white/20 transition-colors">
-              <span className="w-2 h-2 rounded-full bg-orange-300 animate-pulse" />
-              {data.healthAlert} →
-            </a>
+            <p className="text-rose-100 text-sm font-medium mb-1" suppressHydrationWarning>📅 {data?.date ?? ''}</p>
+            <h1 className="text-3xl md:text-4xl font-display font-bold" suppressHydrationWarning>{data?.greeting ?? 'Olá'}, <span className="text-yellow-200">{data?.userName ?? ''}</span> 👋</h1>
+            {data?.healthAlert && (
+              <a href="/semaforo" className="mt-2 inline-flex items-center gap-2 text-white/90 text-sm bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 hover:bg-white/20 transition-colors">
+                <span className="w-2 h-2 rounded-full bg-orange-300 animate-pulse" />
+                {data.healthAlert} →
+              </a>
+            )}
           </div>
           <button
             onClick={handleCheckIn}
@@ -228,21 +278,21 @@ export default function ColaboradoraPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-xl">⭐</div>
             <div>
-              <span className="font-bold text-uni-text-900 text-lg">Nível {data.level}</span>
-              <span className="ml-2 text-xs bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">{data.points.toLocaleString('pt-BR')} pts</span>
+              <span className="font-bold text-uni-text-900 text-lg">Nível {data?.level ?? 0}</span>
+              <span className="ml-2 text-xs bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">{(data?.points ?? 0).toLocaleString('pt-BR')} pts</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {unlockedBadges.slice(0, 3).map((b: any) => (
               <span key={b.id} title={b.name} className="text-lg cursor-default">{b.icon}</span>
             ))}
-            <span className="text-xs font-bold text-uni-text-400">🏆 {data.achievementCount} conquistas</span>
+            <span className="text-xs font-bold text-uni-text-400">🏆 {data?.achievementCount ?? 0} conquistas</span>
           </div>
         </div>
         <div className="w-full h-2.5 bg-cream-100 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
         </div>
-        <p className="text-[11px] text-uni-text-400 mt-2">{data.pointsNextLevel} pts para o próximo nível</p>
+        <p className="text-[11px] text-uni-text-400 mt-2">{data?.pointsNextLevel ?? 0} pts para o próximo nível</p>
       </section>
 
       {/* ── Level Up Burst ── */}
@@ -415,9 +465,9 @@ export default function ColaboradoraPage() {
           </div>
           <div className="grid grid-cols-3 gap-4">
             {[
-              { value: data.engagementStats?.streakDays, unit: 'dias', label: 'Dias de streak', icon: '🔥' },
-              { value: `${data.engagementStats?.openRate}%`, unit: '', label: 'Taxa de abertura', icon: '👁' },
-              { value: data.engagementStats?.actionsToday, unit: '', label: 'Ações hoje', icon: '✅' },
+              { value: data?.engagementStats?.streakDays ?? 0, unit: 'dias', label: 'Dias de streak', icon: '🔥' },
+              { value: `${data?.engagementStats?.openRate ?? 0}%`, unit: '', label: 'Taxa de abertura', icon: '👁' },
+              { value: data?.engagementStats?.actionsToday ?? 0, unit: '', label: 'Ações hoje', icon: '✅' },
             ].map((m, i) => (
               <div key={i} className="text-center bg-white/60 rounded-xl p-3">
                 <div className="text-lg mb-1">{m.icon}</div>

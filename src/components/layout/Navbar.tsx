@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import styles from './Navbar.module.css';
 
 const NAV_SECTIONS = ['profiles', 'gamification', 'roi', 'campanhas'] as const;
@@ -46,20 +47,12 @@ export default function Navbar({ onQuizOpen }: NavbarProps) {
   }, [updateState]);
 
   return (
-    <nav className={`${styles.nav} ${scrolled ? styles.navScrolled : ''}`}>
+    <header role="banner" className={`${styles.nav} ${scrolled ? styles.navScrolled : ''}`}>
       <div className={styles.inner}>
         <a href="#" className={styles.logo}>
-          <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
-            <path d="M18 32C18 32 8 24 8 15C8 11 11 8 14.5 8C16.5 8 17.5 9.5 18 11C18.5 9.5 19.5 8 21.5 8C25 8 28 11 28 15C28 24 18 32 18 32Z" fill="#F9EEF3" stroke="#C85C7E" strokeWidth="1.4" strokeLinejoin="round"/>
-            <path d="M18 30C18 30 10.5 22 12 13.5C13 9 15.5 6.5 18 6C20.5 6.5 23 9 24 13.5C25.5 22 18 30 18 30Z" fill="#EAB8CB" stroke="#C85C7E" strokeWidth="0.9"/>
-            <circle cx="18" cy="6" r="1.5" fill="#B8922A"/>
-          </svg>
-          <div>
-            <div className={styles.logoText}>UniHER</div>
-            <div className={styles.logoSub}>Saúde Feminina</div>
-          </div>
+          <Image src="/logo-uniher.png" alt="UniHER" width={130} height={52} priority className="object-contain" style={{ width: 130, height: 'auto' }} />
         </a>
-        <div className={styles.links}>
+        <nav role="navigation" aria-label="Navegação principal" className={styles.links}>
           {NAV_SECTIONS.map((id) => (
             <a
               key={id}
@@ -69,7 +62,7 @@ export default function Navbar({ onQuizOpen }: NavbarProps) {
               {LABELS[id]}
             </a>
           ))}
-        </div>
+        </nav>
         <div className={styles.ctaGroup}>
           <a className={styles.ctaOutline} href="/welcome">Acessar Plataforma</a>
           <button className={styles.cta} onClick={onQuizOpen}>Diagnóstico Gratuito</button>
@@ -87,7 +80,7 @@ export default function Navbar({ onQuizOpen }: NavbarProps) {
       </div>
 
       {menuOpen && (
-        <div className={styles.mobileMenu}>
+        <nav role="navigation" aria-label="Menu mobile" className={styles.mobileMenu}>
           {MOBILE_SECTIONS.map((id) => (
             <a key={id} href={`#${id}`} onClick={closeMenu}>
               {LABELS[id]}
@@ -99,8 +92,8 @@ export default function Navbar({ onQuizOpen }: NavbarProps) {
           <button className={styles.mobileCta} onClick={() => { closeMenu(); onQuizOpen(); }}>
             Diagnóstico Gratuito
           </button>
-        </div>
+        </nav>
       )}
-    </nav>
+    </header>
   );
 }

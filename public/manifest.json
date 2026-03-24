@@ -1,0 +1,13 @@
+{
+  "name": "UniHER — Saúde Feminina",
+  "short_name": "UniHER",
+  "description": "Plataforma de saúde feminina corporativa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#C9A264",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

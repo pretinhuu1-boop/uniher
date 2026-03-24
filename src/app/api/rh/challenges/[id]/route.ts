@@ -31,13 +31,14 @@ export const PATCH = withRole('rh')(async (req, context) => {
   const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
   if (!user?.company_id) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
 
-  const challenge = db.prepare('SELECT * FROM challenges WHERE id = ?').get(id) as any;
+  // Pre-filter: only fetch challenges belonging to this company or defaults
+  const challenge = db.prepare(
+    'SELECT * FROM challenges WHERE id = ? AND (company_id = ? OR is_default = 1)'
+  ).get(id, user.company_id) as any;
   if (!challenge) return NextResponse.json({ error: 'Desafio não encontrado' }, { status: 404 });
 
-  // RH can only manage: defaults (toggle active) OR their own company's challenges
   const isDefault = challenge.is_default === 1;
   const isOwn = challenge.company_id === user.company_id;
-  if (!isDefault && !isOwn) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
   const parsed = PatchSchema.safeParse(body);
@@ -107,10 +108,12 @@ export const DELETE = withRole('rh')(async (_req, context) => {
   const db = getReadDb();
   const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
 
-  const challenge = db.prepare('SELECT * FROM challenges WHERE id = ?').get(id) as any;
+  // Pre-filter by company_id to prevent IDOR
+  const challenge = db.prepare(
+    'SELECT * FROM challenges WHERE id = ? AND company_id = ?'
+  ).get(id, user?.company_id) as any;
   if (!challenge) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });
   if (challenge.is_default) return NextResponse.json({ error: 'Desafios padrão não podem ser excluídos' }, { status: 403 });
-  if (challenge.company_id !== user?.company_id) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
 
   const wq = getWriteQueue();
   await wq.enqueue((db) => {

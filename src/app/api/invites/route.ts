@@ -6,8 +6,12 @@ import { NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
+import { sendEmailAsync } from '@/lib/mail';
+import { inviteEmailHtml } from '@/lib/mail/templates';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
+import { checkAdminRateLimit } from '@/lib/security/rate-limit';
+import { logAudit } from '@/lib/audit';
 
 const MAX_EXPIRY_DAYS = 3;
 
@@ -39,6 +43,7 @@ export const GET = withRole('rh', 'lideranca')(async (_req, context) => {
 });
 
 export const POST = withRole('rh')(async (req, context) => {
+  await checkAdminRateLimit(req);
   const userId = context.auth.userId;
   await initDb();
   const db = getReadDb();
@@ -50,6 +55,11 @@ export const POST = withRole('rh')(async (req, context) => {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
 
   const { email, role, department_id } = parsed.data;
+
+  // RH cannot invite other RH users — only admin can
+  if (context.auth.role === 'rh' && role === 'rh') {
+    return NextResponse.json({ error: 'RH não pode convidar outros usuários RH' }, { status: 403 });
+  }
 
   // Check if already invited and pending
   const existing = db.prepare("SELECT id FROM invites WHERE email = ? AND company_id = ? AND status = 'pending'").get(email, user.company_id);
@@ -89,5 +99,37 @@ export const POST = withRole('rh')(async (req, context) => {
   });
 
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`;
+
+  // Fetch company name for the email
+  const company = db.prepare('SELECT name FROM companies WHERE id = ?').get(user.company_id) as { name: string } | undefined;
+  const inviterName = user.name || 'Equipe UniHER';
+  const companyName = company?.name || 'sua empresa';
+
+  // Audit log for invite creation
+  logAudit({
+    actorId: userId,
+    actorEmail: user.name || '',
+    actorRole: context.auth.role,
+    action: 'invite_sent',
+    entityType: 'invite',
+    entityId: id,
+    entityLabel: email,
+    details: { role, department_id, company_id: user.company_id },
+    ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || undefined,
+  });
+
+  // Send invite email (fire-and-forget)
+  sendEmailAsync({
+    to: email,
+    subject: `${inviterName} convidou você para a UniHER`,
+    html: inviteEmailHtml({
+      inviterName,
+      companyName,
+      inviteUrl,
+      role,
+      expiresInDays: MAX_EXPIRY_DAYS,
+    }),
+  });
+
   return NextResponse.json({ success: true, inviteUrl, token, email });
 });

@@ -45,6 +45,12 @@ export default function LigaPage() {
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [customLeagues, setCustomLeagues] = useState<CustomLeague[]>([]);
   const [joinLoading, setJoinLoading] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('uniher_liga_explanation_dismissed') !== 'true';
+    }
+    return true;
+  });
 
   useEffect(() => {
     // Get current user
@@ -96,6 +102,29 @@ export default function LigaPage() {
 
   return (
     <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-6 font-body animate-fadeIn">
+      {/* Explanation Banner */}
+      {showExplanation && (
+        <div className="bg-gradient-to-r from-amber-50 to-cream-100 border border-amber-200 rounded-xl p-4 mb-6 relative">
+          <button
+            onClick={() => {
+              setShowExplanation(false);
+              localStorage.setItem('uniher_liga_explanation_dismissed', 'true');
+            }}
+            className="absolute top-2 right-2 text-uni-text-400 hover:text-uni-text-600 text-lg transition-colors"
+            aria-label="Fechar explicação"
+          >
+            ×
+          </button>
+          <h3 className="font-bold text-uni-text-800 mb-2">Como funcionam as Ligas?</h3>
+          <ul className="text-sm text-uni-text-600 space-y-1">
+            <li>Complete desafios e check-ins para ganhar pontos semanais</li>
+            <li><span className="text-green-600 font-medium">Top 10</span> da sua liga sobem para a próxima</li>
+            <li><span className="text-red-500 font-medium">Últimos 5</span> descem uma liga</li>
+            <li>As ligas resetam toda segunda-feira</li>
+          </ul>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>

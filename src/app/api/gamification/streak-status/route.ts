@@ -4,8 +4,17 @@ import { getStreakStatus } from '@/services/gamification.service';
 import { getLevelFromPoints } from '@/services/gamification.service';
 
 export const GET = withAuth(async (_req, context) => {
-  const userId = context.auth.userId;
-  const status = getStreakStatus(userId);
-  const levelInfo = getLevelFromPoints(status.points);
-  return NextResponse.json({ ...status, levelInfo });
+  try {
+    const userId = context.auth.userId;
+    const status = getStreakStatus(userId);
+    const levelInfo = getLevelFromPoints(status.points);
+    return NextResponse.json({ ...status, levelInfo });
+  } catch (error) {
+    console.error('[Streak] Error:', error);
+    return NextResponse.json({
+      streak: 0, freezes: 0, checkedInToday: false,
+      dailyXpEarned: 0, dailyXpGoal: 100, level: 1,
+      levelInfo: { level: 1, currentXP: 0, nextLevelXP: 100 },
+    });
+  }
 });

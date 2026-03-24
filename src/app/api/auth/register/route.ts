@@ -3,7 +3,7 @@ import { initDb } from '@/lib/db/init';
 import { register } from '@/services/auth.service';
 import { registerSchema } from '@/lib/validation/schemas';
 import { checkAuthRateLimit } from '@/lib/security/rate-limit';
-import { handleApiError } from '@/lib/errors';
+import { handleApiError, ConflictError } from '@/lib/errors';
 
 export async function POST(req: Request) {
   try {
@@ -17,6 +17,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
+    // Prevent email enumeration: return generic 400 for conflict errors
+    if (error instanceof ConflictError) {
+      return NextResponse.json(
+        { error: 'Não foi possível criar a conta. Verifique os dados e tente novamente.', code: 'VALIDATION_ERROR' },
+        { status: 400 }
+      );
+    }
     if (error && typeof error === 'object' && 'issues' in error) {
       return NextResponse.json(
         { error: 'Dados inválidos', details: (error as { issues: unknown[] }).issues },

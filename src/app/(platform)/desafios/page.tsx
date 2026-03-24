@@ -113,8 +113,10 @@ export default function DesafiosPage() {
         {isLoading ? (
           <div className="col-span-full py-20 text-center animate-pulse">Carregando seus desafios...</div>
         ) : filtered.length === 0 ? (
-          <div className="col-span-full py-20 text-center bg-white rounded-[2rem] border border-dashed border-border-1 text-uni-text-400 font-medium">
-            Nenhum desafio encontrado em "{TABS.find(t => t.key === activeTab)?.label}".
+          <div className="col-span-full py-16 text-center bg-white rounded-[2rem] border border-dashed border-border-1 space-y-2">
+            <span className="text-4xl block">🎯</span>
+            <p className="text-uni-text-700 font-medium">Nenhum desafio em &quot;{TABS.find(t => t.key === activeTab)?.label}&quot;</p>
+            <p className="text-sm text-uni-text-400">Seus desafios aparecerão aqui! O RH da sua empresa irá criar desafios para você participar.</p>
           </div>
         ) : (
           filtered.map((c: any) => (

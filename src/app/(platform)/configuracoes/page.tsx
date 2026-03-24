@@ -32,6 +32,17 @@ const PRIVACY_PREFS: TogglePref[] = [
   { id: 'analytics', label: 'Dados anonimizados', description: 'Permitir uso de dados anonimizados para melhoria', defaultOn: true },
 ];
 
+/** Maps toggle id -> API pref_key */
+const TOGGLE_KEY_MAP: Record<string, string> = {
+  badges: 'notif_badges',
+  campaigns: 'notif_campaigns',
+  challenges: 'notif_challenges',
+  email: 'notif_email',
+  ranking: 'privacy_ranking',
+  profile: 'privacy_profile',
+  analytics: 'privacy_analytics',
+};
+
 export default function ConfiguracoesPage() {
   const [nome, setNome] = useState('');
   const [emailVal, setEmailVal] = useState('');
@@ -50,6 +61,17 @@ export default function ConfiguracoesPage() {
     });
     return initial;
   });
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+
+  // Archetype
+  const [archetype, setArchetype] = useState<{ name: string; key: string; description: string; assignedAt: string } | null>(null);
+  const [archetypeLoaded, setArchetypeLoaded] = useState(false);
+
+  // LGPD
+  const [exportLabel, setExportLabel] = useState('Exportar meus dados');
+  const [deleteLabel, setDeleteLabel] = useState('Solicitar exclusão da conta');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [lgpdFeedback, setLgpdFeedback] = useState<string | null>(null);
 
   // Reminder preferences
   const [reminderTimes, setReminderTimes] = useState<string[]>(['08:00', '18:00']);
@@ -58,26 +80,185 @@ export default function ConfiguracoesPage() {
   });
   const [browserEnabled, setBrowserEnabled] = useState(false);
   const [browserSupported, setBrowserSupported] = useState(false);
+  const [pushAvailable, setPushAvailable] = useState(false);
+  const [pushVapidKey, setPushVapidKey] = useState('');
   const [reminderSaveLabel, setReminderSaveLabel] = useState('Salvar lembretes');
 
+  // Load archetype info
   useEffect(() => {
-    setBrowserSupported('Notification' in window);
+    fetch('/api/collaborator/archetype')
+      .then(r => r.json())
+      .then(({ archetype: a }) => {
+        if (a) setArchetype(a);
+        setArchetypeLoaded(true);
+      })
+      .catch(() => setArchetypeLoaded(true));
+  }, []);
+
+  async function handleExportData() {
+    setExportLabel('Exportando...');
+    try {
+      const res = await fetch('/api/users/me/export');
+      if (!res.ok) {
+        const err = await res.json();
+        setLgpdFeedback(err.error || 'Erro ao exportar dados.');
+        setTimeout(() => setLgpdFeedback(null), 4000);
+        setExportLabel('Exportar meus dados');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `uniher-dados-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setExportLabel('Dados exportados!');
+    } catch {
+      setExportLabel('Erro ao exportar');
+    } finally {
+      setTimeout(() => setExportLabel('Exportar meus dados'), 3000);
+    }
+  }
+
+  async function handleDeleteRequest() {
+    setDeleteLabel('Enviando...');
+    setShowDeleteConfirm(false);
+    try {
+      const res = await fetch('/api/users/me/delete-request', { method: 'POST' });
+      const result = await res.json();
+      if (result.success) {
+        setLgpdFeedback(result.message);
+        setDeleteLabel('Solicitação enviada');
+      } else {
+        setLgpdFeedback(result.error || 'Erro ao solicitar exclusão.');
+        setDeleteLabel('Solicitar exclusão da conta');
+      }
+    } catch {
+      setDeleteLabel('Erro ao solicitar');
+    } finally {
+      setTimeout(() => {
+        setDeleteLabel('Solicitar exclusão da conta');
+        setLgpdFeedback(null);
+      }, 6000);
+    }
+  }
+
+  // Load notification/privacy toggle preferences from API
+  useEffect(() => {
+    fetch('/api/users/me/preferences')
+      .then(r => r.json())
+      .then(({ preferences }) => {
+        if (preferences && typeof preferences === 'object') {
+          setToggles(prev => {
+            const updated = { ...prev };
+            // Reverse map: pref_key -> toggle id
+            const reverseMap: Record<string, string> = {};
+            for (const [toggleId, prefKey] of Object.entries(TOGGLE_KEY_MAP)) {
+              reverseMap[prefKey] = toggleId;
+            }
+            for (const [key, value] of Object.entries(preferences)) {
+              const toggleId = reverseMap[key];
+              if (toggleId) {
+                updated[toggleId] = value === '1';
+              }
+            }
+            return updated;
+          });
+        }
+        setPrefsLoaded(true);
+      })
+      .catch(() => setPrefsLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    setBrowserSupported('Notification' in window && 'serviceWorker' in navigator);
+    // Check if Web Push is available
+    fetch('/api/push/vapid-key')
+      .then(r => r.json())
+      .then(data => {
+        if (data.enabled && data.publicKey) {
+          setPushAvailable(true);
+          setPushVapidKey(data.publicKey);
+          // Check existing push subscription
+          navigator.serviceWorker?.ready?.then(reg => {
+            reg.pushManager.getSubscription().then(sub => {
+              if (sub) setBrowserEnabled(true);
+            });
+          }).catch(() => {});
+        }
+      }).catch(() => {});
     fetch('/api/users/me/notification-preferences')
       .then(r => r.json())
       .then(({ prefs }) => {
         if (prefs) {
           setReminderTimes(prefs.reminder_times ?? ['08:00', '18:00']);
           setMissionReminders(prefs.mission_reminders ?? {});
-          setBrowserEnabled(prefs.browser_enabled ?? false);
+          // If push is not available, fall back to browser_enabled flag
+          if (!pushAvailable) setBrowserEnabled(prefs.browser_enabled ?? false);
         }
       }).catch(() => {});
   }, []);
 
+  function urlBase64ToUint8Array(base64String: string): Uint8Array {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
   async function requestBrowserPermission() {
     if (!('Notification' in window)) return;
     const permission = await Notification.requestPermission();
-    const enabled = permission === 'granted';
-    setBrowserEnabled(enabled);
+    if (permission !== 'granted') return;
+
+    // If push is available, register SW + subscribe
+    if (pushAvailable && pushVapidKey && 'serviceWorker' in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(pushVapidKey) as BufferSource,
+        });
+        const subJson = subscription.toJSON();
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endpoint: subJson.endpoint,
+            keys: { p256dh: subJson.keys?.p256dh, auth: subJson.keys?.auth },
+          }),
+        });
+      } catch (err) {
+        console.error('[PUSH] Subscribe error:', err);
+      }
+    }
+
+    setBrowserEnabled(true);
+  }
+
+  async function disablePushNotifications() {
+    if ('serviceWorker' in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const subscription = await reg.pushManager.getSubscription();
+        if (subscription) {
+          await fetch('/api/push/subscribe', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: subscription.endpoint }),
+          });
+          await subscription.unsubscribe();
+        }
+      } catch (err) {
+        console.error('[PUSH] Unsubscribe error:', err);
+      }
+    }
+    setBrowserEnabled(false);
   }
 
   async function handleSaveReminders() {
@@ -130,7 +311,20 @@ export default function ConfiguracoesPage() {
   }, []);
 
   const handleToggle = (id: string) => {
-    setToggles(prev => ({ ...prev, [id]: !prev[id] }));
+    const newValue = !toggles[id];
+    setToggles(prev => ({ ...prev, [id]: newValue }));
+
+    const prefKey = TOGGLE_KEY_MAP[id];
+    if (prefKey) {
+      fetch('/api/users/me/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences: { [prefKey]: newValue ? '1' : '0' } }),
+      }).catch(() => {
+        // Revert on failure
+        setToggles(prev => ({ ...prev, [id]: !newValue }));
+      });
+    }
   };
 
   async function handleSaveProfile() {
@@ -295,7 +489,7 @@ export default function ConfiguracoesPage() {
                 </span>
               </div>
               <button
-                onClick={browserEnabled ? () => setBrowserEnabled(false) : requestBrowserPermission}
+                onClick={browserEnabled ? disablePushNotifications : requestBrowserPermission}
                 style={{
                   padding: '6px 14px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700,
                   border: '1px solid', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
@@ -371,6 +565,147 @@ export default function ConfiguracoesPage() {
             </button>
           </div>
         </div>
+
+        {/* Seu Arquétipo */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Seu Arquétipo</h2>
+          {!archetypeLoaded ? (
+            <p className={styles.sectionDesc}>Carregando...</p>
+          ) : archetype ? (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <span style={{ fontSize: '1.8rem' }}>
+                  {archetype.key === 'arch_guardia' ? '🛡️' : archetype.key === 'arch_protetora' ? '🌸' : archetype.key === 'arch_guerreira' ? '⚔️' : '⚖️'}
+                </span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-900)' }}>{archetype.name}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-400)' }}>
+                    Atribuído em {new Date(archetype.assignedAt).toLocaleDateString('pt-BR')}
+                  </div>
+                </div>
+              </div>
+              <p className={styles.sectionDesc} style={{ marginBottom: 12 }}>{archetype.description}</p>
+              <a
+                href="/quiz"
+                style={{
+                  display: 'inline-block', fontSize: '0.82rem', fontWeight: 600,
+                  color: 'var(--rose-500)', textDecoration: 'none',
+                }}
+              >
+                Refazer quiz →
+              </a>
+            </div>
+          ) : (
+            <div>
+              <p className={styles.sectionDesc}>Faça o quiz para descobrir seu perfil de saúde e receber recomendações personalizadas.</p>
+              <a
+                href="/quiz"
+                style={{
+                  display: 'inline-block', padding: '10px 20px', borderRadius: 'var(--radius-sm)',
+                  background: 'var(--rose-500)', color: 'white', fontSize: '0.85rem',
+                  fontWeight: 600, textDecoration: 'none',
+                }}
+              >
+                Fazer o quiz
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Privacidade e Dados (LGPD) */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Privacidade e Dados</h2>
+          <p className={styles.sectionDesc}>
+            Conforme a LGPD, você pode exportar todos os seus dados ou solicitar a exclusão da sua conta a qualquer momento.
+          </p>
+
+          {lgpdFeedback && (
+            <div style={{
+              padding: '12px 16px', borderRadius: 'var(--radius-sm)', marginBottom: 16,
+              background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d',
+              fontSize: '0.82rem', fontWeight: 500,
+            }}>
+              {lgpdFeedback}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--border-1)' }}>
+              <div>
+                <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-900)' }}>Exportar meus dados</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-400)' }}>Baixe uma cópia de todos os seus dados em formato JSON</div>
+              </div>
+              <button
+                onClick={handleExportData}
+                style={{
+                  padding: '8px 18px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem',
+                  fontWeight: 600, border: '1px solid var(--border-2)', background: 'white',
+                  color: 'var(--text-700)', cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                {exportLabel}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0' }}>
+              <div>
+                <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-900)' }}>Solicitar exclusão da conta</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-400)' }}>Sua conta será removida em até 15 dias úteis após análise</div>
+              </div>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  padding: '8px 18px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem',
+                  fontWeight: 600, border: '1px solid #fca5a5', background: '#fff1f2',
+                  color: '#dc2626', cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                {deleteLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}>
+            <div style={{
+              background: 'white', borderRadius: 16, padding: 24, maxWidth: 400, width: '100%',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>⚠️</div>
+                <h3 style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-900)' }}>Tem certeza?</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-500)', marginTop: 8 }}>
+                  Esta ação solicitará a exclusão permanente da sua conta e todos os seus dados. O processo é irreversível após a aprovação.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{
+                    flex: 1, padding: '10px 16px', borderRadius: 12, border: '1px solid var(--border-1)',
+                    background: 'white', color: 'var(--text-600)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteRequest}
+                  style={{
+                    flex: 1, padding: '10px 16px', borderRadius: 12, border: 'none',
+                    background: '#dc2626', color: 'white', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                  }}
+                >
+                  Confirmar exclusão
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

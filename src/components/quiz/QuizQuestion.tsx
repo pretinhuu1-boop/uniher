@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { QUESTIONS } from '@/data/questions';
 import { QuizState, QuizOption } from '@/types';
 import styles from './QuizQuestion.module.css';
@@ -40,16 +41,7 @@ export default function QuizQuestion({
           </svg>
         </button>
         <div className={styles.headerLogo}>
-          <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="15" stroke="#C85C7E" strokeWidth="1.5" />
-            <path
-              d="M16 8c-2 2-4 5-4 8s2 6 4 8c2-2 4-5 4-8s-2-6-4-8z"
-              fill="#C85C7E"
-              opacity="0.15"
-              stroke="#C85C7E"
-              strokeWidth="1"
-            />
-          </svg>
+          <Image src="/logo-uniher.png" alt="" width={24} height={20} className="object-contain" style={{ width: 24, height: 'auto' }} />
           <span className={styles.headerLogoText}>UniHER</span>
         </div>
       </div>

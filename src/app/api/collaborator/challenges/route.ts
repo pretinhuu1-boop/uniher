@@ -46,10 +46,16 @@ export const PATCH = withAuth(async (req, { auth }) => {
   try {
     await initDb();
     const body = await req.json();
-    const { challengeId, increment } = body; // Usando body simples para simplificar o "registra progresso" individual
+    const { challengeId, increment } = body;
 
     if (!challengeId) {
       return NextResponse.json({ error: 'challengeId é obrigatório' }, { status: 400 });
+    }
+
+    // Ownership check: verify user owns this user_challenge entry
+    const userChallenge = challengeRepo.getUserChallenge(auth.userId, challengeId);
+    if (!userChallenge) {
+      return NextResponse.json({ error: 'Desafio não encontrado' }, { status: 404 });
     }
 
     const result = await activityService.updateChallengeProgress(auth.userId, challengeId, increment || 1);

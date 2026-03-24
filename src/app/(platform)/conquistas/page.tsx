@@ -56,8 +56,8 @@ export default function ConquistasPage() {
   const stats = [
     { label: 'Badges conquistados', value: `${unlockedCount}/${badgeList.length}`, icon: '🏆' },
     { label: 'Progresso geral', value: `${completionPct}%`, icon: '📈' },
-    { label: 'Dias de sequência', value: (data as any).streakDays ?? 0, icon: '🔥' },
-    { label: 'Pontos totais', value: ((data as any).points ?? 0).toLocaleString('pt-BR'), icon: '⭐' },
+    { label: 'Dias de sequência', value: (data as any)?.streakDays ?? 0, icon: '🔥' },
+    { label: 'Pontos totais', value: ((data as any)?.points ?? 0).toLocaleString('pt-BR'), icon: '⭐' },
   ];
 
   return (
@@ -211,10 +211,20 @@ export default function ConquistasPage() {
                   )}
                   {isUnlocked && (
                     <button
-                      onClick={e => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        setSharedBadge(badge.id);
-                        setTimeout(() => setSharedBadge(null), 2000);
+                        const text = `Conquistei o badge "${badge.name}" na UniHER!`;
+                        const url = window.location.origin;
+                        try {
+                          if (navigator.share) {
+                            await navigator.share({ title: text, text, url });
+                          } else {
+                            const waUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+                            window.open(waUrl, '_blank');
+                          }
+                          setSharedBadge(badge.id);
+                          setTimeout(() => setSharedBadge(null), 2000);
+                        } catch { /* user cancelled share */ }
                       }}
                       className={cn(
                         "text-xs font-bold px-4 py-2 rounded-xl transition-all",
@@ -234,10 +244,10 @@ export default function ConquistasPage() {
       </div>
 
       {filteredBadges.length === 0 && (
-        <div className="text-center py-16 text-uni-text-400">
-          <div className="text-5xl mb-3">🏆</div>
-          <p className="font-bold text-uni-text-600">Nenhum badge encontrado</p>
-          <p className="text-sm mt-1">Tente outro filtro</p>
+        <div className="text-center py-16 space-y-2">
+          <span className="text-5xl block">🏆</span>
+          <p className="font-bold text-uni-text-700">Nenhum badge encontrado</p>
+          <p className="text-sm text-uni-text-400">Complete desafios e check-ins diários para desbloquear seu primeiro badge!</p>
         </div>
       )}
     </div>

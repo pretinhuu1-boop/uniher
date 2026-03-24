@@ -5,18 +5,31 @@ import { MockUser, UserRole } from '@/types/platform';
 
 const STORAGE_KEY_USER = 'uniher-user';
 
-function getStoredUser(): MockUser | null {
+/**
+ * Minimal user data stored in localStorage for UI routing only (not for security).
+ * Authentication is handled by httpOnly cookies (JWT).
+ * Only non-sensitive display fields are persisted: id, name, role.
+ */
+interface StoredUserData {
+  id: string;
+  name: string;
+  role: UserRole;
+}
+
+function getStoredUser(): StoredUserData | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_USER);
-    if (raw) return JSON.parse(raw) as MockUser;
+    if (raw) return JSON.parse(raw) as StoredUserData;
   } catch {}
   return null;
 }
 
+/** Only persist minimal non-sensitive data for UI routing */
 function persistUser(user: MockUser) {
   try {
-    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+    const minimal: StoredUserData = { id: user.id, name: user.name, role: user.role };
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(minimal));
   } catch {}
 }
 
@@ -29,6 +42,7 @@ function clearStoredUser() {
 interface AuthContextValue {
   user: MockUser | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   approved: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (data: any) => Promise<boolean>;
@@ -40,14 +54,15 @@ export function useAuthState(): AuthContextValue {
   // Start with null on both server and client to avoid hydration mismatch.
   // localStorage is read in useEffect (client-only).
   const [user, setUser] = useState<MockUser | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [approved, setApproved] = useState<boolean>(true);
   const router = useRouter();
 
-  // Verificar sessao ao montar (via /api/auth/me)
+  // Verify session on mount (via /api/auth/me).
+  // Don't set user from localStorage immediately — verify with API first,
+  // falling back to localStorage only if API fails (offline support).
   useEffect(() => {
-    // Restore from localStorage immediately for instant UI, then validate
     const stored = getStoredUser();
-    if (stored) setUser(stored);
 
     fetch('/api/auth/me')
       .then(r => r.ok ? r.json() : null)
@@ -76,7 +91,24 @@ export function useAuthState(): AuthContextValue {
           clearStoredUser();
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // API unavailable — fall back to localStorage for offline support
+        if (stored) {
+          setUser({
+            id: stored.id,
+            name: stored.name,
+            email: '',
+            role: stored.role,
+            level: 0,
+            points: 0,
+            streak: 0,
+            joinedAt: '',
+          });
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [router]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
@@ -160,6 +192,7 @@ export function useAuthState(): AuthContextValue {
   return {
     user,
     isAuthenticated: user !== null,
+    isLoading,
     approved,
     login,
     register,
@@ -171,6 +204,7 @@ export function useAuthState(): AuthContextValue {
 export const AuthContext = createContext<AuthContextValue>({
   user: null,
   isAuthenticated: false,
+  isLoading: true,
   approved: true,
   login: async () => false,
   register: async () => false,

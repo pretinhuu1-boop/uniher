@@ -1,0 +1,1461 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "UniHER API",
+    "description": "API da plataforma UniHER - Saúde e bem-estar corporativo feminino",
+    "version": "1.0.0",
+    "contact": {
+      "name": "UniHER",
+      "url": "https://uniher.com.br"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Servidor principal"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido via login"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "token",
+        "description": "Cookie httpOnly com token JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string", "enum": ["admin", "rh", "lideranca", "colaboradora"] },
+          "company_id": { "type": "string", "nullable": true }
+        }
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "trade_name": { "type": "string", "nullable": true },
+          "cnpj": { "type": "string" },
+          "logo_url": { "type": "string", "nullable": true },
+          "primary_color": { "type": "string", "nullable": true }
+        }
+      },
+      "Badge": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "icon": { "type": "string" },
+          "category": { "type": "string" }
+        }
+      },
+      "Campaign": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "start_date": { "type": "string", "format": "date" },
+          "end_date": { "type": "string", "format": "date" },
+          "status": { "type": "string", "enum": ["draft", "active", "completed"] }
+        }
+      },
+      "Challenge": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "points": { "type": "integer" },
+          "status": { "type": "string" }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "read": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Objective": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "target": { "type": "number" },
+          "current": { "type": "number" },
+          "reward": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Sistema"],
+        "summary": "Verificação de saúde do sistema",
+        "description": "Retorna status do sistema e conexão com banco de dados",
+        "responses": {
+          "200": {
+            "description": "Sistema operacional",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "healthy" },
+                    "database": { "type": "string", "example": "connected" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Login do usuário",
+        "description": "Autentica o usuário e retorna tokens JWT",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 8 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login bem-sucedido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Credenciais inválidas" }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Registro de novo usuário",
+        "description": "Cria uma nova conta de usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 8 },
+                  "invite_token": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Usuário criado com sucesso" },
+          "409": { "description": "E-mail já cadastrado" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Logout do usuário",
+        "description": "Invalida o token e limpa cookies de sessão",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Logout realizado com sucesso" }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Renovar token JWT",
+        "description": "Gera um novo token de acesso usando o refresh token",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Token renovado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Refresh token inválido ou expirado" }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Solicitar redefinição de senha",
+        "description": "Envia e-mail com link para redefinir a senha",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "E-mail enviado (se o endereço existir)" }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Redefinir senha",
+        "description": "Define nova senha usando token de redefinição",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["token", "password"],
+                "properties": {
+                  "token": { "type": "string" },
+                  "password": { "type": "string", "minLength": 8 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Senha redefinida com sucesso" },
+          "400": { "description": "Token inválido ou expirado" }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Alterar senha",
+        "description": "Altera a senha do usuário autenticado",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["currentPassword", "newPassword"],
+                "properties": {
+                  "currentPassword": { "type": "string" },
+                  "newPassword": { "type": "string", "minLength": 8 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Senha alterada com sucesso" },
+          "400": { "description": "Senha atual incorreta" }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Autenticação"],
+        "summary": "Dados do usuário autenticado",
+        "description": "Retorna informações do usuário logado",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Dados do usuário",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "401": { "description": "Não autenticado" }
+        }
+      }
+    },
+    "/admin/companies": {
+      "get": {
+        "tags": ["Admin - Empresas"],
+        "summary": "Listar empresas",
+        "description": "Lista todas as empresas cadastradas (somente admin)",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de empresas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "companies": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Company" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin - Empresas"],
+        "summary": "Criar empresa",
+        "description": "Cadastra uma nova empresa no sistema",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "cnpj"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "trade_name": { "type": "string" },
+                  "cnpj": { "type": "string" },
+                  "primary_color": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Empresa criada com sucesso" }
+        }
+      }
+    },
+    "/admin/companies/{id}": {
+      "get": {
+        "tags": ["Admin - Empresas"],
+        "summary": "Detalhes da empresa",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Dados da empresa" },
+          "404": { "description": "Empresa não encontrada" }
+        }
+      },
+      "put": {
+        "tags": ["Admin - Empresas"],
+        "summary": "Atualizar empresa",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Company" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Empresa atualizada" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin - Empresas"],
+        "summary": "Remover empresa",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Empresa removida" }
+        }
+      }
+    },
+    "/admin/companies/{id}/users": {
+      "get": {
+        "tags": ["Admin - Empresas"],
+        "summary": "Listar usuários de uma empresa",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Lista de usuários da empresa" }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": ["Admin - Usuários"],
+        "summary": "Listar todos os usuários",
+        "description": "Lista todos os usuários do sistema (somente admin)",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de usuários",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/User" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}": {
+      "get": {
+        "tags": ["Admin - Usuários"],
+        "summary": "Detalhes do usuário",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Dados do usuário" }
+        }
+      },
+      "put": {
+        "tags": ["Admin - Usuários"],
+        "summary": "Atualizar usuário",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Usuário atualizado" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin - Usuários"],
+        "summary": "Remover usuário",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Usuário removido" }
+        }
+      }
+    },
+    "/admin/badges": {
+      "get": {
+        "tags": ["Admin - Badges"],
+        "summary": "Listar badges",
+        "description": "Lista todas as badges disponíveis",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de badges",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "badges": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Badge" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin - Badges"],
+        "summary": "Criar badge",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Badge" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Badge criada" }
+        }
+      }
+    },
+    "/admin/badges/{id}": {
+      "put": {
+        "tags": ["Admin - Badges"],
+        "summary": "Atualizar badge",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Badge atualizada" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin - Badges"],
+        "summary": "Remover badge",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Badge removida" }
+        }
+      }
+    },
+    "/admin/system": {
+      "get": {
+        "tags": ["Admin - Sistema"],
+        "summary": "Status do sistema",
+        "description": "Retorna métricas e status geral do sistema",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Informações do sistema" }
+        }
+      }
+    },
+    "/admin/system/backup": {
+      "post": {
+        "tags": ["Admin - Sistema"],
+        "summary": "Executar backup",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Backup iniciado" }
+        }
+      }
+    },
+    "/admin/system/integrity": {
+      "get": {
+        "tags": ["Admin - Sistema"],
+        "summary": "Verificar integridade do banco",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Resultado da verificação" }
+        }
+      }
+    },
+    "/admin/audit": {
+      "get": {
+        "tags": ["Admin - Sistema"],
+        "summary": "Log de auditoria",
+        "description": "Retorna registros de auditoria do sistema",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Registros de auditoria" }
+        }
+      }
+    },
+    "/admin/alerts/send": {
+      "post": {
+        "tags": ["Admin - Sistema"],
+        "summary": "Enviar alerta global",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "message"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "message": { "type": "string" },
+                  "type": { "type": "string", "enum": ["info", "warning", "critical"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Alerta enviado" }
+        }
+      }
+    },
+    "/admin/settings": {
+      "get": {
+        "tags": ["Admin - Sistema"],
+        "summary": "Configurações do sistema",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Configurações atuais" }
+        }
+      },
+      "put": {
+        "tags": ["Admin - Sistema"],
+        "summary": "Atualizar configurações",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Configurações atualizadas" }
+        }
+      }
+    },
+    "/collaborator/challenges": {
+      "get": {
+        "tags": ["Colaboradora - Desafios"],
+        "summary": "Listar desafios da colaboradora",
+        "description": "Retorna desafios disponíveis e em andamento",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de desafios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "challenges": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Challenge" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/collaborator/challenges/{id}": {
+      "get": {
+        "tags": ["Colaboradora - Desafios"],
+        "summary": "Detalhes do desafio",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Dados do desafio" }
+        }
+      }
+    },
+    "/collaborator/badges": {
+      "get": {
+        "tags": ["Colaboradora - Conquistas"],
+        "summary": "Listar badges da colaboradora",
+        "description": "Retorna badges conquistadas pela colaboradora",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de badges conquistadas" }
+        }
+      }
+    },
+    "/collaborator/campaigns": {
+      "get": {
+        "tags": ["Colaboradora - Campanhas"],
+        "summary": "Listar campanhas disponíveis",
+        "description": "Retorna campanhas ativas para a colaboradora",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de campanhas" }
+        }
+      }
+    },
+    "/collaborator/leagues": {
+      "get": {
+        "tags": ["Colaboradora - Liga"],
+        "summary": "Informações da liga semanal",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados da liga" }
+        }
+      }
+    },
+    "/collaborator/semaforo": {
+      "get": {
+        "tags": ["Colaboradora"],
+        "summary": "Semáforo de saúde da colaboradora",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Status do semáforo de saúde" }
+        }
+      }
+    },
+    "/collaborator/activities": {
+      "get": {
+        "tags": ["Colaboradora"],
+        "summary": "Atividades recentes",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de atividades" }
+        }
+      }
+    },
+    "/collaborator": {
+      "get": {
+        "tags": ["Colaboradora"],
+        "summary": "Painel da colaboradora",
+        "description": "Retorna dados resumidos do painel da colaboradora",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados do painel" }
+        }
+      }
+    },
+    "/campaigns": {
+      "get": {
+        "tags": ["Campanhas"],
+        "summary": "Listar campanhas",
+        "description": "Lista campanhas da empresa (RH/Liderança)",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de campanhas" }
+        }
+      },
+      "post": {
+        "tags": ["Campanhas"],
+        "summary": "Criar campanha",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Campaign" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Campanha criada" }
+        }
+      }
+    },
+    "/campaigns/{id}": {
+      "get": {
+        "tags": ["Campanhas"],
+        "summary": "Detalhes da campanha",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Dados da campanha" }
+        }
+      },
+      "put": {
+        "tags": ["Campanhas"],
+        "summary": "Atualizar campanha",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Campanha atualizada" }
+        }
+      },
+      "delete": {
+        "tags": ["Campanhas"],
+        "summary": "Remover campanha",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Campanha removida" }
+        }
+      }
+    },
+    "/campaigns/join": {
+      "post": {
+        "tags": ["Campanhas"],
+        "summary": "Participar de uma campanha",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["campaignId"],
+                "properties": {
+                  "campaignId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Participação confirmada" }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": ["Notificações"],
+        "summary": "Listar notificações",
+        "description": "Retorna notificações do usuário autenticado",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de notificações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notifications": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Notification" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/{id}": {
+      "delete": {
+        "tags": ["Notificações"],
+        "summary": "Remover notificação",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Notificação removida" }
+        }
+      }
+    },
+    "/notifications/mark-read": {
+      "post": {
+        "tags": ["Notificações"],
+        "summary": "Marcar notificações como lidas",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Notificações marcadas como lidas" }
+        }
+      }
+    },
+    "/objectives": {
+      "get": {
+        "tags": ["Objetivos e Recompensas"],
+        "summary": "Listar objetivos",
+        "description": "Retorna objetivos e progresso do usuário",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de objetivos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "objectives": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Objective" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/objectives/{id}/claim": {
+      "post": {
+        "tags": ["Objetivos e Recompensas"],
+        "summary": "Resgatar recompensa",
+        "description": "Resgata a recompensa de um objetivo concluído",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Recompensa resgatada" },
+          "400": { "description": "Objetivo ainda não concluído" }
+        }
+      }
+    },
+    "/gamification/check-in": {
+      "post": {
+        "tags": ["Gamificação"],
+        "summary": "Registrar check-in diário",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Check-in registrado" }
+        }
+      }
+    },
+    "/gamification/daily-missions": {
+      "get": {
+        "tags": ["Gamificação"],
+        "summary": "Listar missões diárias",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Missões do dia" }
+        }
+      }
+    },
+    "/gamification/daily-missions/{id}/complete": {
+      "post": {
+        "tags": ["Gamificação"],
+        "summary": "Completar missão diária",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Missão completada" }
+        }
+      }
+    },
+    "/gamification/leaderboard": {
+      "get": {
+        "tags": ["Gamificação"],
+        "summary": "Ranking de pontuação",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Ranking dos usuários" }
+        }
+      }
+    },
+    "/gamification/league": {
+      "get": {
+        "tags": ["Gamificação"],
+        "summary": "Informações da liga",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados da liga semanal" }
+        }
+      }
+    },
+    "/gamification/streak-status": {
+      "get": {
+        "tags": ["Gamificação"],
+        "summary": "Status da sequência de dias",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados do streak" }
+        }
+      }
+    },
+    "/upload/avatar": {
+      "post": {
+        "tags": ["Upload"],
+        "summary": "Upload de avatar do usuário",
+        "description": "Faz upload da foto de perfil do usuário",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload realizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Arquivo inválido" }
+        }
+      }
+    },
+    "/upload/logo": {
+      "post": {
+        "tags": ["Upload"],
+        "summary": "Upload de logo da empresa",
+        "description": "Faz upload do logo da empresa (somente RH/Admin)",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload realizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Arquivo inválido" }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Dados do dashboard",
+        "description": "Retorna métricas e dados para o dashboard do RH/Liderança",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados do dashboard" }
+        }
+      }
+    },
+    "/invites": {
+      "get": {
+        "tags": ["Convites"],
+        "summary": "Listar convites enviados",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de convites" }
+        }
+      },
+      "post": {
+        "tags": ["Convites"],
+        "summary": "Enviar convite",
+        "description": "Envia convite por e-mail para nova colaboradora",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "role": { "type": "string", "enum": ["colaboradora", "lideranca", "rh"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Convite enviado" },
+          "409": { "description": "E-mail já convidado" }
+        }
+      }
+    },
+    "/invites/{token}": {
+      "get": {
+        "tags": ["Convites"],
+        "summary": "Validar token de convite",
+        "parameters": [{ "name": "token", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Token válido" },
+          "404": { "description": "Token inválido ou expirado" }
+        }
+      }
+    },
+    "/invites/pending": {
+      "get": {
+        "tags": ["Convites"],
+        "summary": "Listar convites pendentes de aprovação",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de convites pendentes" }
+        }
+      }
+    },
+    "/invites/approve": {
+      "post": {
+        "tags": ["Convites"],
+        "summary": "Aprovar convite",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Convite aprovado" }
+        }
+      }
+    },
+    "/quiz": {
+      "get": {
+        "tags": ["Quiz"],
+        "summary": "Obter perguntas do quiz",
+        "description": "Retorna perguntas do diagnóstico de saúde",
+        "responses": {
+          "200": { "description": "Perguntas do quiz" }
+        }
+      }
+    },
+    "/quiz/submit": {
+      "post": {
+        "tags": ["Quiz"],
+        "summary": "Enviar respostas do quiz",
+        "description": "Processa respostas e retorna o perfil/arquétipo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["answers"],
+                "properties": {
+                  "answers": {
+                    "type": "array",
+                    "items": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Resultado do quiz com arquétipo" }
+        }
+      }
+    },
+    "/leads": {
+      "post": {
+        "tags": ["Leads"],
+        "summary": "Capturar lead",
+        "description": "Registra um novo lead interessado na plataforma",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "phone", "company"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "phone": { "type": "string" },
+                  "company": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Lead registrado" }
+        }
+      }
+    },
+    "/analytics/communications": {
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Analytics de comunicações/emails",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados de analytics de emails" }
+        }
+      }
+    },
+    "/analytics/history": {
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Histórico de analytics",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados históricos" }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": ["Perfil do Usuário"],
+        "summary": "Dados do perfil",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados do perfil do usuário" }
+        }
+      },
+      "put": {
+        "tags": ["Perfil do Usuário"],
+        "summary": "Atualizar perfil",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Perfil atualizado" }
+        }
+      }
+    },
+    "/users/me/preferences": {
+      "get": {
+        "tags": ["Perfil do Usuário"],
+        "summary": "Preferências do usuário",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Preferências atuais" }
+        }
+      },
+      "put": {
+        "tags": ["Perfil do Usuário"],
+        "summary": "Atualizar preferências",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Preferências atualizadas" }
+        }
+      }
+    },
+    "/users/me/notification-preferences": {
+      "get": {
+        "tags": ["Perfil do Usuário"],
+        "summary": "Preferências de notificação",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Preferências de notificação" }
+        }
+      },
+      "put": {
+        "tags": ["Perfil do Usuário"],
+        "summary": "Atualizar preferências de notificação",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Preferências atualizadas" }
+        }
+      }
+    },
+    "/company": {
+      "get": {
+        "tags": ["Empresa"],
+        "summary": "Dados da empresa do usuário",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados da empresa" }
+        }
+      }
+    },
+    "/departments": {
+      "get": {
+        "tags": ["Departamentos"],
+        "summary": "Listar departamentos",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de departamentos" }
+        }
+      }
+    },
+    "/rh/challenges": {
+      "get": {
+        "tags": ["RH - Desafios"],
+        "summary": "Listar desafios (RH)",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de desafios" }
+        }
+      },
+      "post": {
+        "tags": ["RH - Desafios"],
+        "summary": "Criar desafio",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "201": { "description": "Desafio criado" }
+        }
+      }
+    },
+    "/rh/challenges/{id}": {
+      "put": {
+        "tags": ["RH - Desafios"],
+        "summary": "Atualizar desafio",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Desafio atualizado" }
+        }
+      },
+      "delete": {
+        "tags": ["RH - Desafios"],
+        "summary": "Remover desafio",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Desafio removido" }
+        }
+      }
+    },
+    "/rh/leagues": {
+      "get": {
+        "tags": ["RH - Ligas"],
+        "summary": "Listar ligas",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de ligas" }
+        }
+      },
+      "post": {
+        "tags": ["RH - Ligas"],
+        "summary": "Criar liga",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "201": { "description": "Liga criada" }
+        }
+      }
+    },
+    "/rh/leagues/{id}": {
+      "get": {
+        "tags": ["RH - Ligas"],
+        "summary": "Detalhes da liga",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Dados da liga" }
+        }
+      },
+      "put": {
+        "tags": ["RH - Ligas"],
+        "summary": "Atualizar liga",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Liga atualizada" }
+        }
+      },
+      "delete": {
+        "tags": ["RH - Ligas"],
+        "summary": "Remover liga",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Liga removida" }
+        }
+      }
+    },
+    "/rh/leagues/{id}/join": {
+      "post": {
+        "tags": ["RH - Ligas"],
+        "summary": "Entrar na liga",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Entrada confirmada" }
+        }
+      }
+    },
+    "/rh/objectives": {
+      "get": {
+        "tags": ["RH - Objetivos"],
+        "summary": "Listar objetivos (RH)",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de objetivos" }
+        }
+      },
+      "post": {
+        "tags": ["RH - Objetivos"],
+        "summary": "Criar objetivo",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "201": { "description": "Objetivo criado" }
+        }
+      }
+    },
+    "/rh/objectives/{id}": {
+      "put": {
+        "tags": ["RH - Objetivos"],
+        "summary": "Atualizar objetivo",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Objetivo atualizado" }
+        }
+      },
+      "delete": {
+        "tags": ["RH - Objetivos"],
+        "summary": "Remover objetivo",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Objetivo removido" }
+        }
+      }
+    },
+    "/push/vapid-key": {
+      "get": {
+        "tags": ["Push Notifications"],
+        "summary": "Obter chave VAPID pública",
+        "description": "Retorna a chave pública para subscrição de push notifications",
+        "responses": {
+          "200": { "description": "Chave VAPID pública" }
+        }
+      }
+    },
+    "/push/subscribe": {
+      "post": {
+        "tags": ["Push Notifications"],
+        "summary": "Registrar subscrição push",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Subscrição registrada" }
+        }
+      }
+    }
+  },
+  "tags": [
+    { "name": "Sistema", "description": "Endpoints de saúde e monitoramento" },
+    { "name": "Autenticação", "description": "Login, registro, recuperação de senha e gerenciamento de sessão" },
+    { "name": "Admin - Empresas", "description": "Gerenciamento de empresas (somente admin master)" },
+    { "name": "Admin - Usuários", "description": "Gerenciamento de usuários (somente admin master)" },
+    { "name": "Admin - Badges", "description": "Gerenciamento de badges/conquistas (somente admin)" },
+    { "name": "Admin - Sistema", "description": "Configurações e operações do sistema (somente admin)" },
+    { "name": "Colaboradora", "description": "Painel e funcionalidades da colaboradora" },
+    { "name": "Colaboradora - Desafios", "description": "Desafios disponíveis para a colaboradora" },
+    { "name": "Colaboradora - Conquistas", "description": "Badges e conquistas da colaboradora" },
+    { "name": "Colaboradora - Campanhas", "description": "Campanhas disponíveis para participação" },
+    { "name": "Colaboradora - Liga", "description": "Liga semanal e ranking" },
+    { "name": "Campanhas", "description": "Gerenciamento de campanhas (RH/Liderança)" },
+    { "name": "Notificações", "description": "Gerenciamento de notificações do usuário" },
+    { "name": "Objetivos e Recompensas", "description": "Objetivos com recompensas resgatáveis" },
+    { "name": "Gamificação", "description": "Sistema de gamificação, check-in, missões e liga" },
+    { "name": "Upload", "description": "Upload de arquivos (avatar e logo)" },
+    { "name": "Dashboard", "description": "Dados do dashboard para RH e Liderança" },
+    { "name": "Convites", "description": "Sistema de convites para novas colaboradoras" },
+    { "name": "Quiz", "description": "Diagnóstico de saúde e bem-estar" },
+    { "name": "Leads", "description": "Captura de leads interessados" },
+    { "name": "Analytics", "description": "Dados de analytics e histórico" },
+    { "name": "Perfil do Usuário", "description": "Gerenciamento de perfil e preferências" },
+    { "name": "Empresa", "description": "Dados da empresa do usuário" },
+    { "name": "Departamentos", "description": "Listagem de departamentos" },
+    { "name": "RH - Desafios", "description": "Gerenciamento de desafios pelo RH" },
+    { "name": "RH - Ligas", "description": "Gerenciamento de ligas pelo RH" },
+    { "name": "RH - Objetivos", "description": "Gerenciamento de objetivos pelo RH" },
+    { "name": "Push Notifications", "description": "Web push notifications" }
+  ]
+}

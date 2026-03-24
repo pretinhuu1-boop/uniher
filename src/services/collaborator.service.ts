@@ -1,3 +1,4 @@
+import { getReadDb } from '@/lib/db';
 import * as userRepo from '@/repositories/user.repository';
 import * as badgeRepo from '@/repositories/badge.repository';
 import * as challengeRepo from '@/repositories/challenge.repository';
@@ -29,6 +30,21 @@ function getFormattedDate(): string {
   });
 }
 
+function getExamsPercent(userId: string): { percent: number; total: number } {
+  try {
+    const db = getReadDb();
+    const row = db.prepare(`
+      SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+      FROM user_exams WHERE user_id = ?
+    `).get(userId) as { total: number; completed: number } | undefined;
+
+    if (!row || row.total === 0) return { percent: 0, total: 0 };
+    return { percent: Math.round((row.completed / row.total) * 100), total: row.total };
+  } catch {
+    return { percent: 0, total: 0 };
+  }
+}
+
 export function getCollaboratorHome(userId: string, companyId: string) {
   const user = userRepo.getUserById(userId);
   if (!user) throw new Error('Usuário não encontrado');
@@ -39,6 +55,7 @@ export function getCollaboratorHome(userId: string, companyId: string) {
   const challenges = challengeRepo.getUserChallenges(userId, 'active');
   const activeCampaigns = campaignRepo.countActiveCampaigns(companyId);
   const unreadNotifs = notifRepo.countUnread(userId);
+  const examStats = getExamsPercent(userId);
 
   return {
     greeting: getCurrentGreeting(),
@@ -47,8 +64,8 @@ export function getCollaboratorHome(userId: string, companyId: string) {
     healthAlert: user.streak > 0
       ? `Você está em sequência de ${user.streak} dias!`
       : 'Complete um desafio hoje para iniciar sua sequência',
-    examsPercent: 40,
-    examsTotal: 5,
+    examsPercent: examStats.percent,
+    examsTotal: examStats.total,
     contentViewed: 12,
     campaignsActive: activeCampaigns,
     campaignsTotal: 4,

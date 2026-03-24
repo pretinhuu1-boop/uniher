@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniHER — Painel de Testes</title>
+  <style>
+    :root{--gold:#C9A264;--gold-dark:#7A5C12;--navy:#1A3A6B;--bg:#FAF7F2;--card:#FFF;--border:#E8DFD0;--text:#3D2E22;--muted:#8C7B6B;--green:#10B981;--red:#EF4444;--amber:#F59E0B;--blue:#3B82F6;--purple:#8B5CF6}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .header{background:linear-gradient(135deg,var(--navy),#2A5A9B);color:#fff;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .header h1{font-size:20px;font-weight:700} .header .sub{font-size:12px;opacity:.7;margin-top:2px}
+    .stats-bar{display:flex;gap:16px;flex-wrap:wrap;padding:16px 28px;background:#f8f4ee;border-bottom:1px solid var(--border)}
+    .stat{text-align:center;min-width:100px}
+    .stat .n{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums} .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    .tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+    .tab{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);transition:all .15s}
+    .tab:hover{background:#f5f0e8} .tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    .filter{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);transition:all .15s}
+    .filter:hover{background:#f5f0e8} .filter.active{background:var(--gold);color:#fff;border-color:var(--gold-dark)}
+    .section{margin-bottom:24px}
+    .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-head h2{font-size:16px;font-weight:700;color:var(--navy)}
+    .badge-manual{background:#FEF2F2;color:var(--red);border:1px solid #FCA5A5;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+    .badge-auto{background:#F0FDF4;color:var(--green);border:1px solid #86EFAC;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+    .badge-count{background:#EFF6FF;color:var(--blue);border:1px solid #93C5FD;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
+    .test-group{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:visible}
+    .test-group-head{padding:14px 18px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+    .test-group-head:hover{background:#faf7f2}
+    .test-group-head h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+    .test-group-head .arrow{transition:transform .2s;font-size:12px;color:var(--muted)}
+    .test-group-head .arrow.open{transform:rotate(90deg)}
+    .test-group-body{display:none;border-top:1px solid var(--border)}
+    .test-group-body.open{display:block}
+    .test-item{display:flex;align-items:flex-start;gap:10px;padding:10px 18px;border-bottom:1px solid #f5f0e8;font-size:13px;transition:background .1s}
+    .test-item:last-child{border:none}
+    .test-item:hover{background:#faf7f2}
+    .test-item input[type=checkbox]{margin-top:2px;width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+    .test-item .desc{flex:1}
+    .test-item .type{flex-shrink:0;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px}
+    .type-manual{background:#FEF2F2;color:var(--red);border:1px solid #FCA5A5}
+    .type-auto{background:#F0FDF4;color:var(--green);border:1px solid #86EFAC}
+    .progress-bar{width:100%;height:6px;background:#e8e0d4;border-radius:99px;overflow:hidden}
+    .progress-fill{height:100%;border-radius:99px;transition:width .3s;background:var(--green)}
+    .search{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:100%;max-width:300px;outline:none;background:var(--card)}
+    .search:focus{border-color:var(--gold)}
+    .foot{text-align:center;padding:20px;font-size:12px;color:var(--muted)}
+    @media(max-width:768px){.stats-bar{gap:8px}.stat .n{font-size:22px}.tabs{overflow-x:auto}}
+    .runner{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+    .runner h2{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:12px}
+    .runner-grid{display:flex;flex-wrap:wrap;gap:8px}
+    .run-btn{padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);transition:all .15s;display:flex;align-items:center;gap:6px}
+    .run-btn:hover{background:#f5f0e8;transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+    .run-btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+    .run-btn.primary:hover{background:#2A5A9B}
+    .run-btn .icon{font-size:16px}
+    .cmd-box{background:#1a1a2e;color:#a8d8ea;font-family:Consolas,Monaco,monospace;font-size:12px;padding:14px 18px;border-radius:8px;margin-top:12px;position:relative;display:none;white-space:pre-wrap;line-height:1.6}
+    .cmd-box.show{display:block}
+    .cmd-box .copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.1);border:none;color:#a8d8ea;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer}
+    .cmd-box .copy-btn:hover{background:rgba(255,255,255,.2)}
+    .info-banner{background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px;padding:12px 16px;font-size:13px;color:#1E40AF;margin-bottom:16px;display:flex;align-items:flex-start;gap:8px}
+    /* Result cards */
+    .result-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+    .result-card{padding:16px;border-radius:10px;text-align:center;border:1px solid #e8e0d4}
+    .result-card .val{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
+    .result-card .lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+    .result-card.pass{background:#F0FDF4;border-color:#86EFAC} .result-card.pass .val,.result-card.pass .lbl{color:#059669}
+    .result-card.fail{background:#FEF2F2;border-color:#FCA5A5} .result-card.fail .val,.result-card.fail .lbl{color:#DC2626}
+    .result-card.skip{background:#FFFBEB;border-color:#FDE68A} .result-card.skip .val,.result-card.skip .lbl{color:#92400E}
+    .result-card.time{background:#EFF6FF;border-color:#93C5FD} .result-card.time .val,.result-card.time .lbl{color:#1E40AF}
+    .result-card.rate{background:#F5F3FF;border-color:#C4B5FD} .result-card.rate .val,.result-card.rate .lbl{color:#6D28D9}
+    /* Donut */
+    .donut-wrap{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:16px}
+    .donut{width:100px;height:100px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center}
+    .donut .center{font-size:22px;font-weight:800;color:var(--navy)}
+    /* Result groups */
+    .rg{border:1px solid #e8e0d4;border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--card)}
+    .rg-head{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background .1s}
+    .rg-head:hover{background:#faf7f2}
+    .rg-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+    .rg-meta{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:600}
+    .rg-body{display:none;border-top:1px solid #e8e0d4}
+    .rg-body.open{display:block}
+    .rt{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid #f5f0e8;font-size:13px;transition:background .1s}
+    .rt:last-child{border:none}
+    .rt:hover{background:#faf7f2}
+    .rt-icon{flex-shrink:0;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px}
+    .rt-icon.pass{background:#DCFCE7;color:#059669} .rt-icon.fail{background:#FEE2E2;color:#DC2626} .rt-icon.skip{background:#FEF3C7;color:#92400E}
+    .rt-body{flex:1;min-width:0}
+    .rt-title{font-weight:500}
+    .rt-dur{font-size:11px;color:var(--muted);flex-shrink:0}
+    .rt-err{margin-top:6px;padding:8px 12px;background:#FFF5F5;border:1px solid #FCA5A5;border-radius:6px;font-size:12px;color:#991B1B;font-family:Consolas,monospace;white-space:pre-wrap;word-break:break-all;max-height:100px;overflow-y:auto;cursor:pointer;transition:max-height .3s}
+    .rt-err.expanded{max-height:400px}
+    /* Filter tabs for results */
+    .rf{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+    .rf-btn{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);transition:all .15s}
+    .rf-btn:hover{background:#f5f0e8} .rf-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .fade-in{animation:fadeIn .3s ease-out}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>UniHER — Painel de Testes de Homologação</h1>
+    <div class="sub">210 testes | 170 automatizáveis | 40 manuais</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button onclick="uncheckAll()" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;cursor:pointer">Limpar Todos</button>
+    <button onclick="exportResults()" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;border:none;background:var(--gold);color:#fff;cursor:pointer">Exportar Resultados</button>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="n" id="totalCount">210</div><div class="l">Total</div></div>
+  <div class="stat"><div class="n" style="color:var(--green)" id="passedCount">0</div><div class="l">Passou</div></div>
+  <div class="stat"><div class="n" style="color:var(--muted)" id="pendingCount">210</div><div class="l">Pendente</div></div>
+  <div class="stat"><div class="n" style="color:var(--red)" id="manualCount">40</div><div class="l">Manual</div></div>
+  <div class="stat"><div class="n" style="color:var(--green)" id="autoCount">170</div><div class="l">Automático</div></div>
+  <div class="stat">
+    <div class="progress-bar" style="width:150px;margin:8px auto 4px"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="l"><span id="progressPct">0</span>% concluído</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Playwright Runner -->
+  <div class="runner">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h2>🧪 Testes Automatizados (Playwright)</h2>
+      <span id="serverStatus" style="font-size:12px;padding:4px 10px;border-radius:6px;background:#FEF2F2;color:var(--red);font-weight:600">⏳ Verificando...</span>
+    </div>
+    <div class="runner-grid">
+      <button class="run-btn primary" onclick="runTests('all')" id="btn-all"><span class="icon">▶</span> Rodar TODOS (170 testes)</button>
+      <button class="run-btn" onclick="runTests('master')" id="btn-master"><span class="icon">👑</span> Master Admin</button>
+      <button class="run-btn" onclick="runTests('rh')" id="btn-rh"><span class="icon">🏢</span> Admin Empresa</button>
+      <button class="run-btn" onclick="runTests('colaboradora')" id="btn-colaboradora"><span class="icon">👩</span> Colaboradora</button>
+      <button class="run-btn" onclick="runTests('integrado')" id="btn-integrado"><span class="icon">🔗</span> Integrado E2E</button>
+      <button class="run-btn" onclick="runTests('seguranca')" id="btn-seguranca"><span class="icon">🔒</span> Segurança</button>
+    </div>
+    <div id="runnerOutput" style="display:none;margin-top:14px">
+      <div id="runnerProgress" style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:16px;height:16px;border:2px solid #e8e0d4;border-top-color:var(--gold);border-radius:50%;animation:spin .6s linear infinite" id="runSpinner"></div>
+        <span id="runnerLabel" style="font-size:13px;font-weight:600;color:var(--navy)">Executando testes...</span>
+      </div>
+      <div id="runnerResults" style="display:none" class="fade-in"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+    <input type="text" class="search" placeholder="Buscar teste..." oninput="filterTests(this.value)" id="searchInput">
+    <div class="filters">
+      <span class="filter active" onclick="setTypeFilter('all',this)">Todos</span>
+      <span class="filter" onclick="setTypeFilter('manual',this)">🔴 Manuais</span>
+      <span class="filter" onclick="setTypeFilter('auto',this)">🟢 Automáticos</span>
+      <span class="filter" onclick="setTypeFilter('pending',this)">⏳ Pendentes</span>
+      <span class="filter" onclick="setTypeFilter('passed',this)">✅ Concluídos</span>
+    </div>
+  </div>
+
+  <div class="tabs" id="roleTabs"></div>
+  <div id="testContent"></div>
+</div>
+
+<div class="foot">UniHER — Plano de Testes de Homologação | 210 testes</div>
+
+<script>
+const TESTS = {
+  'master': {
+    label: '👑 Master Admin',
+    groups: {
+      'Login & Acesso': [
+        { desc: 'Login com admin@uniher.com.br / Admin@2026', type: 'auto' },
+        { desc: 'Redirect para /admin após login', type: 'auto' },
+        { desc: 'Acessar /colaboradora → redireciona para /admin', type: 'auto' },
+        { desc: 'Logout → cookies limpos → redirect para /auth', type: 'auto' },
+        { desc: 'Login com senha errada → mensagem genérica', type: 'auto' },
+        { desc: 'Rate limit após 5 tentativas', type: 'auto' },
+      ],
+      'Visão Geral': [
+        { desc: 'KPIs mostram dados reais (empresas, usuárias, campanhas, DB)', type: 'auto' },
+        { desc: 'Empresas recentes listadas com plano correto', type: 'auto' },
+        { desc: 'Empty state orientador se não houver empresas', type: 'auto' },
+      ],
+      'Empresas': [
+        { desc: 'Criar empresa (nome, CNPJ, setor, plano, contato)', type: 'auto' },
+        { desc: 'Editar empresa', type: 'auto' },
+        { desc: 'Soft delete empresa → some da lista', type: 'auto' },
+        { desc: 'Ver usuários da empresa', type: 'auto' },
+        { desc: 'Bloquear/desbloquear usuário de empresa', type: 'auto' },
+        { desc: 'Reset senha → modal persistente com "Copiar"', type: 'auto' },
+      ],
+      'Usuários': [
+        { desc: 'Listar todos os usuários (paginado)', type: 'auto' },
+        { desc: 'Buscar por nome/email', type: 'auto' },
+        { desc: 'Filtrar por role e status', type: 'auto' },
+        { desc: 'Bloquear/desbloquear', type: 'auto' },
+        { desc: 'Alterar role', type: 'auto' },
+        { desc: 'Reset de senha → modal persistente', type: 'auto' },
+      ],
+      'Admin Master': [
+        { desc: 'Criar novo admin master (pede senha atual)', type: 'auto' },
+        { desc: 'Admin master sem empresa vinculada', type: 'auto' },
+        { desc: 'Listar admins master', type: 'auto' },
+      ],
+      'Badges': [
+        { desc: 'Criar badge (nome, descrição, ícone, pontos, raridade)', type: 'auto' },
+        { desc: 'Editar badge', type: 'auto' },
+        { desc: 'Listar badges com contagem de holders', type: 'auto' },
+      ],
+      'Sistema': [
+        { desc: 'Stats: DB size, uptime, memória, cores', type: 'auto' },
+        { desc: 'Health check com indicadores verde/vermelho', type: 'auto' },
+        { desc: 'Backup do Banco → cria arquivo', type: 'auto' },
+        { desc: 'Verificar Integridade → mostra resultado', type: 'auto' },
+        { desc: 'Migrations listadas', type: 'auto' },
+        { desc: 'Painel master visível apenas em localhost', type: 'manual' },
+      ],
+      'Alertas & Auditoria': [
+        { desc: 'Enviar alerta para todos os usuários', type: 'auto' },
+        { desc: 'Listar logs com filtro por período', type: 'auto' },
+        { desc: 'Filtrar auditoria por ação', type: 'auto' },
+        { desc: 'Buscar por email/entidade na auditoria', type: 'auto' },
+        { desc: 'Export CSV funcional', type: 'auto' },
+      ],
+      'Painel Controle HTML': [
+        { desc: 'Acessar /uniher-control.html', type: 'auto' },
+        { desc: 'Login necessário → tela de login', type: 'auto' },
+        { desc: 'Após login → painel carrega', type: 'auto' },
+        { desc: 'Status Online/Offline correto', type: 'auto' },
+        { desc: 'Ver Logs do Servidor (modal)', type: 'auto' },
+        { desc: 'Ver Logs de Erros', type: 'auto' },
+        { desc: 'Portas em uso (tabela)', type: 'auto' },
+        { desc: 'Uso de Disco', type: 'auto' },
+        { desc: 'Info Completa do Sistema', type: 'auto' },
+        { desc: 'Backup do Banco', type: 'auto' },
+        { desc: 'Verificar Integridade', type: 'auto' },
+        { desc: 'Limpar Logs', type: 'auto' },
+        { desc: 'Deploy checklist visível', type: 'manual' },
+        { desc: 'Gerar Nginx Config', type: 'auto' },
+        { desc: 'Gerar .env.production', type: 'auto' },
+        { desc: 'Comandos PM2', type: 'manual' },
+      ],
+      'Segurança Master': [
+        { desc: 'JWT secret ≥ 32 chars', type: 'auto' },
+        { desc: 'Refresh token expira em 48h', type: 'auto' },
+        { desc: 'Rate limit progressivo: 1min → 5min → 30min', type: 'auto' },
+        { desc: 'Lockout 30min → notificação de segurança ao admin', type: 'auto' },
+        { desc: 'Failed login logado na auditoria', type: 'auto' },
+        { desc: 'Soft delete não apaga dados reais', type: 'auto' },
+        { desc: 'API /admin/* retorna 403 para não-admin', type: 'auto' },
+      ],
+    }
+  },
+  'rh': {
+    label: '🏢 Admin Empresa (RH)',
+    groups: {
+      'Primeiro Acesso': [
+        { desc: 'Registro via /hr-onboarding', type: 'auto' },
+        { desc: 'Redirect para dashboard após registro', type: 'auto' },
+        { desc: 'RH novo → redirect para /onboarding-rh', type: 'auto' },
+        { desc: 'Onboarding mostra 5 passos com tempo estimado', type: 'auto' },
+        { desc: '"Comece aqui" no passo 1', type: 'auto' },
+      ],
+      'Dashboard': [
+        { desc: 'KPIs mostram dados da empresa (não de outras)', type: 'auto' },
+        { desc: 'Gráficos com dados reais ou empty state', type: 'auto' },
+        { desc: 'Ranking de departamentos', type: 'auto' },
+      ],
+      'Gestão Colaboradoras': [
+        { desc: 'Stats: total, ativas, bloqueadas, por depto', type: 'auto' },
+        { desc: 'Buscar por nome/email', type: 'auto' },
+        { desc: 'Filtrar por departamento, role, status', type: 'auto' },
+        { desc: 'Bloquear/desbloquear colaboradora', type: 'auto' },
+        { desc: 'Trocar departamento inline', type: 'auto' },
+        { desc: 'Paginação funcional', type: 'auto' },
+        { desc: 'Só vê usuários da própria empresa', type: 'auto' },
+      ],
+      'Departamentos': [
+        { desc: 'Criar departamento (nome + cor)', type: 'auto' },
+        { desc: 'Editar departamento', type: 'auto' },
+        { desc: 'Deletar departamento', type: 'auto' },
+        { desc: 'Contagem de usuários por departamento', type: 'auto' },
+      ],
+      'Convites': [
+        { desc: 'Convidar por email (role + departamento)', type: 'auto' },
+        { desc: 'RH não pode convidar role "RH"', type: 'auto' },
+        { desc: 'Bulk invite (múltiplos emails)', type: 'auto' },
+        { desc: 'Progresso do bulk invite visível', type: 'auto' },
+        { desc: 'Resultados: sucesso/erro por email', type: 'auto' },
+        { desc: 'Email de convite enviado (ou log console)', type: 'auto' },
+        { desc: 'Ver pendentes/aceitos/expirados', type: 'auto' },
+        { desc: 'Aprovar usuário pendente', type: 'auto' },
+        { desc: 'RH não pode aprovar outro RH → erro 403', type: 'auto' },
+      ],
+      'Desafios & Campanhas': [
+        { desc: 'Criar desafio para a empresa', type: 'auto' },
+        { desc: 'Ver desafios padrão da plataforma', type: 'auto' },
+        { desc: 'Editar/deletar apenas desafios da própria empresa', type: 'auto' },
+        { desc: 'Criar campanha (nome, mês, cor)', type: 'auto' },
+        { desc: 'Só vê campanhas da própria empresa', type: 'auto' },
+      ],
+      'Objetivos & Ligas': [
+        { desc: 'Criar objetivo para a empresa', type: 'auto' },
+        { desc: 'Vincular objetivo a campanha', type: 'auto' },
+        { desc: 'Gerenciar ligas customizadas', type: 'auto' },
+      ],
+      'Company Profile': [
+        { desc: 'Editar nome, CNPJ, setor, contato', type: 'auto' },
+        { desc: 'Upload de logo → imagem aparece', type: 'auto' },
+        { desc: 'Salvar → dados persistem', type: 'auto' },
+      ],
+      'Analytics': [
+        { desc: 'Analytics de Comunicação com dados reais', type: 'auto' },
+        { desc: 'Histórico com dados reais', type: 'auto' },
+        { desc: 'Download CSV funcional', type: 'auto' },
+      ],
+      'Configurações': [
+        { desc: 'Editar perfil (nome, cargo)', type: 'auto' },
+        { desc: 'Contato de emergência', type: 'auto' },
+        { desc: 'Toggles de notificação salvam no banco', type: 'auto' },
+        { desc: 'Toggles de privacidade salvam no banco', type: 'auto' },
+      ],
+      'Segurança RH': [
+        { desc: 'RH não acessa /admin → redirect', type: 'auto' },
+        { desc: 'RH não acessa /api/admin/* → 403', type: 'auto' },
+        { desc: 'Analytics filtrado por empresa', type: 'auto' },
+        { desc: 'Histórico filtrado por empresa', type: 'auto' },
+        { desc: 'Challenges PATCH pre-filtrado por empresa', type: 'auto' },
+        { desc: 'Convites auditados', type: 'auto' },
+      ],
+    }
+  },
+  'colaboradora': {
+    label: '👩 Colaboradora',
+    groups: {
+      'Aceitar Convite': [
+        { desc: 'Acessar link de convite /invite/[token]', type: 'auto' },
+        { desc: 'Token válido → mostra formulário', type: 'auto' },
+        { desc: 'Token expirado → mensagem de erro', type: 'auto' },
+        { desc: 'Token inválido → mensagem de erro', type: 'auto' },
+        { desc: 'Senha forte (maiúsc, minúsc, número, especial)', type: 'auto' },
+        { desc: 'Toggle de senha independente por campo', type: 'auto' },
+        { desc: 'Loading spinner no botão', type: 'auto' },
+        { desc: 'Redirect para /pending-approval', type: 'auto' },
+      ],
+      'Primeiro Acesso': [
+        { desc: 'mustChangePassword → redirect /primeiro-acesso', type: 'auto' },
+        { desc: 'Bloqueia outras rotas até trocar senha', type: 'auto' },
+        { desc: 'Validação em tempo real', type: 'auto' },
+        { desc: 'Após trocar → redirect home', type: 'auto' },
+      ],
+      'Quiz': [
+        { desc: '6 perguntas com slider', type: 'auto' },
+        { desc: 'Progresso visível', type: 'auto' },
+        { desc: 'Submit → resultado do arquétipo', type: 'auto' },
+        { desc: 'Redirect para /colaboradora', type: 'auto' },
+      ],
+      'Home': [
+        { desc: 'Check-in hero card no topo', type: 'auto' },
+        { desc: 'Check-in → XP ganho + streak', type: 'auto' },
+        { desc: 'Barra de XP diário progride', type: 'auto' },
+        { desc: 'Não permite double check-in', type: 'auto' },
+        { desc: 'Stats cards com dados reais', type: 'auto' },
+        { desc: 'Daily missions listadas', type: 'auto' },
+        { desc: 'Completar missão → feedback', type: 'auto' },
+        { desc: 'Challenges com barra de progresso', type: 'auto' },
+        { desc: 'Incrementar progresso', type: 'auto' },
+        { desc: 'Badges desbloqueados visíveis', type: 'auto' },
+        { desc: 'Botão de pânico (WhatsApp)', type: 'manual' },
+        { desc: 'Toast de erro visível quando API falha', type: 'auto' },
+      ],
+      'Desafios': [
+        { desc: 'Listar desafios ativos/completados/disponíveis', type: 'auto' },
+        { desc: 'Criar desafio pessoal', type: 'auto' },
+        { desc: 'Registrar progresso', type: 'auto' },
+        { desc: 'Empty state orientador', type: 'auto' },
+      ],
+      'Campanhas': [
+        { desc: 'Ver campanhas disponíveis', type: 'auto' },
+        { desc: 'Participar de campanha', type: 'auto' },
+        { desc: 'Ver progresso', type: 'auto' },
+        { desc: 'Filtro por status', type: 'auto' },
+        { desc: 'Empty state orientador', type: 'auto' },
+      ],
+      'Conquistas': [
+        { desc: 'Listar badges (desbloqueados + bloqueados)', type: 'auto' },
+        { desc: 'Filtro: todos/desbloqueados/bloqueados', type: 'auto' },
+        { desc: 'Progresso geral (%)', type: 'auto' },
+        { desc: 'Share → Web Share API ou WhatsApp', type: 'manual' },
+        { desc: 'Empty state orientador', type: 'auto' },
+      ],
+      'Liga': [
+        { desc: 'Banner explicativo (dismissível)', type: 'auto' },
+        { desc: 'Leaderboard com posição atual', type: 'auto' },
+        { desc: 'Selecionar entre ligas', type: 'auto' },
+        { desc: 'Ligas customizadas visíveis', type: 'auto' },
+        { desc: 'Paginação no leaderboard', type: 'auto' },
+      ],
+      'Semáforo': [
+        { desc: 'Legenda de cores no topo', type: 'auto' },
+        { desc: '6 dimensões com score', type: 'auto' },
+        { desc: 'Dica acionável por dimensão', type: 'auto' },
+        { desc: 'Histórico real', type: 'auto' },
+        { desc: 'Agendar lembrete → salva preferência', type: 'auto' },
+      ],
+      'Notificações': [
+        { desc: 'Listar notificações', type: 'auto' },
+        { desc: 'Filtro por tipo (6 filtros)', type: 'auto' },
+        { desc: 'Marcar como lida', type: 'auto' },
+        { desc: 'Deletar', type: 'auto' },
+        { desc: 'Contagem por filtro', type: 'auto' },
+        { desc: 'Empty state por filtro', type: 'auto' },
+      ],
+      'Configurações': [
+        { desc: 'Editar perfil', type: 'auto' },
+        { desc: 'Contato de emergência', type: 'auto' },
+        { desc: 'Arquétipo visível', type: 'auto' },
+        { desc: 'Link para refazer quiz', type: 'auto' },
+        { desc: 'Toggles notificação salvam', type: 'auto' },
+        { desc: 'Toggles privacidade salvam', type: 'auto' },
+        { desc: 'Push notification toggle', type: 'manual' },
+        { desc: 'Lembretes configuráveis', type: 'auto' },
+        { desc: 'Exportar dados → download JSON', type: 'auto' },
+        { desc: 'Solicitar exclusão → notifica admins', type: 'auto' },
+      ],
+      'Esqueci Senha': [
+        { desc: 'Acessar /esqueci-senha', type: 'auto' },
+        { desc: 'Email enviado (mesmo se não existe)', type: 'auto' },
+        { desc: 'Link no email/log', type: 'auto' },
+        { desc: 'Token inválido → erro', type: 'auto' },
+        { desc: 'Token expirado → erro', type: 'auto' },
+        { desc: 'Nova senha com validação forte', type: 'auto' },
+        { desc: 'Após reset → redirect login', type: 'auto' },
+        { desc: 'Token usado → não funciona de novo', type: 'auto' },
+      ],
+      'Segurança Colaboradora': [
+        { desc: 'Não acessa /admin → redirect', type: 'auto' },
+        { desc: 'Não acessa /api/admin/* → 403', type: 'auto' },
+        { desc: 'Não acessa /api/rh/* → 403', type: 'auto' },
+        { desc: 'Não vê dados de outra colaboradora', type: 'auto' },
+        { desc: 'Não incrementa challenge de outro user', type: 'auto' },
+      ],
+    }
+  },
+  'integrado': {
+    label: '🔗 Teste Integrado',
+    groups: {
+      'Fluxo E2E Completo': [
+        { desc: 'Admin loga → cria empresa', type: 'auto' },
+        { desc: 'Cria departamentos (RH, Marketing, TI)', type: 'auto' },
+        { desc: 'Cria usuário RH', type: 'auto' },
+        { desc: 'RH loga → vê onboarding', type: 'auto' },
+        { desc: 'RH convida 3 colaboradoras', type: 'auto' },
+        { desc: 'Colaboradora aceita convite → pending', type: 'auto' },
+        { desc: 'RH aprova colaboradora', type: 'auto' },
+        { desc: 'Colaboradora loga → faz quiz', type: 'auto' },
+        { desc: 'Colaboradora faz check-in → ganha XP', type: 'auto' },
+        { desc: 'Colaboradora inicia desafio', type: 'auto' },
+        { desc: 'RH cria campanha → colaboradora vê', type: 'auto' },
+        { desc: 'Colaboradora desbloqueia badge', type: 'auto' },
+        { desc: 'Colaboradora compartilha badge', type: 'manual' },
+        { desc: 'RH vê analytics → reflete ações', type: 'auto' },
+        { desc: 'Admin vê auditoria → ações logadas', type: 'auto' },
+        { desc: 'Admin faz backup → arquivo criado', type: 'auto' },
+      ],
+      'Segurança E2E': [
+        { desc: 'Login errado 6x → lockout 1min', type: 'auto' },
+        { desc: 'Continuar → lockout 5min', type: 'auto' },
+        { desc: 'Continuar → lockout 30min + admin notificado', type: 'auto' },
+        { desc: 'Colaboradora acessa API admin → 403', type: 'auto' },
+        { desc: 'Acessar dados de outro user por ID → 404', type: 'auto' },
+        { desc: 'Upload .php → rejeitado', type: 'auto' },
+        { desc: 'Upload > 5MB → rejeitado', type: 'auto' },
+        { desc: 'SQL injection em busca → sem efeito', type: 'auto' },
+        { desc: 'XSS em campo nome → sanitizado', type: 'auto' },
+        { desc: 'JWT secret > 32 chars', type: 'auto' },
+        { desc: 'Forgot-password não revela se email existe', type: 'auto' },
+        { desc: 'Register não revela se email existe', type: 'auto' },
+      ],
+      'LGPD E2E': [
+        { desc: 'Exportar dados → JSON completo', type: 'auto' },
+        { desc: 'Solicitar exclusão → admins notificados', type: 'auto' },
+        { desc: 'Consent tracking (POST/GET/DELETE)', type: 'auto' },
+        { desc: 'Dados soft-deleted não aparecem em listagens', type: 'auto' },
+      ],
+      'Resiliência': [
+        { desc: 'Matar Node → watchdog reinicia em ~3s', type: 'manual' },
+        { desc: 'Health check healthy após restart', type: 'manual' },
+        { desc: 'DB reconecta após falha', type: 'manual' },
+        { desc: 'Upload corrompido → erro tratado', type: 'auto' },
+        { desc: 'Payload inválido → erro 400', type: 'auto' },
+      ],
+      'Mobile': [
+        { desc: 'Login responsivo', type: 'manual' },
+        { desc: 'Check-in hero visível sem scroll', type: 'manual' },
+        { desc: 'Sidebar abre/fecha', type: 'manual' },
+        { desc: 'Sidebar fecha ao clicar link', type: 'manual' },
+        { desc: 'Tabelas viram cards no mobile', type: 'manual' },
+        { desc: 'Touch targets ≥ 44px', type: 'manual' },
+        { desc: 'Scroll-to-top em páginas longas', type: 'manual' },
+      ],
+      'Performance': [
+        { desc: 'Página inicial < 3s', type: 'manual' },
+        { desc: 'Dashboard < 2s', type: 'manual' },
+        { desc: 'Listagens paginadas', type: 'auto' },
+        { desc: 'npm audit → 0 vulnerabilidades', type: 'auto' },
+        { desc: 'Build produção → 0 erros TypeScript', type: 'auto' },
+      ],
+    }
+  }
+};
+
+// ─── State ───
+let activeRole = 'master';
+let typeFilter = 'all';
+let searchQuery = '';
+
+// ─── Persistence ───
+function getChecked() { try { return JSON.parse(localStorage.getItem('uniher_tests') || '{}'); } catch { return {}; } }
+function setChecked(id, val) { const c = getChecked(); if (val) c[id] = true; else delete c[id]; localStorage.setItem('uniher_tests', JSON.stringify(c)); }
+
+// ─── Render ───
+function render() {
+  // Tabs
+  const tabsEl = document.getElementById('roleTabs');
+  tabsEl.innerHTML = Object.entries(TESTS).map(([key, val]) =>
+    `<span class="tab ${key===activeRole?'active':''}" onclick="activeRole='${key}';render()">${val.label}</span>`
+  ).join('');
+
+  // Content
+  const role = TESTS[activeRole];
+  const checked = getChecked();
+  let html = '';
+
+  // Separate manual and auto groups
+  for (const [groupName, tests] of Object.entries(role.groups)) {
+    const filtered = tests.filter(t => {
+      if (typeFilter === 'manual' && t.type !== 'manual') return false;
+      if (typeFilter === 'auto' && t.type !== 'auto') return false;
+      const id = `${activeRole}_${groupName}_${t.desc}`;
+      if (typeFilter === 'passed' && !checked[id]) return false;
+      if (typeFilter === 'pending' && checked[id]) return false;
+      if (searchQuery && !t.desc.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
+    if (filtered.length === 0) continue;
+
+    const manualCount = filtered.filter(t => t.type === 'manual').length;
+    const autoCount = filtered.filter(t => t.type === 'auto').length;
+    const doneCount = filtered.filter(t => checked[`${activeRole}_${groupName}_${t.desc}`]).length;
+
+    html += `<div class="test-group">
+      <div class="test-group-head" onclick="this.querySelector('.arrow').classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <h3><span class="arrow">▶</span> ${groupName} <span class="badge-count">${doneCount}/${filtered.length}</span>
+          ${manualCount?`<span class="badge-manual">${manualCount} manual</span>`:''}
+          ${autoCount?`<span class="badge-auto">${autoCount} auto</span>`:''}
+        </h3>
+      </div>
+      <div class="test-group-body">`;
+
+    // Manual first
+    const manualTests = filtered.filter(t => t.type === 'manual');
+    const autoTests = filtered.filter(t => t.type === 'auto');
+
+    for (const t of [...manualTests, ...autoTests]) {
+      const id = `${activeRole}_${groupName}_${t.desc}`;
+      const isChecked = checked[id] ? 'checked' : '';
+      html += `<div class="test-item">
+        <input type="checkbox" ${isChecked} onchange="setChecked('${id.replace(/'/g,"\\'")}',this.checked);updateStats()">
+        <span class="desc">${t.desc}</span>
+        <span class="type ${t.type==='manual'?'type-manual':'type-auto'}">${t.type==='manual'?'🔴 Manual':'🟢 Auto'}</span>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  document.getElementById('testContent').innerHTML = html || '<p style="text-align:center;color:var(--muted);padding:40px">Nenhum teste encontrado</p>';
+  updateStats();
+}
+
+function updateStats() {
+  const checked = getChecked();
+  let total = 0, manual = 0, auto = 0, passed = 0;
+  for (const role of Object.values(TESTS)) {
+    for (const tests of Object.values(role.groups)) {
+      for (const t of tests) {
+        total++;
+        if (t.type === 'manual') manual++; else auto++;
+      }
+    }
+  }
+  passed = Object.keys(checked).length;
+  document.getElementById('totalCount').textContent = total;
+  document.getElementById('passedCount').textContent = passed;
+  document.getElementById('pendingCount').textContent = total - passed;
+  document.getElementById('manualCount').textContent = manual;
+  document.getElementById('autoCount').textContent = auto;
+  const pct = total > 0 ? Math.round((passed / total) * 100) : 0;
+  document.getElementById('progressPct').textContent = pct;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function filterTests(q) { searchQuery = q; render(); }
+function setTypeFilter(f, el) {
+  typeFilter = f;
+  document.querySelectorAll('.filter').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+function uncheckAll() { if(confirm('Limpar todos os resultados?')){ localStorage.removeItem('uniher_tests'); render(); } }
+function exportResults() {
+  const checked = getChecked();
+  const lines = ['UniHER — Resultados de Teste', `Data: ${new Date().toLocaleDateString('pt-BR')}`, ''];
+  for (const [roleKey, role] of Object.entries(TESTS)) {
+    lines.push(`\n== ${role.label} ==`);
+    for (const [groupName, tests] of Object.entries(role.groups)) {
+      lines.push(`\n${groupName}:`);
+      for (const t of tests) {
+        const id = `${roleKey}_${groupName}_${t.desc}`;
+        lines.push(`  ${checked[id] ? '✅' : '⬜'} [${t.type}] ${t.desc}`);
+      }
+    }
+  }
+  const total = Object.values(TESTS).flatMap(r => Object.values(r.groups).flat()).length;
+  const passed = Object.keys(checked).length;
+  lines.push(`\n\n== RESUMO ==\nTotal: ${total} | Passou: ${passed} | Pendente: ${total-passed} | ${Math.round(passed/total*100)}% concluído`);
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `uniher-testes-${new Date().toISOString().split('T')[0]}.txt`; a.click();
+}
+
+render();
+
+// ─── Server Status Check ───
+async function checkServer() {
+  const el = document.getElementById('serverStatus');
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    if (d.serverOk) {
+      el.style.background = '#F0FDF4'; el.style.color = '#059669';
+      el.textContent = '🟢 Servidor Online (localhost:3000)';
+    } else {
+      el.style.background = '#FEF2F2'; el.style.color = '#DC2626';
+      el.textContent = '🔴 Servidor Offline — inicie com iniciar.bat';
+    }
+  } catch {
+    el.style.background = '#FFF7ED'; el.style.color = '#92400E';
+    el.textContent = '⚠️ Use iniciar_testes.bat para habilitar';
+  }
+}
+checkServer();
+setInterval(checkServer, 10000);
+
+// ─── Test Runner ───
+let running = false;
+
+async function runTests(project) {
+  if (running) return;
+  running = true;
+
+  // Update button
+  const btn = document.getElementById('btn-' + project);
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #ccc;border-top-color:var(--navy);border-radius:50%;animation:spin .6s linear infinite"></span> Executando...';
+  btn.disabled = true;
+  document.querySelectorAll('.run-btn').forEach(b => b.style.opacity = '0.5');
+  btn.style.opacity = '1';
+
+  // Show output
+  const output = document.getElementById('runnerOutput');
+  const results = document.getElementById('runnerResults');
+  const spinner = document.getElementById('runSpinner');
+  const label = document.getElementById('runnerLabel');
+  output.style.display = 'block';
+  results.style.display = 'none';
+  spinner.style.display = 'block';
+  label.textContent = `Executando testes ${project === 'all' ? '(todos)' : project}... Isso pode levar 1-2 minutos.`;
+
+  try {
+    const r = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project })
+    });
+    const data = await r.json();
+
+    spinner.style.display = 'none';
+    results.style.display = 'block';
+
+    if (data.stats) {
+      renderResults(data);
+    } else {
+      label.innerHTML = `<span style="color:var(--amber);font-size:16px">⚠️ Testes executados mas sem resultados JSON</span>`;
+      results.innerHTML = `<div class="cmd-box show" style="max-height:400px;overflow-y:auto">${data.output || 'Sem output'}</div>`;
+    }
+  } catch (err) {
+    document.getElementById('runSpinner').style.display = 'none';
+    document.getElementById('runnerLabel').innerHTML = `<span style="color:var(--red)">❌ Erro: ${err.message}. Use iniciar_testes.bat primeiro.</span>`;
+    document.getElementById('runnerResults').style.display = 'none';
+  }
+
+  // Reset buttons
+  btn.innerHTML = origHTML;
+  btn.disabled = false;
+  document.querySelectorAll('.run-btn').forEach(b => b.style.opacity = '1');
+  running = false;
+}
+
+// ─── Visual Results Renderer ───
+let currentFilter = 'all';
+
+function renderResults(data) {
+  const s = data.stats;
+  const pct = s.total > 0 ? Math.round((s.passed / s.total) * 100) : 0;
+  const dur = (s.duration / 1000).toFixed(1);
+  const barColor = pct === 100 ? '#10B981' : pct > 70 ? '#F59E0B' : '#EF4444';
+  const results = document.getElementById('runnerResults');
+
+  // Donut chart SVG
+  const passAngle = (s.passed / Math.max(s.total, 1)) * 360;
+  const failAngle = (s.failed / Math.max(s.total, 1)) * 360;
+  const skipAngle = (s.skipped / Math.max(s.total, 1)) * 360;
+  function arc(start, end, color) {
+    if (end - start <= 0) return '';
+    const r = 40, cx = 50, cy = 50;
+    const s1 = (start - 90) * Math.PI / 180, e1 = (end - 90) * Math.PI / 180;
+    const x1 = cx + r * Math.cos(s1), y1 = cy + r * Math.sin(s1);
+    const x2 = cx + r * Math.cos(e1), y2 = cy + r * Math.sin(e1);
+    const large = end - start > 180 ? 1 : 0;
+    return `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z" fill="${color}"/>`;
+  }
+  let donutSVG = `<svg width="100" height="100" viewBox="0 0 100 100">`;
+  let offset = 0;
+  if (s.passed > 0) { donutSVG += arc(offset, offset + passAngle, '#10B981'); offset += passAngle; }
+  if (s.failed > 0) { donutSVG += arc(offset, offset + failAngle, '#EF4444'); offset += failAngle; }
+  if (s.skipped > 0) { donutSVG += arc(offset, offset + skipAngle, '#F59E0B'); offset += skipAngle; }
+  donutSVG += `<circle cx="50" cy="50" r="28" fill="white"/></svg>`;
+
+  // Header with summary
+  const statusIcon = data.success ? '✅' : '❌';
+  const statusMsg = data.success
+    ? `Todos os ${s.total} testes passaram`
+    : `${s.failed} falha${s.failed > 1 ? 's' : ''} de ${s.total} testes`;
+  const statusColor = data.success ? '#059669' : '#DC2626';
+
+  let html = `
+    <!-- Status Banner -->
+    <div style="padding:16px 20px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;gap:12px;background:${data.success ? '#F0FDF4' : '#FEF2F2'};border:1px solid ${data.success ? '#86EFAC' : '#FCA5A5'}">
+      <span style="font-size:28px">${statusIcon}</span>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:${statusColor}">${statusMsg}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Executado em ${dur}s${s.skipped > 0 ? ` | ${s.skipped} ignorados` : ''}</div>
+      </div>
+    </div>
+
+    <!-- Summary cards + donut -->
+    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <div style="flex-shrink:0;position:relative;width:100px;height:100px">
+        ${donutSVG}
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--navy)">${pct}%</div>
+      </div>
+      <div class="result-summary" style="flex:1">
+        <div class="result-card pass"><div class="val">${s.passed}</div><div class="lbl">Passou</div></div>
+        <div class="result-card ${s.failed ? 'fail' : 'pass'}"><div class="val">${s.failed}</div><div class="lbl">Falhou</div></div>
+        <div class="result-card skip"><div class="val">${s.skipped || 0}</div><div class="lbl">Ignorado</div></div>
+        <div class="result-card time"><div class="val">${dur}s</div><div class="lbl">Tempo</div></div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+        <span>${s.passed} de ${s.total} testes passaram</span>
+        <span style="font-weight:600;color:${statusColor}">${pct}%</span>
+      </div>
+      <div style="width:100%;height:10px;background:#e8e0d4;border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width .5s"></div>
+      </div>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="rf" id="resultFilters">
+      <span class="rf-btn active" onclick="filterResults('all',this)">Todos (${s.total})</span>
+      <span class="rf-btn" onclick="filterResults('passed',this)" style="color:#059669">✓ Passou (${s.passed})</span>
+      <span class="rf-btn" onclick="filterResults('failed',this)" style="color:#DC2626">✗ Falhou (${s.failed})</span>
+      ${s.skipped ? `<span class="rf-btn" onclick="filterResults('skipped',this)" style="color:#92400E">⊘ Ignorado (${s.skipped})</span>` : ''}
+    </div>
+
+    <!-- Test groups -->
+    <div id="resultGroups">`;
+
+  // Group tests
+  const groups = {};
+  for (const t of (s.tests || [])) {
+    const g = t.group || 'Outros';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(t);
+  }
+
+  for (const [groupName, tests] of Object.entries(groups)) {
+    const gPassed = tests.filter(t => t.status === 'passed').length;
+    const gFailed = tests.filter(t => t.status === 'failed').length;
+    const gSkipped = tests.filter(t => t.status === 'skipped').length;
+    const gIcon = gFailed > 0 ? '❌' : gSkipped === tests.length ? '⊘' : '✅';
+    const gBorderColor = gFailed > 0 ? '#FCA5A5' : gSkipped === tests.length ? '#FDE68A' : '#86EFAC';
+
+    html += `<div class="rg" data-has-fail="${gFailed > 0}" data-has-pass="${gPassed > 0}" data-has-skip="${gSkipped > 0}">
+      <div class="rg-head" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.arr').classList.toggle('open')">
+        <div class="rg-title">
+          <span>${gIcon}</span>
+          <span>${groupName}</span>
+        </div>
+        <div class="rg-meta">
+          ${gPassed > 0 ? `<span style="color:#059669">✓${gPassed}</span>` : ''}
+          ${gFailed > 0 ? `<span style="color:#DC2626">✗${gFailed}</span>` : ''}
+          ${gSkipped > 0 ? `<span style="color:#92400E">⊘${gSkipped}</span>` : ''}
+          <span style="color:var(--muted);font-size:12px">${gPassed}/${tests.length}</span>
+          <span class="arr ${gFailed > 0 ? 'open' : ''}" style="transition:transform .2s;font-size:10px;color:var(--muted)">▶</span>
+        </div>
+      </div>
+      <div class="rg-body ${gFailed > 0 ? 'open' : ''}">`;
+
+    for (const t of tests) {
+      const cls = t.status === 'passed' ? 'pass' : t.status === 'failed' ? 'fail' : 'skip';
+      const icon = cls === 'pass' ? '✓' : cls === 'fail' ? '✗' : '⊘';
+      const durStr = t.duration > 0 ? `${t.duration}ms` : '';
+
+      // Clean error message
+      let errMsg = '';
+      if (t.error) {
+        errMsg = t.error;
+        if (errMsg.includes("Executable doesn't exist")) {
+          errMsg = "🔧 Browser Chromium não instalado.\nSolução: Execute npx playwright install no terminal.";
+        } else if (errMsg.includes('expect(received)')) {
+          const expMatch = errMsg.match(/Expected: (.+)/);
+          const recMatch = errMsg.match(/Received: (.+)/);
+          if (expMatch && recMatch) {
+            errMsg = `Esperado: ${expMatch[1]}\nRecebido: ${recMatch[1]}`;
+          }
+        } else if (errMsg.includes('toBeTruthy')) {
+          errMsg = 'Valor retornado é falso/vazio quando deveria ser verdadeiro.\n' + errMsg.substring(0, 200);
+        }
+      }
+
+      html += `<div class="rt" data-status="${cls}">
+        <div class="rt-icon ${cls}">${icon}</div>
+        <div class="rt-body">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="rt-title" style="color:${cls === 'pass' ? '#059669' : cls === 'fail' ? '#DC2626' : '#92400E'}">${t.title}</span>
+            ${durStr ? `<span class="rt-dur">${durStr}</span>` : ''}
+          </div>
+          ${errMsg ? `<div class="rt-err" onclick="this.classList.toggle('expanded')" title="Clique para expandir">${errMsg.substring(0, 500)}</div>` : ''}
+        </div>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+  html += `</div>`;
+
+  results.innerHTML = html;
+
+  // Add arrow rotation CSS
+  document.querySelectorAll('.arr.open').forEach(el => el.style.transform = 'rotate(90deg)');
+  document.querySelectorAll('.rg-head').forEach(el => {
+    el.addEventListener('click', () => {
+      const arr = el.querySelector('.arr');
+      arr.style.transform = arr.classList.contains('open') ? 'rotate(90deg)' : 'rotate(0)';
+    });
+  });
+}
+
+function filterResults(status, btn) {
+  // Update active button
+  document.querySelectorAll('#resultFilters .rf-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  // Filter test items
+  document.querySelectorAll('.rt').forEach(el => {
+    if (status === 'all') { el.style.display = ''; return; }
+    el.style.display = el.dataset.status === status ? '' : 'none';
+  });
+
+  // Hide empty groups
+  document.querySelectorAll('.rg').forEach(g => {
+    const visible = g.querySelectorAll(`.rt${status !== 'all' ? `[data-status="${status}"]` : ''}:not([style*="display: none"])`);
+    g.style.display = status === 'all' || visible.length > 0 ? '' : 'none';
+    // Auto-open groups with visible items when filtering
+    if (status !== 'all' && visible.length > 0) {
+      g.querySelector('.rg-body').classList.add('open');
+      const arr = g.querySelector('.arr');
+      if (arr) { arr.classList.add('open'); arr.style.transform = 'rotate(90deg)'; }
+    }
+  });
+}
+</script>
+</body>
+</html>
