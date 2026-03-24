@@ -6,14 +6,37 @@ echo "       UniHER - Wellness Hub"
 echo "========================================"
 echo ""
 
-echo "[0/3] Encerrando processos anteriores..."
+echo "[0/4] Verificando ambiente..."
+if [ ! -f ".env.local" ]; then
+    if [ -f ".env.example" ]; then
+        echo "[info] Criando .env.local a partir do .env.example..."
+        cp .env.example .env.local
+        echo "[OK] .env.local criado. Edite depois se precisar customizar."
+    else
+        echo "[info] Gerando .env.local padrao..."
+        cat > .env.local << 'ENVEOF'
+JWT_SECRET=uniher-dev-secret-change-in-production-min32chars
+JWT_REFRESH_SECRET=uniher-refresh-secret-change-in-prod-min32
+DATABASE_PATH=data/uniher.db
+RESEND_API_KEY=
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+ENVEOF
+        echo "[OK] .env.local criado com valores padrao."
+    fi
+else
+    echo "[info] .env.local OK."
+fi
+echo ""
+
+echo "[1/4] Encerrando processos anteriores..."
 pkill -f "next dev" 2>/dev/null || true
 pkill -f "node.*next" 2>/dev/null || true
 sleep 1
 echo "[info] Processos encerrados."
 echo ""
 
-echo "[1/3] Verificando dependencias..."
+echo "[2/4] Verificando dependencias..."
 if [ ! -d "node_modules" ]; then
     echo "[info] Instalando dependencias..."
     npm install
@@ -26,7 +49,7 @@ else
 fi
 
 echo ""
-echo "[2/3] Preparando Banco de Dados..."
+echo "[3/4] Preparando Banco de Dados..."
 mkdir -p data
 if [ -f "data/uniher.db" ]; then
     echo "[info] Banco ja existe. Mantendo dados."
@@ -40,7 +63,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "[3/3] Iniciando Servidor de Desenvolvimento (com auto-restart)..."
+echo "[4/4] Iniciando Servidor de Desenvolvimento (com auto-restart)..."
 rm -rf .next 2>/dev/null
 echo "[info] Acesse: http://localhost:3000"
 echo "[info] O servidor reinicia automaticamente se cair."
