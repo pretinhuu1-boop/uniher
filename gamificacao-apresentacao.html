@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniHER · Gamificação — Apresentação</title>
+<style>
+  :root {
+    --gold: #C9A264; --gold-l: #e8c98a; --navy: #1A3A6B; --pink: #EC4899;
+    --green: #4ade80; --purple: #a855f7; --bg: #09090b; --bg2: #111113;
+    --card: rgba(255,255,255,0.04); --border: rgba(255,255,255,0.08);
+    --text: #f4f4f5; --muted: #71717a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-snap-type:y mandatory}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden}
+  section{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 24px;position:relative;overflow:hidden}
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--pink));z-index:999;transition:width .1s}
+  #nav-dots{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:999}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--border);border:1px solid var(--muted);cursor:pointer;transition:all .3s}
+  .dot.active{background:var(--gold);border-color:var(--gold);transform:scale(1.4)}
+  #play-btn{position:fixed;bottom:24px;right:24px;background:var(--gold);color:#000;border:none;border-radius:50px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;z-index:999;display:flex;align-items:center;gap:6px;transition:all .2s}
+  #play-btn:hover{transform:scale(1.05)}
+  #timer{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:50px;padding:6px 16px;font-size:12px;color:var(--muted);z-index:999;letter-spacing:.5px}
+
+  /* ── PARTICLES ── */
+  canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.35}
+
+  /* ── TYPOGRAPHY ── */
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+  h1{font-size:clamp(36px,6vw,72px);font-weight:800;line-height:1.05;letter-spacing:-1px}
+  h2{font-size:clamp(24px,4vw,48px);font-weight:800;line-height:1.1;letter-spacing:-.5px}
+  h3{font-size:clamp(18px,2.5vw,28px);font-weight:700}
+  .sub{font-size:clamp(14px,1.8vw,18px);color:var(--muted);line-height:1.6;max-width:600px;text-align:center;margin:0 auto}
+  .gradient-text{background:linear-gradient(135deg,var(--gold),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .green-text{color:var(--green)}
+  .gold-text{color:var(--gold)}
+
+  /* ── CARDS ── */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;backdrop-filter:blur(8px)}
+  .card-glow{box-shadow:0 0 40px rgba(201,162,100,.08)}
+  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;width:100%;max-width:900px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;max-width:900px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:900px}
+  .stat-big{font-size:clamp(48px,8vw,96px);font-weight:900;line-height:1;letter-spacing:-3px}
+  .stat-label{font-size:13px;color:var(--muted);margin-top:4px;font-weight:500}
+
+  /* ── ANIMATION CLASSES ── */
+  .reveal{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .reveal.visible{opacity:1;transform:none}
+  .reveal-scale{opacity:0;transform:scale(.92);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+  .reveal-scale.visible{opacity:1;transform:scale(1)}
+  .reveal-left{opacity:0;transform:translateX(-48px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .reveal-left.visible{opacity:1;transform:none}
+  .reveal-right{opacity:0;transform:translateX(48px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .reveal-right.visible{opacity:1;transform:none}
+  .stagger-1{transition-delay:.1s}.stagger-2{transition-delay:.2s}.stagger-3{transition-delay:.3s}
+  .stagger-4{transition-delay:.4s}.stagger-5{transition-delay:.5s}.stagger-6{transition-delay:.6s}
+  .stagger-7{transition-delay:.7s}.stagger-8{transition-delay:.8s}
+
+  /* ── SECTION SPECIFIC ── */
+  #s0{background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(201,162,100,.12) 0%,transparent 70%)}
+  #s0 .logo-pill{background:rgba(201,162,100,.12);border:1px solid rgba(201,162,100,.3);border-radius:50px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--gold);letter-spacing:1px;margin-bottom:24px}
+  #s0 .scroll-hint{position:absolute;bottom:32px;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:12px;animation:bounce 2s infinite}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+  .arrow-down{width:20px;height:20px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg)}
+
+  /* ── PROBLEMA ── */
+  #s1{background:linear-gradient(180deg,var(--bg) 0%,#0d0a0a 100%)}
+  .stat-row{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+  .stat-pill{background:rgba(236,72,153,.08);border:1px solid rgba(236,72,153,.2);border-radius:12px;padding:16px 24px;text-align:center}
+  .stat-pill .n{font-size:32px;font-weight:800;color:var(--pink)}
+  .stat-pill .l{font-size:12px;color:var(--muted);margin-top:2px}
+
+  /* ── SOLUÇÃO ── */
+  #s2{background:radial-gradient(ellipse 60% 50% at 50% 100%,rgba(74,222,128,.06) 0%,transparent 70%)}
+  .solution-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:16px;overflow:hidden;max-width:800px;width:100%}
+  .sol-item{background:var(--bg2);padding:28px 24px;text-align:center}
+  .sol-item .ico{font-size:32px;margin-bottom:12px}
+  .sol-item h4{font-size:15px;font-weight:700;margin-bottom:6px}
+  .sol-item p{font-size:12px;color:var(--muted);line-height:1.5}
+
+  /* ── 1050 LIÇÕES ── */
+  #s3{background:var(--bg)}
+  .theme-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;max-width:900px;width:100%;margin-top:24px}
+  .theme-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 8px;text-align:center;cursor:default;transition:all .3s}
+  .theme-card:hover{border-color:var(--gold);transform:translateY(-4px);box-shadow:0 8px 24px rgba(201,162,100,.15)}
+  .theme-card .emoji{font-size:24px;margin-bottom:8px}
+  .theme-card .name{font-size:10px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
+  .theme-card .count{font-size:11px;color:var(--muted);margin-top:4px}
+  .counter-display{font-size:clamp(80px,15vw,160px);font-weight:900;letter-spacing:-6px;line-height:1;background:linear-gradient(135deg,var(--gold) 40%,var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+  /* ── TIPOS ── */
+  #s4{background:linear-gradient(180deg,var(--bg) 0%,#0a0710 100%)}
+  .type-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;max-width:900px;width:100%;margin-top:24px}
+  .type-chip{border-radius:10px;padding:14px 10px;text-align:center;font-size:11px;font-weight:600;letter-spacing:.5px;border:1px solid transparent;transition:all .3s;cursor:default}
+  .type-chip:hover{transform:scale(1.06)}
+  .type-chip .ti{font-size:24px;margin-bottom:8px;display:block}
+  .tc-gold{background:rgba(201,162,100,.1);border-color:rgba(201,162,100,.3);color:var(--gold)}
+  .tc-green{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2);color:var(--green)}
+  .tc-purple{background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.2);color:var(--purple)}
+  .tc-pink{background:rgba(236,72,153,.08);border-color:rgba(236,72,153,.2);color:var(--pink)}
+
+  /* ── CAMPANHAS ── */
+  #s5{background:var(--bg2)}
+  .calendar-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:900px;width:100%;margin-top:24px}
+  .month-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;transition:all .3s;cursor:default}
+  .month-card:hover{transform:translateY(-3px)}
+  .month-card .mn{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .month-card .mc{font-size:10px;margin-top:6px;font-weight:600;line-height:1.3;padding:4px 6px;border-radius:6px}
+  .mc-pink{background:rgba(236,72,153,.15);color:#f9a8d4}
+  .mc-yellow{background:rgba(250,204,21,.12);color:#fde68a}
+  .mc-gold{background:rgba(201,162,100,.12);color:var(--gold-l)}
+  .mc-green{background:rgba(74,222,128,.12);color:#86efac}
+  .mc-blue{background:rgba(96,165,250,.12);color:#bfdbfe}
+  .mc-orange{background:rgba(251,146,60,.12);color:#fed7aa}
+  .mc-purple{background:rgba(168,85,247,.1);color:#d8b4fe}
+  .mc-neutral{background:rgba(255,255,255,.05);color:var(--muted)}
+
+  /* ── ADMIN ── */
+  #s6{background:radial-gradient(ellipse 70% 50% at 50% 50%,rgba(201,162,100,.07) 0%,transparent 70%)}
+  .admin-features{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px;width:100%;margin-top:32px}
+  .af-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;display:flex;gap:16px;align-items:flex-start;transition:all .3s}
+  .af-card:hover{border-color:rgba(201,162,100,.3);transform:translateX(4px)}
+  .af-ico{font-size:28px;flex-shrink:0}
+  .af-card h4{font-size:15px;font-weight:700;margin-bottom:4px}
+  .af-card p{font-size:12px;color:var(--muted);line-height:1.6}
+
+  /* ── MÉTRICAS ── */
+  #s7{background:var(--bg)}
+  .metrics-ring{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+  .ring-item{text-align:center}
+  .ring{width:100px;height:100px;border-radius:50%;position:relative;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .ring::before{content:'';position:absolute;inset:0;border-radius:50%;padding:3px;background:linear-gradient(135deg,var(--gold),var(--pink));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+  .ring-label{font-size:13px;font-weight:700;margin-bottom:4px}
+  .ring-sub{font-size:11px;color:var(--muted)}
+  .xp-bar{background:rgba(255,255,255,.06);border-radius:8px;height:8px;overflow:hidden;max-width:600px;width:100%;margin:32px auto 0}
+  .xp-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--pink));border-radius:8px;width:0;transition:width 1.5s cubic-bezier(.16,1,.3,1)}
+
+  /* ── ROADMAP ── */
+  #s8{background:var(--bg2)}
+  .roadmap{display:flex;flex-direction:column;gap:0;max-width:700px;width:100%;margin-top:32px;position:relative}
+  .roadmap::before{content:'';position:absolute;left:19px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--gold),var(--pink),var(--purple))}
+  .rm-item{display:flex;gap:20px;align-items:flex-start;padding:0 0 28px}
+  .rm-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;position:relative;z-index:1}
+  .rm-done{background:rgba(201,162,100,.2);border:2px solid var(--gold)}
+  .rm-wip{background:rgba(74,222,128,.15);border:2px solid var(--green)}
+  .rm-next{background:rgba(168,85,247,.12);border:2px solid var(--purple);opacity:.7}
+  .rm-body h4{font-size:14px;font-weight:700;margin-bottom:4px}
+  .rm-body p{font-size:12px;color:var(--muted);line-height:1.5}
+  .tag{display:inline-block;padding:2px 10px;border-radius:50px;font-size:10px;font-weight:700;margin-bottom:6px}
+  .tag-done{background:rgba(201,162,100,.2);color:var(--gold)}
+  .tag-wip{background:rgba(74,222,128,.15);color:var(--green)}
+  .tag-next{background:rgba(168,85,247,.12);color:var(--purple)}
+
+  /* ── CTA ── */
+  #s9{background:radial-gradient(ellipse 80% 70% at 50% 50%,rgba(201,162,100,.1) 0%,rgba(236,72,153,.06) 50%,transparent 80%)}
+  .cta-btn{background:linear-gradient(135deg,var(--gold),#e8a040);color:#000;border:none;border-radius:50px;padding:16px 40px;font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.5px;transition:all .3s;margin-top:32px;display:inline-flex;align-items:center;gap:10px}
+  .cta-btn:hover{transform:scale(1.06);box-shadow:0 16px 48px rgba(201,162,100,.35)}
+  .contact-grid{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+  .contact-pill{background:var(--card);border:1px solid var(--border);border-radius:50px;padding:10px 20px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:768px){
+    .grid-3,.grid-4,.solution-grid{grid-template-columns:1fr 1fr}
+    .theme-grid{grid-template-columns:repeat(4,1fr)}
+    .calendar-grid{grid-template-columns:repeat(3,1fr)}
+    .admin-features{grid-template-columns:1fr}
+    .type-list{grid-template-columns:repeat(3,1fr)}
+    #nav-dots{display:none}
+  }
+  @media(max-width:480px){
+    .grid-3,.solution-grid{grid-template-columns:1fr}
+    .theme-grid{grid-template-columns:repeat(3,1fr)}
+    .stat-row{flex-direction:column;align-items:center}
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar" style="width:0%"></div>
+<canvas id="bg"></canvas>
+
+<div id="nav-dots">
+  <div class="dot active" onclick="goTo(0)" title="Início"></div>
+  <div class="dot" onclick="goTo(1)" title="O Problema"></div>
+  <div class="dot" onclick="goTo(2)" title="A Solução"></div>
+  <div class="dot" onclick="goTo(3)" title="1.050 Lições"></div>
+  <div class="dot" onclick="goTo(4)" title="Tipos de Atividade"></div>
+  <div class="dot" onclick="goTo(5)" title="Campanhas"></div>
+  <div class="dot" onclick="goTo(6)" title="Admin"></div>
+  <div class="dot" onclick="goTo(7)" title="Métricas"></div>
+  <div class="dot" onclick="goTo(8)" title="Roadmap"></div>
+  <div class="dot" onclick="goTo(9)" title="Contato"></div>
+</div>
+
+<button id="play-btn" onclick="togglePlay()">▶ Auto-play</button>
+<div id="timer">Seção 1 / 10</div>
+
+<!-- ═══════════════════════════════════════════ S0 · CAPA -->
+<section id="s0">
+  <div class="logo-pill reveal">✦ UNIHER · GAMIFICAÇÃO</div>
+  <h1 class="reveal stagger-1" style="text-align:center;max-width:800px">
+    Saúde da mulher<br><span class="gradient-text">que engaja de verdade</span>
+  </h1>
+  <p class="sub reveal stagger-2" style="margin-top:20px">
+    Um sistema completo de gamificação — 1.050 lições, 11 tipos de atividade e conteúdo para o ano inteiro. Estilo Duolingo, feito para o universo corporativo feminino.
+  </p>
+  <div class="reveal stagger-3" style="margin-top:40px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+    <span style="background:rgba(201,162,100,.12);border:1px solid rgba(201,162,100,.3);border-radius:50px;padding:8px 20px;font-size:13px;color:var(--gold)">📚 1.050 Lições</span>
+    <span style="background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:50px;padding:8px 20px;font-size:13px;color:var(--green)">🎮 11 Tipos</span>
+    <span style="background:rgba(236,72,153,.08);border:1px solid rgba(236,72,153,.2);border-radius:50px;padding:8px 20px;font-size:13px;color:var(--pink)">📅 52 Semanas</span>
+    <span style="background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:50px;padding:8px 20px;font-size:13px;color:var(--purple)">🏆 Badges & Ligas</span>
+  </div>
+  <div class="scroll-hint">
+    <span>Role para explorar</span>
+    <div class="arrow-down"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S1 · O PROBLEMA -->
+<section id="s1">
+  <div class="eyebrow reveal">O Problema</div>
+  <h2 class="reveal stagger-1" style="text-align:center;max-width:700px">
+    Programas de saúde corporativa<br><span style="color:var(--pink)">que ninguém usa</span>
+  </h2>
+  <p class="sub reveal stagger-2" style="margin-top:16px">
+    Comunicados ignorados. Webinars com 5% de presença. Conteúdo genérico que não fala com a realidade da mulher que trabalha.
+  </p>
+  <div class="stat-row reveal stagger-3">
+    <div class="stat-pill">
+      <div class="n" id="c1">0%</div>
+      <div class="l">dos programas de saúde<br>são efetivamente usados</div>
+    </div>
+    <div class="stat-pill">
+      <div class="n" id="c2">0x</div>
+      <div class="l">mais afastamentos femininos<br>por burnout vs homens</div>
+    </div>
+    <div class="stat-pill">
+      <div class="n" id="c3">0%</div>
+      <div class="l">das mulheres sentem que<br>benefícios são genéricos</div>
+    </div>
+  </div>
+  <div class="reveal stagger-4" style="margin-top:40px;background:rgba(236,72,153,.06);border:1px solid rgba(236,72,153,.15);border-radius:16px;padding:24px;max-width:600px;text-align:center">
+    <p style="font-size:14px;line-height:1.7;color:#e4e4e7">O problema não é <em>falta de informação</em>.<br>É falta de <strong style="color:var(--pink)">engajamento</strong> — e engajamento se constrói com gamificação.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S2 · A SOLUÇÃO -->
+<section id="s2">
+  <div class="eyebrow reveal">A Solução</div>
+  <h2 class="reveal stagger-1" style="text-align:center">
+    UniHER <span class="gradient-text">Gamificação</span>
+  </h2>
+  <p class="sub reveal stagger-2" style="margin-top:16px">
+    Um ecossistema completo que transforma a jornada de saúde da colaboradora em uma experiência diária de aprendizado e conquistas.
+  </p>
+  <div class="solution-grid reveal stagger-3" style="margin-top:32px">
+    <div class="sol-item">
+      <div class="ico">📖</div>
+      <h4>Aprende</h4>
+      <p>Lições diárias de 2–5 min sobre saúde feminina, com 11 formatos diferentes</p>
+    </div>
+    <div class="sol-item">
+      <div class="ico">🎯</div>
+      <h4>Pratica</h4>
+      <p>Quiz, reflexão, desafio do dia — conteúdo que aplica na vida real</p>
+    </div>
+    <div class="sol-item">
+      <div class="ico">🏆</div>
+      <h4>Conquista</h4>
+      <p>XP, streaks, badges, ligas e recompensas configuradas pela empresa</p>
+    </div>
+    <div class="sol-item">
+      <div class="ico">🔥</div>
+      <h4>Mantém o ritmo</h4>
+      <p>Streak diário com notificações inteligentes para não perder a sequência</p>
+    </div>
+    <div class="sol-item">
+      <div class="ico">💎</div>
+      <h4>É recompensada</h4>
+      <p>Vouchers, folgas, produtos — recompensas reais que motivam</p>
+    </div>
+    <div class="sol-item">
+      <div class="ico">📊</div>
+      <h4>É medida</h4>
+      <p>Admin vê engajamento em tempo real — quem evoluiu, quem precisa de atenção</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S3 · 1050 LIÇÕES -->
+<section id="s3">
+  <div class="eyebrow reveal">Biblioteca de Conteúdo</div>
+  <div class="counter-display reveal stagger-1" id="bigCounter">0</div>
+  <h2 class="reveal stagger-2" style="text-align:center;margin-top:8px">lições gamificadas</h2>
+  <p class="sub reveal stagger-3" style="margin-top:12px">
+    Conteúdo real, em português, sobre saúde da mulher — distribuído em 7 temas ao longo de 52 semanas, com campanhas sazonais.
+  </p>
+  <div class="theme-grid reveal stagger-4">
+    <div class="theme-card">
+      <div class="emoji">💧</div>
+      <div class="name">Hidratação</div>
+      <div class="count">150 lições</div>
+    </div>
+    <div class="theme-card">
+      <div class="emoji">🌙</div>
+      <div class="name">Sono</div>
+      <div class="count">150 lições</div>
+    </div>
+    <div class="theme-card">
+      <div class="emoji">🛡️</div>
+      <div class="name">Prevenção</div>
+      <div class="count">150 lições</div>
+    </div>
+    <div class="theme-card">
+      <div class="emoji">🥗</div>
+      <div class="name">Nutrição</div>
+      <div class="count">150 lições</div>
+    </div>
+    <div class="theme-card">
+      <div class="emoji">🧠</div>
+      <div class="name">Saúde Mental</div>
+      <div class="count">150 lições</div>
+    </div>
+    <div class="theme-card">
+      <div class="emoji">🌸</div>
+      <div class="name">Ciclo</div>
+      <div class="count">150 lições</div>
+    </div>
+    <div class="theme-card">
+      <div class="emoji">⭐</div>
+      <div class="name">Geral</div>
+      <div class="count">150 lições</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S4 · 11 TIPOS -->
+<section id="s4">
+  <div class="eyebrow reveal">Metodologia</div>
+  <h2 class="reveal stagger-1" style="text-align:center">
+    <span class="gradient-text">11 tipos</span> de atividade
+  </h2>
+  <p class="sub reveal stagger-2" style="margin-top:12px">
+    Cada tema é explorado com múltiplos formatos — para diferentes perfis de aprendizado e manter o engajamento ao longo do tempo.
+  </p>
+  <div class="type-list reveal stagger-3">
+    <div class="type-chip tc-gold"><span class="ti">💊</span>Pílula</div>
+    <div class="type-chip tc-gold"><span class="ti">❓</span>Quiz</div>
+    <div class="type-chip tc-gold"><span class="ti">🪞</span>Reflexão</div>
+    <div class="type-chip tc-green"><span class="ti">✏️</span>Lacuna</div>
+    <div class="type-chip tc-green"><span class="ti">✅</span>V ou F</div>
+    <div class="type-chip tc-green"><span class="ti">🔀</span>Ordenar</div>
+    <div class="type-chip tc-purple"><span class="ti">🔗</span>Parear</div>
+    <div class="type-chip tc-purple"><span class="ti">📖</span>História</div>
+    <div class="type-chip tc-purple"><span class="ti">🗂️</span>Flashcard</div>
+    <div class="type-chip tc-pink"><span class="ti">🖼️</span>Imagem</div>
+    <div class="type-chip tc-pink"><span class="ti">🏃</span>Desafio Dia</div>
+  </div>
+  <div class="reveal stagger-4" style="margin-top:32px;display:flex;gap:24px;flex-wrap:wrap;justify-content:center">
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)">
+      <span style="width:12px;height:12px;border-radius:3px;background:rgba(201,162,100,.3);display:inline-block"></span>
+      Informação e avaliação
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)">
+      <span style="width:12px;height:12px;border-radius:3px;background:rgba(74,222,128,.25);display:inline-block"></span>
+      Prática escrita
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)">
+      <span style="width:12px;height:12px;border-radius:3px;background:rgba(168,85,247,.25);display:inline-block"></span>
+      Interação e conexão
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)">
+      <span style="width:12px;height:12px;border-radius:3px;background:rgba(236,72,153,.25);display:inline-block"></span>
+      Visual e ação real
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S5 · CAMPANHAS -->
+<section id="s5">
+  <div class="eyebrow reveal">Calendário Anual</div>
+  <h2 class="reveal stagger-1" style="text-align:center">
+    Conteúdo alinhado às<br><span class="gradient-text">campanhas de saúde</span>
+  </h2>
+  <p class="sub reveal stagger-2" style="margin-top:12px">
+    Cada mês tem um tema principal sincronizado com as campanhas nacionais de saúde da mulher.
+  </p>
+  <div class="calendar-grid reveal stagger-3">
+    <div class="month-card"><div class="mn">JAN</div><div class="mc mc-gold">Novo Ano, Novos Hábitos</div></div>
+    <div class="month-card"><div class="mn">FEV</div><div class="mc mc-pink">Fev. Roxo · Saúde do Coração</div></div>
+    <div class="month-card"><div class="mn">MAR</div><div class="mc mc-purple">Dia da Mulher · Março Lilás</div></div>
+    <div class="month-card"><div class="mn">ABR</div><div class="mc mc-green">Abril Verde · Nutrição</div></div>
+    <div class="month-card"><div class="mn">MAI</div><div class="mc mc-pink">Dia das Mães · Ciclo</div></div>
+    <div class="month-card"><div class="mn">JUN</div><div class="mc mc-orange">Junho Laranja · Leucemia</div></div>
+    <div class="month-card"><div class="mn">JUL</div><div class="mc mc-blue">Jul. Amarelo · Hepatite</div></div>
+    <div class="month-card"><div class="mn">AGO</div><div class="mc mc-gold">Agosto Dourado · Amamentação</div></div>
+    <div class="month-card"><div class="mn">SET</div><div class="mc mc-yellow">Setembro Amarelo · Saúde Mental</div></div>
+    <div class="month-card"><div class="mn">OUT</div><div class="mc mc-pink">Outubro Rosa · Mama</div></div>
+    <div class="month-card"><div class="mn">NOV</div><div class="mc mc-blue">Novembro Azul · Prevenção</div></div>
+    <div class="month-card"><div class="mn">DEZ</div><div class="mc mc-green">Dez. Vermelho · Verão Saudável</div></div>
+  </div>
+  <div class="reveal stagger-4" style="margin-top:20px;background:rgba(201,162,100,.06);border:1px solid rgba(201,162,100,.15);border-radius:12px;padding:16px 24px;max-width:600px;text-align:center">
+    <p style="font-size:13px;color:var(--muted);line-height:1.6">
+      📌 O admin pode criar lições personalizadas para qualquer semana — datas comemorativas da empresa, campanhas internas e eventos específicos.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S6 · ADMIN -->
+<section id="s6">
+  <div class="eyebrow reveal">Para o Admin da Empresa</div>
+  <h2 class="reveal stagger-1" style="text-align:center">
+    Controle <span class="gradient-text">total</span> do conteúdo
+  </h2>
+  <p class="sub reveal stagger-2" style="margin-top:12px">
+    O admin configura tudo — do calendário de lições às recompensas reais da empresa.
+  </p>
+  <div class="admin-features">
+    <div class="af-card reveal stagger-1">
+      <div class="af-ico">✏️</div>
+      <div>
+        <h4>Criar lições personalizadas</h4>
+        <p>Adicione lições próprias para qualquer dia/semana, em todos os 11 formatos. Conteúdo exclusivo da empresa.</p>
+      </div>
+    </div>
+    <div class="af-card reveal stagger-2">
+      <div class="af-ico">📅</div>
+      <div>
+        <h4>Configurar dias e frequência</h4>
+        <p>Defina quais dias da semana têm lições e quantas lições por dia — por dia da semana.</p>
+      </div>
+    </div>
+    <div class="af-card reveal stagger-3">
+      <div class="af-ico">🗂️</div>
+      <div>
+        <h4>Gerenciar biblioteca</h4>
+        <p>Edite, desative ou exclua qualquer lição da empresa. As lições globais continuam disponíveis só-leitura.</p>
+      </div>
+    </div>
+    <div class="af-card reveal stagger-4">
+      <div class="af-ico">🎁</div>
+      <div>
+        <h4>Recompensas reais</h4>
+        <p>Configure vouchers, folgas, produtos e experiências como prêmios para as colaboradoras mais engajadas.</p>
+      </div>
+    </div>
+    <div class="af-card reveal stagger-5">
+      <div class="af-ico">📊</div>
+      <div>
+        <h4>Painel de engajamento</h4>
+        <p>Veja quem está ativa, streaks da equipe, lições completadas e distribuição por tema.</p>
+      </div>
+    </div>
+    <div class="af-card reveal stagger-6">
+      <div class="af-ico">🔔</div>
+      <div>
+        <h4>Campanhas e comunicação</h4>
+        <p>Dispare notificações para a equipe, crie desafios de grupo e alinhe com as campanhas do RH.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S7 · MÉTRICAS -->
+<section id="s7">
+  <div class="eyebrow reveal">Sistema de Progresso</div>
+  <h2 class="reveal stagger-1" style="text-align:center">
+    Métricas que<br><span class="gradient-text">motivam de verdade</span>
+  </h2>
+  <div class="metrics-ring reveal stagger-2">
+    <div class="ring-item">
+      <div class="ring">⚡</div>
+      <div class="ring-label">XP</div>
+      <div class="ring-sub">Pontos por lição</div>
+    </div>
+    <div class="ring-item">
+      <div class="ring">🔥</div>
+      <div class="ring-label">Streak</div>
+      <div class="ring-sub">Dias consecutivos</div>
+    </div>
+    <div class="ring-item">
+      <div class="ring">❤️</div>
+      <div class="ring-label">Vidas</div>
+      <div class="ring-sub">Sistema de corações</div>
+    </div>
+    <div class="ring-item">
+      <div class="ring">🏅</div>
+      <div class="ring-label">Liga</div>
+      <div class="ring-sub">Ranking da equipe</div>
+    </div>
+    <div class="ring-item">
+      <div class="ring">🎖️</div>
+      <div class="ring-label">Badges</div>
+      <div class="ring-sub">Conquistas únicas</div>
+    </div>
+  </div>
+  <div class="reveal stagger-3" style="max-width:600px;width:100%;margin-top:40px">
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+      <span style="color:var(--muted)">Progresso da equipe — exemplo</span>
+      <span style="color:var(--gold);font-weight:700">73% engajamento</span>
+    </div>
+    <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+  </div>
+  <div class="grid-3 reveal stagger-4" style="margin-top:32px">
+    <div class="card" style="text-align:center">
+      <div style="font-size:32px;font-weight:800;color:var(--gold)">+340</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">XP por lição completada<br>(configurável)</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:32px;font-weight:800;color:var(--pink)">7 dias</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Streak mínimo para<br>primeiro badge</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:32px;font-weight:800;color:var(--green)">5</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Vidas por dia —<br>recarregam em 24h</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S8 · ROADMAP -->
+<section id="s8">
+  <div class="eyebrow reveal">Progresso do Projeto</div>
+  <h2 class="reveal stagger-1" style="text-align:center">
+    O que está <span class="gradient-text">pronto</span> e o que vem a seguir
+  </h2>
+  <div class="roadmap reveal stagger-2" style="margin-top:40px">
+    <div class="rm-item">
+      <div class="rm-dot rm-done">✓</div>
+      <div class="rm-body">
+        <span class="tag tag-done">Entregue</span>
+        <h4>Sistema de Gamificação Base</h4>
+        <p>XP, streaks, corações, badges, ligas, check-in diário, semáforo de saúde — tudo operacional.</p>
+      </div>
+    </div>
+    <div class="rm-item">
+      <div class="rm-dot rm-done">✓</div>
+      <div class="rm-body">
+        <span class="tag tag-done">Entregue</span>
+        <h4>1.050 Lições · 11 Tipos de Atividade</h4>
+        <p>Biblioteca completa com conteúdo para o ano inteiro, campanhas sazonais e 7 temas de saúde feminina.</p>
+      </div>
+    </div>
+    <div class="rm-item">
+      <div class="rm-dot rm-done">✓</div>
+      <div class="rm-body">
+        <span class="tag tag-done">Entregue</span>
+        <h4>Admin CRUD de Lições</h4>
+        <p>Admin cria, edita, exclui lições da empresa e configura quais dias e quantas lições por dia.</p>
+      </div>
+    </div>
+    <div class="rm-item">
+      <div class="rm-dot rm-wip">◐</div>
+      <div class="rm-body">
+        <span class="tag tag-wip">Em andamento</span>
+        <h4>UI de Gerenciamento de Lições</h4>
+        <p>Aba "Lições" no painel admin com filtros, criação inline e visualização por semana/tema.</p>
+      </div>
+    </div>
+    <div class="rm-item">
+      <div class="rm-dot rm-next">○</div>
+      <div class="rm-body">
+        <span class="tag tag-next">Próximo</span>
+        <h4>Streak Viciante + Push Notifications</h4>
+        <p>Notificações inteligentes, animação de fogo, penalidade visual e proteções de streak.</p>
+      </div>
+    </div>
+    <div class="rm-item" style="padding-bottom:0">
+      <div class="rm-dot rm-next">○</div>
+      <div class="rm-body">
+        <span class="tag tag-next">Próximo</span>
+        <h4>Competição Social Real</h4>
+        <p>Notificações de ultrapassagem na liga, desafios de grupo e mural de conquistas da equipe.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ S9 · CTA -->
+<section id="s9">
+  <div class="eyebrow reveal">Vamos juntos</div>
+  <h2 class="reveal stagger-1" style="text-align:center;max-width:700px">
+    Transforme a saúde da sua equipe<br>em uma <span class="gradient-text">experiência que engaja</span>
+  </h2>
+  <p class="sub reveal stagger-2" style="margin-top:16px">
+    O sistema está construído, testado e pronto para sua empresa. O próximo passo é configurar o conteúdo da sua marca e lançar para as colaboradoras.
+  </p>
+  <div class="reveal stagger-3" style="margin-top:32px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center">
+    <div style="background:var(--card);border:1px solid rgba(201,162,100,.3);border-radius:16px;padding:20px 28px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🚀</div>
+      <div style="font-weight:700;font-size:15px;color:var(--gold)">Pronto para produção</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Deploy imediato disponível</div>
+    </div>
+    <div style="background:var(--card);border:1px solid rgba(74,222,128,.2);border-radius:16px;padding:20px 28px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🎨</div>
+      <div style="font-weight:700;font-size:15px;color:var(--green)">Personalizável</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Cores, logo e conteúdo da empresa</div>
+    </div>
+    <div style="background:var(--card);border:1px solid rgba(168,85,247,.2);border-radius:16px;padding:20px 28px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">📱</div>
+      <div style="font-weight:700;font-size:15px;color:var(--purple)">Mobile-first</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Web + PWA instalável</div>
+    </div>
+  </div>
+  <div class="contact-grid reveal stagger-4" style="margin-top:32px">
+    <div class="contact-pill">✦ <span>UniHER · Plataforma de Saúde Feminina Corporativa</span></div>
+  </div>
+  <p class="reveal stagger-5" style="font-size:12px;color:var(--muted);margin-top:32px;text-align:center">
+    Documento gerado exclusivamente para apresentação interna · Confidencial
+  </p>
+</section>
+
+<script>
+// ── SPRING ANIMATION ENGINE (Remotion-inspired) ──────────────────────
+function spring(frame, { stiffness=100, damping=10, mass=1, from=0, to=1 } = {}) {
+  if (frame <= 0) return from;
+  const w0 = Math.sqrt(stiffness / mass);
+  const zeta = damping / (2 * Math.sqrt(stiffness * mass));
+  const wd = zeta < 1 ? w0 * Math.sqrt(1 - zeta * zeta) : 0;
+  const t = frame / 30;
+  let result;
+  if (zeta < 1) {
+    result = to - (to - from) * Math.exp(-zeta * w0 * t) *
+      (Math.cos(wd * t) + (zeta * w0 / wd) * Math.sin(wd * t));
+  } else {
+    result = to - (to - from) * Math.exp(-w0 * t) * (1 + w0 * t);
+  }
+  return result;
+}
+
+function interpolate(value, inputRange, outputRange) {
+  const [inMin, inMax] = inputRange;
+  const [outMin, outMax] = outputRange;
+  const t = Math.max(0, Math.min(1, (value - inMin) / (inMax - inMin)));
+  return outMin + t * (outMax - outMin);
+}
+
+// ── PARTICLE BACKGROUND ───────────────────────────────────────────────
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.r = Math.random() * 1.5 + .3;
+    this.vx = (Math.random() - .5) * .3;
+    this.vy = (Math.random() - .5) * .15 - .1;
+    this.life = 0;
+    this.maxLife = Math.random() * 300 + 150;
+    const palettes = ['201,162,100', '236,72,153', '74,222,128', '168,85,247'];
+    this.color = palettes[Math.floor(Math.random() * palettes.length)];
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy; this.life++;
+    if (this.life > this.maxLife || this.y < -10) this.reset();
+  }
+  draw() {
+    const alpha = interpolate(this.life, [0, 40, this.maxLife - 40, this.maxLife], [0, .8, .8, 0]);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${this.color},${alpha})`;
+    ctx.fill();
+  }
+}
+
+for (let i = 0; i < 120; i++) {
+  const p = new Particle();
+  p.life = Math.random() * p.maxLife;
+  particles.push(p);
+}
+
+function animateBg() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animateBg);
+}
+animateBg();
+
+// ── SECTIONS & SCROLL ────────────────────────────────────────────────
+const sections = document.querySelectorAll('section');
+const dots = document.querySelectorAll('.dot');
+const progressBar = document.getElementById('progress-bar');
+const timerEl = document.getElementById('timer');
+let currentSection = 0;
+let playInterval = null;
+let isPlaying = false;
+
+function updateProgress() {
+  const idx = getCurrentSectionIndex();
+  currentSection = idx;
+  const pct = ((idx) / (sections.length - 1)) * 100;
+  progressBar.style.width = pct + '%';
+  dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+  timerEl.textContent = `Seção ${idx + 1} / ${sections.length}`;
+}
+
+function getCurrentSectionIndex() {
+  const scrollY = window.scrollY;
+  let closest = 0;
+  let minDist = Infinity;
+  sections.forEach((s, i) => {
+    const dist = Math.abs(s.offsetTop - scrollY);
+    if (dist < minDist) { minDist = dist; closest = i; }
+  });
+  return closest;
+}
+
+function goTo(idx) {
+  sections[idx].scrollIntoView({ behavior: 'smooth' });
+}
+
+window.addEventListener('scroll', updateProgress, { passive: true });
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  const idx = getCurrentSectionIndex();
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') goTo(Math.min(idx + 1, sections.length - 1));
+  if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') goTo(Math.max(idx - 1, 0));
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+});
+
+// ── AUTO-PLAY (Remotion sequence style) ───────────────────────────────
+function togglePlay() {
+  const btn = document.getElementById('play-btn');
+  if (isPlaying) {
+    clearInterval(playInterval);
+    isPlaying = false;
+    btn.textContent = '▶ Auto-play';
+  } else {
+    isPlaying = true;
+    btn.textContent = '⏸ Pausar';
+    let idx = getCurrentSectionIndex();
+    playInterval = setInterval(() => {
+      idx++;
+      if (idx >= sections.length) { togglePlay(); idx = 0; return; }
+      goTo(idx);
+    }, 5000);
+  }
+}
+
+// ── INTERSECTION OBSERVER (reveal animations) ──────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      el.classList.add('visible');
+      // Trigger special animations when section comes into view
+      const section = el.closest('section');
+      if (section && section.id === 's1') triggerCounters();
+      if (section && section.id === 's3') triggerBigCounter();
+      if (section && section.id === 's7') triggerXPBar();
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+document.querySelectorAll('.reveal, .reveal-scale, .reveal-left, .reveal-right').forEach(el => {
+  observer.observe(el);
+});
+
+// ── ANIMATED COUNTERS ─────────────────────────────────────────────────
+function animateNumber(el, target, suffix = '%', duration = 1200) {
+  let start = 0;
+  const step = target / (duration / 16);
+  const timer = setInterval(() => {
+    start += step;
+    if (start >= target) { start = target; clearInterval(timer); }
+    el.textContent = Math.round(start) + suffix;
+  }, 16);
+}
+
+let countersTriggered = false;
+function triggerCounters() {
+  if (countersTriggered) return;
+  countersTriggered = true;
+  setTimeout(() => animateNumber(document.getElementById('c1'), 23, '%', 1000), 200);
+  setTimeout(() => animateNumber(document.getElementById('c2'), 3, 'x', 900), 400);
+  setTimeout(() => animateNumber(document.getElementById('c3'), 67, '%', 1100), 600);
+}
+
+let bigCounterTriggered = false;
+function triggerBigCounter() {
+  if (bigCounterTriggered) return;
+  bigCounterTriggered = true;
+  const el = document.getElementById('bigCounter');
+  let frame = 0;
+  const target = 1050;
+  const totalFrames = 80;
+  const anim = setInterval(() => {
+    frame++;
+    const progress = spring(frame, { stiffness: 60, damping: 14, from: 0, to: 1 });
+    el.textContent = Math.round(progress * target).toLocaleString('pt-BR');
+    if (frame >= totalFrames) clearInterval(anim);
+  }, 16);
+}
+
+let xpTriggered = false;
+function triggerXPBar() {
+  if (xpTriggered) return;
+  xpTriggered = true;
+  setTimeout(() => {
+    document.getElementById('xpFill').style.width = '73%';
+  }, 400);
+}
+
+// ── PARALLAX SUBTLE ───────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY;
+  sections.forEach((section, i) => {
+    const offset = scrollY - section.offsetTop;
+    const h2 = section.querySelector('h1, h2');
+    if (h2 && Math.abs(offset) < window.innerHeight) {
+      h2.style.transform = `translateY(${offset * 0.06}px)`;
+    }
+  });
+}, { passive: true });
+
+// Init
+updateProgress();
+</script>
+</body>
+</html>
