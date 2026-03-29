@@ -34,7 +34,7 @@ const patchLessonSchema = z.object({
   description: z.string().optional(),
   type: z.enum(LESSON_TYPES).optional(),
   theme: z.enum(LESSON_THEMES).optional(),
-  content_json: z.record(z.unknown()).optional(),
+  content_json: z.record(z.string(), z.unknown()).optional(),
   week_number: z.number().int().min(1).max(52).optional(),
   day_of_week: z.number().int().min(1).max(7).optional(),
   order_index: z.number().int().min(0).optional(),

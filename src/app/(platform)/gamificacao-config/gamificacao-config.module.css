@@ -276,6 +276,19 @@
   margin-top: 12px;
 }
 
+.saveBtnSmall {
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--gold-500, #c9952e);
+  color: var(--white);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.saveBtnSmall:hover { background: var(--gold-600, #a87a20); }
+
 .saveBtn {
   padding: 10px 28px;
   border-radius: var(--radius-sm);

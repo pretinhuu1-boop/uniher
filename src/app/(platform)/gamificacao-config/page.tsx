@@ -10,13 +10,59 @@ const fetcher = (url: string) => fetch(url).then(r => {
 });
 
 const THEME_LABELS: Record<string, string> = {
-  hidratacao: 'Hidratacao',
+  hidratacao: 'Hidratação',
   sono: 'Sono',
-  prevencao: 'Prevencao',
-  nutricao: 'Nutricao',
-  mental: 'Saude Mental',
+  prevencao: 'Prevenção',
+  nutricao: 'Nutrição',
+  mental: 'Saúde Mental',
   ciclo: 'Ciclo Menstrual',
+  geral: 'Geral',
 };
+
+const LESSON_TYPE_LABELS: Record<string, string> = {
+  pilula: '💊 Pílula',
+  quiz: '❓ Quiz',
+  reflexao: '🪞 Reflexão',
+  lacuna: '✏️ Lacuna',
+  verdadeiro_falso: '✅ V/F',
+  ordenar: '🔢 Ordenar',
+  parear: '🔗 Parear',
+  historia: '📖 História',
+  flashcard: '🃏 Flashcard',
+  imagem: '🖼️ Imagem',
+  desafio_dia: '🎯 Desafio',
+};
+
+const CONTENT_TEMPLATES: Record<string, object> = {
+  pilula: { tip: 'Texto informativo aqui.', fact: 'Dado científico relevante.', action: 'Ação prática sugerida.' },
+  quiz: { question: 'Pergunta aqui?', options: ['Opção A', 'Opção B', 'Opção C', 'Opção D'], correct: 0 },
+  reflexao: { prompt: 'Como você se sente em relação a...?' },
+  lacuna: { text: 'Complete: A mulher precisa de ___ horas de sono por dia.', options: ['6', '7-9', '10', '12'], correct: 1 },
+  verdadeiro_falso: { statement: 'Afirmação aqui.', correct: true, explanation: 'Explicação.' },
+  ordenar: { instruction: 'Coloque na ordem correta:', items: ['Passo 1', 'Passo 2', 'Passo 3', 'Passo 4'], correct_order: [0, 1, 2, 3] },
+  parear: { pairs: [{ left: 'Termo A', right: 'Definição A' }, { left: 'Termo B', right: 'Definição B' }] },
+  historia: { scenario: 'Cenário aqui.', question: 'O que fazer?', options: ['A', 'B', 'C', 'D'], correct: 0 },
+  flashcard: { cards: [{ front: 'Pergunta', back: 'Resposta' }, { front: 'Pergunta 2', back: 'Resposta 2' }] },
+  imagem: { question: 'Qual opção é mais saudável?', options: [{ emoji: '🥗', label: 'Salada' }, { emoji: '🍔', label: 'Hambúrguer' }], correct: 0 },
+  desafio_dia: { challenge: 'Descrição do desafio.', duration: 'hoje', tips: ['Dica 1', 'Dica 2'] },
+};
+
+interface Lesson {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  theme: string;
+  week_number: number;
+  day_of_week: number;
+  order_index: number;
+  xp_reward: number;
+  duration_seconds: number;
+  active: number;
+  campaign_context: string | null;
+  content_json: Record<string, unknown> | null;
+  isGlobal: boolean;
+}
 
 const REWARD_TYPE_LABELS: Record<string, string> = {
   voucher: 'Voucher',
@@ -299,6 +345,86 @@ export default function GamificacaoConfigPage() {
       showToast('Erro de conexao', 'error');
     }
     setProcessingRedemption(null);
+  }
+
+  // ── Section 8: Lesson Management ──
+  const [lessonThemeFilter, setLessonThemeFilter] = useState('');
+  const [lessonTypeFilter, setLessonTypeFilter] = useState('');
+  const [lessonWeekFilter, setLessonWeekFilter] = useState('');
+  const [lessonSearch, setLessonSearch] = useState('');
+  const [lessonPage, setLessonPage] = useState(1);
+  const [showLessonForm, setShowLessonForm] = useState(false);
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [lessonSaving, setLessonSaving] = useState(false);
+  const [deletingLesson, setDeletingLesson] = useState<string | null>(null);
+  const [lessonForm, setLessonForm] = useState({
+    title: '', description: '', type: 'pilula', theme: 'hidratacao',
+    week_number: '', day_of_week: '', xp_reward: 20, duration_seconds: 90,
+    campaign_context: '', content_json: JSON.stringify(CONTENT_TEMPLATES.pilula, null, 2),
+  });
+
+  const lessonsUrl = (() => {
+    const params = new URLSearchParams({ page: String(lessonPage), limit: '12' });
+    if (lessonThemeFilter) params.set('theme', lessonThemeFilter);
+    if (lessonTypeFilter) params.set('type', lessonTypeFilter);
+    if (lessonWeekFilter) params.set('week', lessonWeekFilter);
+    if (lessonSearch) params.set('search', lessonSearch);
+    return `/api/rh/lessons?${params}`;
+  })();
+  const { data: lessonsData, isLoading: lessonsLoading, mutate: mutateLessons } = useSWR<{ lessons: Lesson[]; total: number; totalPages: number }>(
+    lessonsUrl, fetcher, { revalidateOnFocus: false }
+  );
+
+  function openCreateLesson() {
+    setEditingLesson(null);
+    setLessonForm({ title: '', description: '', type: 'pilula', theme: 'hidratacao', week_number: '', day_of_week: '', xp_reward: 20, duration_seconds: 90, campaign_context: '', content_json: JSON.stringify(CONTENT_TEMPLATES.pilula, null, 2) });
+    setShowLessonForm(true);
+  }
+
+  function openEditLesson(lesson: Lesson) {
+    setEditingLesson(lesson);
+    setLessonForm({
+      title: lesson.title, description: lesson.description, type: lesson.type,
+      theme: lesson.theme, week_number: String(lesson.week_number), day_of_week: String(lesson.day_of_week),
+      xp_reward: lesson.xp_reward, duration_seconds: lesson.duration_seconds,
+      campaign_context: lesson.campaign_context ?? '',
+      content_json: JSON.stringify(lesson.content_json ?? {}, null, 2),
+    });
+    setShowLessonForm(true);
+  }
+
+  async function saveLesson() {
+    let contentParsed: Record<string, unknown>;
+    try { contentParsed = JSON.parse(lessonForm.content_json); } catch { showToast('JSON do conteúdo inválido', 'error'); return; }
+    setLessonSaving(true);
+    try {
+      const body = {
+        title: lessonForm.title.trim(), description: lessonForm.description.trim(),
+        type: lessonForm.type, theme: lessonForm.theme,
+        xp_reward: lessonForm.xp_reward, duration_seconds: lessonForm.duration_seconds,
+        content_json: contentParsed,
+        ...(lessonForm.week_number ? { week_number: Number(lessonForm.week_number) } : {}),
+        ...(lessonForm.day_of_week ? { day_of_week: Number(lessonForm.day_of_week) } : {}),
+        ...(lessonForm.campaign_context ? { campaign_context: lessonForm.campaign_context } : {}),
+      };
+      const url = editingLesson ? `/api/rh/lessons/${editingLesson.id}` : '/api/rh/lessons';
+      const method = editingLesson ? 'PATCH' : 'POST';
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!res.ok) { const d = await res.json(); showToast(d.error || 'Erro ao salvar lição', 'error'); }
+      else { showToast(editingLesson ? 'Lição atualizada!' : 'Lição criada!', 'success'); setShowLessonForm(false); mutateLessons(); }
+    } catch { showToast('Erro de conexão', 'error'); }
+    setLessonSaving(false);
+  }
+
+  async function deleteLesson(id: string) {
+    if (!confirm('Excluir esta lição?')) return;
+    setDeletingLesson(id);
+    try {
+      const res = await fetch(`/api/rh/lessons/${id}`, { method: 'DELETE' });
+      if (!res.ok) { const d = await res.json(); showToast(d.error || 'Erro ao excluir', 'error'); }
+      else { showToast('Lição excluída', 'success'); mutateLessons(); }
+    } catch { showToast('Erro de conexão', 'error'); }
+    setDeletingLesson(null);
   }
 
   // ── Debounced numeric inputs ──
@@ -842,7 +968,151 @@ export default function GamificacaoConfigPage() {
             </div>
           )}
         </section>
+        {/* ═══ Section 8: Gerenciamento de Lições ═══ */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionIcon}>📚</span>
+            <h2 className={styles.sectionTitle}>Gerenciamento de Lições</h2>
+          </div>
+          <p className={styles.sectionDesc}>
+            Visualize as {lessonsData?.total ?? '…'} lições disponíveis e crie conteúdo personalizado para sua empresa. Lições globais são somente leitura.
+          </p>
+
+          {/* Filters */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+            <input className={styles.input} style={{ flex: '1 1 160px', minWidth: 120 }} placeholder="🔍 Buscar título..." value={lessonSearch} onChange={e => { setLessonSearch(e.target.value); setLessonPage(1); }} />
+            <select className={styles.input} style={{ flex: '0 0 auto' }} value={lessonThemeFilter} onChange={e => { setLessonThemeFilter(e.target.value); setLessonPage(1); }}>
+              <option value="">Todos os temas</option>
+              {Object.entries(THEME_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+            <select className={styles.input} style={{ flex: '0 0 auto' }} value={lessonTypeFilter} onChange={e => { setLessonTypeFilter(e.target.value); setLessonPage(1); }}>
+              <option value="">Todos os tipos</option>
+              {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+            <input className={styles.input} style={{ flex: '0 0 80px', minWidth: 60 }} type="number" min={1} max={52} placeholder="Semana" value={lessonWeekFilter} onChange={e => { setLessonWeekFilter(e.target.value); setLessonPage(1); }} />
+            <button className={styles.saveBtn} onClick={openCreateLesson} style={{ marginLeft: 'auto' }}>+ Nova Lição</button>
+          </div>
+
+          {/* Lesson list */}
+          {lessonsLoading ? (
+            <div className={styles.skeletonBlock} />
+          ) : (lessonsData?.lessons ?? []).length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📭</div>
+              <p className={styles.emptyText}>Nenhuma lição encontrada com esses filtros</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(lessonsData?.lessons ?? []).map(lesson => (
+                <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-secondary, #f8f8f8)', borderRadius: 8, border: '1px solid var(--border-subtle, #e0e0e0)' }}>
+                  <span style={{ fontSize: 13, opacity: .6, minWidth: 24 }}>S{lesson.week_number}</span>
+                  <span style={{ fontSize: 12, background: '#e8f4fd', color: '#1565c0', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{LESSON_TYPE_LABELS[lesson.type] ?? lesson.type}</span>
+                  <span style={{ fontSize: 12, background: '#f3e5f5', color: '#6a1b9a', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{THEME_LABELS[lesson.theme] ?? lesson.theme}</span>
+                  <span style={{ flex: 1, fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lesson.title}</span>
+                  {lesson.campaign_context && <span style={{ fontSize: 11, opacity: .7, whiteSpace: 'nowrap' }}>🏷️ {lesson.campaign_context}</span>}
+                  {lesson.isGlobal ? (
+                    <span style={{ fontSize: 11, color: '#888', background: '#f0f0f0', padding: '2px 8px', borderRadius: 4 }}>Global</span>
+                  ) : (
+                    <>
+                      <button className={styles.saveBtnSmall} onClick={() => openEditLesson(lesson)} style={{ padding: '4px 10px', fontSize: 12 }}>Editar</button>
+                      <button className={styles.saveBtnDanger} onClick={() => deleteLesson(lesson.id)} disabled={deletingLesson === lesson.id} style={{ padding: '4px 10px', fontSize: 12 }}>
+                        {deletingLesson === lesson.id ? '...' : 'Excluir'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {(lessonsData?.totalPages ?? 1) > 1 && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'center', justifyContent: 'center' }}>
+              <button className={styles.saveBtn} onClick={() => setLessonPage(p => Math.max(1, p - 1))} disabled={lessonPage === 1} style={{ padding: '4px 12px' }}>← Anterior</button>
+              <span style={{ fontSize: 13 }}>Pág. {lessonPage} / {lessonsData?.totalPages}</span>
+              <button className={styles.saveBtn} onClick={() => setLessonPage(p => Math.min(lessonsData?.totalPages ?? 1, p + 1))} disabled={lessonPage === (lessonsData?.totalPages ?? 1)} style={{ padding: '4px 12px' }}>Próxima →</button>
+            </div>
+          )}
+        </section>
       </div>
+
+      {/* Lesson Create/Edit Modal */}
+      {showLessonForm && (
+        <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) setShowLessonForm(false); }}>
+          <div className={styles.modal} style={{ maxWidth: 640, maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 className={styles.modalTitle}>{editingLesson ? 'Editar Lição' : 'Nova Lição'}</h3>
+
+            <div className={styles.formGrid}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Título *</label>
+                <input className={styles.input} placeholder="Título da lição" value={lessonForm.title} onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Descrição *</label>
+                <input className={styles.input} placeholder="Breve descrição" value={lessonForm.description} onChange={e => setLessonForm(f => ({ ...f, description: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className={styles.formGrid3}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Tipo *</label>
+                <select className={styles.input} value={lessonForm.type} onChange={e => setLessonForm(f => ({ ...f, type: e.target.value, content_json: JSON.stringify(CONTENT_TEMPLATES[e.target.value] ?? {}, null, 2) }))}>
+                  {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Tema *</label>
+                <select className={styles.input} value={lessonForm.theme} onChange={e => setLessonForm(f => ({ ...f, theme: e.target.value }))}>
+                  {Object.entries(THEME_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>XP</label>
+                <input type="number" className={styles.input} min={10} max={100} value={lessonForm.xp_reward} onChange={e => setLessonForm(f => ({ ...f, xp_reward: Number(e.target.value) }))} />
+              </div>
+            </div>
+
+            <div className={styles.formGrid3}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Semana (1–52)</label>
+                <input type="number" className={styles.input} min={1} max={52} placeholder="Atual" value={lessonForm.week_number} onChange={e => setLessonForm(f => ({ ...f, week_number: e.target.value }))} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Dia (1=Seg, 7=Dom)</label>
+                <input type="number" className={styles.input} min={1} max={7} placeholder="Hoje" value={lessonForm.day_of_week} onChange={e => setLessonForm(f => ({ ...f, day_of_week: e.target.value }))} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Duração (seg)</label>
+                <input type="number" className={styles.input} min={30} value={lessonForm.duration_seconds} onChange={e => setLessonForm(f => ({ ...f, duration_seconds: Number(e.target.value) }))} />
+              </div>
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Campanha <span className={styles.labelHint}>(opcional — ex: Outubro Rosa)</span></label>
+              <input className={styles.input} placeholder="Ex: Outubro Rosa - Câncer de Mama" value={lessonForm.campaign_context} onChange={e => setLessonForm(f => ({ ...f, campaign_context: e.target.value }))} />
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Conteúdo (JSON) *</label>
+              <textarea
+                className={styles.input}
+                style={{ minHeight: 180, fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
+                value={lessonForm.content_json}
+                onChange={e => setLessonForm(f => ({ ...f, content_json: e.target.value }))}
+                spellCheck={false}
+              />
+              <span className={styles.labelHint}>Edite o JSON conforme o tipo selecionado. Ao trocar o tipo, o template é atualizado.</span>
+            </div>
+
+            <div className={styles.saveRow}>
+              <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.description}>
+                {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar Alterações' : 'Criar Lição'}
+              </button>
+              <button className={styles.saveBtnDanger} onClick={() => setShowLessonForm(false)} style={{ marginLeft: 8 }}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

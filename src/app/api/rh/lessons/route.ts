@@ -89,7 +89,7 @@ export const GET = withRole('rh')(async (req, { auth }) => {
 
     const countRow = db.prepare(
       `SELECT COUNT(*) as total FROM daily_lessons dl ${whereClause}`
-    ).get(...params) as { total: number };
+    ).get(params) as { total: number };
 
     const lessons = db.prepare(
       `SELECT
@@ -111,7 +111,7 @@ export const GET = withRole('rh')(async (req, { auth }) => {
        ${whereClause}
        ORDER BY dl.week_number ASC, dl.day_of_week ASC, dl.order_index ASC
        LIMIT ? OFFSET ?`
-    ).all(...params, limit, offset) as Record<string, unknown>[];
+    ).all([...params, limit, offset]) as Record<string, unknown>[];
 
     const mapped = lessons.map((lesson) => ({
       ...lesson,
@@ -135,7 +135,7 @@ const createLessonSchema = z.object({
   description: z.string(),
   type: z.enum(LESSON_TYPES),
   theme: z.enum(LESSON_THEMES),
-  content_json: z.record(z.unknown()),
+  content_json: z.record(z.string(), z.unknown()),
   week_number: z.number().int().min(1).max(52).optional(),
   day_of_week: z.number().int().min(1).max(7).optional(),
   order_index: z.number().int().min(0).optional().default(0),
