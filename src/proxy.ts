@@ -22,6 +22,8 @@ const PUBLIC_ROUTES = [
 // Prefixos publicos
 const PUBLIC_PREFIXES = [
   '/api/auth/',
+  '/api/invites/',
+  '/invite/',
   '/_next/',
   '/favicon',
 ];
@@ -74,7 +76,7 @@ export async function proxy(request: NextRequest) {
 
     // Redirecionar para troca obrigatoria de senha se necessario
     if ((payload as any).mustChangePassword === true) {
-      const allowedPaths = ['/primeiro-acesso', '/api/auth/change-password', '/api/auth/me', '/api/auth/logout'];
+      const allowedPaths = ['/primeiro-acesso', '/api/auth/change-password', '/api/auth/confirm-first-access', '/api/auth/me', '/api/auth/logout', '/api/auth/refresh', '/api/users/me'];
       if (!allowedPaths.some(p => pathname.startsWith(p))) {
         if (pathname.startsWith('/api/')) {
           return NextResponse.json({ error: 'Troca de senha obrigatória', mustChangePassword: true }, { status: 403 });
@@ -89,6 +91,12 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
+    // If refresh token exists, let page load — client-side interceptor will handle reauth
+    const refreshToken = request.cookies.get('uniher-refresh-token')?.value;
+    if (refreshToken) {
+      return NextResponse.next();
+    }
+    // No refresh token either — full redirect to login
     const loginUrl = new URL('/auth', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);

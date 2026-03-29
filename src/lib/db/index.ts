@@ -60,10 +60,13 @@ export function walCheckpoint(): void {
 
 /** Fechar conexao (para shutdown graceful) */
 export function closeDb(): void {
+  if (_writeQueue) {
+    _writeQueue.destroy();
+    _writeQueue = null;
+  }
   if (_db) {
     try { _db.pragma('wal_checkpoint(TRUNCATE)'); } catch { /* ignore */ }
     _db.close();
     _db = null;
-    _writeQueue = null;
   }
 }

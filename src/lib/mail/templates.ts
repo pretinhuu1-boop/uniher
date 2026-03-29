@@ -37,7 +37,7 @@ export function inviteEmailHtml(data: {
   expiresInDays: number;
 }): string {
   const roleLabel: Record<string, string> = {
-    rh: 'RH',
+    rh: 'Admin',
     lideranca: 'Liderança',
     colaboradora: 'Colaboradora',
   };

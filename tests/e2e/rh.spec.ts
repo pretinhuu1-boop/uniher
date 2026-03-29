@@ -30,13 +30,15 @@ test.describe('RH — Painel da Empresa', () => {
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
     });
     expect(res.status()).toBe(200);
-    const body = await res.json();
-    adminToken = body.accessToken;
+    const cookies = res.headers()['set-cookie'] || '';
+    const match = cookies.match(/uniher-access-token=([^;]+)/);
+    adminToken = match?.[1] || '';
+    expect(adminToken).toBeTruthy();
   });
 
   test('Setup: admin cria empresa', async ({ request }) => {
     const res = await request.post('/api/admin/companies', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: {
         name: companyName,
         cnpj: companyCnpj,
@@ -51,13 +53,14 @@ test.describe('RH — Painel da Empresa', () => {
 
   test('Setup: admin cria usuário RH vinculado à empresa', async ({ request }) => {
     const res = await request.post('/api/admin/users', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: {
         name: rhName,
         email: rhEmail,
         password: rhPassword,
         role: 'rh',
         company_id: companyId,
+        mustChangePassword: false,
       },
     });
     expect(res.status()).toBe(200);
@@ -73,17 +76,20 @@ test.describe('RH — Painel da Empresa', () => {
     });
 
     expect(res.status()).toBe(200);
+    const cookies = res.headers()['set-cookie'] || '';
+    const match = cookies.match(/uniher-access-token=([^;]+)/);
+    rhToken = match?.[1] || '';
+    expect(rhToken).toBeTruthy();
     const body = await res.json();
     expect(body.user.role).toBe('rh');
     expect(body.user.email).toBe(rhEmail);
-    rhToken = body.accessToken;
   });
 
   // ─── Dashboard ───────────────────────────────────────────────────────────────
 
   test('GET /api/dashboard — RH acessa dashboard da empresa', async ({ request }) => {
     const res = await request.get('/api/dashboard', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -101,7 +107,7 @@ test.describe('RH — Painel da Empresa', () => {
     const invitedEmail = `colab-rh-${ts}@email.com`;
 
     const res = await request.post('/api/invites', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {
         email: invitedEmail,
         role: 'colaboradora',
@@ -119,7 +125,7 @@ test.describe('RH — Painel da Empresa', () => {
 
   test('POST /api/invites — RH NÃO pode convidar outro RH (403)', async ({ request }) => {
     const res = await request.post('/api/invites', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {
         email: `outro-rh-${ts}@empresa.com`,
         role: 'rh',
@@ -136,13 +142,13 @@ test.describe('RH — Painel da Empresa', () => {
 
     // Primeiro convite
     await request.post('/api/invites', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: { email: duplicateEmail, role: 'colaboradora' },
     });
 
     // Segundo convite mesmo email
     const res = await request.post('/api/invites', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: { email: duplicateEmail, role: 'colaboradora' },
     });
 
@@ -151,7 +157,7 @@ test.describe('RH — Painel da Empresa', () => {
 
   test('GET /api/invites — RH lista convites da empresa', async ({ request }) => {
     const res = await request.get('/api/invites', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -187,7 +193,7 @@ test.describe('RH — Painel da Empresa', () => {
     test.skip(!invitedUserId, 'userId não disponível (registro falhou)');
 
     const res = await request.patch('/api/invites/approve', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {
         userId: invitedUserId,
         action: 'approve',
@@ -206,7 +212,7 @@ test.describe('RH — Painel da Empresa', () => {
     // Cria um RH pendente via admin
     const rhPendingEmail = `rh-pending-${ts}@empresa.com`;
     const createRes = await request.post('/api/admin/users', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: {
         name: 'RH Pendente',
         email: rhPendingEmail,
@@ -224,7 +230,7 @@ test.describe('RH — Painel da Empresa', () => {
     const { id: pendingRhId } = await createRes.json();
 
     const res = await request.patch('/api/invites/approve', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {
         userId: pendingRhId,
         action: 'approve',
@@ -237,7 +243,7 @@ test.describe('RH — Painel da Empresa', () => {
 
   test('PATCH /api/invites/approve — rejeita body inválido', async ({ request }) => {
     const res = await request.patch('/api/invites/approve', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {},
     });
 
@@ -248,7 +254,7 @@ test.describe('RH — Painel da Empresa', () => {
 
   test('GET /api/rh/objectives — RH lista objetivos da empresa', async ({ request }) => {
     const res = await request.get('/api/rh/objectives', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -259,7 +265,7 @@ test.describe('RH — Painel da Empresa', () => {
 
   test('POST /api/rh/objectives — RH cria objetivo', async ({ request }) => {
     const res = await request.post('/api/rh/objectives', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {
         title: `Objetivo Teste ${ts}`,
         description: 'Objetivo criado nos testes e2e',
@@ -280,7 +286,7 @@ test.describe('RH — Painel da Empresa', () => {
 
   test('POST /api/rh/objectives — rejeita objetivo inválido (sem título)', async ({ request }) => {
     const res = await request.post('/api/rh/objectives', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {
         type: 'weekly',
         target_type: 'points',
@@ -297,17 +303,17 @@ test.describe('RH — Painel da Empresa', () => {
 
   test('RH NÃO pode acessar endpoints de admin master', async ({ request }) => {
     const resCompanies = await request.get('/api/admin/companies', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
     expect([401, 403]).toContain(resCompanies.status());
 
     const resUsers = await request.get('/api/admin/users', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
     expect([401, 403]).toContain(resUsers.status());
 
     const resSystem = await request.get('/api/admin/system', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
     expect([401, 403]).toContain(resSystem.status());
   });

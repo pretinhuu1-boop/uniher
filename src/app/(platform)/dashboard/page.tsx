@@ -68,11 +68,7 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="px-2 py-0.5 bg-rose-500 text-white text-[10px] font-bold rounded-md uppercase tracking-wider">OFG</span>
-            <span className="text-uni-text-400 text-sm font-medium">/ corporativo</span>
-          </div>
-          <h1 className="text-4xl font-display font-bold text-uni-text-900 leading-tight">Dashboard RH</h1>
+          <h1 className="text-4xl font-display font-bold text-uni-text-900 leading-tight">Dashboard</h1>
           <p className="text-uni-text-600 mt-1 max-w-xl">Visão geral estratégica da saúde e engajamento da população feminina da sua empresa.</p>
         </div>
 
@@ -139,7 +135,11 @@ export default function DashboardPage() {
         ) : kpis.length > 0 ? kpis.map((kpi: DashboardKPI, i: number) => (
           <StatCard key={i} kpi={kpi} className="animate-scaleIn h-full" />
         )) : (
-          <div className="col-span-full text-center text-uni-text-400 text-sm py-8">Sem dados de KPI disponíveis</div>
+          <div className="col-span-full" style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+            <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Seu dashboard vai ganhar vida em breve</p>
+            <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>Quando as colaboradoras começarem a usar a plataforma, os KPIs aparecerão aqui automaticamente.</p>
+          </div>
         )}
       </div>
 
@@ -185,7 +185,7 @@ export default function DashboardPage() {
               <h3 className="text-lg font-bold text-uni-text-900">Engajamento ao Longo do Tempo</h3>
               <p className="text-xs text-uni-text-500">Benchmark de atividade vs retenção.</p>
             </div>
-            <Badge variant="success">Tendência de Alta</Badge>
+            {engagement.length > 0 && <Badge variant="success">Tendência de Alta</Badge>}
           </div>
           <div className="flex-grow">
             {engagement.length > 0 ? (
@@ -214,7 +214,11 @@ export default function DashboardPage() {
                options={{ responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }}
              />
             ) : (
-              <div className="flex items-center justify-center h-full text-uni-text-400 text-sm">Sem dados de engajamento</div>
+              <div className="flex flex-col items-center justify-center h-full" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>📈</div>
+                <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Dados de engajamento em construção</p>
+                <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>Conforme as colaboradoras interagirem com a plataforma, o gráfico de engajamento será preenchido.</p>
+              </div>
             )}
           </div>
         </Card>
@@ -251,7 +255,11 @@ export default function DashboardPage() {
               </div>
             </>
           ) : (
-            <div className="flex-grow flex items-center justify-center text-uni-text-400 text-sm">Sem dados demográficos</div>
+            <div className="flex-grow flex flex-col items-center justify-center" style={{ textAlign: 'center', padding: '40px 20px' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
+              <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Distribuição demográfica indisponível</p>
+              <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>Cadastre colaboradoras para visualizar a distribuição por faixa etária.</p>
+            </div>
           )}
         </Card>
       </div>
@@ -287,7 +295,11 @@ export default function DashboardPage() {
                 </div>
               </div>
             )) : (
-              <div className="text-center text-uni-text-400 text-sm py-8">Sem departamentos cadastrados</div>
+              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🏢</div>
+                <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Nenhum departamento cadastrado</p>
+                <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>Crie departamentos em "Departamentos" para acompanhar o ranking de engajamento por setor.</p>
+              </div>
             )}
           </div>
         </Card>
@@ -315,7 +327,11 @@ export default function DashboardPage() {
                 </div>
               </div>
             )) : (
-              <div className="text-center text-uni-text-400 text-sm py-8">Sem campanhas</div>
+              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>📢</div>
+                <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Nenhuma campanha ativa</p>
+                <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>Crie campanhas de saúde em "Campanhas" para engajar suas colaboradoras ao longo do ano.</p>
+              </div>
             )}
           </div>
         </Card>

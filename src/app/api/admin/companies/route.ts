@@ -45,7 +45,14 @@ export const POST = withRole('admin')(async (req: NextRequest, context) => {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
   }
-  const { name, trade_name, cnpj, sector, plan, contact_name, contact_email, contact_phone } = parsed.data;
+  const stripHtml = (s: string) => s.replace(/<[^>]*>/g, '').trim();
+  const { cnpj, sector, plan, contact_name, contact_email, contact_phone } = parsed.data;
+  const name = stripHtml(parsed.data.name);
+  const trade_name = parsed.data.trade_name ? stripHtml(parsed.data.trade_name) : undefined;
+
+  if (!name) {
+    return NextResponse.json({ error: 'Nome da empresa é obrigatório' }, { status: 422 });
+  }
 
   try {
     const company = await createCompany({

@@ -45,9 +45,19 @@ const TOGGLE_KEY_MAP: Record<string, string> = {
 
 export default function ConfiguracoesPage() {
   const [nome, setNome] = useState('');
+  const [nickname, setNickname] = useState('');
   const [emailVal, setEmailVal] = useState('');
   const [cargo, setCargo] = useState('');
+  const [deptName, setDeptName] = useState('');
   const [saveLabel, setSaveLabel] = useState('Salvar');
+
+  // Password change
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [pwdMsg, setPwdMsg] = useState('');
+  const [pwdSaving, setPwdSaving] = useState(false);
 
   // Emergency contact
   const [emergencyName, setEmergencyName] = useState('');
@@ -297,17 +307,15 @@ export default function ConfiguracoesPage() {
       .then(({ user }) => {
         if (user) {
           setNome(user.name || '');
+          setNickname(user.nickname || '');
           setEmailVal(user.email || '');
+          setDeptName(user.department_name || '');
+          setCargo(user.role === 'rh' ? 'Admin Empresa' : user.role === 'lideranca' ? 'Liderança' : 'Colaboradora');
           setEmergencyName(user.emergency_contact_name || '');
           setEmergencyPhone(user.emergency_contact_phone || '');
         }
       })
-      .catch(() => {
-        // Fallback to static values
-        setNome('Ana Maria');
-        setEmailVal('ana.maria@empresa.com');
-        setCargo('Analista de RH');
-      });
+      .catch(() => {});
   }, []);
 
   const handleToggle = (id: string) => {
@@ -330,17 +338,49 @@ export default function ConfiguracoesPage() {
   async function handleSaveProfile() {
     setSaveLabel('Salvando...');
     try {
-      await fetch('/api/users/me', {
+      const res = await fetch('/api/users/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nome }),
+        body: JSON.stringify({ nickname }),
       });
-      setSaveLabel('✓ Salvo!');
+      if (res.ok) {
+        setSaveLabel('Salvo!');
+      } else {
+        const d = await res.json();
+        setSaveLabel(d.error || 'Erro ao salvar');
+      }
     } catch {
       setSaveLabel('Erro ao salvar');
     } finally {
       setTimeout(() => setSaveLabel('Salvar'), 2000);
     }
+  }
+
+  async function handleChangePassword() {
+    setPwdMsg('');
+    if (newPwd !== confirmPwd) { setPwdMsg('As senhas não coincidem.'); return; }
+    if (newPwd.length < 8) { setPwdMsg('A nova senha precisa ter no mínimo 8 caracteres.'); return; }
+    setPwdSaving(true);
+    try {
+      const res = await fetch('/api/users/me/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setPwdMsg('Senha alterada com sucesso!');
+        setCurrentPwd('');
+        setNewPwd('');
+        setConfirmPwd('');
+        setTimeout(() => setShowPasswordChange(false), 2000);
+      } else {
+        setPwdMsg(d.error || 'Erro ao alterar senha.');
+      }
+    } catch {
+      setPwdMsg('Erro de conexão.');
+    }
+    setPwdSaving(false);
   }
 
   async function handleSaveEmergency() {
@@ -390,27 +430,75 @@ export default function ConfiguracoesPage() {
           <h2 className={styles.sectionTitle}>Perfil</h2>
           <div className={styles.formGrid}>
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Nome</label>
-              <input className={styles.input} type="text" value={nome} onChange={(e) => setNome(e.target.value)} />
+              <label className={styles.label}>Nome <span style={{ fontSize: 10, color: '#999' }}>(definido pelo admin)</span></label>
+              <input className={styles.input} type="text" value={nome} readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Apelido <span style={{ fontSize: 10, color: '#999' }}>(como quer ser chamada)</span></label>
+              <input className={styles.input} type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Ex: Edu, Duda..." />
             </div>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>E-mail</label>
               <input className={styles.input} type="email" value={emailVal} readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} />
             </div>
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Departamento</label>
-              <input className={styles.input} type="text" defaultValue="RH" readOnly style={{ opacity: 0.6 }} />
+              <label className={styles.label}>Papel</label>
+              <input className={styles.input} type="text" value={cargo} readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} />
             </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Cargo</label>
-              <input className={styles.input} type="text" value={cargo} onChange={(e) => setCargo(e.target.value)} />
-            </div>
+            {deptName && (
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Setor</label>
+                <input className={styles.input} type="text" value={deptName} readOnly style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+              </div>
+            )}
           </div>
           <div className={styles.saveRow}>
             <button className={styles.saveBtn} onClick={handleSaveProfile}>
               {saveLabel}
             </button>
           </div>
+        </div>
+
+        {/* Trocar Senha */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Segurança</h2>
+          {!showPasswordChange ? (
+            <button
+              className={styles.saveBtn}
+              onClick={() => setShowPasswordChange(true)}
+              style={{ background: 'transparent', border: '1px solid #e8dfd0', color: '#7a6b5a' }}
+            >
+              Alterar minha senha
+            </button>
+          ) : (
+            <div style={{ maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Senha atual *</label>
+                <input className={styles.input} type="password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} autoComplete="current-password" />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Nova senha *</label>
+                <input className={styles.input} type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)} autoComplete="new-password" />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Confirmar nova senha *</label>
+                <input className={styles.input} type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} autoComplete="new-password" />
+              </div>
+              {pwdMsg && <p style={{ fontSize: 13, color: pwdMsg.includes('sucesso') ? '#16a34a' : '#dc2626', margin: 0 }}>{pwdMsg}</p>}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className={styles.saveBtn} onClick={handleChangePassword} disabled={pwdSaving || !currentPwd || !newPwd || !confirmPwd}>
+                  {pwdSaving ? 'Salvando...' : 'Alterar senha'}
+                </button>
+                <button
+                  className={styles.saveBtn}
+                  onClick={() => { setShowPasswordChange(false); setCurrentPwd(''); setNewPwd(''); setConfirmPwd(''); setPwdMsg(''); }}
+                  style={{ background: 'transparent', border: '1px solid #e8dfd0', color: '#7a6b5a' }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Contato de Emergência */}

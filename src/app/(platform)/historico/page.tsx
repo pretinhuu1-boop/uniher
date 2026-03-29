@@ -177,10 +177,12 @@ export default function HistoricoPage() {
       {!isLoading && activeTab === 'pontos' ? (
         <div className={styles.tableWrap}>
           {sortedData.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-400)' }}>
-              <p style={{ fontSize: '2rem', marginBottom: 8 }}>📊</p>
-              <p style={{ fontWeight: 600 }}>Sem dados no periodo</p>
-              {searchTerm && <p style={{ fontSize: '0.85rem' }}>Nenhum resultado para &ldquo;{searchTerm}&rdquo;</p>}
+            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+              <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Sem dados no período</p>
+              <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>
+                {searchTerm ? `Nenhum resultado para "${searchTerm}". Tente outro termo ou limpe a busca.` : 'Os dados de pontuação aparecerão aqui conforme as competições forem registradas.'}
+              </p>
             </div>
           ) : (
             <table className={styles.table}>
@@ -231,9 +233,10 @@ export default function HistoricoPage() {
         /* Ranking view as cards */
         <div className={styles.rankingGrid}>
           {rankingData.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-400)', gridColumn: '1 / -1' }}>
-              <p style={{ fontSize: '2rem', marginBottom: 8 }}>🏆</p>
-              <p style={{ fontWeight: 600 }}>Sem dados de ranking</p>
+            <div style={{ textAlign: 'center', padding: '60px 20px', gridColumn: '1 / -1' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🏆</div>
+              <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Ranking ainda sem dados</p>
+              <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>O ranking será preenchido conforme os departamentos acumularem pontos em desafios e campanhas.</p>
             </div>
           ) : (
             rankingData.map((item) => {

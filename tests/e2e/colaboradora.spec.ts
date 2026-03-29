@@ -33,12 +33,15 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
     });
     expect(res.status()).toBe(200);
-    adminToken = (await res.json()).accessToken;
+    const cookies = res.headers()['set-cookie'] || '';
+    const match = cookies.match(/uniher-access-token=([^;]+)/);
+    adminToken = match?.[1] || '';
+    expect(adminToken).toBeTruthy();
   });
 
   test('Setup: admin cria empresa', async ({ request }) => {
     const res = await request.post('/api/admin/companies', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: { name: companyName, cnpj: companyCnpj, sector: 'Saúde', plan: 'pro' },
     });
     expect(res.status()).toBe(200);
@@ -47,13 +50,14 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('Setup: admin cria RH vinculado à empresa', async ({ request }) => {
     const res = await request.post('/api/admin/users', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: {
         name: `RH Colab ${ts}`,
         email: rhEmail,
         password: rhPassword,
         role: 'rh',
         company_id: companyId,
+        mustChangePassword: false,
       },
     });
     expect(res.status()).toBe(200);
@@ -64,12 +68,15 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
       data: { email: rhEmail, password: rhPassword },
     });
     expect(res.status()).toBe(200);
-    rhToken = (await res.json()).accessToken;
+    const cookies = res.headers()['set-cookie'] || '';
+    const match = cookies.match(/uniher-access-token=([^;]+)/);
+    rhToken = match?.[1] || '';
+    expect(rhToken).toBeTruthy();
   });
 
   test('Setup: RH cria convite para colaboradora', async ({ request }) => {
     const res = await request.post('/api/invites', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: { email: colabEmail, role: 'colaboradora' },
     });
     expect(res.status()).toBe(200);
@@ -91,17 +98,18 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
     expect(res.status()).toBe(201);
     const body = await res.json();
     expect(body).toHaveProperty('user');
-    expect(body).toHaveProperty('accessToken');
+    const cookies2 = res.headers()['set-cookie'] || '';
+    const match2 = cookies2.match(/uniher-access-token=([^;]+)/);
+    colabToken = match2?.[1] || '';
     expect(body.user.role).toBe('colaboradora');
     colabUserId = body.user.id;
-    colabToken = body.accessToken;
   });
 
   test('Setup: RH aprova colaboradora', async ({ request }) => {
     test.skip(!colabUserId, 'Registro da colaboradora falhou');
 
     const res = await request.patch('/api/invites/approve', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: { userId: colabUserId, action: 'approve' },
     });
     // 200 = aprovada, 404 = já aprovada auto
@@ -114,17 +122,20 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
     });
 
     expect(res.status()).toBe(200);
+    const cookies3 = res.headers()['set-cookie'] || '';
+    const match3 = cookies3.match(/uniher-access-token=([^;]+)/);
+    colabToken = match3?.[1] || '';
+    expect(colabToken).toBeTruthy();
     const body = await res.json();
     expect(body.user.role).toBe('colaboradora');
     expect(body.user.email).toBe(colabEmail);
-    colabToken = body.accessToken;
   });
 
   // ─── Dashboard ───────────────────────────────────────────────────────────────
 
   test('GET /api/dashboard — colaboradora acessa dashboard', async ({ request }) => {
     const res = await request.get('/api/dashboard', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -136,7 +147,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('POST /api/gamification/check-in — realiza check-in diário', async ({ request }) => {
     const res = await request.post('/api/gamification/check-in', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -147,7 +158,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('POST /api/gamification/check-in — segundo check-in no mesmo dia', async ({ request }) => {
     const res = await request.post('/api/gamification/check-in', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     // Pode retornar 200 (com mensagem já fez check-in) ou 409
@@ -163,7 +174,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('GET /api/gamification/streak-status — retorna status do streak', async ({ request }) => {
     const res = await request.get('/api/gamification/streak-status', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -182,7 +193,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('GET /api/gamification/daily-missions — lista missões do dia', async ({ request }) => {
     const res = await request.get('/api/gamification/daily-missions', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -194,7 +205,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
   test('POST /api/gamification/daily-missions/:id/complete — completa missão', async ({ request }) => {
     // Primeiro busca missões disponíveis
     const missionsRes = await request.get('/api/gamification/daily-missions', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     const { missions } = await missionsRes.json();
@@ -206,7 +217,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
     const missionId = missions[0].id;
 
     const res = await request.post(`/api/gamification/daily-missions/${missionId}/complete`, {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     // 200 = completou, 400/409 = já completou
@@ -217,7 +228,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('GET /api/gamification/leaderboard — ranking por departamento', async ({ request }) => {
     const res = await request.get('/api/gamification/leaderboard', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -229,7 +240,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('GET /api/gamification/leaderboard?type=league — ranking por liga', async ({ request }) => {
     const res = await request.get('/api/gamification/leaderboard?type=league', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -242,7 +253,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('GET /api/collaborator/challenges — lista desafios', async ({ request }) => {
     const res = await request.get('/api/collaborator/challenges', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -260,7 +271,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('GET /api/users/me/notification-preferences — retorna preferências', async ({ request }) => {
     const res = await request.get('/api/users/me/notification-preferences', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -274,7 +285,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('PATCH /api/users/me/notification-preferences — atualiza preferências', async ({ request }) => {
     const res = await request.patch('/api/users/me/notification-preferences', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
       data: {
         reminder_times: ['09:00', '17:00'],
         browser_enabled: true,
@@ -287,7 +298,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
     // Verifica se persistiu
     const verifyRes = await request.get('/api/users/me/notification-preferences', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
     const verifyBody = await verifyRes.json();
     expect(verifyBody.prefs.reminder_times).toEqual(['09:00', '17:00']);
@@ -296,7 +307,7 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('PATCH /api/users/me/notification-preferences — rejeita dados inválidos', async ({ request }) => {
     const res = await request.patch('/api/users/me/notification-preferences', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
       data: {
         reminder_times: ['invalid-time'],
       },
@@ -309,19 +320,19 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   test('Colaboradora NÃO pode acessar endpoints de admin', async ({ request }) => {
     const res = await request.get('/api/admin/companies', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
     expect([401, 403]).toContain(res.status());
   });
 
   test('Colaboradora NÃO pode acessar endpoints de RH', async ({ request }) => {
     const resInvites = await request.get('/api/invites', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
     expect([401, 403]).toContain(resInvites.status());
 
     const resObjectives = await request.post('/api/rh/objectives', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
       data: {
         title: 'Objetivo Hacker',
         type: 'weekly',

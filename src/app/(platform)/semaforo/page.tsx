@@ -111,7 +111,11 @@ export default function SemaforoPage() {
     setTimeout(() => setReminderFeedback(null), 2000);
   }
 
+  // Stabilize dependency to prevent infinite loop
+  const semaforoKey = JSON.stringify(semaforoData.map((d: any) => d.dimension + d.score));
+
   useEffect(() => {
+    if (!semaforoData.length) return;
     const initial: Record<string, number> = {};
     semaforoData.forEach((item: any) => { initial[item.dimension] = 0; });
     setAnimatedScores(initial);
@@ -127,7 +131,8 @@ export default function SemaforoPage() {
       if (step >= steps) clearInterval(timer);
     }, 800 / steps);
     return () => clearInterval(timer);
-  }, [semaforoData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [semaforoKey]);
 
   const filteredItems = semaforoData.filter(item =>
     activeFilter === 'all' || item.status === activeFilter

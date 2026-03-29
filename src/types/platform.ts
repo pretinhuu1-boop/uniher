@@ -17,6 +17,10 @@ export interface MockUser {
   points: number;
   streak: number;
   joinedAt: string;
+  nickname?: string | null;
+  also_collaborator?: number;
+  can_approve?: number;
+  mustChangePassword?: boolean;
 }
 
 export interface Department {

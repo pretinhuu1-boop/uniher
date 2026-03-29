@@ -8,6 +8,7 @@ const autoWorkers = Math.max(1, Math.min(3, Math.floor(cpus / 2)));
 export default defineConfig({
   testDir: './e2e',
   outputDir: './results',
+  globalTeardown: './global-teardown.ts',
   timeout: 30000,
   retries: 0,
   fullyParallel: true,
@@ -28,5 +29,6 @@ export default defineConfig({
     { name: 'colaboradora', testMatch: 'colaboradora.spec.ts' },
     { name: 'integrado', testMatch: 'integrado.spec.ts' },
     { name: 'seguranca', testMatch: 'seguranca.spec.ts' },
+    { name: 'visual-ux', testMatch: 'visual-ux.spec.ts', use: { headless: true } },
   ],
 });

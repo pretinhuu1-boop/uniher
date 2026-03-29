@@ -5,8 +5,8 @@ self.addEventListener('push', function(event) {
   const data = event.data ? event.data.json() : {};
   const options = {
     body: data.body || 'Nova notificação',
-    icon: '/logo.svg',
-    badge: '/logo.svg',
+    icon: '/logo-uniher.png',
+    badge: '/logo-uniher.png',
     vibrate: [100, 50, 100],
     data: { url: data.url || '/' },
     actions: [{ action: 'open', title: 'Abrir' }]
@@ -25,7 +25,7 @@ self.addEventListener('notificationclick', function(event) {
 
 // PWA Cache strategy
 const CACHE_NAME = 'uniher-v1';
-const PRECACHE_URLS = ['/logo.svg', '/manifest.json'];
+const PRECACHE_URLS = ['/', '/logo-uniher.png', '/manifest.json'];
 
 self.addEventListener('install', event => {
   event.waitUntil(

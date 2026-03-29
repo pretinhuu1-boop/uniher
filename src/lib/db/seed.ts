@@ -17,6 +17,8 @@ async function seed() {
   const adminPassword = await hashPassword('Admin@2026');
 
   await writeQueue.enqueue((db) => {
+    // Temporarily disable FK for seed (inserts in dependency order but same transaction)
+    db.pragma('foreign_keys = OFF');
     db.transaction(() => {
       // ─── Admin Master (único usuário criado no seed) ───
       const existingAdmin = db.prepare('SELECT id FROM users WHERE role = ?').get('admin');
@@ -83,10 +85,29 @@ async function seed() {
         console.log('[seed] Desafios padrão já existem, pulando...');
       }
 
-      console.log('[seed] ✅ Seed de homologação concluído!');
+      console.log('[seed] ✅ Seed base concluído!');
       console.log('[seed] Admin: admin@uniher.com.br / Admin@2026');
     })();
+    db.pragma('foreign_keys = ON');
   });
+
+  // Seed gamification lessons (30 lições de saúde, 6 semanas)
+  try {
+    const { seedGamificationLessons } = require('./seeds/gamification-seed');
+    await writeQueue.enqueue((db) => {
+      db.pragma('foreign_keys = OFF');
+      try {
+        seedGamificationLessons(db);
+      } finally {
+        db.pragma('foreign_keys = ON');
+      }
+    });
+    console.log('[seed] ✅ Lições de gamificação inseridas!');
+  } catch (err: any) {
+    console.warn('[seed] ⚠️ Gamification seed:', err.message);
+  }
+
+  console.log('[seed] ✅ Seed de homologação completo!');
 }
 
 seed().catch(err => {

@@ -48,6 +48,7 @@ yarn-error.log*
 
 # temp
 /tmp/
+para_teste.txt
 
 # uploads
 public/uploads/*

@@ -1,9 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 interface RoleCard {
   key: 'rh' | 'lideranca' | 'colaboradora';
@@ -47,6 +49,20 @@ const roles: RoleCard[] = [
 
 export default function WelcomePage() {
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+
+  // If already logged in, redirect based on role
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        router.replace('/admin');
+      } else if (user.role === 'colaboradora') {
+        router.replace('/colaboradora');
+      } else if (user.role === 'rh' || user.role === 'lideranca') {
+        router.replace('/dashboard');
+      }
+    }
+  }, [isAuthenticated, user, router]);
 
   const handleSelect = (role: RoleCard) => {
     if (typeof window !== 'undefined') {

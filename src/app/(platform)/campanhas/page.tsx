@@ -8,11 +8,41 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
 
+function formatDateRange(start?: string | null, end?: string | null): string {
+  if (!start && !end) return 'Sem período definido';
+  const fmt = (d: string) => {
+    const [y, m, day] = d.split('-');
+    const date = new Date(Number(y), Number(m) - 1, Number(day));
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  };
+  const fmtYear = (d: string) => {
+    const [y, m, day] = d.split('-');
+    const date = new Date(Number(y), Number(m) - 1, Number(day));
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+  if (start && end) return `${fmt(start)} — ${fmtYear(end)}`;
+  if (start) return `A partir de ${fmtYear(start)}`;
+  return `Até ${fmtYear(end!)}`;
+}
+
+function getTimeProgress(start?: string | null, end?: string | null): number | null {
+  if (!start || !end) return null;
+  const now = Date.now();
+  const s = new Date(start + 'T00:00:00').getTime();
+  const e = new Date(end + 'T23:59:59').getTime();
+  if (now < s) return 0;
+  if (now > e) return 100;
+  return Math.round(((now - s) / (e - s)) * 100);
+}
+
 const TEMAS = [
   { label: 'Saúde Mental', color: '#A48090', icon: '🧠' },
   { label: 'Prevenção', color: '#C9A264', icon: '🌸' },
   { label: 'Hábitos Saudáveis', color: '#3E7D5A', icon: '🌿' },
   { label: 'Nutrição', color: '#EF9F27', icon: '🍎' },
+  { label: 'Bem-estar', color: '#6B8EC9', icon: '💆' },
+  { label: 'Fitness', color: '#E06B75', icon: '🏋️' },
+  { label: 'Outro', color: '#8B7355', icon: '✨' },
 ] as const;
 
 const MESES = [
@@ -30,30 +60,55 @@ export default function CampanhasPage() {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const [formName, setFormName] = useState('');
-  const [formTema, setFormTema] = useState<typeof TEMAS[number]['label']>(TEMAS[0].label);
-  const [formMes, setFormMes] = useState<typeof MESES[number]>(MESES[new Date().getMonth()]);
+  const [formTema, setFormTema] = useState<string>(TEMAS[0].label);
+  const [formTemaCustom, setFormTemaCustom] = useState('');
+  const [formDataInicio, setFormDataInicio] = useState('');
+  const [formDataFim, setFormDataFim] = useState('');
 
   const isRH = user?.role === 'rh';
 
+  const today = new Date().toISOString().slice(0, 10);
+
+  const getTemporalStatus = (c: any): 'active' | 'next' | 'done' => {
+    if (c.start_date && c.end_date) {
+      if (today >= c.start_date && today <= c.end_date) return 'active';
+      if (today < c.start_date) return 'next';
+      if (today > c.end_date) return 'done';
+    }
+    return c.status || 'next';
+  };
+
   const filteredCampaigns = campaigns.filter((c: any) => {
     if (activeFilter === 'all') return true;
-    return c.status === activeFilter;
+    const temporal = getTemporalStatus(c);
+    return temporal === activeFilter;
   });
 
   const handleCreate = async () => {
     if (!formName) return;
     try {
+      const temaFinal = formTema === 'Outro' ? (formTemaCustom || 'Outro') : formTema;
       const temaObj = TEMAS.find(t => t.label === formTema);
+      const color = temaObj?.color || '#8B7355';
       await createCampaign({
         name: formName,
-        month: `${formMes} · ${formTema}`,
-        color: temaObj?.color || '#C9A264',
-        status: 'next'
+        month: temaFinal,
+        color,
+        status: 'next',
+        start_date: formDataInicio || undefined,
+        end_date: formDataFim || undefined,
+        theme: temaFinal,
+        theme_color: color,
       });
       setIsModalOpen(false);
       setFormName('');
-    } catch (err) {
-      console.error(err);
+      setFormTema(TEMAS[0].label);
+      setFormTemaCustom('');
+      setFormDataInicio('');
+      setFormDataFim('');
+    } catch (err: any) {
+      console.error('Erro ao criar campanha:', err);
+      alert(err?.message || 'Erro ao criar campanha');
     }
   };
 
@@ -172,30 +227,65 @@ export default function CampanhasPage() {
             <p className="text-sm text-uni-text-400">As campanhas de saúde e bem-estar da sua empresa aparecerão aqui. Tente outro filtro ou aguarde novas campanhas.</p>
           </div>
         ) : (
-          filteredCampaigns.map((c: any) => (
-            <div 
-              key={c.id} 
+          filteredCampaigns.map((c: any) => {
+            const temporal = getTemporalStatus(c);
+            const timeProgress = getTimeProgress(c.start_date, c.end_date);
+            const temaObj = TEMAS.find(t => t.label === (c.theme || c.month));
+            const themeIcon = temaObj?.icon || '✨';
+            const themeLabel = c.theme || c.month;
+            const themeColor = c.theme_color || c.color;
+
+            return (
+            <div
+              key={c.id}
               className="group relative bg-white border border-border-1 rounded-[2rem] p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
             >
               <div className="flex justify-between items-start mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400">{c.month}</span>
-                <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", getStatusBadgeClass(c.status))}>
-                  {c.status_label || (c.status === 'active' ? 'Ativa' : c.status === 'done' ? 'Concluída' : 'Próxima')}
+                <span className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400">
+                  {formatDateRange(c.start_date, c.end_date)}
+                </span>
+                <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", getStatusBadgeClass(temporal))}>
+                  {temporal === 'active' ? 'Ativa' : temporal === 'done' ? 'Concluída' : 'Próxima'}
                 </span>
               </div>
 
               <h3 className="text-xl font-display font-bold text-uni-text-900 mb-2">{c.name}</h3>
+
+              {/* Theme badge */}
+              <div className="flex items-center gap-1.5 mb-4">
+                <span
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold"
+                  style={{ backgroundColor: themeColor + '18', color: themeColor }}
+                >
+                  {themeIcon} {themeLabel}
+                </span>
+              </div>
+
               <p className="text-xs text-uni-text-500 leading-relaxed mb-6 flex-grow">
-                Junte-se à nossa missão de saúde e autocuidado focada em {c.month.split('·')[1] || 'você'}.
+                Junte-se à nossa missão de saúde e autocuidado focada em {themeLabel}.
               </p>
 
-              <div className="space-y-4">
+              {/* Temporal progress bar (active campaigns) */}
+              {timeProgress !== null && temporal === 'active' && (
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between text-[11px] font-bold">
+                    <span className="text-uni-text-400">Tempo decorrido</span>
+                    <span style={{ color: themeColor }}>{timeProgress}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-cream-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${timeProgress}%`, background: themeColor }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Participation progress */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between text-[11px] font-bold">
                   <span className="text-uni-text-400">Progresso Geral</span>
-                  <span className="text-rose-500">{c.progress}%</span>
+                  <span className="text-rose-500">{c.progress ?? 0}%</span>
                 </div>
                 <div className="h-1.5 w-full bg-cream-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-rose-400 transition-all duration-1000" style={{ width: `${c.progress}%`, background: c.color }} />
+                  <div className="h-full rounded-full bg-rose-400 transition-all duration-1000" style={{ width: `${c.progress ?? 0}%`, background: c.color }} />
                 </div>
               </div>
 
@@ -246,7 +336,8 @@ export default function CampanhasPage() {
                 )}
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -268,26 +359,49 @@ export default function CampanhasPage() {
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Tema</label>
+            <select
+              className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none appearance-none bg-white"
+              value={formTema}
+              onChange={(e) => setFormTema(e.target.value)}
+            >
+              {TEMAS.map(t => <option key={t.label} value={t.label}>{t.icon} {t.label}</option>)}
+            </select>
+          </div>
+
+          {formTema === 'Outro' && (
+            <div>
+              <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Nome do Tema Personalizado</label>
+              <input
+                type="text"
+                className="w-full px-4 py-3 rounded-2xl border border-border-1 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all"
+                placeholder="Ex: Ergonomia, Saúde Ocular..."
+                value={formTemaCustom}
+                onChange={(e) => setFormTemaCustom(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Tema</label>
-              <select 
-                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none appearance-none bg-white"
-                value={formTema}
-                onChange={(e) => setFormTema(e.target.value as typeof TEMAS[number]['label'])}
-              >
-                {TEMAS.map(t => <option key={t.label} value={t.label}>{t.icon} {t.label}</option>)}
-              </select>
+              <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Data Início</label>
+              <input
+                type="date"
+                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none bg-white"
+                value={formDataInicio}
+                onChange={(e) => setFormDataInicio(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Mês</label>
-              <select 
-                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none appearance-none bg-white"
-                value={formMes}
-                onChange={(e) => setFormMes(e.target.value as typeof MESES[number])}
-              >
-                {MESES.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
+              <label className="block text-xs font-bold text-uni-text-600 mb-2 uppercase tracking-widest">Data Fim</label>
+              <input
+                type="date"
+                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none bg-white"
+                value={formDataFim}
+                onChange={(e) => setFormDataFim(e.target.value)}
+                min={formDataInicio}
+              />
             </div>
           </div>
 

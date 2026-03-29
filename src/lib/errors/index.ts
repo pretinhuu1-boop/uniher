@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { logger, generateRequestId } from '@/lib/logger';
 
 export class AppError extends Error {
   constructor(
     message: string,
     public statusCode: number = 500,
-    public code?: string
+    public code?: string,
+    public details?: unknown[]
   ) {
     super(message);
     this.name = 'AppError';
@@ -54,23 +56,34 @@ export class RateLimitError extends AppError {
 }
 
 /** Transforma qualquer erro em uma resposta HTTP padronizada */
-export function handleApiError(error: unknown): NextResponse {
+export function handleApiError(error: unknown, reqId?: string): NextResponse {
+  const requestId = reqId || generateRequestId();
+
   if (error instanceof AppError) {
+    if (error.statusCode >= 500) {
+      logger.error({ requestId, code: error.code, status: error.statusCode }, error.message);
+    }
     return NextResponse.json(
       {
-        error: error.message,
-        code: error.code,
+        status: error.statusCode,
+        code: error.code || 'APP_ERROR',
+        message: error.message,
+        ...(error.details ? { details: error.details } : {}),
+        requestId,
       },
       { status: error.statusCode }
     );
   }
 
-  console.error('[API Error]', error);
+  const msg = error instanceof Error ? error.message : 'Unknown error';
+  logger.error({ requestId, err: error }, `Unhandled: ${msg}`);
 
   return NextResponse.json(
     {
-      error: 'Erro interno do servidor',
+      status: 500,
       code: 'INTERNAL_ERROR',
+      message: 'Erro interno do servidor',
+      requestId,
     },
     { status: 500 }
   );

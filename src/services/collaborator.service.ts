@@ -125,7 +125,7 @@ export function getCollaboratorSemaforo(userId: string) {
     score: s.score,
     recommendation: (RECOMMENDATIONS[s.dimension] || ['Mantenha seus hábitos saudáveis'])[0],
     icon: s.icon,
-    history: [s.score - 1, s.score - 0.5, s.score, s.score + 0.2, s.score + 0.5, s.score + 0.3, s.score],
+    history: healthRepo.getHealthScoreHistory(userId, s.dimension, 30).map(h => h.score),
     tips: RECOMMENDATIONS[s.dimension] || [],
   }));
 }

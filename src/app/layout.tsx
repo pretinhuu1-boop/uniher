@@ -67,7 +67,7 @@ export const metadata: Metadata = {
       'Plataforma gamificada que transforma o cuidado com a saúde da mulher em hábitos diários — reduzindo absenteísmo em 23%, aumentando engajamento em 92% e entregando ROI de 4.8x.',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/og-image.svg',
         width: 1200,
         height: 630,
         alt: 'UniHER — Plataforma de Saúde Feminina Corporativa com Gamificação',
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
     title: 'UniHER — Saúde Feminina Corporativa',
     description:
       'Gamificação + IA para saúde feminina no trabalho. ROI 4.8x, -23% absenteísmo, 92% engajamento.',
-    images: ['/og-image.jpg'],
+    images: ['/og-image.svg'],
     creator: '@uniher',
   },
   robots: {
@@ -107,7 +107,7 @@ const jsonLd = [
     '@type': 'Organization',
     name: 'UniHER',
     url: SITE_URL,
-    logo: `${SITE_URL}/og-image.jpg`,
+    logo: `${SITE_URL}/og-image.svg`,
     description: 'Plataforma SaaS de saúde feminina corporativa com gamificação e IA personalizada.',
     sameAs: [],
     contactPoint: {
@@ -197,6 +197,12 @@ export default function RootLayout({
         ))}
       </head>
       <body className={`${playfair.variable} ${montserrat.variable}`} suppressHydrationWarning>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg"
+        >
+          Ir para conteúdo principal
+        </a>
         <ServiceWorkerRegistration />
         <AuthProvider>{children}</AuthProvider>
       </body>

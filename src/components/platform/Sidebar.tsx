@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -26,9 +27,11 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios/gerenciar', label: 'Gerenciar Desafios', icon: 'desafios' },
     { href: '/liga/gerenciar', label: 'Gerenciar Ligas', icon: 'liga' },
+    { href: '/gamificacao-config', label: 'Config. Gamificação', icon: 'config' },
     { href: '/convites', label: 'Convites', icon: 'invite' },
+    { href: '/agenda', label: 'Agenda de Saúde', icon: 'agenda' },
     { href: '/historico', label: 'Histórico', icon: 'historico' },
-    { href: '/analytics-emails', label: 'Analytics de Emails', icon: 'analytics' },
+    { href: '/analytics-emails', label: 'Comunicação', icon: 'analytics' },
     { href: '/company-profile', label: 'Perfil da Empresa', icon: 'profile' },
   ],
   lideranca: [
@@ -37,6 +40,7 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
     { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios', label: 'Desafios', icon: 'desafios' },
+    { href: '/agenda', label: 'Agenda de Saúde', icon: 'agenda' },
     { href: '/historico', label: 'Histórico', icon: 'historico' },
   ],
   colaboradora: [
@@ -47,12 +51,13 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { href: '/desafios', label: 'Desafios', icon: 'desafios' },
     { href: '/conquistas', label: 'Conquistas', icon: 'conquistas' },
     { href: '/liga', label: 'Liga Semanal', icon: 'liga' },
+    { href: '/agenda', label: 'Minha Agenda', icon: 'agenda' },
   ],
 };
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Master',
-  rh: 'RH',
+  rh: 'Admin',
   lideranca: 'Liderança',
   colaboradora: 'Colaboradora',
 };
@@ -71,17 +76,58 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  const role = user?.role || 'colaboradora';
+  const realRole = user?.role || 'colaboradora';
+  const alsoCollab = user?.also_collaborator || realRole === 'lideranca';
+  const canSwitchView = alsoCollab && realRole !== 'colaboradora';
+
+  // Active view: real role or 'colaboradora' mode
+  const [activeView, setActiveView] = useState<string>(realRole);
+
+  // Restore view mode from sessionStorage, reset when user changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('uniher-view-mode');
+      if (saved && canSwitchView && (saved === 'colaboradora' || saved === realRole)) {
+        setActiveView(saved);
+        return;
+      }
+    }
+    setActiveView(realRole);
+  }, [realRole, canSwitchView]);
+
+  const role = activeView;
   const navItems = NAV_ITEMS_BY_ROLE[role] || NAV_ITEMS_BY_ROLE.colaboradora;
   const roleLabel = ROLE_LABELS[role] || 'Colaboradora';
 
-  // Company branding (only for non-admin users with a company)
+  const handleSwitchView = (view: string) => {
+    setActiveView(view);
+    // Store in sessionStorage so it persists across navigations
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('uniher-view-mode', view);
+    }
+    // Navigate to the default page of the selected view
+    if (view === 'colaboradora') router.push('/colaboradora');
+    else if (view === 'admin') router.push('/admin');
+    else router.push('/dashboard');
+    onClose();
+  };
+
+  // Company branding (only for non-admin users with a company, skip on first-access)
+  const skipCompanyFetch = role === 'admin' || pathname === '/primeiro-acesso';
   const { data: companyData } = useSWR<{ company: { name: string; trade_name: string | null; logo_url: string | null; primary_color: string | null } }>(
-    role !== 'admin' ? '/api/company' : null,
+    !skipCompanyFetch ? '/api/company' : null,
     fetcher,
     { revalidateOnFocus: false }
   );
   const company = companyData?.company;
+
+  // Notification count (real data)
+  const { data: notifData } = useSWR<{ unread: number }>(
+    pathname !== '/primeiro-acesso' ? '/api/notifications/count' : null,
+    fetcher,
+    { refreshInterval: 30000, dedupingInterval: 5000, revalidateOnFocus: true }
+  );
+  const unreadCount = notifData?.unread ?? 0;
 
   const initials = user?.name
     ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -137,6 +183,37 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
         </div>
 
+        {/* View Switcher — for multi-role users */}
+        {canSwitchView && (
+          <div className="px-4 py-2 border-b border-border-1 bg-cream-50/50">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-uni-text-300 mb-1.5 px-1">Visualizar como</div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleSwitchView(realRole)}
+                className={cn(
+                  "flex-1 text-xs py-1.5 px-2 rounded-lg font-semibold transition-all",
+                  activeView === realRole
+                    ? "bg-gold-500 text-white shadow-sm"
+                    : "bg-white text-uni-text-500 border border-border-1 hover:bg-cream-50"
+                )}
+              >
+                {ROLE_LABELS[realRole]}
+              </button>
+              <button
+                onClick={() => handleSwitchView('colaboradora')}
+                className={cn(
+                  "flex-1 text-xs py-1.5 px-2 rounded-lg font-semibold transition-all",
+                  activeView === 'colaboradora'
+                    ? "bg-gold-500 text-white shadow-sm"
+                    : "bg-white text-uni-text-500 border border-border-1 hover:bg-cream-50"
+                )}
+              >
+                Colaboradora
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Scrollable Nav List */}
         <nav role="navigation" aria-label="Menu principal" className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-thin scrollbar-thumb-cream-200">
           <div className="space-y-1">
@@ -162,7 +239,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               isActive={pathname === '/notificacoes'}
               onClick={onClose}
             >
-              <Badge variant="alert" size="sm" className="ml-auto w-5 h-5 p-0 flex items-center justify-center">2</Badge>
+              {unreadCount > 0 && (
+                <Badge variant="alert" size="sm" className="ml-auto w-5 h-5 p-0 flex items-center justify-center">{unreadCount}</Badge>
+              )}
             </SidebarNavItem>
 
             {BOTTOM_ITEMS.map(item => (

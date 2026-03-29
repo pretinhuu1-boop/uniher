@@ -43,6 +43,7 @@ export async function GET(req: Request, segmentData: { params: Promise<{ token: 
 
   return NextResponse.json({
     valid: true,
+    name: invite.name || '',
     email: invite.email,
     role: invite.role,
     companyName: invite.company_name,
@@ -70,15 +71,28 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
   const passwordHash = await hashPassword(password);
   const userId = nanoid();
 
-  const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare(`
-      INSERT INTO users (id, name, email, password_hash, role, company_id, department_id, league, approved, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'bronze', 0, datetime('now'), datetime('now'))
-    `).run(userId, name, invite.email, passwordHash, invite.role, invite.company_id, invite.department_id || null);
+  // Check if email already exists
+  const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(invite.email);
+  if (existingUser) {
+    return NextResponse.json({ error: 'Este email já possui uma conta. Faça login.' }, { status: 409 });
+  }
 
-    db.prepare(`UPDATE invites SET status = 'accepted', updated_at = datetime('now') WHERE token = ?`).run(token);
-  });
+  const wq = getWriteQueue();
+  try {
+    await wq.enqueue((db) => {
+      db.prepare(`
+        INSERT INTO users (id, name, email, password_hash, role, company_id, department_id, league, approved, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'bronze', 0, datetime('now'), datetime('now'))
+      `).run(userId, name, invite.email, passwordHash, invite.role, invite.company_id, invite.department_id || null);
+
+      db.prepare(`UPDATE invites SET status = 'accepted', accepted_at = datetime('now') WHERE token = ?`).run(token);
+    });
+  } catch (err: any) {
+    if (err?.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return NextResponse.json({ error: 'Este email já possui uma conta.' }, { status: 409 });
+    }
+    throw err;
+  }
 
   // Gerar tokens JWT
   const accessToken = await signAccessToken({
@@ -88,10 +102,12 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
   });
   const refreshToken = await signRefreshToken({ userId });
 
-  // Salvar refresh token
+  // Salvar refresh token (hashed)
+  const { createHash } = await import('crypto');
+  const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
   await wq.enqueue((db) => {
-    db.prepare('INSERT INTO refresh_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, datetime("now", "+30 days"))')
-      .run(nanoid(), userId, refreshToken);
+    db.prepare("INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, datetime('now', '+30 days'))")
+      .run(nanoid(), userId, tokenHash);
   });
 
   await setAuthCookies(accessToken, refreshToken);
@@ -113,7 +129,7 @@ export const DELETE = withRole('rh')(async (_req, context) => {
 
   const wq = getWriteQueue();
   await wq.enqueue((db) => {
-    db.prepare(`UPDATE invites SET status = 'expired', updated_at = datetime('now') WHERE token = ?`).run(token);
+    db.prepare(`UPDATE invites SET status = 'expired' WHERE token = ?`).run(token);
   });
 
   return NextResponse.json({ success: true });

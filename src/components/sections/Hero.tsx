@@ -34,7 +34,7 @@ export default function Hero({ onQuizOpen }: HeroProps) {
 
             {/* CTAs */}
             <div className={styles.ctas}>
-              <a className={styles.btnPrimary} href="/welcome">
+              <a className={styles.btnPrimary} href="/auth">
                 Acessar Plataforma →
               </a>
               <button className={styles.btnSecondary} onClick={onQuizOpen}>

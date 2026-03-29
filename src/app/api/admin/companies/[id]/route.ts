@@ -17,14 +17,15 @@ const PatchSchema = z.discriminatedUnion('action', [
     action: z.literal('update'),
     name: z.string().min(1).max(120).optional(),
     trade_name: z.string().max(120).optional().nullable(),
+    cnpj: z.string().max(20).optional().nullable(),
     sector: z.string().max(80).optional().nullable(),
-    plan: z.enum(['trial', 'pro', 'enterprise']).optional(),
+    plan: z.enum(['trial', 'basic', 'pro', 'enterprise']).optional(),
     contact_name: z.string().max(100).optional().nullable(),
-    contact_email: z.string().email().optional().nullable(),
+    contact_email: z.string().email().max(120).optional().nullable().or(z.literal('')),
     contact_phone: z.string().max(20).optional().nullable(),
     logo_url: z.string().url().optional().nullable(),
-    primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
-    secondary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+    primary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable().or(z.literal('')),
+    secondary_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable().or(z.literal('')),
   }),
 ]);
 
@@ -90,7 +91,7 @@ export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
   const d = parsed.data;
   const fields: string[] = [];
   const values: unknown[] = [];
-  const keys = ['name','trade_name','sector','plan','contact_name','contact_email','contact_phone','logo_url','primary_color','secondary_color'] as const;
+  const keys = ['name','trade_name','cnpj','sector','plan','contact_name','contact_email','contact_phone','logo_url','primary_color','secondary_color'] as const;
   for (const k of keys) {
     if (k in d && (d as Record<string, unknown>)[k] !== undefined) {
       fields.push(`${k} = ?`);

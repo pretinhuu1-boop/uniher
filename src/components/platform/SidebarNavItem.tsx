@@ -100,6 +100,15 @@ const ICONS: Record<string, React.ReactNode> = {
       <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   ),
+  agenda: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" />
+      <path d="M8 18h.01" /><path d="M12 18h.01" />
+    </svg>
+  ),
 };
 
 export function NavIcon({ name }: { name: string }) {
@@ -109,6 +118,30 @@ export function NavIcon({ name }: { name: string }) {
     </span>
   );
 }
+
+const TOOLTIPS: Record<string, string> = {
+  '/dashboard': 'Visão geral da empresa: KPIs, engajamento e resumo de atividades',
+  '/colaboradoras-gestao': 'Gerencie as colaboradoras: aprovação, perfis e status',
+  '/departamentos': 'Organize departamentos e vincule colaboradoras a cada setor',
+  '/semaforo': 'Indicadores de saúde por dimensão — identifique áreas de atenção',
+  '/campanhas': 'Crie e acompanhe campanhas de saúde e bem-estar',
+  '/objetivos': 'Defina metas e recompensas para engajar as colaboradoras',
+  '/desafios': 'Crie desafios gamificados com pontuação e prazos',
+  '/ligas': 'Competições entre departamentos para estimular engajamento',
+  '/gamificacao-config': 'Configure XP, streaks, vidas, ligas, temas e recompensas da gamificação',
+  '/convites': 'Envie convites por email para novas colaboradoras',
+  '/historico': 'Histórico de pontos, atividades e relatórios por período',
+  '/analytics-emails': 'Analytics de comunicação: convites, notificações e alertas',
+  '/company-profile': 'Dados e identidade visual da sua empresa',
+  '/notificacoes': 'Alertas e avisos do sistema para você',
+  '/configuracoes': 'Preferências pessoais, senha e notificações',
+  '/admin': 'Painel global: empresas, usuários, badges e sistema',
+  // Colaboradora
+  '/colaboradora': 'Sua página inicial com check-in e atividades do dia',
+  '/conquistas': 'Suas badges e conquistas desbloqueadas',
+  '/agenda': 'Agende exames, consultas e lembretes de saúde — com alertas automáticos',
+  '/ranking': 'Ranking geral e por departamento',
+};
 
 interface SidebarNavItemProps {
   href: string;
@@ -120,11 +153,13 @@ interface SidebarNavItemProps {
 }
 
 export default function SidebarNavItem({ href, icon, label, isActive, onClick, children }: SidebarNavItemProps) {
+  const tooltip = TOOLTIPS[href];
+
   return (
     <Link
       href={href}
       className={cn(
-        "group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all duration-200",
+        "group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 relative",
         isActive
           ? "bg-rose-50 text-rose-700 shadow-sm border border-rose-100"
           : "text-uni-text-600 hover:bg-cream-100 hover:text-uni-text-900"
@@ -133,8 +168,19 @@ export default function SidebarNavItem({ href, icon, label, isActive, onClick, c
       onClick={onClick}
     >
       <NavIcon name={icon} />
-      {label}
+      <span className="flex-1">{label}</span>
       {children}
+      {tooltip && (
+        <span className="relative flex-shrink-0" onClick={e => e.preventDefault()}>
+          <span
+            className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-60 transition-opacity cursor-help"
+            style={{ background: '#e8dfd0', color: '#8B7355' }}
+            title={tooltip}
+          >
+            ?
+          </span>
+        </span>
+      )}
     </Link>
   );
 }

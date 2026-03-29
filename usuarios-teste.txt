@@ -1,0 +1,24 @@
+UniHER — Usuarios de Teste (Homologacao)
+==========================================
+
+Admin Master (sistema)
+  Email: admin@uniher.com.br
+  Senha: Admin@2026
+  Role:  admin
+
+Admin Empresa (RH)
+  Email: rh@teste.com
+  Senha: Admin@2026
+  Role:  rh
+  Empresa: Empresa Teste (Teste Ltda)
+
+Colaboradora
+  Email: colab@teste.com
+  Senha: Admin@2026
+  Role:  colaboradora
+  Empresa: Empresa Teste (Teste Ltda)
+
+==========================================
+Todas as senhas: Admin@2026
+Banco: data/uniher.db
+Porta: 3000

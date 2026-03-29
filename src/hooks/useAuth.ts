@@ -48,6 +48,7 @@ interface AuthContextValue {
   register: (data: any) => Promise<boolean>;
   selectRole: (role: UserRole) => void;
   logout: () => void;
+  refreshUser: () => void;
 }
 
 export function useAuthState(): AuthContextValue {
@@ -78,10 +79,15 @@ export function useAuthState(): AuthContextValue {
             points: u.points,
             streak: u.streak,
             joinedAt: u.created_at,
+            also_collaborator: u.also_collaborator || (u.role === 'lideranca' ? 1 : 0),
+            nickname: u.nickname,
+            can_approve: u.can_approve,
           };
           setUser(updated);
           setApproved(u.approved !== 0);
           persistUser(updated);
+          // Mark session as active for the fetch interceptor
+          try { sessionStorage.setItem('uniher-session-active', '1'); } catch {}
           if (u.mustChangePassword === true) {
             router.push('/primeiro-acesso');
           }
@@ -132,10 +138,13 @@ export function useAuthState(): AuthContextValue {
         points: u.points,
         streak: u.streak,
         joinedAt: u.created_at,
+        also_collaborator: u.also_collaborator || (u.role === 'lideranca' ? 1 : 0),
       };
 
       setUser(loggedUser);
       persistUser(loggedUser);
+      // Mark session as active so fetch interceptor doesn't show reauth modal on fresh login
+      try { sessionStorage.setItem('uniher-session-active', '1'); } catch {}
       return true;
     } catch {
       return false;
@@ -167,6 +176,8 @@ export function useAuthState(): AuthContextValue {
 
       setUser(registered);
       persistUser(registered);
+      // Mark session as active so fetch interceptor doesn't show reauth modal on fresh registration
+      try { sessionStorage.setItem('uniher-session-active', '1'); } catch {}
       return true;
     } catch {
       return false;
@@ -186,7 +197,26 @@ export function useAuthState(): AuthContextValue {
     } catch {}
     setUser(null);
     clearStoredUser();
+    // Clear session flags so next login starts fresh
+    try { sessionStorage.removeItem('uniher-view-mode'); } catch {}
+    try { sessionStorage.removeItem('uniher-session-active'); } catch {}
     window.location.href = '/';
+  }, []);
+
+  const refreshUser = useCallback(() => {
+    fetch('/api/auth/me').then(r => r.json()).then(data => {
+      if (data?.user) {
+        const u = data.user;
+        const updated: MockUser = {
+          id: u.id, name: u.name, email: u.email, role: u.role as UserRole,
+          level: u.level, points: u.points, streak: u.streak, joinedAt: u.created_at,
+          also_collaborator: u.also_collaborator || (u.role === 'lideranca' ? 1 : 0),
+          nickname: u.nickname, can_approve: u.can_approve,
+        };
+        setUser(updated);
+        persistUser(updated);
+      }
+    }).catch(() => {});
   }, []);
 
   return {
@@ -198,6 +228,7 @@ export function useAuthState(): AuthContextValue {
     register,
     selectRole,
     logout,
+    refreshUser,
   };
 }
 
@@ -210,6 +241,7 @@ export const AuthContext = createContext<AuthContextValue>({
   register: async () => false,
   selectRole: () => {},
   logout: () => {},
+  refreshUser: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);

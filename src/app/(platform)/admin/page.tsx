@@ -78,10 +78,10 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  rh: 'RH',
+  rh: 'Admin Empresa',
   lideranca: 'Liderança',
   colaboradora: 'Colaboradora',
-  admin: 'Admin',
+  admin: 'Admin Master',
 };
 
 const RARITY_COLORS: Record<string, string> = {
@@ -244,7 +244,7 @@ function OverviewTab() {
 
 // ─── Companies Tab ────────────────────────────────────────────────────────────
 
-function CompanyUsersPanel({ companyId }: { companyId: string }) {
+function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGoToUsers?: () => void }) {
   const { data, mutate } = useSWR<{ users: CompanyUser[] }>(
     `/api/admin/companies/${companyId}/users`,
     fetcher,
@@ -282,10 +282,15 @@ function CompanyUsersPanel({ companyId }: { companyId: string }) {
 
   if (users.length === 0)
     return (
-      <div className="text-center py-10 space-y-2">
+      <div className="text-center py-10 space-y-3">
         <span className="text-3xl block">👤</span>
         <p className="text-uni-text-700 font-medium text-sm">Nenhum usuário nesta empresa</p>
-        <p className="text-xs text-uni-text-400">Adicione usuários para que possam acessar a plataforma.</p>
+        <p className="text-xs text-uni-text-400">Adicione um Admin Empresa para começar.</p>
+        {onGoToUsers && (
+          <button onClick={onGoToUsers} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg" style={{ background: '#C9A264' }}>
+            + Adicionar Admin Empresa
+          </button>
+        )}
       </div>
     );
 
@@ -466,7 +471,7 @@ function CompanyUsersPanel({ companyId }: { companyId: string }) {
 
 const EMPTY_COMPANY_FORM = { name: '', trade_name: '', cnpj: '', sector: '', plan: 'trial' as 'trial' | 'pro' | 'enterprise', contact_name: '', contact_email: '', contact_phone: '' };
 
-function CompaniesTab() {
+function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
   const { data, isLoading, error, mutate } = useSWR<{ companies: Company[] }>(
     '/api/admin/companies',
     fetcher,
@@ -478,6 +483,40 @@ function CompaniesTab() {
   const [saving, setSaving] = useState(false);
   const [blocking, setBlocking] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [editingCompany, setEditingCompany] = useState<string | null>(null);
+  const [editCompanyForm, setEditCompanyForm] = useState({ name: '', trade_name: '', cnpj: '', sector: '', plan: 'trial', contact_name: '', contact_email: '', contact_phone: '', primary_color: '', secondary_color: '' });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  function startEditCompany(c: Company) {
+    setEditingCompany(c.id);
+    setEditCompanyForm({
+      name: c.name || '', trade_name: c.trade_name || '', cnpj: c.cnpj || '',
+      sector: c.sector || '', plan: c.plan || 'trial',
+      contact_name: (c as any).contact_name || '', contact_email: (c as any).contact_email || '', contact_phone: (c as any).contact_phone || '',
+      primary_color: (c as any).primary_color || '', secondary_color: (c as any).secondary_color || '',
+    });
+  }
+
+  async function saveEditCompany() {
+    if (!editingCompany) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/admin/companies/${editingCompany}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', ...editCompanyForm }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setFeedback({ type: 'success', msg: 'Empresa atualizada!' });
+        setEditingCompany(null);
+        mutate();
+      } else {
+        setFeedback({ type: 'error', msg: json.error || 'Erro ao atualizar' });
+      }
+    } catch { setFeedback({ type: 'error', msg: 'Erro de conexão' }); }
+    setSavingEdit(false);
+  }
   const companies = data?.companies ?? [];
 
   async function createCompany() {
@@ -622,10 +661,11 @@ function CompaniesTab() {
                         <span className="font-semibold text-uni-text-900 text-sm">{company.trade_name || company.name}</span>
                         {isBlocked && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">SUSPENSA</span>}
                       </div>
-                      <div className="text-[11px] text-uni-text-400 font-mono">{company.cnpj}</div>
+                      <div className="text-[11px] text-uni-text-400 font-mono mt-0.5">{company.cnpj}</div>
+                      <div className="text-[11px] text-uni-text-500 md:hidden">{company.sector || ''}</div>
                     </div>
 
-                    <div className="hidden md:block text-xs text-uni-text-500 w-20 truncate">{company.sector || '—'}</div>
+                    <div className="hidden md:block text-xs text-uni-text-500 w-32 truncate" title={company.sector || ''}>{company.sector || '—'}</div>
                     <div className="text-center w-14 cursor-pointer" onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>
                       <div className="text-sm font-bold text-uni-text-900">{company.user_count}</div>
                       <div className="text-[10px] text-uni-text-400">usuárias</div>
@@ -634,7 +674,10 @@ function CompaniesTab() {
                       {company.plan}
                     </span>
 
-                    {/* Block / Unblock */}
+                    <button onClick={() => startEditCompany(company)} className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-all flex-shrink-0">
+                      Editar
+                    </button>
+
                     <button
                       onClick={() => toggleBlock(company)}
                       disabled={blocking === company.id}
@@ -650,7 +693,83 @@ function CompaniesTab() {
                     <span className={cn('text-uni-text-400 transition-transform text-sm cursor-pointer', expandedCompany === company.id && 'rotate-180')} onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>▾</span>
                   </div>
 
-                  {expandedCompany === company.id && <CompanyUsersPanel companyId={company.id} />}
+                  {editingCompany === company.id && (
+                    <div className="px-6 py-5 bg-amber-50/30 border-t border-amber-200/50">
+                      <p className="text-xs font-bold text-uni-text-600 mb-4 uppercase tracking-wide">Editar Empresa</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Razão Social *</label>
+                          <input value={editCompanyForm.name} onChange={e => setEditCompanyForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Nome Fantasia</label>
+                          <input value={editCompanyForm.trade_name} onChange={e => setEditCompanyForm(f => ({ ...f, trade_name: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">CNPJ</label>
+                          <input value={editCompanyForm.cnpj} onChange={e => setEditCompanyForm(f => ({ ...f, cnpj: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Setor</label>
+                          <input value={editCompanyForm.sector} onChange={e => setEditCompanyForm(f => ({ ...f, sector: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Plano</label>
+                          <select value={editCompanyForm.plan} onChange={e => setEditCompanyForm(f => ({ ...f, plan: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400">
+                            <option value="trial">Trial</option>
+                            <option value="basic">Basic</option>
+                            <option value="pro">Pro</option>
+                            <option value="enterprise">Enterprise</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <p className="text-xs font-bold text-uni-text-500 mt-5 mb-3 uppercase tracking-wide">Contato da Empresa</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Nome do Contato</label>
+                          <input value={editCompanyForm.contact_name} onChange={e => setEditCompanyForm(f => ({ ...f, contact_name: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Email do Contato</label>
+                          <input type="email" value={editCompanyForm.contact_email} onChange={e => setEditCompanyForm(f => ({ ...f, contact_email: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Telefone</label>
+                          <input value={editCompanyForm.contact_phone} onChange={e => setEditCompanyForm(f => ({ ...f, contact_phone: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
+                        </div>
+                      </div>
+
+                      <p className="text-xs font-bold text-uni-text-500 mt-5 mb-3 uppercase tracking-wide">Identidade Visual</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Primária</label>
+                          <div className="flex items-center gap-2">
+                            <input type="color" value={editCompanyForm.primary_color || '#C9A264'} onChange={e => setEditCompanyForm(f => ({ ...f, primary_color: e.target.value }))} className="w-10 h-10 rounded-lg border border-border-1 cursor-pointer" />
+                            <input value={editCompanyForm.primary_color} onChange={e => setEditCompanyForm(f => ({ ...f, primary_color: e.target.value }))} placeholder="#C9A264" className="flex-1 border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400 font-mono" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Secundária</label>
+                          <div className="flex items-center gap-2">
+                            <input type="color" value={editCompanyForm.secondary_color || '#1A3A6B'} onChange={e => setEditCompanyForm(f => ({ ...f, secondary_color: e.target.value }))} className="w-10 h-10 rounded-lg border border-border-1 cursor-pointer" />
+                            <input value={editCompanyForm.secondary_color} onChange={e => setEditCompanyForm(f => ({ ...f, secondary_color: e.target.value }))} placeholder="#1A3A6B" className="flex-1 border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400 font-mono" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-5 pt-4 border-t border-amber-200/50">
+                        <button onClick={saveEditCompany} disabled={savingEdit} className="px-5 py-2.5 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-50" style={{ background: '#C9A264' }}>
+                          {savingEdit ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
+                        <button onClick={() => setEditingCompany(null)} className="px-5 py-2.5 rounded-lg text-xs font-bold text-uni-text-500 hover:bg-gray-100 transition-all border border-border-1">
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {expandedCompany === company.id && <CompanyUsersPanel companyId={company.id} onGoToUsers={onGoToUsers} />}
                 </div>
               );
             })}
@@ -663,7 +782,7 @@ function CompaniesTab() {
 
 // ─── Users Tab ────────────────────────────────────────────────────────────────
 
-const EMPTY_USER_FORM = { name: '', email: '', password: '', role: 'admin' as const, company_id: '' };
+const EMPTY_USER_FORM = { name: '', email: '', password: '', role: 'rh' as const, company_id: '', also_collaborator: false };
 
 function UsersTab() {
   const { data: companiesData } = useSWR<{ companies: Company[] }>('/api/admin/companies', fetcher, {
@@ -792,12 +911,16 @@ function UsersTab() {
   }
 
   async function createUser() {
+    if (!userForm.company_id) {
+      setUserFeedback({ type: 'error', msg: 'Selecione uma empresa.' });
+      return;
+    }
     setSavingUser(true);
     try {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...userForm, company_id: (userForm.company_id && userForm.company_id !== '__master__') ? userForm.company_id : null }),
+        body: JSON.stringify({ ...userForm, company_id: userForm.company_id }),
       });
       const json = await res.json();
       if (json.success) {
@@ -876,20 +999,30 @@ function UsersTab() {
             <div>
               <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Papel *</label>
               <select value={userForm.role} onChange={e => setUserForm(f => ({ ...f, role: e.target.value as typeof userForm.role }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400">
-                <option value="admin">Admin</option>
-                <option value="rh">Admin Empresa (RH)</option>
+                <option value="rh">Admin Empresa</option>
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Empresa (opcional)</label>
-              <select value={userForm.company_id} onChange={e => setUserForm(f => ({ ...f, company_id: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400">
+              <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Empresa *</label>
+              <select value={userForm.company_id} onChange={e => setUserForm(f => ({ ...f, company_id: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" required>
                 <option value="">— Selecione uma empresa —</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.trade_name || c.name}</option>)}
-                <option value="__master__">— Master (sem empresa) —</option>
               </select>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3 mt-2 px-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={userForm.also_collaborator}
+                onChange={e => setUserForm(f => ({ ...f, also_collaborator: e.target.checked }))}
+                className="w-4 h-4 rounded border-border-1 accent-gold-500"
+              />
+              <span className="text-sm text-uni-text-600">Também participa como colaboradora</span>
+            </label>
+            <span className="text-[10px] text-uni-text-400" title="Se marcado, este usuário pode alternar entre a visão de gestor e a de colaboradora (check-ins, desafios, etc)">ℹ️</span>
+          </div>
+          <div className="flex gap-3 mt-3">
             <button onClick={() => setShowCreateUser(false)} className="px-4 py-2 rounded-lg border border-border-1 text-sm font-bold text-uni-text-600 hover:bg-cream-50">Cancelar</button>
             <button onClick={createUser} disabled={savingUser || !userForm.name || !userForm.email || userForm.password.length < 8}
               className="px-6 py-2 rounded-lg bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 disabled:opacity-50">
@@ -919,11 +1052,13 @@ function UsersTab() {
                   className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-rose-400" />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Papel</label>
+                <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">
+                  Papel
+                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usuária padrão — check-ins, campanhas e pontos'}>?</span>
+                </label>
                 <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
                   className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400">
-                  <option value="admin">Admin</option>
-                  <option value="rh">Admin Empresa (RH)</option>
+                  <option value="rh">Admin Empresa</option>
                   <option value="lideranca">Liderança</option>
                   <option value="colaboradora">Colaboradora</option>
                 </select>
@@ -1123,7 +1258,7 @@ function UsersTab() {
                             {isBlocked ? 'Bloqueada' : 'Ativa'}
                           </span>
                         </td>
-                        <td className="px-6 py-3">
+                        <td className="px-6 py-3 whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => openEdit(u)}
@@ -1523,7 +1658,7 @@ function AdminMasterTab() {
                           <div className="text-[11px] text-uni-text-400">{u.email}</div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-[11px] font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full border border-rose-100">
+                          <span className="text-[11px] font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full border border-rose-100 whitespace-nowrap">
                             Sistema · Sem empresa
                           </span>
                         </td>
@@ -1537,13 +1672,13 @@ function AdminMasterTab() {
                           </span>
                         </td>
                         <td className="px-6 py-3">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-2 flex-nowrap">
                             <button onClick={() => doAction(u.id, isBlocked ? 'unblock' : 'block')} disabled={loading === blockKey}
-                              className={cn('px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all', isBlocked ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-red-50 text-red-700 hover:bg-red-100', loading === blockKey && 'opacity-50 cursor-wait')}>
+                              className={cn('px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap', isBlocked ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-red-50 text-red-700 hover:bg-red-100', loading === blockKey && 'opacity-50 cursor-wait')}>
                               {loading === blockKey ? '...' : isBlocked ? 'Desbloquear' : 'Bloquear'}
                             </button>
                             <button onClick={() => doAction(u.id, 'reset_password')} disabled={loading === resetKey}
-                              className={cn('px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all', loading === resetKey && 'opacity-50 cursor-wait')}>
+                              className={cn('px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all whitespace-nowrap', loading === resetKey && 'opacity-50 cursor-wait')}>
                               {loading === resetKey ? '...' : 'Resetar Senha'}
                             </button>
                           </div>
@@ -2798,7 +2933,7 @@ export default function AdminPage() {
       {/* Tab Content */}
       <div>
         {activeTab === 'Visão Geral' && <OverviewTab />}
-        {activeTab === 'Empresas' && <CompaniesTab />}
+        {activeTab === 'Empresas' && <CompaniesTab onGoToUsers={() => setActiveTab('Usuários')} />}
         {activeTab === 'Usuários' && <UsersTab />}
         {activeTab === 'Admin Master' && <AdminMasterTab />}
         {activeTab === 'Badges' && <BadgesTab />}

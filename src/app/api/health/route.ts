@@ -4,7 +4,7 @@
  * Rate limited: 30 req/min per IP.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getReadDb } from '@/lib/db';
+import { getReadDb, getWriteQueue } from '@/lib/db';
 import { checkPublicRateLimit } from '@/lib/security/rate-limit';
 import fs from 'fs';
 import path from 'path';
@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
       sizeMB: +(getDbSize() / 1024 / 1024).toFixed(2),
       users: userCount,
       companies: companyCount,
+      writeQueue: getWriteQueue().getStats(),
     },
     memory: {
       heapUsedMB: +(mem.heapUsed / 1024 / 1024).toFixed(1),

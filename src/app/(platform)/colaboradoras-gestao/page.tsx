@@ -40,7 +40,7 @@ interface Department {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ROLE_LABELS: Record<string, string> = {
-  rh: 'RH',
+  rh: 'Admin',
   lideranca: 'Liderança',
   colaboradora: 'Colaboradora',
 };
@@ -121,6 +121,91 @@ export default function ColaboradorasGestaoPage() {
     setChangeDeptValue('');
   }, [doAction, changeDeptValue]);
 
+  // ─── Edit modal state ───
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', role: '', department_id: '' });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editMsg, setEditMsg] = useState('');
+  const [resetResult, setResetResult] = useState('');
+
+  function openEditModal(u: User) {
+    setEditUser(u);
+    setEditForm({
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      department_id: u.department_id || '',
+    });
+    setEditMsg('');
+    setResetResult('');
+  }
+
+  async function saveEdit() {
+    if (!editUser) return;
+    setEditSaving(true);
+    setEditMsg('');
+    try {
+      // Update name via dedicated endpoint
+      const res = await fetch(`/api/rh/users/${editUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_profile',
+          name: editForm.name,
+          role: editForm.role,
+          department_id: editForm.department_id || null,
+        }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setEditMsg('Salvo com sucesso!');
+        mutate();
+        setTimeout(() => setEditUser(null), 1000);
+      } else {
+        setEditMsg(d.error || 'Erro ao salvar');
+      }
+    } catch {
+      setEditMsg('Erro de conexão');
+    }
+    setEditSaving(false);
+  }
+
+  async function resetPassword() {
+    if (!editUser) return;
+    setResetResult('');
+    try {
+      const res = await fetch(`/api/rh/users/${editUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_password' }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setResetResult(`Nova senha: ${d.temporaryPassword || d.password || 'Enviada por email'}`);
+      } else {
+        setResetResult(d.error || 'Erro ao resetar');
+      }
+    } catch {
+      setResetResult('Erro de conexão');
+    }
+  }
+
+  async function softDelete() {
+    if (!editUser) return;
+    if (!confirm(`Remover ${editUser.name}? Esta ação pode ser revertida pelo admin.`)) return;
+    try {
+      const res = await fetch(`/api/rh/users/${editUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'soft_delete' }),
+      });
+      if (res.ok) {
+        setEditUser(null);
+        mutate();
+      }
+    } catch {}
+  }
+
   if (user?.role !== 'rh' && user?.role !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-uni-text-400">
@@ -177,7 +262,7 @@ export default function ColaboradorasGestaoPage() {
             <option value="">Todos os papéis</option>
             <option value="colaboradora">Colaboradora</option>
             <option value="lideranca">Liderança</option>
-            <option value="rh">RH</option>
+            <option value="rh">Admin</option>
           </select>
           <select
             className="border border-border-1 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-rose-400 bg-white"
@@ -205,7 +290,11 @@ export default function ColaboradorasGestaoPage() {
             <Spinner /> Carregando...
           </div>
         ) : users.length === 0 ? (
-          <div className="p-10 text-center text-sm text-uni-text-400">Nenhuma colaboradora encontrada.</div>
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>👩‍💼</div>
+            <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Nenhuma colaboradora encontrada</p>
+            <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>Envie convites em "Convites" para adicionar colaboradoras, ou ajuste os filtros acima para encontrar quem procura.</p>
+          </div>
         ) : (
           <>
             {/* Mobile Cards */}
@@ -387,6 +476,12 @@ export default function ColaboradorasGestaoPage() {
                             >
                               Setor
                             </button>
+                            <button
+                              onClick={() => openEditModal(u)}
+                              className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-gold-50 text-gold-700 hover:bg-gold-100 transition-all"
+                            >
+                              Editar
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -423,6 +518,76 @@ export default function ColaboradorasGestaoPage() {
           </div>
         )}
       </div>
+
+      {/* Edit User Modal */}
+      {editUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setEditUser(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-display font-bold text-uni-text-900">Editar Colaboradora</h3>
+              <button onClick={() => setEditUser(null)} className="text-uni-text-400 hover:text-uni-text-700 text-xl">✕</button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Nome</label>
+                <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Email</label>
+                <input value={editForm.email} disabled className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-cream-50 text-uni-text-400 cursor-not-allowed" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Papel</label>
+                <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white">
+                  <option value="colaboradora">Colaboradora</option>
+                  <option value="lideranca">Liderança</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Setor</label>
+                <select value={editForm.department_id} onChange={e => setEditForm(f => ({ ...f, department_id: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white">
+                  <option value="">— Nenhum —</option>
+                  {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="bg-cream-50 rounded-lg p-3 text-xs text-uni-text-500 space-y-1">
+              <div>Nível: <strong>{editUser.level}</strong> · Pontos: <strong>{editUser.points}</strong></div>
+              <div>Criada em: {new Date(editUser.created_at).toLocaleDateString('pt-BR')}</div>
+            </div>
+
+            {editMsg && (
+              <p className={cn('text-sm font-medium', editMsg.includes('sucesso') ? 'text-emerald-600' : 'text-red-600')}>{editMsg}</p>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2">
+              <button onClick={saveEdit} disabled={editSaving} className="px-5 py-2 rounded-lg bg-gold-500 text-white text-sm font-bold hover:bg-gold-600 disabled:opacity-50">
+                {editSaving ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+              <button onClick={resetPassword} className="px-4 py-2 rounded-lg border border-amber-300 text-amber-700 text-sm font-bold hover:bg-amber-50">
+                🔑 Resetar Senha
+              </button>
+              <button onClick={softDelete} className="px-4 py-2 rounded-lg border border-red-300 text-red-700 text-sm font-bold hover:bg-red-50">
+                🗑 Remover
+              </button>
+              <button onClick={() => setEditUser(null)} className="px-4 py-2 rounded-lg border border-border-1 text-uni-text-600 text-sm hover:bg-cream-50 ml-auto">
+                Cancelar
+              </button>
+            </div>
+
+            {resetResult && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                <strong>🔑 {resetResult}</strong>
+                <button onClick={() => { navigator.clipboard.writeText(resetResult.replace('Nova senha: ', '')); }} className="ml-2 text-xs text-amber-700 underline">Copiar</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -19,7 +19,22 @@ interface SendEmailOptions {
 }
 
 /**
- * Send an email via Resend.
+ * Retry a function with exponential backoff (1s, 2s, 4s).
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === maxRetries - 1) throw err;
+      await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
+/**
+ * Send an email via Resend with retry + exponential backoff.
  * Falls back to console.log if no API key (dev mode).
  * Never throws — logs errors and returns success/failure.
  */
@@ -36,12 +51,14 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
   }
 
   try {
-    const { error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to,
-      subject,
-      html,
-    });
+    const { error } = await withRetry(() =>
+      resend.emails.send({
+        from: FROM_EMAIL,
+        to,
+        subject,
+        html,
+      })
+    );
 
     if (error) {
       console.error('[EMAIL] Erro ao enviar:', error);
@@ -50,7 +67,7 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
 
     return true;
   } catch (err) {
-    console.error('[EMAIL] Falha ao enviar:', err);
+    console.error('[EMAIL] Falha ao enviar após retries:', err);
     return false;
   }
 }

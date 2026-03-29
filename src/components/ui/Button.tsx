@@ -18,10 +18,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const sizes = {
-      sm: "h-9 px-3 text-sm",
+      sm: "h-11 px-3 text-sm",
       md: "h-11 px-6 text-base",
       lg: "h-14 px-8 text-lg font-semibold",
-      icon: "h-10 w-10 flex items-center justify-center p-0",
+      icon: "h-11 w-11 flex items-center justify-center p-0",
     };
 
     return (

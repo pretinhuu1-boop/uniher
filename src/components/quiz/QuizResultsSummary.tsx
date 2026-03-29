@@ -73,7 +73,6 @@ export default function QuizResultsSummary({
     setSubmitting(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
-      console.log('Lead captured:', { ...form, archetype: archName, score: beforeAvg });
       setSubmitted(true);
     } finally {
       setSubmitting(false);

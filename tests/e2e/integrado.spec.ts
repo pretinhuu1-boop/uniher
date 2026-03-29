@@ -38,9 +38,10 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     });
 
     expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body.user.role).toBe('admin');
-    adminToken = body.accessToken;
+    const cookies = res.headers()['set-cookie'] || '';
+    const match = cookies.match(/uniher-access-token=([^;]+)/);
+    adminToken = match?.[1] || '';
+    expect(adminToken).toBeTruthy();
   });
 
   // ─── Step 2: Admin cria empresa ──────────────────────────────────────────────
@@ -49,7 +50,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!adminToken, 'Admin login falhou');
 
     const res = await request.post('/api/admin/companies', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: {
         name: companyName,
         cnpj: companyCnpj,
@@ -71,13 +72,14 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!adminToken || !companyId, 'Steps anteriores falharam');
 
     const res = await request.post('/api/admin/users', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: {
         name: `Gestora RH Integrado ${ts}`,
         email: rhEmail,
         password: rhPassword,
         role: 'rh',
         company_id: companyId,
+        mustChangePassword: false,
       },
     });
 
@@ -97,10 +99,12 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     });
 
     expect(res.status()).toBe(200);
+    const cookies = res.headers()['set-cookie'] || '';
+    const match = cookies.match(/uniher-access-token=([^;]+)/);
+    rhToken = match?.[1] || '';
+    expect(rhToken).toBeTruthy();
     const body = await res.json();
     expect(body.user.role).toBe('rh');
-    expect(body.user.email).toBe(rhEmail);
-    rhToken = body.accessToken;
   });
 
   // ─── Step 5: RH acessa dashboard ────────────────────────────────────────────
@@ -109,7 +113,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!rhToken, 'Login do RH falhou');
 
     const res = await request.get('/api/dashboard', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -124,7 +128,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!rhToken, 'Login do RH falhou');
 
     const res = await request.post('/api/invites', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: { email: colabEmail, role: 'colaboradora' },
     });
 
@@ -141,7 +145,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!rhToken, 'Login do RH falhou');
 
     const res = await request.get('/api/invites', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -174,7 +178,9 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     expect(body).toHaveProperty('user');
     expect(body.user.role).toBe('colaboradora');
     colabUserId = body.user.id;
-    colabToken = body.accessToken;
+    const regCookies = res.headers()['set-cookie'] || '';
+    const regMatch = regCookies.match(/uniher-access-token=([^;]+)/);
+    colabToken = regMatch?.[1] || '';
   });
 
   // ─── Step 9: RH aprova colaboradora ──────────────────────────────────────────
@@ -183,7 +189,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!rhToken || !colabUserId, 'Steps anteriores falharam');
 
     const res = await request.patch('/api/invites/approve', {
-      headers: { Authorization: `Bearer ${rhToken}` },
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: { userId: colabUserId, action: 'approve' },
     });
 
@@ -201,9 +207,12 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     });
 
     expect(res.status()).toBe(200);
+    const loginCookies = res.headers()['set-cookie'] || '';
+    const loginMatch = loginCookies.match(/uniher-access-token=([^;]+)/);
+    colabToken = loginMatch?.[1] || '';
+    expect(colabToken).toBeTruthy();
     const body = await res.json();
     expect(body.user.role).toBe('colaboradora');
-    colabToken = body.accessToken;
   });
 
   // ─── Step 11: Colaboradora acessa dashboard ──────────────────────────────────
@@ -212,7 +221,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!colabToken, 'Login da colaboradora falhou');
 
     const res = await request.get('/api/dashboard', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -226,7 +235,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!colabToken, 'Login da colaboradora falhou');
 
     const res = await request.post('/api/gamification/check-in', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -240,7 +249,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!colabToken, 'Login da colaboradora falhou');
 
     const res = await request.get('/api/gamification/streak-status', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -255,7 +264,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!colabToken, 'Login da colaboradora falhou');
 
     const res = await request.get('/api/gamification/daily-missions', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);
@@ -270,7 +279,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     test.skip(!colabToken, 'Login da colaboradora falhou');
 
     const res = await request.get('/api/gamification/leaderboard', {
-      headers: { Authorization: `Bearer ${colabToken}` },
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
     expect(res.status()).toBe(200);

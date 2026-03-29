@@ -10,15 +10,15 @@ type Tab = 'invites' | 'pending';
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 const ROLE_OPTIONS = [
-  { value: 'colaboradora', label: 'Colaboradora' },
-  { value: 'lideranca', label: 'Liderança' },
-  { value: 'rh', label: 'RH' },
+  { value: 'colaboradora', label: 'Colaboradora', hint: 'Usuária padrão — faz check-ins, participa de campanhas e acumula pontos' },
+  { value: 'lideranca', label: 'Liderança', hint: 'Gestora de equipe — tudo da colaboradora + visão dos indicadores do departamento' },
+  { value: 'rh', label: 'Admin Empresa', hint: 'Administradora da empresa — gerencia colaboradoras, campanhas e configurações' },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
   colaboradora: 'Colaboradora',
   lideranca: 'Liderança',
-  rh: 'RH',
+  rh: 'Admin',
 };
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
@@ -66,7 +66,7 @@ export default function ConvitesPage() {
   const { data, mutate } = useSWR<{ invites: any[] }>('/api/invites', fetcher, {
     revalidateOnFocus: false,
   });
-  const { data: deptData } = useSWR<{ departments: any[] }>('/api/departments', fetcher, {
+  const { data: deptData, mutate: mutateDepts } = useSWR<{ departments: any[] }>('/api/departments', fetcher, {
     revalidateOnFocus: false,
   });
   const { data: pendingData, mutate: mutatePending } = useSWR<{ users: any[] }>(
@@ -79,7 +79,7 @@ export default function ConvitesPage() {
   const departments = deptData?.departments ?? [];
   const pendingUsers = pendingData?.users ?? [];
 
-  const [form, setForm] = useState({ email: '', role: 'colaboradora', department_id: '', expires_at: getDefaultExpiry() });
+  const [form, setForm] = useState({ name: '', email: '', role: 'colaboradora', department_id: '', expires_at: getDefaultExpiry(), can_approve: false });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [lastInviteUrl, setLastInviteUrl] = useState('');
@@ -97,6 +97,35 @@ export default function ConvitesPage() {
   const [bulkResults, setBulkResults] = useState<{ total: number; successCount: number; errorCount: number; results: { email: string; success: boolean; error?: string }[] } | null>(null);
   const [bulkError, setBulkError] = useState('');
 
+  // Quick create department
+  const [showNewDept, setShowNewDept] = useState(false);
+  const [newDeptName, setNewDeptName] = useState('');
+  const [creatingDept, setCreatingDept] = useState(false);
+
+  async function handleCreateDept() {
+    if (!newDeptName.trim()) return;
+    setCreatingDept(true);
+    try {
+      const res = await fetch('/api/departments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newDeptName.trim() }),
+      });
+      const d = await res.json();
+      if (res.ok && d.id) {
+        await mutateDepts();
+        setForm(f => ({ ...f, department_id: d.id }));
+        setShowNewDept(false);
+        setNewDeptName('');
+      } else {
+        alert(d.error || 'Erro ao criar setor');
+      }
+    } catch {
+      alert('Erro de conexão');
+    }
+    setCreatingDept(false);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -108,6 +137,7 @@ export default function ConvitesPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: form.name,
           email: form.email,
           role: form.role,
           department_id: form.department_id || null,
@@ -118,7 +148,7 @@ export default function ConvitesPage() {
       if (d.success) {
         setSuccessMsg(`Convite criado para ${d.email}`);
         setLastInviteUrl(d.inviteUrl);
-        setForm({ email: '', role: 'colaboradora', department_id: '', expires_at: getDefaultExpiry() });
+        setForm({ name: '', email: '', role: 'colaboradora', department_id: '', expires_at: getDefaultExpiry(), can_approve: false });
         mutate();
       } else {
         setError(d.error || 'Erro ao criar convite');
@@ -216,7 +246,7 @@ export default function ConvitesPage() {
 
   const inviteOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
-  return (
+  return (<>
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
@@ -357,6 +387,17 @@ export default function ConvitesPage() {
 
         <form onSubmit={handleSubmit} className={styles.formGrid}>
           <div className={styles.fieldGroup}>
+            <label className={styles.label}>Nome completo *</label>
+            <input
+              type="text"
+              required
+              placeholder="Nome da colaboradora"
+              className={styles.input}
+              value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+            />
+          </div>
+          <div className={styles.fieldGroup}>
             <label className={styles.label}>Email *</label>
             <input
               type="email"
@@ -369,7 +410,13 @@ export default function ConvitesPage() {
           </div>
 
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Papel *</label>
+            <label className={styles.label}>
+              Papel *
+              <span
+                title={roleOptions.find(r => r.value === form.role)?.hint || ''}
+                style={{ cursor: 'help', marginLeft: 4, opacity: 0.5 }}
+              >?</span>
+            </label>
             <select
               className={styles.select}
               value={form.role}
@@ -382,18 +429,45 @@ export default function ConvitesPage() {
           </div>
 
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Setor (opcional)</label>
-            <select
-              className={styles.select}
-              value={form.department_id}
-              onChange={e => setForm(f => ({ ...f, department_id: e.target.value }))}
-            >
-              <option value="">— Nenhum —</option>
-              {departments.map((d: any) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
+            <label className={styles.label}>Setor *</label>
+              <select
+                className={styles.select}
+                value={form.department_id}
+                onChange={e => {
+                  if (e.target.value === '__new__') {
+                    setShowNewDept(true);
+                    e.target.value = form.department_id;
+                    return;
+                  }
+                  setForm(f => ({ ...f, department_id: e.target.value }));
+                }}
+                required
+              >
+                <option value="">— Selecione —</option>
+                {departments.map((d: any) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+                <option value="__new__" style={{ fontWeight: 600 }}>＋ Criar novo setor</option>
+              </select>
+              <span style={{ display: 'none' }}>
+                {/* placeholder to keep JSX structure */}
+              </span>
           </div>
+
+          {form.role === 'lideranca' && (
+            <div className={styles.fieldGroup} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={form.can_approve}
+                  onChange={e => setForm(f => ({ ...f, can_approve: e.target.checked }))}
+                  style={{ width: 16, height: 16, accentColor: '#C9A264' }}
+                />
+                Pode aprovar colaboradoras do setor
+              </label>
+              <span title="Se habilitado, esta liderança pode aprovar novas colaboradoras que entrarem no setor dela" style={{ cursor: 'help', opacity: 0.5, fontSize: 12 }}>ℹ️</span>
+            </div>
+          )}
 
           <div className={styles.fieldGroup}>
             <label className={styles.label}>
@@ -620,5 +694,29 @@ export default function ConvitesPage() {
       )}
       </>}
     </div>
-  );
+
+    {/* Modal: Criar novo setor */}
+    {showNewDept && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowNewDept(false)}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: 380, maxWidth: '90vw', boxShadow: '0 8px 30px rgba(0,0,0,0.15)' }} onClick={e => e.stopPropagation()}>
+          <h3 style={{ margin: '0 0 16px', fontFamily: 'var(--ff-display)', fontSize: 20, color: '#1a3a6b' }}>Novo Setor</h3>
+          <input
+            type="text"
+            placeholder="Nome do setor"
+            value={newDeptName}
+            onChange={e => setNewDeptName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleCreateDept()}
+            autoFocus
+            style={{ width: '100%', padding: '10px 14px', border: '1px solid #e8dfd0', borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setShowNewDept(false)} style={{ padding: '8px 20px', border: '1px solid #e8dfd0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 14 }}>Cancelar</button>
+            <button type="button" onClick={handleCreateDept} disabled={creatingDept || !newDeptName.trim()} style={{ padding: '8px 20px', border: 'none', borderRadius: 8, background: '#C9A264', color: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, opacity: creatingDept ? 0.6 : 1 }}>
+              {creatingDept ? 'Criando...' : 'Criar Setor'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>);
 }

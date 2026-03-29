@@ -130,6 +130,9 @@ export async function login(input: LoginInput): Promise<AuthResult> {
     mustChangePassword: (user as any).must_change_password === 1,
   });
 
+  // Session fixation prevention: invalidate all existing sessions before creating new one
+  await refreshTokenRepo.deleteAllUserTokens(user.id);
+
   const refreshToken = await signRefreshToken({ userId: user.id });
   await refreshTokenRepo.createRefreshToken(user.id, refreshToken);
   await setAuthCookies(accessToken, refreshToken);

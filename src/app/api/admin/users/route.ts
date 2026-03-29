@@ -57,6 +57,8 @@ export const POST = withRole('admin')(async (req: NextRequest, context) => {
   }
 
   const { name, email, password, role, company_id, confirmCurrentPassword } = parsed.data;
+  const alsoCollaborator = body.also_collaborator ? 1 : 0;
+  const mustChangePw = body.mustChangePassword === false ? 0 : 1;
   const db = getReadDb();
 
   // Admin master exige confirmação de senha do solicitante
@@ -82,9 +84,9 @@ export const POST = withRole('admin')(async (req: NextRequest, context) => {
   const wq = getWriteQueue();
   await wq.enqueue((db) => {
     db.prepare(`
-      INSERT INTO users (id, name, email, password_hash, role, company_id, approved, level, points, streak, must_change_password)
-      VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, 0, 1)
-    `).run(id, name, email, passwordHash, role, finalCompanyId);
+      INSERT INTO users (id, name, email, password_hash, role, company_id, approved, level, points, streak, must_change_password, also_collaborator)
+      VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, 0, ?, ?)
+    `).run(id, name, email, passwordHash, role, finalCompanyId, mustChangePw, alsoCollaborator);
   });
 
   await logAudit({

@@ -4,6 +4,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
   output: isProd ? 'standalone' : undefined,
+  productionBrowserSourceMaps: false,
   experimental: {},
   async headers() {
     return [

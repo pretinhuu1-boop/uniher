@@ -6,6 +6,7 @@ export interface UserRow {
   company_id: string;
   department_id: string | null;
   name: string;
+  nickname: string | null;
   email: string;
   password_hash: string;
   role: string;
@@ -18,15 +19,22 @@ export interface UserRow {
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   last_active: string | null;
+  also_collaborator: number; // 0 or 1
   created_at: string;
   updated_at: string;
+  department_name?: string | null;
 }
 
 export type PublicUser = Omit<UserRow, 'password_hash'>;
 
 export function getUserById(id: string): UserRow | undefined {
   const db = getReadDb();
-  return db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow | undefined;
+  return db.prepare(`
+    SELECT u.*, d.name as department_name
+    FROM users u
+    LEFT JOIN departments d ON u.department_id = d.id
+    WHERE u.id = ?
+  `).get(id) as UserRow | undefined;
 }
 
 export function getUserByEmail(email: string): UserRow | undefined {

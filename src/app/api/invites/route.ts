@@ -16,10 +16,11 @@ import { logAudit } from '@/lib/audit';
 const MAX_EXPIRY_DAYS = 3;
 
 const CreateSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
   email: z.string().email(),
   role: z.enum(['rh', 'lideranca', 'colaboradora']).default('colaboradora'),
   department_id: z.string().optional().nullable(),
-  expires_at: z.string().optional(), // ISO or datetime-local string
+  expires_at: z.string().optional(),
 });
 
 export const GET = withRole('rh', 'lideranca')(async (_req, context) => {
@@ -54,7 +55,7 @@ export const POST = withRole('rh')(async (req, context) => {
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
 
-  const { email, role, department_id } = parsed.data;
+  const { name: inviteeName, email, role, department_id } = parsed.data;
 
   // RH cannot invite other RH users — only admin can
   if (context.auth.role === 'rh' && role === 'rh') {
@@ -93,9 +94,9 @@ export const POST = withRole('rh')(async (req, context) => {
   const wq = getWriteQueue();
   await wq.enqueue((db) => {
     db.prepare(`
-      INSERT INTO invites (id, company_id, email, role, department_id, token, status, invited_by, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-    `).run(id, user.company_id, email, role, department_id || null, token, userId, expiresAt);
+      INSERT INTO invites (id, company_id, email, role, department_id, token, status, invited_by, expires_at, name)
+      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+    `).run(id, user.company_id, email, role, department_id || null, token, userId, expiresAt, inviteeName || null);
   });
 
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`;

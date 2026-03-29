@@ -137,6 +137,13 @@ export async function dailyCheckIn(userId: string): Promise<{
 
   // Check badge unlocks
   const badgesUnlocked = await checkAndUnlockBadges(userId);
+
+  // Recalculate semaforo with objective data
+  try {
+    const { recalculateSemaforo } = await import('./semaforo-calculator.service');
+    await recalculateSemaforo(userId);
+  } catch { /* non-critical */ }
+
   return { ...result, badgesUnlocked };
 }
 

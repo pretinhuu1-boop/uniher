@@ -48,7 +48,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
         </header>
 
         {/* Content Container */}
-        <div className="flex-1 p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full animate-pageIn">
+        <div id="main-content" className="flex-1 p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full animate-pageIn">
           {children}
         </div>
       </main>

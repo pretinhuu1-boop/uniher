@@ -5,11 +5,17 @@ import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
 const patchSchema = z.object({
   name: z.string().min(1).optional(),
   status: z.enum(['next', 'active', 'done']).optional(),
   color: z.string().optional(),
   status_label: z.string().optional(),
+  start_date: z.string().regex(dateRegex, 'Formato YYYY-MM-DD').optional().nullable(),
+  end_date: z.string().regex(dateRegex, 'Formato YYYY-MM-DD').optional().nullable(),
+  theme: z.string().optional().nullable(),
+  theme_color: z.string().optional().nullable(),
 });
 
 // PATCH /api/campaigns/[id] — Atualizar campanha (apenas RH)
@@ -36,9 +42,9 @@ export const PATCH = withRole('rh')(async (req, context) => {
       return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
     }
 
-    const { name, status, color, status_label } = parsed.data;
+    const { name, status, color, status_label, start_date, end_date, theme, theme_color } = parsed.data;
 
-    // Build dynamic update
+    // Build dynamic update — whitelist de campos
     const fields: string[] = [];
     const values: unknown[] = [];
 
@@ -46,6 +52,10 @@ export const PATCH = withRole('rh')(async (req, context) => {
     if (status !== undefined) { fields.push('status = ?'); values.push(status); }
     if (color !== undefined) { fields.push('color = ?'); values.push(color); }
     if (status_label !== undefined) { fields.push('status_label = ?'); values.push(status_label); }
+    if (start_date !== undefined) { fields.push('start_date = ?'); values.push(start_date); }
+    if (end_date !== undefined) { fields.push('end_date = ?'); values.push(end_date); }
+    if (theme !== undefined) { fields.push('theme = ?'); values.push(theme); }
+    if (theme_color !== undefined) { fields.push('theme_color = ?'); values.push(theme_color); }
 
     if (fields.length === 0) {
       return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });

@@ -11,9 +11,10 @@ import { checkAdminRateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
 
 const PatchSchema = z.object({
-  action: z.enum(['block', 'unblock', 'change_department', 'change_role']),
+  action: z.enum(['block', 'unblock', 'change_department', 'change_role', 'update_profile', 'reset_password', 'soft_delete']),
   department_id: z.string().optional().nullable(),
   role: z.enum(['lideranca', 'colaboradora']).optional(),
+  name: z.string().min(2).max(100).optional(),
 });
 
 export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
@@ -136,6 +137,49 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         details: { action: 'change_role', from: targetUser.role, to: role },
         ip,
       });
+      break;
+    }
+    case 'update_profile': {
+      const updates: string[] = ["updated_at = datetime('now')"];
+      const values: any[] = [];
+      if (body.name) { updates.push('name = ?'); values.push(body.name); }
+      if (body.role && ['lideranca', 'colaboradora'].includes(body.role) && targetUser.role !== 'rh') {
+        updates.push('role = ?'); values.push(body.role);
+      }
+      if (body.department_id !== undefined) {
+        updates.push('department_id = ?'); values.push(body.department_id || null);
+      }
+      values.push(userId);
+      await wq.enqueue((db) => {
+        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+      });
+      await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'user_edit', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: { action: 'update_profile', changes: body }, ip });
+      break;
+    }
+    case 'reset_password': {
+      const { hashPassword } = await import('@/lib/auth/password');
+      const { nanoid } = await import('nanoid');
+      // Generate random password
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$';
+      let tempPass = '';
+      for (let i = 0; i < 12; i++) tempPass += chars[Math.floor(Math.random() * chars.length)];
+      // Ensure it meets requirements
+      tempPass = tempPass.slice(0, 8) + 'A1a@' + tempPass.slice(8);
+      const hash = await hashPassword(tempPass);
+      await wq.enqueue((db) => {
+        db.prepare("UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = datetime('now') WHERE id = ?").run(hash, userId);
+      });
+      await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });
+      return NextResponse.json({ success: true, temporaryPassword: tempPass });
+    }
+    case 'soft_delete': {
+      if (targetUser.role === 'rh' || targetUser.role === 'admin') {
+        return NextResponse.json({ error: 'Não é possível remover este usuário' }, { status: 403 });
+      }
+      await wq.enqueue((db) => {
+        db.prepare("UPDATE users SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(userId);
+      });
+      await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'user_delete', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: { soft: true }, ip });
       break;
     }
   }

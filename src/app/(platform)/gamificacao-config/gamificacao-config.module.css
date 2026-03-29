@@ -1,0 +1,666 @@
+/* ═══════════════════════════════════════════════════════════════
+   Gamificacao Config
+   ═══════════════════════════════════════════════════════════════ */
+
+.page {
+  padding: 32px;
+  animation: fadeUp 0.5s ease both;
+  max-width: 960px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.title {
+  font-family: var(--ff-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--text-400);
+  margin-bottom: 28px;
+}
+
+/* ── Sections ── */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  background: var(--white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 28px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.sectionIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  font-family: var(--ff-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.sectionDesc {
+  font-size: 0.82rem;
+  color: var(--text-500);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ── Form Fields ── */
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.formGrid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldGroupFull {
+  grid-column: 1 / -1;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-600);
+}
+
+.labelHint {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-400);
+}
+
+.input {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-1);
+  background: var(--cream-50);
+  font-size: 0.88rem;
+  color: var(--text-900);
+  transition: border-color 0.2s ease;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--gold-400, #d4a843);
+  background: var(--white);
+}
+
+.select {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-1);
+  background: var(--cream-50);
+  font-size: 0.88rem;
+  color: var(--text-900);
+  width: 100%;
+  cursor: pointer;
+}
+
+/* ── Toggle Row ── */
+.toggleList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-1);
+  gap: 12px;
+}
+
+.toggleRow:last-child {
+  border-bottom: none;
+}
+
+.toggleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.toggleLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-900);
+}
+
+.toggleDesc {
+  font-size: 0.78rem;
+  color: var(--text-400);
+}
+
+/* ── Toggle Switch ── */
+.toggle {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.toggleInput {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--cream-200);
+  border-radius: 13px;
+  transition: background 0.3s ease;
+}
+
+.toggleSlider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--white);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.toggleInput:checked + .toggleSlider {
+  background: var(--gold-500, #c9952e);
+}
+
+.toggleInput:checked + .toggleSlider::before {
+  transform: translateX(22px);
+}
+
+/* ── XP Slider Row ── */
+.xpRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.xpLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-700);
+  min-width: 110px;
+}
+
+.xpSlider {
+  flex: 1;
+  height: 6px;
+  appearance: none;
+  background: var(--cream-200);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.xpSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold-500, #c9952e);
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  cursor: grab;
+}
+
+.xpSlider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold-500, #c9952e);
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  cursor: grab;
+}
+
+.xpValue {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold-700, #9a7623);
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ── Save Button ── */
+.saveRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.saveBtn {
+  padding: 10px 28px;
+  border-radius: var(--radius-sm);
+  background: var(--gold-500, #c9952e);
+  color: var(--white);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.saveBtn:hover {
+  background: var(--gold-600, #a87c24);
+}
+
+.saveBtn:active {
+  transform: scale(0.98);
+}
+
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saveBtnOutline {
+  padding: 10px 28px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--gold-600, #a87c24);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: 1px solid var(--gold-300, #e0c67a);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveBtnOutline:hover {
+  background: var(--gold-50, #fef9ec);
+}
+
+.saveBtnDanger {
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  background: #fff1f2;
+  color: #dc2626;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid #fca5a5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveBtnDanger:hover {
+  background: #fee2e2;
+}
+
+.saveBtnSuccess {
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  background: #f0fdf4;
+  color: #16a34a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid #bbf7d0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveBtnSuccess:hover {
+  background: #dcfce7;
+}
+
+/* ── Themes Checkboxes ── */
+.themeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.themeCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-1);
+  background: var(--cream-50);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  color: var(--text-700);
+}
+
+.themeCheckbox:hover {
+  border-color: var(--gold-300, #e0c67a);
+}
+
+.themeCheckboxActive {
+  border-color: var(--gold-500, #c9952e);
+  background: var(--gold-50, #fef9ec);
+  color: var(--gold-700, #9a7623);
+  font-weight: 600;
+}
+
+.themeCheck {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold-500, #c9952e);
+}
+
+/* ── Theme Order ── */
+.themeOrderList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.themeOrderItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--cream-50);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text-700);
+}
+
+.themeOrderIndex {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gold-600, #a87c24);
+  min-width: 20px;
+}
+
+.themeOrderName {
+  flex: 1;
+  font-weight: 500;
+}
+
+.themeOrderBtns {
+  display: flex;
+  gap: 2px;
+}
+
+.themeOrderBtn {
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: none;
+  border: 1px solid var(--border-1);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-500);
+  transition: all 0.15s ease;
+}
+
+.themeOrderBtn:hover {
+  background: var(--gold-50, #fef9ec);
+  border-color: var(--gold-300, #e0c67a);
+  color: var(--gold-700, #9a7623);
+}
+
+/* ── Rewards Table ── */
+.rewardsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rewardsTable th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-400);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.rewardsTable td {
+  font-size: 0.85rem;
+  color: var(--text-700);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-1);
+  vertical-align: middle;
+}
+
+.rewardsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.typeBadge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.typeVoucher { background: #dbeafe; color: #1d4ed8; }
+.typeFolga { background: #dcfce7; color: #15803d; }
+.typeProduto { background: #fef3c7; color: #b45309; }
+.typeExperiencia { background: #ede9fe; color: #6d28d9; }
+
+/* ── Redemptions ── */
+.redemptionCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.redemptionCard:last-child {
+  border-bottom: none;
+}
+
+.redemptionInfo {
+  flex: 1;
+}
+
+.redemptionUser {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-900);
+}
+
+.redemptionReward {
+  font-size: 0.78rem;
+  color: var(--text-500);
+}
+
+.redemptionDate {
+  font-size: 0.72rem;
+  color: var(--text-400);
+}
+
+.redemptionActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.statusPending {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.statusApproved {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.statusRejected {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 1000;
+  animation: slideUp 0.3s ease both;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+.toastSuccess {
+  background: #15803d;
+  color: white;
+}
+
+.toastError {
+  background: #dc2626;
+  color: white;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Empty State ── */
+.emptyState {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-400);
+}
+
+.emptyIcon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.emptyText {
+  font-size: 0.85rem;
+}
+
+/* ── Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+}
+
+.modalTitle {
+  font-family: var(--ff-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-900);
+  margin-bottom: 20px;
+}
+
+/* ── Loading skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--cream-100) 25%, var(--cream-200) 50%, var(--cream-100) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  height: 20px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeletonBlock {
+  composes: skeleton;
+  height: 120px;
+  margin-bottom: 16px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page { padding: 20px 16px; }
+  .formGrid { grid-template-columns: 1fr; }
+  .formGrid3 { grid-template-columns: 1fr; }
+  .themeGrid { grid-template-columns: 1fr 1fr; }
+  .rewardsTable th:nth-child(3),
+  .rewardsTable td:nth-child(3) { display: none; }
+  .redemptionCard { flex-direction: column; align-items: flex-start; }
+  .redemptionActions { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .themeGrid { grid-template-columns: 1fr; }
+}

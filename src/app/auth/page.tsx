@@ -99,7 +99,7 @@ function AuthContent() {
             label="Email"
             type="email"
             placeholder="seu@email.com"
-            autoComplete="email"
+            autoComplete="username"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -110,7 +110,7 @@ function AuthContent() {
               label="Senha"
               type={showPw ? 'text' : 'password'}
               placeholder="********"
-              autoComplete="current-password"
+              autoComplete="new-password"
               required
               minLength={6}
               value={password}

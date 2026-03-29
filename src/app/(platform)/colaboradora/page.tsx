@@ -1,9 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCollaboratorHome, useCollaboratorBadges, useCollaboratorChallenges, useNotifications, useDailyMissions } from '@/hooks/useCollaborator';
+import useSWR from 'swr';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import DailyLesson from '@/components/gamification/DailyLesson';
+import HeartsDisplay from '@/components/gamification/HeartsDisplay';
+import JourneyMap from '@/components/gamification/JourneyMap';
+import RewardsShop from '@/components/gamification/RewardsShop';
+import StreakFire from '@/components/gamification/StreakFire';
+import LeagueNotification from '@/components/gamification/LeagueNotification';
+
+const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 interface StreakStatus {
   streak: number; freezes: number; checkedInToday: boolean;
@@ -23,11 +33,27 @@ interface LeagueStatus {
 }
 
 export default function ColaboradoraPage() {
+  const router = useRouter();
   const { data } = useCollaboratorHome();
   const { badges: allBadges } = useCollaboratorBadges();
   const { challenges } = useCollaboratorChallenges();
   const { notifications } = useNotifications();
   const { missions: swrMissions, mutate: mutateMissions } = useDailyMissions();
+  const { data: heartsData } = useSWR('/api/gamification/hearts', fetcher, { revalidateOnFocus: false });
+
+  // Redirect to quiz if no health scores exist (first access)
+  const [quizChecked, setQuizChecked] = useState(false);
+  useEffect(() => {
+    fetch('/api/collaborator/semaforo').then(r => r.json()).then(d => {
+      const scores = d?.semaforo || d || [];
+      // Don't redirect if user is viewing as collaborator (multi-role)
+      const isViewMode = typeof window !== 'undefined' && sessionStorage.getItem('uniher-view-mode') === 'colaboradora';
+      if (Array.isArray(scores) && scores.length === 0 && !quizChecked && !isViewMode) {
+        router.push('/welcome-colaboradora');
+      }
+      setQuizChecked(true);
+    }).catch(() => setQuizChecked(true));
+  }, [router, quizChecked]);
 
   const unreadNotification = (notifications || []).find((n: any) => !n.read && n.type === 'badge');
   const [showToast, setShowToast] = useState(false);
@@ -39,6 +65,7 @@ export default function ColaboradoraPage() {
   const [streakStatus, setStreakStatus] = useState<StreakStatus | null>(null);
   const [dailyMissions, setDailyMissions] = useState<DailyMission[]>([]);
   const [leagueStatus, setLeagueStatus] = useState<LeagueStatus | null>(null);
+  const [leagueNotif, setLeagueNotif] = useState<{ show: boolean; type: 'overtaken' | 'overtook' | 'promotion' | 'demotion'; name?: string } | null>(null);
   const [missionFeedback, setMissionFeedback] = useState<string | null>(null);
   const [levelUpBurst, setLevelUpBurst] = useState(false);
   const [activeMission, setActiveMission] = useState<DailyMission | null>(null);
@@ -63,19 +90,44 @@ export default function ColaboradoraPage() {
 
     // Load gamification data (daily missions handled by SWR hook)
     fetch('/api/gamification/streak-status').then(r => r.json()).then(setStreakStatus).catch(() => {});
-    fetch('/api/gamification/league').then(r => r.json()).then(d => setLeagueStatus(d.status)).catch(() => {});
+    fetch('/api/gamification/league').then(r => r.json()).then(d => {
+      const status = d.status;
+      if (!status) return;
+      setLeagueStatus(status);
+      // Detect rank changes since last visit
+      const prevRankKey = 'uniher-league-rank';
+      const prevLeagueKey = 'uniher-league-name';
+      const prevRank = parseInt(sessionStorage.getItem(prevRankKey) || '0', 10);
+      const prevLeague = sessionStorage.getItem(prevLeagueKey) || '';
+      if (prevRank > 0) {
+        if (status.currentLeague !== prevLeague && prevLeague) {
+          const promoted = status.rank < prevRank || status.currentLeague > prevLeague;
+          setLeagueNotif({ show: true, type: promoted ? 'promotion' : 'demotion' });
+        } else if (status.rank > prevRank) {
+          setLeagueNotif({ show: true, type: 'overtaken' });
+        } else if (status.rank < prevRank) {
+          setLeagueNotif({ show: true, type: 'overtook' });
+        }
+      }
+      sessionStorage.setItem(prevRankKey, String(status.rank));
+      sessionStorage.setItem(prevLeagueKey, status.currentLeague || '');
+    }).catch(() => {});
   }, []);
 
   // Sync SWR missions into local state
+  const missionsKey = JSON.stringify((swrMissions || []).map((m: any) => m.id + ':' + m.completed));
   useEffect(() => {
     if (swrMissions.length > 0) setDailyMissions(swrMissions);
-  }, [swrMissions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missionsKey]);
 
+  const challengesKey = JSON.stringify((challenges || []).map((c: any) => c.id + ':' + (c.progress ?? 0)));
   useEffect(() => {
     const map: Record<string, number> = {};
     (challenges || []).forEach((c: any) => { map[c.id] = c.progress ?? 0; });
     setChallengeProgress(map);
-  }, [challenges]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [challengesKey]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowToast(true), 1200);
@@ -189,6 +241,16 @@ export default function ColaboradoraPage() {
   return (
     <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 font-body animate-fadeIn">
 
+      {/* ── League Notification ── */}
+      {leagueNotif?.show && (
+        <LeagueNotification
+          show={leagueNotif.show}
+          type={leagueNotif.type}
+          name={leagueNotif.name}
+          onClose={() => setLeagueNotif(null)}
+        />
+      )}
+
       {/* ── Error Toast ── */}
       {errorMsg && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] bg-red-500 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-bold animate-slideDown">
@@ -221,6 +283,9 @@ export default function ColaboradoraPage() {
         </div>
         <p className="text-xs opacity-75 mt-1">{streakStatus?.dailyXpEarned ?? 0}/{streakStatus?.dailyXpGoal ?? 20} XP hoje</p>
       </div>
+
+      {/* ── Daily Lesson (Lição do Dia) ── */}
+      <DailyLesson />
 
       {/* ── Greeting Header ── */}
       <section className="relative bg-gradient-to-br from-rose-400 via-rose-500 to-pink-600 rounded-2xl p-8 text-white overflow-hidden shadow-xl shadow-rose/20">
@@ -282,7 +347,12 @@ export default function ColaboradoraPage() {
               <span className="ml-2 text-xs bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">{(data?.points ?? 0).toLocaleString('pt-BR')} pts</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <HeartsDisplay
+              hearts={heartsData?.hearts ?? 5}
+              maxHearts={heartsData?.maxHearts ?? 5}
+              enabled={heartsData?.enabled ?? false}
+            />
             {unlockedBadges.slice(0, 3).map((b: any) => (
               <span key={b.id} title={b.name} className="text-lg cursor-default">{b.icon}</span>
             ))}
@@ -292,7 +362,24 @@ export default function ColaboradoraPage() {
         <div className="w-full h-2.5 bg-cream-100 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
         </div>
-        <p className="text-[11px] text-uni-text-400 mt-2">{data?.pointsNextLevel ?? 0} pts para o próximo nível</p>
+        <div className="flex items-center justify-between mt-2">
+          <p className="text-[11px] text-uni-text-400">{data?.pointsNextLevel ?? 0} pts para o próximo nível</p>
+          {(() => {
+            const streak = streakStatus?.streak ?? 0;
+            const level = data?.level ?? 0;
+            const unlockedBadgeIds = new Set((allBadges || []).filter((b: any) => b.unlocked || b.unlockedAt).map((b: any) => b.id));
+            if (!unlockedBadgeIds.has('badge_streak7') && streak > 0) {
+              return <p className="text-[11px] text-rose-400 font-semibold">🔥 {7 - Math.min(streak, 7)} dias para Badge Sequência 7</p>;
+            }
+            if (level < 10) {
+              return <p className="text-[11px] text-amber-500 font-semibold">⭐ Nível {10 - level} para Badge Mestra</p>;
+            }
+            if (!unlockedBadgeIds.has('badge_streak30') && streak > 0) {
+              return <p className="text-[11px] text-violet-400 font-semibold">🔥 {30 - Math.min(streak, 30)} dias para Badge Sequência 30</p>;
+            }
+            return <p className="text-[11px] text-emerald-500 font-semibold">👑 Nível elite alcançado!</p>;
+          })()}
+        </div>
       </section>
 
       {/* ── Level Up Burst ── */}
@@ -309,30 +396,29 @@ export default function ColaboradoraPage() {
 
       {/* ── Gamification Row: Streak + Daily XP + League ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Streak */}
+        {/* Streak (animated) */}
         <div className="bg-white border border-border-1 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-bold text-uni-text-900 text-sm">Sequência</span>
-            {streakStatus && streakStatus.freezes > 0 && (
+          <StreakFire streak={streakStatus?.streak ?? 0} showAnimation={isCheckedIn} />
+          {/* Streak at risk warning */}
+          {streakStatus && !streakStatus.checkedInToday && streakStatus.streak > 0 && (
+            <div className="mt-3 flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 animate-pulse">
+              <span className="text-base">⚠️</span>
+              <p className="text-xs font-bold text-orange-700">Faça check-in para não perder sua sequência!</p>
+            </div>
+          )}
+          {streakStatus && streakStatus.checkedInToday && (
+            <div className="mt-3 flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+              <span className="text-base">✅</span>
+              <p className="text-xs font-bold text-emerald-700">Sequência protegida hoje!</p>
+            </div>
+          )}
+          {streakStatus && streakStatus.freezes > 0 && (
+            <div className="mt-2">
               <span className="text-xs bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-full">
                 ❄️ {streakStatus.freezes} freeze{streakStatus.freezes > 1 ? 's' : ''}
               </span>
-            )}
-          </div>
-          <div className="flex items-end gap-2 mb-3">
-            <span className="text-4xl font-display font-bold text-orange-500">{streakStatus?.streak ?? 0}</span>
-            <span className="text-sm text-uni-text-400 mb-1">dias 🔥</span>
-          </div>
-          <div className="flex gap-1">
-            {[...Array(7)].map((_, i) => (
-              <div key={i} className={cn("flex-1 h-1.5 rounded-full", i < Math.min(7, streakStatus?.streak ?? 0) ? "bg-orange-400" : "bg-cream-100")} />
-            ))}
-          </div>
-          <p className="text-[10px] text-uni-text-400 mt-2">
-            {streakStatus?.streak === 0 ? 'Faça check-in para começar!' :
-             streakStatus?.streak === 1 ? 'Ótimo começo! Continue amanhã.' :
-             `${7 - ((streakStatus?.streak ?? 0) % 7)} dias para o próximo marco`}
-          </p>
+            </div>
+          )}
         </div>
 
         {/* Daily XP Goal */}
@@ -452,6 +538,9 @@ export default function ColaboradoraPage() {
         )}
       </section>
 
+      {/* ── Journey Map (Weekly Progress) ── */}
+      <JourneyMap />
+
       {/* ── Engagement & Badges ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Engagement Banner */}
@@ -495,6 +584,9 @@ export default function ColaboradoraPage() {
           </div>
         </section>
       </div>
+
+      {/* ── Rewards Shop ── */}
+      <RewardsShop userPoints={data?.points ?? 0} />
 
       {/* ── Active Challenges ── */}
       <section>

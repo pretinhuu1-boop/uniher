@@ -8,6 +8,8 @@
   "theme_color": "#C9A264",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
-  ]
+    { "src": "/logo-uniher.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo-uniher.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "categories": ["health", "wellness", "business"]
 }

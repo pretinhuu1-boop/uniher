@@ -1,0 +1,32 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF7F2"/>
+      <stop offset="100%" stop-color="#F5EDE3"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E8C97A"/>
+      <stop offset="50%" stop-color="#C9A264"/>
+      <stop offset="100%" stop-color="#9A7520"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="4" fill="url(#gold)"/>
+  <rect x="0" y="626" width="1200" height="4" fill="url(#gold)"/>
+  <!-- Lotus -->
+  <g transform="translate(600,220) scale(1.5)">
+    <path d="M0,60 C-14,-10 -12,-50 0,-70 C12,-50 14,-10 0,60 Z" stroke="url(#gold)" stroke-width="2.5" fill="none"/>
+    <path d="M0,60 C-20,30 -55,5 -65,-25 C-55,-45 -30,-35 -10,-5 C2,15 0,40 0,60 Z" stroke="url(#gold)" stroke-width="2.5" fill="none"/>
+    <path d="M0,60 C20,30 55,5 65,-25 C55,-45 30,-35 10,-5 C-2,15 0,40 0,60 Z" stroke="url(#gold)" stroke-width="2.5" fill="none"/>
+  </g>
+  <!-- Text -->
+  <text x="600" y="370" text-anchor="middle" font-family="Georgia, 'Playfair Display', serif" font-size="72" fill="#1A3A6B" font-weight="600">
+    Uni<tspan fill="#C9A264" font-weight="700">HER</tspan>
+  </text>
+  <text x="600" y="420" text-anchor="middle" font-family="Arial, 'Montserrat', sans-serif" font-size="24" fill="#C9A264" letter-spacing="8">
+    SAUDE FEMININA
+  </text>
+  <text x="600" y="480" text-anchor="middle" font-family="Arial, 'Montserrat', sans-serif" font-size="20" fill="#8B7355">
+    Plataforma de bem-estar corporativo para mulheres
+  </text>
+</svg>
