@@ -573,7 +573,7 @@ export default function ConfiguracoesPage() {
               <div className={styles.toggleInfo}>
                 <span className={styles.toggleLabel}>Notificações do navegador</span>
                 <span className={styles.toggleDesc}>
-                  {browserEnabled ? '✓ Ativadas — você receberá alertas mesmo com a aba em segundo plano' : 'Receba alertas no navegador nos horários configurados'}
+                  {browserEnabled ? '✓ Ativadas — no celular instalado, os lembretes podem aparecer mesmo com o app fechado ou após perder o login' : 'Receba alertas no navegador e no celular instalado nos horários configurados'}
                 </span>
               </div>
               <button

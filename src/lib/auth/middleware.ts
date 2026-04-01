@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAccessToken, type TokenPayload } from './jwt';
 import { getAccessToken } from './cookies';
+import { isTokenBlacklisted } from './token-blacklist';
 
 export interface AuthContext {
   params: Promise<Record<string, string>>;
@@ -28,6 +29,13 @@ export function withAuth(handler: ApiHandler) {
       if (!accessToken) {
         return NextResponse.json(
           { error: 'Token de autenticação não fornecido' },
+          { status: 401 }
+        );
+      }
+
+      if (isTokenBlacklisted(accessToken)) {
+        return NextResponse.json(
+          { error: 'Token revogado' },
           { status: 401 }
         );
       }

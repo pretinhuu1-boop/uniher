@@ -133,14 +133,13 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   // ─── Dashboard ───────────────────────────────────────────────────────────────
 
-  test('GET /api/dashboard — colaboradora acessa dashboard', async ({ request }) => {
+  test('GET /api/dashboard — colaboradora NÃO tem acesso ao dashboard de RH', async ({ request }) => {
     const res = await request.get('/api/dashboard', {
       headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
-    expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty('kpis');
+    // Dashboard é restrito a admin/rh/lideranca — colaboradora recebe 403
+    expect(res.status()).toBe(403);
   });
 
   // ─── Gamificação — Check-in ──────────────────────────────────────────────────
@@ -161,8 +160,8 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
       headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
-    // Pode retornar 200 (com mensagem já fez check-in) ou 409
-    expect([200, 409]).toContain(res.status());
+    // Segundo check-in retorna 429 (alreadyDone) ou 409 (conflito)
+    expect([409, 429]).toContain(res.status());
   });
 
   test('POST /api/gamification/check-in — rejeita sem autenticação', async ({ request }) => {

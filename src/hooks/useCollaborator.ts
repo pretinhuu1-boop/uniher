@@ -40,3 +40,18 @@ export function useNotifications() {
   });
   return { notifications: data ?? [], isLoading, mutate };
 }
+
+export function useCollaboratorFeed(scope: 'company' | 'group' = 'company') {
+  const { data, isLoading, mutate } = useSWR(`/api/collaborator/feed?scope=${scope}&limit=20`, fetcher, {
+    revalidateOnFocus: false,
+    refreshInterval: 60_000,
+    dedupingInterval: 20_000,
+  });
+  return {
+    items: data?.items ?? [],
+    settings: data?.settings ?? { companyFeedEnabled: true },
+    scope: data?.scope ?? scope,
+    isLoading,
+    mutate,
+  };
+}

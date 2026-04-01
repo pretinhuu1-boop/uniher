@@ -50,24 +50,33 @@ export default function NotificacoesPage() {
     // Optimistic
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     try {
-      await fetch('/api/notifications/mark-read', {
+      const response = await fetch('/api/notifications/mark-read', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ all: true }),
       });
-      mutate();
-    } catch { mutate(); }
+      if (!response.ok) throw new Error('Falha ao marcar todas');
+      await mutate();
+    } catch { await mutate(); }
   }
 
   async function toggleRead(id: string) {
     if (pendingIds.has(id)) return;
+    const current = notifications.find(n => n.id === id);
+    if (!current) return;
+    const nextRead = !current.read;
     setPendingIds(p => new Set(p).add(id));
     // Optimistic
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n));
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: nextRead } : n));
     try {
-      await fetch(`/api/notifications/${id}`, { method: 'PATCH' });
-      mutate();
-    } catch { mutate(); }
+      const response = await fetch(`/api/notifications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ read: nextRead }),
+      });
+      if (!response.ok) throw new Error('Falha ao atualizar notificacao');
+      await mutate();
+    } catch { await mutate(); }
     setPendingIds(p => { const s = new Set(p); s.delete(id); return s; });
   }
 
@@ -77,9 +86,10 @@ export default function NotificacoesPage() {
     // Optimistic
     setNotifications(prev => prev.filter(n => n.id !== id));
     try {
-      await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
-      mutate();
-    } catch { mutate(); }
+      const response = await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Falha ao excluir notificacao');
+      await mutate();
+    } catch { await mutate(); }
     setPendingIds(p => { const s = new Set(p); s.delete(id); return s; });
   }
 
@@ -89,8 +99,8 @@ export default function NotificacoesPage() {
     setNotifications([]);
     try {
       await Promise.all(ids.map(id => fetch(`/api/notifications/${id}`, { method: 'DELETE' })));
-      mutate();
-    } catch { mutate(); }
+      await mutate();
+    } catch { await mutate(); }
   }
 
   return (

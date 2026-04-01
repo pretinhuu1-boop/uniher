@@ -251,7 +251,7 @@ const EMPTY_FORM = {
 function RHView() {
   const { data, isLoading, mutate } = useSWR<{ objectives: Objective[] }>('/api/rh/objectives', fetcher);
   const { data: campaigns } = useSWR<{ campaigns: { id: string; name: string }[] }>('/api/campaigns', fetcher);
-  const { data: badges } = useSWR<{ badges: { id: string; name: string }[] }>('/api/admin/badges', fetcher);
+  const { data: badges } = useSWR<{ badges: { id: string; name: string }[] }>('/api/badges', fetcher);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');

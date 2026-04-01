@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { initDb } from '@/lib/db/init';
-import { withAuth } from '@/lib/auth/middleware';
+import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import * as dashService from '@/services/dashboard.service';
 
-export const GET = withAuth(async (_req, { auth }) => {
+export const GET = withRole('admin', 'rh', 'lideranca')(async (_req, { auth }) => {
   try {
     await initDb();
 

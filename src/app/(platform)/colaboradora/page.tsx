@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCollaboratorHome, useCollaboratorBadges, useCollaboratorChallenges, useNotifications, useDailyMissions } from '@/hooks/useCollaborator';
+import { useCollaboratorHome, useCollaboratorBadges, useCollaboratorChallenges, useNotifications, useDailyMissions, useCollaboratorFeed } from '@/hooks/useCollaborator';
 import useSWR from 'swr';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -32,13 +32,32 @@ interface LeagueStatus {
   meta: { label: string; color: string; icon: string };
 }
 
+type FeedScope = 'company' | 'group';
+
+interface FeedItem {
+  id: string;
+  createdAt: string;
+  userName: string;
+  message: string;
+  icon: string;
+  isSelf: boolean;
+}
+
 export default function ColaboradoraPage() {
   const router = useRouter();
+  const [feedScope, setFeedScope] = useState<FeedScope>('company');
   const { data } = useCollaboratorHome();
   const { badges: allBadges } = useCollaboratorBadges();
   const { challenges } = useCollaboratorChallenges();
   const { notifications } = useNotifications();
   const { missions: swrMissions, mutate: mutateMissions } = useDailyMissions();
+  const {
+    items: socialFeed,
+    settings: feedSettings,
+    scope: effectiveFeedScope,
+    isLoading: feedLoading,
+    mutate: mutateFeed
+  } = useCollaboratorFeed(feedScope);
   const { data: heartsData } = useSWR('/api/gamification/hearts', fetcher, { revalidateOnFocus: false });
 
   // Redirect to quiz if no health scores exist (first access)
@@ -48,12 +67,24 @@ export default function ColaboradoraPage() {
       const scores = d?.semaforo || d || [];
       // Don't redirect if user is viewing as collaborator (multi-role)
       const isViewMode = typeof window !== 'undefined' && sessionStorage.getItem('uniher-view-mode') === 'colaboradora';
-      if (Array.isArray(scores) && scores.length === 0 && !quizChecked && !isViewMode) {
+      const skipQuiz = typeof window !== 'undefined' && sessionStorage.getItem('uniher-skip-quiz') === '1';
+
+      if (Array.isArray(scores) && scores.length === 0 && !quizChecked && !isViewMode && !skipQuiz) {
         router.push('/welcome-colaboradora');
       }
+      if (Array.isArray(scores) && scores.length > 0 && typeof window !== 'undefined') {
+        sessionStorage.removeItem('uniher-skip-quiz');
+      }
+
       setQuizChecked(true);
     }).catch(() => setQuizChecked(true));
   }, [router, quizChecked]);
+
+  useEffect(() => {
+    if (feedScope === 'company' && feedSettings && !feedSettings.companyFeedEnabled) {
+      setFeedScope('group');
+    }
+  }, [feedScope, feedSettings]);
 
   const unreadNotification = (notifications || []).find((n: any) => !n.read && n.type === 'badge');
   const [showToast, setShowToast] = useState(false);
@@ -191,6 +222,18 @@ export default function ColaboradoraPage() {
     setMissionSubmitting(false);
   }
 
+  function formatFeedDate(value: string): string {
+    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   async function submitMission() {
     if (!activeMission || missionSubmitting) return;
     setMissionSubmitting(true);
@@ -209,6 +252,7 @@ export default function ColaboradoraPage() {
         mutateMissions();
         mutateChallenges();
         mutateHome();
+        mutateFeed();
       }
     } catch {
       showError('Erro ao completar missão. Tente novamente.');
@@ -539,6 +583,81 @@ export default function ColaboradoraPage() {
       </section>
 
       {/* ── Journey Map (Weekly Progress) ── */}
+      <section className="bg-white border border-border-1 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-uni-text-900">Feed da Comunidade</h2>
+            <p className="text-xs text-uni-text-400 mt-0.5">Conquistas e atividades recentes</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => feedSettings?.companyFeedEnabled && setFeedScope('company')}
+              disabled={!feedSettings?.companyFeedEnabled}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
+                effectiveFeedScope === 'company'
+                  ? 'bg-rose-500 text-white border-rose-500'
+                  : !feedSettings?.companyFeedEnabled
+                    ? 'bg-cream-50 text-uni-text-300 border-border-1 cursor-not-allowed'
+                    : 'bg-white text-uni-text-500 border-border-1 hover:border-rose-200'
+              )}
+            >
+              Empresa
+            </button>
+            <button
+              onClick={() => setFeedScope('group')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
+                effectiveFeedScope === 'group'
+                  ? 'bg-rose-500 text-white border-rose-500'
+                  : 'bg-white text-uni-text-500 border-border-1 hover:border-rose-200'
+              )}
+            >
+              Meu grupo
+            </button>
+          </div>
+        </div>
+
+        {!feedSettings?.companyFeedEnabled && (
+          <p className="text-[11px] text-uni-text-400 mb-3">Visao de empresa inteira desativada pelo RH/Admin.</p>
+        )}
+
+        {feedLoading ? (
+          <div className="space-y-3">
+            <div className="h-14 rounded-xl bg-cream-100 animate-pulse" />
+            <div className="h-14 rounded-xl bg-cream-100 animate-pulse" />
+            <div className="h-14 rounded-xl bg-cream-100 animate-pulse" />
+          </div>
+        ) : (socialFeed as FeedItem[]).length === 0 ? (
+          <div className="text-center py-8 bg-cream-50 border border-dashed border-border-1 rounded-xl">
+            <p className="text-sm font-bold text-uni-text-700">Ainda sem atividades nesse feed</p>
+            <p className="text-xs text-uni-text-400 mt-1">Quando alguem concluir missoes e desbloquear badges, aparece aqui.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {(socialFeed as FeedItem[]).slice(0, 8).map((item) => (
+              <div
+                key={item.id}
+                className={cn(
+                  'flex items-center gap-3 p-3 rounded-xl border',
+                  item.isSelf ? 'bg-rose-50 border-rose-100' : 'bg-cream-50 border-border-1'
+                )}
+              >
+                <div className="w-9 h-9 rounded-lg bg-white border border-border-1 flex items-center justify-center text-base flex-shrink-0">
+                  {item.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-uni-text-700">
+                    <strong>{item.isSelf ? 'Voce' : item.userName}</strong> {item.message}
+                  </p>
+                  <p className="text-[11px] text-uni-text-400 mt-0.5">{formatFeedDate(item.createdAt)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <JourneyMap />
 
       {/* ── Engagement & Badges ── */}

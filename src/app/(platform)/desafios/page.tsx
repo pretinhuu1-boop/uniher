@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useCollaboratorChallenges, useCollaboratorHome } from '@/hooks/useCollaborator';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
@@ -18,12 +19,14 @@ const TABS: { key: TabKey; label: string }[] = [
 const CATEGORIES = ['Hábitos', 'Saúde Mental', 'Prevenção', 'Sono', 'Nutrição'];
 
 export default function DesafiosPage() {
+  const { user } = useAuth();
   const { challenges, isLoading, mutate: mutateChallenges } = useCollaboratorChallenges();
   const { mutate: mutateHome } = useCollaboratorHome();
   const [activeTab, setActiveTab] = useState<TabKey>('active');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const canCreateChallenge = user?.role === 'rh' || user?.role === 'admin';
 
   // Form State para Novo Desafio (RH ou Auto-desafio)
   const [form, setForm] = useState({ title: '', desc: '', cat: CATEGORIES[0], total: 5, pts: 100 });
@@ -51,6 +54,7 @@ export default function DesafiosPage() {
   };
 
   const handleCreate = async () => {
+    if (!canCreateChallenge) return;
     if (!form.title) return;
     try {
       await fetch('/api/collaborator/challenges', {
@@ -81,13 +85,15 @@ export default function DesafiosPage() {
           <h1 className="text-3xl font-display font-bold text-uni-text-900">Meus Desafios</h1>
           <p className="text-uni-text-500 mt-1">Pequenos passos diários para grandes conquistas em saúde.</p>
         </div>
-        <Button 
-          variant="outline" 
-          className="rounded-2xl border-rose-200 text-rose-600 hover:bg-rose-50"
-          onClick={() => setIsModalOpen(true)}
-        >
-          + Novo Desafio
-        </Button>
+        {canCreateChallenge && (
+          <Button
+            variant="outline"
+            className="rounded-2xl border-rose-200 text-rose-600 hover:bg-rose-50"
+            onClick={() => setIsModalOpen(true)}
+          >
+            + Novo Desafio
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -177,7 +183,7 @@ export default function DesafiosPage() {
       </div>
 
       {/* Creation Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Novo Desafio">
+      <Modal isOpen={isModalOpen && canCreateChallenge} onClose={() => setIsModalOpen(false)} title="Novo Desafio">
         <div className="space-y-5">
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Título</label>

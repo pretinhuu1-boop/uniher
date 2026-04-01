@@ -68,7 +68,9 @@ export async function dailyCheckIn(userId: string): Promise<{
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
     // Already checked in today?
-    const lastActive = user.last_active ? user.last_active.split('T')[0] : null;
+    // Use substring(0, 10) to handle both ISO format ("2026-04-01T...") and
+    // SQLite datetime('now') format ("2026-04-01 ...") where split('T') would fail.
+    const lastActive = user.last_active ? user.last_active.substring(0, 10) : null;
     if (lastActive === today) return { alreadyDone: true };
 
     // Streak logic

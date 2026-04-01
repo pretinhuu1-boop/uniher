@@ -3,6 +3,7 @@
  * Deve ser chamado periodicamente (ex: 1x ao dia via cron ou no startup).
  */
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import { isPushEnabled, sendPushNotification } from '@/lib/push';
 import { nanoid } from 'nanoid';
 
 interface PendingEvent {
@@ -12,7 +13,55 @@ interface PendingEvent {
   title: string;
   type: string;
   date: string;
+  time: string | null;
   user_name: string;
+}
+
+interface PushSubscriptionRow {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
+async function sendReminderPush(userId: string, title: string, body: string, url = '/agenda') {
+  if (!isPushEnabled()) return;
+
+  const db = getReadDb();
+  const prefs = db.prepare(`
+    SELECT browser_enabled
+    FROM notification_preferences
+    WHERE user_id = ?
+  `).get(userId) as { browser_enabled?: number } | undefined;
+
+  if (!prefs || prefs.browser_enabled !== 1) return;
+
+  const subscriptions = db.prepare(`
+    SELECT endpoint, p256dh, auth
+    FROM push_subscriptions
+    WHERE user_id = ?
+  `).all(userId) as PushSubscriptionRow[];
+
+  if (!subscriptions.length) return;
+
+  await Promise.all(
+    subscriptions.map((subscription) =>
+      sendPushNotification(
+        {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.p256dh,
+            auth: subscription.auth,
+          },
+        },
+        {
+          title,
+          body,
+          url,
+          icon: '/logo-uniher.png',
+        }
+      ).catch(() => false)
+    )
+  );
 }
 
 /**
@@ -22,22 +71,28 @@ export async function sendUpcomingReminders(): Promise<number> {
   const db = getReadDb();
   let sent = 0;
 
-  // Find events in next 7 days that haven't been reminded
+  // Find events due in the next 30 minutes that haven't been reminded yet.
+  // If no specific time was set, assume 09:00 on the selected date.
   const events = db.prepare(`
-    SELECT he.id, he.user_id, he.company_id, he.title, he.type, he.date,
+    SELECT he.id, he.user_id, he.company_id, he.title, he.type, he.date, he.time,
            u.name as user_name
     FROM health_events he
     JOIN users u ON u.id = he.user_id
     WHERE he.status = 'pending'
       AND he.deleted_at IS NULL
       AND he.reminder_sent = 0
-      AND he.date BETWEEN date('now') AND date('now', '+7 days')
-    ORDER BY he.date ASC
+      AND datetime(
+        he.date || ' ' || COALESCE(NULLIF(he.time, ''), '09:00')
+      ) BETWEEN datetime('now') AND datetime('now', '+30 minutes')
+    ORDER BY he.date ASC, he.time ASC
   `).all() as PendingEvent[];
 
   for (const event of events) {
-    const daysUntil = Math.ceil((new Date(event.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const scheduledAt = new Date(`${event.date}T${event.time || '09:00'}:00`);
+    const hoursUntil = Math.max(0, Math.round((scheduledAt.getTime() - Date.now()) / (1000 * 60 * 60)));
+    const daysUntil = Math.max(0, Math.ceil((new Date(event.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
     const typeLabel = event.type === 'exame' ? 'Exame' : event.type === 'consulta' ? 'Consulta' : 'Lembrete';
+    const whenLabel = event.time ? `${event.date} às ${event.time}` : `${event.date} pela manhã`;
 
     // Notify the collaborator
     const wq = getWriteQueue();
@@ -47,13 +102,18 @@ export async function sendUpcomingReminders(): Promise<number> {
         VALUES (?, ?, 'reminder', ?, ?)
       `).run(
         nanoid(), event.user_id,
-        `${typeLabel} em ${daysUntil} dia${daysUntil > 1 ? 's' : ''}`,
-        `${event.title} - ${event.date}`
+        `${typeLabel} de hoje`,
+        `${event.title} - ${whenLabel}`
       );
 
       // Mark as reminded
       db.prepare('UPDATE health_events SET reminder_sent = 1 WHERE id = ?').run(event.id);
     });
+    await sendReminderPush(
+      event.user_id,
+      `${typeLabel} chegando`,
+      `${event.title} está marcado para ${whenLabel}. Toque para abrir sua agenda.`
+    );
     sent++;
 
     // Notify managers based on their preferences
@@ -78,9 +138,14 @@ export async function sendUpcomingReminders(): Promise<number> {
             `).run(
               nanoid(), mgr.id,
               `${typeLabel} de colaboradora em ${daysUntil} dia${daysUntil > 1 ? 's' : ''}`,
-              `${event.user_name}: ${event.title} - ${event.date}`
+              `${event.user_name}: ${event.title} - ${whenLabel}`
             );
           });
+          await sendReminderPush(
+            mgr.id,
+            `${typeLabel} da equipe próximo`,
+            `${event.user_name} tem ${event.title} marcado para ${whenLabel}.`
+          );
           sent++;
         }
       }

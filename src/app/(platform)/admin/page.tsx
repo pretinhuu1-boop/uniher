@@ -1983,6 +1983,8 @@ interface SystemSettings {
   accent_color?: string;
   support_email?: string;
   support_phone?: string;
+  auto_backup_enabled?: '0' | '1';
+  auto_backup_hour?: string;
 }
 
 function BrandingEditor() {
@@ -1992,6 +1994,8 @@ function BrandingEditor() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [masterPassword, setMasterPassword] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   // Sync remote -> form once loaded
   useEffect(() => {
@@ -2004,19 +2008,45 @@ function BrandingEditor() {
   function set(k: keyof SystemSettings, v: string) {
     setForm(prev => ({ ...prev, [k]: v }));
     setSaved(false);
+    setSaveError('');
   }
 
   async function save() {
     setSaving(true);
+    setSaveError('');
+    const rawHour = Number.parseInt(form.auto_backup_hour ?? '2', 10);
+    const normalizedHour = Number.isInteger(rawHour) ? Math.min(23, Math.max(0, rawHour)) : 2;
+    const payload = {
+      ...form,
+      auto_backup_enabled: form.auto_backup_enabled === '0' ? '0' : '1',
+      auto_backup_hour: String(normalizedHour),
+    };
+    const currentEnabled = data?.settings?.auto_backup_enabled === '0' ? '0' : '1';
+    const isChangingBackupEnabled = payload.auto_backup_enabled !== currentEnabled;
+
+    if (isChangingBackupEnabled && !masterPassword.trim()) {
+      setSaveError('Para ativar ou desativar o backup automático, informe a senha do master.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...payload,
+          ...(isChangingBackupEnabled ? { master_password: masterPassword } : {}),
+        }),
       });
       if (res.ok) {
         await mutate();
+        setForm(prev => ({ ...prev, auto_backup_hour: String(normalizedHour) }));
+        setMasterPassword('');
         setSaved(true);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setSaveError(d?.error || 'Não foi possível salvar as configurações.');
       }
     } finally {
       setSaving(false);
@@ -2025,6 +2055,9 @@ function BrandingEditor() {
 
   const inputCls = 'w-full border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 bg-white';
   const labelCls = 'text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block';
+  const currentEnabled = data?.settings?.auto_backup_enabled === '0' ? '0' : '1';
+  const selectedEnabled = form.auto_backup_enabled === '0' ? '0' : '1';
+  const requiresMasterPassword = selectedEnabled !== currentEnabled;
 
   return (
     <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
@@ -2093,6 +2126,49 @@ function BrandingEditor() {
           </div>
         </div>
 
+        <div className="rounded-xl border border-border-1 bg-cream-50/40 p-4">
+          <p className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-3">Backup Automatico Global</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Status do Backup Diario</label>
+              <select
+                className={inputCls}
+                value={form.auto_backup_enabled ?? '1'}
+                onChange={e => set('auto_backup_enabled', e.target.value as '0' | '1')}
+              >
+                <option value="1">Ativo</option>
+                <option value="0">Desativado</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Horario (0 a 23)</label>
+              <input
+                className={inputCls}
+                type="number"
+                min={0}
+                max={23}
+                value={form.auto_backup_hour ?? '2'}
+                onChange={e => set('auto_backup_hour', e.target.value)}
+                placeholder="2"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className={labelCls}>Senha do Master (obrigatória para mudar ativo/desativado)</label>
+            <input
+              className={inputCls}
+              type="password"
+              value={masterPassword}
+              onChange={e => setMasterPassword(e.target.value)}
+              placeholder="Digite sua senha atual"
+              disabled={!requiresMasterPassword}
+            />
+          </div>
+          <p className="text-xs text-uni-text-500 mt-3">
+            Configuracao global do sistema. Vale para todas as empresas.
+          </p>
+        </div>
+
         <div className="flex items-center gap-3 pt-2">
           <button
             onClick={save}
@@ -2103,6 +2179,7 @@ function BrandingEditor() {
             {saving ? 'Salvando...' : 'Salvar Identidade Visual'}
           </button>
           {saved && <span className="text-sm text-emerald-600 font-medium">✓ Salvo com sucesso</span>}
+          {saveError && <span className="text-sm text-red-600 font-medium">{saveError}</span>}
         </div>
       </div>
     </div>

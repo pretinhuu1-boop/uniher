@@ -6,6 +6,7 @@ import { createChallengeSchema, updateProgressSchema } from '@/lib/validation/sc
 import * as collabService from '@/services/collaborator.service';
 import * as activityService from '@/services/activity.service';
 import * as challengeRepo from '@/repositories/challenge.repository';
+import { getReadDb } from '@/lib/db';
 
 // GET /api/collaborator/challenges - listar desafios
 export const GET = withAuth(async (_req, { auth }) => {
@@ -22,6 +23,11 @@ export const GET = withAuth(async (_req, { auth }) => {
 export const POST = withAuth(async (req, { auth }) => {
   try {
     await initDb();
+    const db = getReadDb();
+    const user = db.prepare('SELECT role FROM users WHERE id = ?').get(auth.userId) as { role?: string } | undefined;
+    if (!user || (user.role !== 'rh' && user.role !== 'admin')) {
+      return NextResponse.json({ error: 'Apenas RH/Admin podem criar desafios.' }, { status: 403 });
+    }
     const body = await req.json();
     const input = createChallengeSchema.parse(body);
 

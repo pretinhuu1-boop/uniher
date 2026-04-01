@@ -32,6 +32,11 @@ export const GET = withAuth(async (_req: NextRequest, context) => {
     missions_active: number;
   };
 
+  const companyFeedSetting = db.prepare(
+    'SELECT setting_value FROM company_settings WHERE company_id = ? AND setting_key = ? LIMIT 1'
+  ).get(user.company_id, 'feed_company_enabled') as { setting_value?: string } | undefined;
+  const feedCompanyEnabled = companyFeedSetting ? companyFeedSetting.setting_value === '1' : true;
+
   return NextResponse.json({
     company: {
       ...company,
@@ -39,6 +44,7 @@ export const GET = withAuth(async (_req: NextRequest, context) => {
       department_count: statsRow.department_count,
       total_points: statsRow.total_points,
       missions_active: statsRow.missions_active,
+      feed_company_enabled: feedCompanyEnabled,
     },
   });
 });
@@ -53,6 +59,7 @@ const UpdateSchema = z.object({
   contactName: z.string().max(100).optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().max(30).optional(),
+  feedCompanyEnabled: z.boolean().optional(),
 });
 
 export const PATCH = withAuth(async (req: NextRequest, context) => {
@@ -83,6 +90,16 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
     contactEmail: parsed.data.contactEmail,
     contactPhone: parsed.data.contactPhone,
   });
+
+  if (parsed.data.feedCompanyEnabled !== undefined) {
+    const db = getReadDb();
+    db.prepare(`
+      INSERT INTO company_settings (id, company_id, setting_key, setting_value, updated_at)
+      VALUES (lower(hex(randomblob(16))), ?, 'feed_company_enabled', ?, datetime('now'))
+      ON CONFLICT(company_id, setting_key)
+      DO UPDATE SET setting_value = excluded.setting_value, updated_at = datetime('now')
+    `).run(user.company_id, parsed.data.feedCompanyEnabled ? '1' : '0');
+  }
 
   return NextResponse.json({ company: updated });
 });

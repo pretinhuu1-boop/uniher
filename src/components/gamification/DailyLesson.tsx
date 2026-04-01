@@ -74,6 +74,7 @@ interface Lesson {
   description?: string;
   duration_seconds?: number;
   completed?: boolean;
+  user_completed?: boolean;
 }
 
 interface DailyLessonProps {
@@ -86,7 +87,12 @@ interface QuizContent {
   questions: { question: string; options: string[]; correct: number; explanation: string }[];
 }
 interface PilulaContent { tip: string; }
-interface ReflexaoContent { reflection: string; }
+interface ReflexaoContent {
+  reflection: string;
+  context?: string;
+  options?: string[];
+  action_label?: string;
+}
 interface LacunaContent {
   sentence: string; // e.g. "Beber ___ por dia ajuda o metabolismo."
   options: string[];
@@ -126,6 +132,123 @@ interface DesafioDiaContent {
   tip?: string;
 }
 
+function extractLessonTopicTitle(title: string): string {
+  const [, ...rest] = title.split(':');
+  return (rest.join(':').trim() || title).trim();
+}
+
+function firstSentenceText(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback;
+  const cleaned = value.replace(/\s+/g, ' ').trim();
+  if (!cleaned) return fallback;
+  const sentence = cleaned.split('.').map((part) => part.trim()).find(Boolean);
+  return sentence || fallback;
+}
+
+function normalizePairText(value: string): string {
+  return value
+    .replace(/^Opção:\s*/i, '')
+    .replace(/^Alternativa:\s*/i, '')
+    .replace(/^Relacionado a:\s*/i, '')
+    .replace(/^Conceito de saúde feminina:\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildReadablePairRight(left: string, right: string, lessonTitle: string): string {
+  const cleanedLeft = normalizePairText(left);
+  const cleanedRight = normalizePairText(right);
+
+  if (!cleanedRight || cleanedRight.toLowerCase() === cleanedLeft.toLowerCase()) {
+    if (/desidrata/i.test(lessonTitle)) return `Pode estar ligado à desidratação.`;
+    if (/sono/i.test(lessonTitle)) return `Pode influenciar sua qualidade de sono.`;
+    if (/estresse|mental/i.test(lessonTitle)) return `Pode impactar seu bem-estar emocional.`;
+    return `Está relacionado ao tema da lição.`;
+  }
+
+  if (cleanedRight.toLowerCase().includes(cleanedLeft.toLowerCase())) {
+    return cleanedRight;
+  }
+
+  return cleanedRight;
+}
+
+function buildCanonicalClientPairs(lesson: Lesson, parsed: Record<string, unknown>) {
+  const topicTitle = extractLessonTopicTitle(lesson.title);
+  const summary = firstSentenceText(parsed.explanation, `Entenda melhor ${topicTitle.toLowerCase()}.`);
+  const questionText = typeof parsed.question === 'string' && parsed.question.trim()
+    ? parsed.question.trim()
+    : `Qual e o principal ponto sobre ${topicTitle.toLowerCase()}?`;
+  const bestAnswer =
+    Array.isArray(parsed.options) && typeof parsed.correct === 'number' && typeof parsed.options[parsed.correct] === 'string'
+      ? String(parsed.options[parsed.correct]).trim()
+      : typeof parsed.challenge === 'string' && parsed.challenge.trim()
+      ? parsed.challenge.trim()
+      : `Resposta correta sobre ${topicTitle.toLowerCase()}.`;
+  const mythText =
+    typeof parsed.v === 'string' && parsed.v.trim()
+      ? parsed.v.trim()
+      : `Afirmacao comum sobre ${topicTitle.toLowerCase()}.`;
+  const verdictText =
+    typeof parsed.vb === 'boolean'
+      ? (parsed.vb ? 'Verdadeiro' : 'Falso')
+      : 'Classifique como verdadeiro ou falso.';
+  const reflectionPrompt =
+    typeof parsed.reflection === 'string' && parsed.reflection.trim()
+      ? parsed.reflection.trim()
+      : typeof parsed.r === 'string' && parsed.r.trim()
+      ? parsed.r.trim()
+      : `Pensando na sua rotina, qual cuidado combina melhor com ${topicTitle.toLowerCase()}?`;
+  const practicalAction =
+    typeof parsed.challenge === 'string' && parsed.challenge.trim()
+      ? parsed.challenge.trim()
+      : typeof parsed.tip === 'string' && parsed.tip.trim()
+      ? parsed.tip.trim()
+      : 'Leve esse aprendizado para uma acao simples no seu dia.';
+
+  return [
+    { left: questionText, right: bestAnswer },
+    { left: `Verdadeiro ou falso: ${mythText}`, right: verdictText },
+    { left: `O que profissionais de saude explicam sobre ${topicTitle.toLowerCase()}?`, right: summary },
+    { left: reflectionPrompt, right: practicalAction },
+  ];
+}
+
+function buildReflectionChoices(topicTitle: string, challenge?: unknown): string[] {
+  const topic = topicTitle.toLowerCase();
+  const action =
+    typeof challenge === 'string' && challenge.trim()
+      ? challenge.trim()
+      : `Quero testar um cuidado simples com ${topic}.`;
+
+  return [
+    'Isso já faz sentido para mim hoje.',
+    'Quero observar melhor esse tema na minha rotina.',
+    action,
+    'Se isso continuar me incomodando, vou buscar orientação profissional.',
+  ];
+}
+
+function createMixedOrder(length: number): number[] {
+  if (length <= 1) return Array.from({ length }, (_, idx) => idx);
+  if (length === 2) return [1, 0];
+
+  const base = Array.from({ length }, (_, idx) => idx);
+
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const shuffled = [...base];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const isDerangement = shuffled.every((value, idx) => value !== idx);
+    if (isDerangement) return shuffled;
+  }
+
+  return base.map((_, idx) => (idx + 1) % length);
+}
+
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 function parseContent(lesson: Lesson): Record<string, unknown> {
@@ -135,12 +258,121 @@ function parseContent(lesson: Lesson): Record<string, unknown> {
     if (typeof raw === 'string') parsed = JSON.parse(raw);
     else if (raw && typeof raw === 'object') parsed = raw as Record<string, unknown>;
 
+    // Backward compatibility: old reflection payloads used "prompt".
+    if (lesson.type === 'reflexao' && typeof parsed.prompt === 'string' && !parsed.reflection) {
+      parsed.reflection = parsed.prompt;
+    }
+    if (lesson.type === 'reflexao') {
+      const topicTitle = extractLessonTopicTitle(lesson.title);
+      const reflection =
+        typeof parsed.reflection === 'string'
+          ? parsed.reflection.trim()
+          : '';
+      const invalid = !reflection || reflection.length < 8 || reflection === '///' || reflection === '...' || reflection === '--';
+      if (invalid) {
+        parsed.reflection = 'Pense em um cuidado simples que voce pode praticar hoje por voce.';
+      }
+      if (!Array.isArray(parsed.options) || parsed.options.length < 2) {
+        parsed.options = buildReflectionChoices(
+          topicTitle,
+          parsed.challenge ?? parsed.tip ?? parsed.d
+        );
+      }
+      if (typeof parsed.action_label !== 'string' || !parsed.action_label.trim()) {
+        parsed.action_label = 'Registrar minha escolha';
+      }
+    }
+
+    if (
+      lesson.type === 'quiz' &&
+      typeof parsed.question === 'string' &&
+      Array.isArray(parsed.options) &&
+      typeof parsed.correct === 'number' &&
+      !Array.isArray(parsed.questions)
+    ) {
+      parsed.questions = [{
+        question: parsed.question,
+        options: parsed.options,
+        correct: parsed.correct,
+        explanation: typeof parsed.explanation === 'string'
+          ? parsed.explanation
+          : firstSentenceText(parsed.context, `Entenda melhor ${extractLessonTopicTitle(lesson.title).toLowerCase()}.`),
+      }];
+    }
+
     // Normalize imagem: seed uses { images: [{label, value, correct: bool}] }
     // Component expects { options: [{emoji, label}], correct: number }
     if (lesson.type === 'imagem' && Array.isArray(parsed.images) && !parsed.options) {
       const images = parsed.images as { label: string; value?: string; emoji?: string; correct: boolean }[];
       parsed.options = images.map(img => ({ emoji: img.emoji || '🍽️', label: img.label + (img.value ? `\n${img.value}` : '') }));
       parsed.correct = images.findIndex(img => img.correct);
+    }
+
+    // Normalize parear: supports legacy {term, definition} and fallback malformed entries.
+    if (lesson.type === 'parear' && Array.isArray(parsed.pairs)) {
+      const rawPairs = parsed.pairs as Array<Record<string, unknown>>;
+      parsed.pairs = rawPairs.map((item, idx) => {
+        const left =
+          typeof item.left === 'string'
+            ? item.left
+            : typeof item.term === 'string'
+            ? item.term
+            : `Item ${idx + 1}`;
+        const right =
+          typeof item.right === 'string'
+            ? item.right
+            : typeof item.definition === 'string'
+            ? item.definition
+            : `Definição ${idx + 1}`;
+        const cleanLeft = normalizePairText(left) || `Item ${idx + 1}`;
+        const cleanRight = buildReadablePairRight(cleanLeft, right, lesson.title || '');
+        return { left: cleanLeft, right: cleanRight };
+      });
+    }
+
+    if (lesson.type === 'parear') {
+      parsed.pairs = buildCanonicalClientPairs(lesson, parsed);
+    }
+
+    if (lesson.type === 'ordenar' && Array.isArray(parsed.steps) && Array.isArray(parsed.correctOrder)) {
+      parsed.items = parsed.steps;
+      parsed.correct_order = parsed.correctOrder;
+      parsed.explanation = typeof parsed.explanation === 'string'
+        ? parsed.explanation
+        : 'Organize os passos do cuidado do mais imediato ao mais continuo.';
+    }
+
+    if (lesson.type === 'historia' && !Array.isArray(parsed.choices) && Array.isArray(parsed.options) && typeof parsed.correct === 'number') {
+      const explanation = firstSentenceText(parsed.explanation, 'Escolha a resposta mais alinhada com a licao.');
+      parsed.choices = (parsed.options as string[]).map((text, idx) => ({
+        text,
+        correct: idx === parsed.correct,
+        feedback: idx === parsed.correct
+          ? `${explanation} Essa e a resposta mais alinhada com a licao.`
+          : `${explanation} Essa opcao parece possivel, mas nao e a melhor para esta situacao.`,
+      }));
+    }
+
+    if (lesson.type === 'flashcard' && Array.isArray(parsed.cards) && !parsed.front && !parsed.back) {
+      const firstCard = (parsed.cards as Array<Record<string, unknown>>)[0] ?? {};
+      parsed.front = typeof firstCard.front === 'string'
+        ? firstCard.front
+        : `O que observar sobre ${extractLessonTopicTitle(lesson.title)}?`;
+      parsed.back = typeof firstCard.back === 'string'
+        ? firstCard.back
+        : firstSentenceText(parsed.explanation, 'Aplique esse aprendizado de forma simples no seu dia.');
+    }
+
+    if (lesson.type === 'desafio_dia') {
+      parsed.challenge = typeof parsed.challenge === 'string'
+        ? parsed.challenge
+        : `Escolha uma acao simples sobre ${extractLessonTopicTitle(lesson.title).toLowerCase()} para praticar hoje.`;
+      parsed.motivation = typeof parsed.motivation === 'string'
+        ? parsed.motivation
+        : firstSentenceText(parsed.reflection ?? parsed.context, 'Um pequeno passo hoje ajuda a consolidar esse cuidado.');
+      parsed.tip = typeof parsed.tip === 'string'
+        ? parsed.tip
+        : firstSentenceText(parsed.context, 'Comece pelo passo mais simples e sustentavel para voce.');
     }
 
     return parsed;
@@ -217,12 +449,57 @@ function PilulaActivity({
 function ReflexaoActivity({
   content, color, completing, onComplete,
 }: { content: ReflexaoContent; color: string; completing: boolean; onComplete: () => void }) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const options = Array.isArray(content.options) ? content.options.filter((item): item is string => typeof item === 'string' && item.trim().length > 0) : [];
+
   return (
     <div>
-      <p className="text-sm text-uni-text-700 leading-relaxed italic mb-3">"{content.reflection}"</p>
-      <p className="text-xs text-uni-text-400 mb-6">Reserve 30 segundos para refletir sobre isso. 🧘</p>
-      <ActionButton onClick={onComplete} disabled={completing} color={color}>
-        {completing ? 'Salvando…' : 'Refleti ✓'}
+      <div
+        className="rounded-2xl p-4 mb-4 text-sm leading-relaxed text-uni-text-700"
+        style={{ background: `${color}10`, borderLeft: `3px solid ${color}` }}
+      >
+        <p className="font-semibold text-uni-text-900 mb-2 text-xs uppercase tracking-wide" style={{ color }}>
+          Reflexão guiada
+        </p>
+        <p className="italic">"{content.reflection}"</p>
+        {content.context && (
+          <p className="mt-3 text-xs text-uni-text-500 leading-6">
+            {content.context}
+          </p>
+        )}
+      </div>
+
+      <p className="text-xs font-bold text-uni-text-500 mb-2">Qual opção combina mais com você hoje?</p>
+      <div className="space-y-2 mb-5">
+        {options.map((option, idx) => {
+          const isSelected = selected === idx;
+          return (
+            <button
+              key={idx}
+              onClick={() => setSelected(idx)}
+              className="w-full text-left px-4 py-3 rounded-xl border text-sm transition-all active:scale-[0.99]"
+              style={{
+                borderColor: isSelected ? color : '#e5e7eb',
+                background: isSelected ? `${color}12` : '#fff',
+                color: '#1f2937',
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold"
+                  style={{ background: isSelected ? color : '#f3f4f6', color: isSelected ? '#fff' : '#6b7280' }}
+                >
+                  {idx + 1}
+                </span>
+                <span className="flex-1 leading-relaxed">{option}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <ActionButton onClick={onComplete} disabled={completing || selected === null} color={color}>
+        {completing ? 'Salvando…' : (content.action_label || 'Registrar minha escolha')}
       </ActionButton>
     </div>
   );
@@ -583,12 +860,7 @@ function ParearActivity({
 
   // Shuffle right column indices for display
   const [rightOrder] = useState<number[]>(() => {
-    const arr = pairs.map((_, i) => i);
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
+    return createMixedOrder(pairs.length);
   });
 
   function handleLeftClick(leftIdx: number) {
@@ -606,6 +878,12 @@ function ParearActivity({
     setChecked(true);
   }
 
+  function clearMatches() {
+    if (checked) return;
+    setMatches({});
+    setSelectedLeft(null);
+  }
+
   const correctCount = Object.entries(matches).filter(
     ([leftIdx, rightIdx]) => parseInt(leftIdx) === rightIdx
   ).length;
@@ -614,6 +892,7 @@ function ParearActivity({
 
   // Color palette for matched pairs
   const matchColors = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#F43F5E'];
+  const pairCount = pairs.length;
 
   function getMatchColor(leftIdx: number) {
     const keys = Object.keys(matches).map(Number);
@@ -621,90 +900,115 @@ function ParearActivity({
     return pos >= 0 ? matchColors[pos % matchColors.length] : null;
   }
 
+  function renderLeftTile(pair: { left: string }, leftIdx: number) {
+    const matchedColor = getMatchColor(leftIdx);
+    const isSelected = selectedLeft === leftIdx;
+    const isCorrectMatch = checked && matches[leftIdx] === leftIdx;
+    const isWrongMatch = checked && matches[leftIdx] !== undefined && matches[leftIdx] !== leftIdx;
+    const borderColor = isSelected
+      ? color
+      : matchedColor
+      ? matchedColor
+      : checked
+      ? (isCorrectMatch ? '#86efac' : isWrongMatch ? '#fda4af' : '#e5e7eb')
+      : '#e5e7eb';
+    const background = isSelected
+      ? `${color}10`
+      : matchedColor
+      ? `${matchedColor}15`
+      : checked
+      ? (isCorrectMatch ? '#f0fdf4' : isWrongMatch ? '#fff1f2' : 'white')
+      : 'white';
+    return (
+      <button
+        key={`left-${leftIdx}`}
+        onClick={() => handleLeftClick(leftIdx)}
+        disabled={checked}
+        className="w-full text-left px-3 py-3.5 rounded-2xl border-2 text-sm font-normal transition-all active:scale-95"
+        style={{ borderColor, background, color: '#1f2937' }}
+      >
+        <div className="flex items-start gap-3">
+          <span
+            className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold"
+            style={{ background: `${color}18`, color }}
+          >
+            {leftIdx + 1}
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-uni-text-900 leading-relaxed">{pair.left}</p>
+            <p className="text-[11px] text-uni-text-500 mt-1">Toque para escolher a resposta correspondente.</p>
+          </div>
+        </div>
+      </button>
+    );
+  }
+
+  function renderRightTile(rightIdx: number) {
+    const pair = pairs[rightIdx];
+    const matchedByLeft = Object.keys(matches).find(k => matches[parseInt(k)] === rightIdx);
+    const matchedColor = matchedByLeft !== undefined ? getMatchColor(parseInt(matchedByLeft)) : null;
+    const isCorrectHere = checked && matchedByLeft !== undefined && parseInt(matchedByLeft) === rightIdx;
+    const borderColor = matchedColor
+      ? matchedColor
+      : checked
+      ? (isCorrectHere ? '#86efac' : '#fda4af')
+      : '#e5e7eb';
+    const background = matchedColor
+      ? `${matchedColor}10`
+      : checked
+      ? (isCorrectHere ? '#f0fdf4' : '#fff1f2')
+      : 'white';
+    return (
+      <button
+        key={`right-${rightIdx}`}
+        onClick={() => handleRightClick(rightIdx)}
+        disabled={checked || (Object.values(matches).includes(rightIdx) && selectedLeft === null)}
+        className="w-full text-left px-3 py-4 rounded-2xl border-2 text-sm font-normal transition-all active:scale-95 flex flex-col gap-2"
+        style={{ borderColor, background, color: '#1f2937' }}
+      >
+        <p className="text-sm leading-relaxed">{pair.right}</p>
+        <p className="text-[11px] text-uni-text-400">
+          {matchedByLeft !== undefined
+            ? `Ligado a “${pairs[parseInt(matchedByLeft)]?.left}”`
+            : 'Toque para conectar com o card da esquerda.'}
+        </p>
+      </button>
+    );
+  }
+
   return (
     <div>
-      <p className="text-xs text-uni-text-400 mb-3">Clique em um item da esquerda, depois conecte com o da direita:</p>
+      <div className="mb-4 rounded-2xl border border-border-1 bg-white/90 p-4 space-y-2">
+        <p className="text-[11px] font-black uppercase tracking-[0.3em] text-uni-text-400">Parear</p>
+        <p className="text-sm text-uni-text-700 leading-relaxed">
+          A esquerda voce vera uma pergunta, uma afirmacao clinica, um ponto-chave e uma reflexao pratica. Conecte cada uma com a resposta certa na direita.
+        </p>
+        <p className="text-[11px] text-uni-text-400">
+          {Object.keys(matches).length}/{pairCount} conectados
+        </p>
+      </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {/* Left column */}
-        <div className="space-y-2">
-          {pairs.map((pair, leftIdx) => {
-            const matchedColor = getMatchColor(leftIdx);
-            const isSelected = selectedLeft === leftIdx;
-            const isCorrectMatch = checked && matches[leftIdx] === leftIdx;
-            const isWrongMatch = checked && matches[leftIdx] !== undefined && matches[leftIdx] !== leftIdx;
-
-            return (
-              <button
-                key={leftIdx}
-                onClick={() => handleLeftClick(leftIdx)}
-                disabled={checked}
-                className="w-full text-left px-3 py-2.5 rounded-xl border-2 text-xs font-medium transition-all active:scale-95"
-                style={{
-                  borderColor: isSelected
-                    ? color
-                    : matchedColor
-                    ? matchedColor
-                    : checked
-                    ? (isCorrectMatch ? '#86efac' : isWrongMatch ? '#fda4af' : '#e5e7eb')
-                    : '#e5e7eb',
-                  background: isSelected
-                    ? `${color}15`
-                    : matchedColor
-                    ? `${matchedColor}15`
-                    : checked
-                    ? (isCorrectMatch ? '#f0fdf4' : isWrongMatch ? '#fff1f2' : 'white')
-                    : 'white',
-                  color: '#374151',
-                  transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-                }}
-              >
-                {pair.left}
-              </button>
-            );
-          })}
+      <div className="grid gap-4 mb-4 md:grid-cols-2">
+        <div className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-uni-text-500">Coluna esquerda</p>
+          {pairs.map((pair, idx) => renderLeftTile(pair, idx))}
         </div>
-
-        {/* Right column (shuffled) */}
-        <div className="space-y-2">
-          {rightOrder.map(rightIdx => {
-            const isMatched = Object.values(matches).includes(rightIdx);
-            const matchedByLeft = Object.keys(matches).find(k => matches[parseInt(k)] === rightIdx);
-            const matchedColor = matchedByLeft !== undefined ? getMatchColor(parseInt(matchedByLeft)) : null;
-            const isCorrectHere = checked && matches[rightIdx] === rightIdx;
-            const isWrongHere = checked && isMatched && matches[rightIdx] !== rightIdx;
-
-            return (
-              <button
-                key={rightIdx}
-                onClick={() => handleRightClick(rightIdx)}
-                disabled={checked || (isMatched && selectedLeft === null)}
-                className="w-full text-left px-3 py-2.5 rounded-xl border-2 text-xs font-medium transition-all active:scale-95"
-                style={{
-                  borderColor: matchedColor
-                    ? matchedColor
-                    : checked
-                    ? (isCorrectHere ? '#86efac' : isWrongHere ? '#fda4af' : '#e5e7eb')
-                    : selectedLeft !== null ? `${color}60` : '#e5e7eb',
-                  background: matchedColor
-                    ? `${matchedColor}15`
-                    : checked
-                    ? (isCorrectHere ? '#f0fdf4' : isWrongHere ? '#fff1f2' : 'white')
-                    : selectedLeft !== null ? `${color}08` : 'white',
-                  color: '#374151',
-                }}
-              >
-                {pairs[rightIdx].right}
-              </button>
-            );
-          })}
+        <div className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-uni-text-500">Coluna direita</p>
+          {rightOrder.map(renderRightTile)}
         </div>
+      </div>
+
+      <div className="mb-4 text-xs text-uni-text-400">
+        {!allMatched
+          ? 'Conecte os 4 pares para revisar o tema completo.'
+          : 'Tudo conectado. Agora verifique se cada ligacao realmente faz sentido.'}
       </div>
 
       {checked && (
         <>
           <div
-            className="rounded-xl p-3 text-sm mb-4 text-center font-bold"
+            className="rounded-2xl p-3 text-sm mb-4 text-center font-bold"
             style={{
               background: allCorrect ? '#f0fdf4' : '#fff1f2',
               border: `1px solid ${allCorrect ? '#86efac' : '#fda4af'}`,
@@ -724,13 +1028,22 @@ function ParearActivity({
       )}
 
       {!checked && (
-        <ActionButton
-          onClick={checkMatches}
-          disabled={!allMatched}
-          color={color}
-        >
-          Verificar pares
-        </ActionButton>
+        <div className="space-y-2">
+          <ActionButton
+            onClick={checkMatches}
+            disabled={!allMatched}
+            color={color}
+          >
+            Verificar pares
+          </ActionButton>
+          <button
+            onClick={clearMatches}
+            disabled={Object.keys(matches).length === 0}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold border border-border-1 text-uni-text-600 bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Limpar pares
+          </button>
+        </div>
       )}
     </div>
   );
@@ -1009,11 +1322,17 @@ function DesafioDiaActivity({
 export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonProps = {}) {
   const { data, mutate } = useSWR('/api/gamification/daily-lesson', fetcher, { revalidateOnFocus: false });
   const [completing, setCompleting] = useState(false);
-  const [completed, setCompleted] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [justCompleted, setJustCompleted] = useState(false);
 
   const lesson: Lesson | undefined = data?.lesson;
-  const alreadyDone: boolean = data?.completed ?? false;
+  const lessonPath: Lesson[] = data?.path ?? (lesson ? [lesson] : []);
+  const pathProgress = data?.pathProgress ?? {
+    completed: lessonPath.filter((l) => !!l.user_completed).length,
+    total: lessonPath.length,
+    remaining: lessonPath.filter((l) => !l.user_completed).length,
+  };
+  const alreadyDone: boolean = lessonPath.length > 0 && pathProgress.remaining === 0;
 
   const themeColor = lesson ? (THEME_COLORS[lesson.theme] || THEME_COLORS.geral) : THEME_COLORS.geral;
   const themeEmoji = lesson ? (THEME_EMOJIS[lesson.theme] || THEME_EMOJIS.geral) : THEME_EMOJIS.geral;
@@ -1026,17 +1345,18 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          lesson_id: lesson.id,
+          lessonId: lesson.id,
           score,
           ...(extra !== undefined ? { knew_already: extra } : {}),
         }),
       });
       const earned = lesson.xp_reward;
       setXpEarned(earned);
-      setCompleted(true);
-      mutate();
+      setJustCompleted(true);
+      await mutate();
       onCompleteProp?.(lesson.id, earned);
     } catch {}
+    setTimeout(() => setJustCompleted(false), 1400);
     setCompleting(false);
   }, [lesson, completing, mutate, onCompleteProp]);
 
@@ -1054,7 +1374,7 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
   }
 
   // ── No lesson available ──
-  if (!lesson) {
+  if (!lesson && !alreadyDone) {
     return (
       <div className="bg-white rounded-2xl border border-border-1 p-6 text-center">
         <div className="text-4xl mb-2">🎉</div>
@@ -1065,7 +1385,7 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
   }
 
   // ── Already done ──
-  if (alreadyDone || completed) {
+  if (alreadyDone) {
     return (
       <div
         className="rounded-2xl p-6 text-center"
@@ -1074,17 +1394,50 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
         <div className="text-4xl mb-2">🎉</div>
         <h3 className="font-display font-bold text-green-800">Lição Concluída!</h3>
         <p className="text-sm text-green-600 mt-1">
-          +{xpEarned || lesson.xp_reward} XP ganhos hoje
+          +{xpEarned || 0} XP ganhos hoje
         </p>
         <p className="text-xs text-green-500 mt-0.5">Volte amanhã para uma nova lição!</p>
       </div>
     );
   }
 
+  if (!lesson) return null;
+
   const parsedContent = parseContent(lesson);
 
   return (
     <div className="bg-white rounded-2xl border border-border-1 overflow-hidden">
+      {lessonPath.length > 1 && (
+        <div className="px-4 pt-4 pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wider">Trilha do dia</p>
+            <p className="text-[11px] font-bold text-uni-text-400">{pathProgress.completed}/{pathProgress.total}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {lessonPath.map((l: Lesson, idx: number) => {
+              const isCompleted = !!l.user_completed;
+              const isCurrent = lesson?.id === l.id;
+              return (
+                <div key={l.id || idx} className="flex items-center gap-2 flex-1">
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black border-2"
+                    style={{
+                      background: isCompleted ? '#ecfdf5' : isCurrent ? `${themeColor}20` : '#fff',
+                      borderColor: isCompleted ? '#86efac' : isCurrent ? themeColor : '#e5e7eb',
+                      color: isCompleted ? '#16a34a' : isCurrent ? themeColor : '#9ca3af',
+                    }}
+                  >
+                    {isCompleted ? '✓' : idx + 1}
+                  </div>
+                  {idx < lessonPath.length - 1 && (
+                    <div className="h-1 flex-1 rounded-full" style={{ background: isCompleted ? '#86efac' : '#e5e7eb' }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {/* ── Header ── */}
       <div
         className="px-4 py-3 flex items-center gap-3"
@@ -1116,6 +1469,11 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
 
       {/* ── Body ── */}
       <div className="p-4">
+        {justCompleted && (
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+            +{xpEarned} XP registrado. Carregando proxima licao...
+          </div>
+        )}
         {lesson.type === 'pilula' && (
           <PilulaActivity
             content={parsedContent as unknown as PilulaContent}

@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { randomUUID } from 'crypto';
 
 export interface TokenPayload extends JWTPayload {
   userId: string;
@@ -31,6 +32,7 @@ export async function signAccessToken(payload: {
     mustChangePassword: payload.mustChangePassword ?? false,
   })
     .setProtectedHeader({ alg: 'HS256' })
+    .setJti(randomUUID())   // Unique per issuance — prevents session fixation & token reuse
     .setIssuedAt()
     .setExpirationTime('15m')
     .sign(getSecret('JWT_SECRET'));

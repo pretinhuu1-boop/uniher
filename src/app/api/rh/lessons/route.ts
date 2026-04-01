@@ -43,6 +43,66 @@ function getCurrentDayOfWeek(): number {
   return day === 0 ? 7 : day;
 }
 
+function normalizeReflectionContent(content: Record<string, unknown>) {
+  const reflection =
+    typeof content.reflection === 'string'
+      ? content.reflection.trim()
+      : typeof content.prompt === 'string'
+        ? content.prompt.trim()
+        : '';
+
+  const invalid =
+    !reflection ||
+    reflection.length < 8 ||
+    reflection === '///' ||
+    reflection === '...' ||
+    reflection === '--';
+
+  return { reflection: invalid ? '' : reflection };
+}
+
+async function ensureWeeklyReflections(companyId: string, weekNumber: number) {
+  const db = getReadDb();
+  const writeQueue = getWriteQueue();
+  const existingRows = db.prepare(
+    `SELECT day_of_week FROM daily_lessons
+     WHERE company_id = ? AND week_number = ? AND type = 'reflexao' AND active = 1`
+  ).all(companyId, weekNumber) as { day_of_week: number }[];
+  const existingDays = new Set(existingRows.map((r) => r.day_of_week));
+
+  const defaults = [
+    'Segunda: Qual cuidado simples com sua saude voce quer priorizar hoje?',
+    'Terca: O que te ajudou a manter energia e foco nesta semana?',
+    'Quarta: Qual sinal do seu corpo voce precisa ouvir com mais atencao?',
+    'Quinta: Que pequena pausa pode melhorar seu bem-estar hoje?',
+    'Sexta: Qual conquista de saude voce reconhece nesta semana?',
+    'Sabado: O que voce pode fazer hoje para descansar melhor?',
+    'Domingo: Qual intencao de autocuidado voce leva para a proxima semana?',
+  ];
+
+  for (let day = 1; day <= 7; day++) {
+    if (existingDays.has(day)) continue;
+
+    await writeQueue.enqueue((wdb) => {
+      wdb.prepare(
+        `INSERT INTO daily_lessons
+          (id, company_id, title, description, type, theme, week_number, day_of_week,
+           order_index, xp_reward, duration_seconds, active, campaign_context, content_json)
+         VALUES (?, ?, ?, ?, 'reflexao', 'mental', ?, ?, 900, 20, 90, 1, ?, ?)`
+      ).run(
+        nanoid(),
+        companyId,
+        `Reflexao do dia ${day}`,
+        'Reflexao diaria para fortalecer autocuidado e constancia.',
+        weekNumber,
+        day,
+        'Reflexoes diarias',
+        JSON.stringify({ reflection: defaults[day - 1] })
+      );
+    });
+  }
+}
+
 // GET /api/rh/lessons
 export const GET = withRole('rh')(async (req, { auth }) => {
   try {
@@ -84,6 +144,9 @@ export const GET = withRole('rh')(async (req, { auth }) => {
       conditions.push('dl.title LIKE ?');
       params.push(`%${search}%`);
     }
+
+    const weekForProvision = week ? parseInt(week, 10) : getCurrentWeek();
+    await ensureWeeklyReflections(companyId, weekForProvision);
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -163,6 +226,17 @@ export const POST = withRole('rh')(async (req, { auth }) => {
     const id = nanoid();
     const weekNumber = data.week_number ?? getCurrentWeek();
     const dayOfWeek = data.day_of_week ?? getCurrentDayOfWeek();
+    const contentToSave =
+      data.type === 'reflexao'
+        ? normalizeReflectionContent(data.content_json)
+        : data.content_json;
+
+    if (data.type === 'reflexao' && !contentToSave.reflection) {
+      return NextResponse.json(
+        { error: 'Reflexao obrigatoria: preencha o campo reflection.' },
+        { status: 400 }
+      );
+    }
 
     const writeQueue = getWriteQueue();
 
@@ -185,7 +259,7 @@ export const POST = withRole('rh')(async (req, { auth }) => {
         data.xp_reward,
         data.duration_seconds,
         data.campaign_context ?? null,
-        JSON.stringify(data.content_json)
+        JSON.stringify(contentToSave)
       );
     });
 

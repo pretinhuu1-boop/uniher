@@ -66,8 +66,9 @@ export async function proxy(request: NextRequest) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(accessToken, secret);
 
-    // Redirect non-admin users trying to access admin routes
-    if ((payload as any).role !== 'admin' && pathname.startsWith('/admin')) {
+    // Redirect/deny non-admin users trying to access admin pages or admin APIs
+    const isAdminSurface = pathname.startsWith('/admin') || pathname.startsWith('/api/admin/');
+    if ((payload as any).role !== 'admin' && isAdminSurface) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
       }

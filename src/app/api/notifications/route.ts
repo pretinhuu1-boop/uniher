@@ -9,7 +9,11 @@ export const GET = withAuth(async (_req, { auth }) => {
   try {
     await initDb();
     const data = collabService.getCollaboratorNotifications(auth.userId);
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
   } catch (error) {
     return handleApiError(error);
   }

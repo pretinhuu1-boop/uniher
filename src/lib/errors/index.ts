@@ -67,6 +67,7 @@ export function handleApiError(error: unknown, reqId?: string): NextResponse {
       {
         status: error.statusCode,
         code: error.code || 'APP_ERROR',
+        error: error.message,   // backward-compat alias (tests use body.error)
         message: error.message,
         ...(error.details ? { details: error.details } : {}),
         requestId,

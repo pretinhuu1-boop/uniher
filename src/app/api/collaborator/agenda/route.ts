@@ -24,6 +24,7 @@ export const GET = withAuth(async (req: NextRequest, context: any) => {
 
   const url = new URL(req.url);
   const month = url.searchParams.get('month'); // YYYY-MM
+  const type = url.searchParams.get('type');
   const status = url.searchParams.get('status');
 
   let query = `
@@ -36,6 +37,11 @@ export const GET = withAuth(async (req: NextRequest, context: any) => {
   if (month) {
     query += ` AND date LIKE ?`;
     params.push(month + '%');
+  }
+
+  if (type && type !== 'all') {
+    query += ` AND type = ?`;
+    params.push(type);
   }
 
   if (status) {
@@ -79,11 +85,12 @@ export const POST = withAuth(async (req: NextRequest, context: any) => {
   // Create notification for the user
   try {
     const writeQueue2 = getWriteQueue();
+    const whenLabel = time ? `${date} às ${time}` : date;
     await writeQueue2.enqueue((db) => {
       db.prepare(`
         INSERT INTO notifications (id, user_id, type, title, message)
         VALUES (?, ?, 'system', ?, ?)
-      `).run(nanoid(), userId, `${type === 'exame' ? 'Exame' : type === 'consulta' ? 'Consulta' : 'Lembrete'} agendado`, `${title} em ${date}`);
+      `).run(nanoid(), userId, `${type === 'exame' ? 'Exame' : type === 'consulta' ? 'Consulta' : 'Lembrete'} agendado`, `${title} em ${whenLabel}`);
     });
   } catch { /* non-critical */ }
 
@@ -96,6 +103,7 @@ export const POST = withAuth(async (req: NextRequest, context: any) => {
       `).all(user.company_id, userId) as { id: string }[];
 
       const userName = (db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as any)?.name || 'Colaboradora';
+      const whenLabel = time ? `${date} às ${time}` : date;
 
       const wq = getWriteQueue();
       for (const mgr of managers) {
@@ -103,7 +111,7 @@ export const POST = withAuth(async (req: NextRequest, context: any) => {
           db.prepare(`
             INSERT INTO notifications (id, user_id, type, title, message)
             VALUES (?, ?, 'system', ?, ?)
-          `).run(nanoid(), mgr.id, `${type === 'exame' ? 'Exame' : 'Consulta'} agendada`, `${userName} agendou: ${title} em ${date}`);
+          `).run(nanoid(), mgr.id, `${type === 'exame' ? 'Exame' : 'Consulta'} agendada`, `${userName} agendou: ${title} em ${whenLabel}`);
         });
       }
     } catch { /* non-critical */ }

@@ -9,6 +9,17 @@ import type { RegisterInput, LoginInput } from '@/lib/validation/schemas';
 import { sanitizeObject } from '@/lib/security/sanitize';
 import { logAudit } from '@/lib/audit';
 
+// Pre-computed dummy hash for timing attack mitigation.
+// Generated once at server start so bcrypt always does a full cost-12 computation
+// even when the user doesn't exist, preventing email enumeration via timing.
+let _dummyHash: string | null = null;
+async function getDummyHash(): Promise<string> {
+  if (!_dummyHash) {
+    _dummyHash = await hashPassword('__timing_mitigation_dummy__never_matches__');
+  }
+  return _dummyHash;
+}
+
 interface AuthResult {
   user: userRepo.PublicUser;
   accessToken: string;
@@ -77,9 +88,9 @@ export async function login(input: LoginInput): Promise<AuthResult> {
   const user = userRepo.getUserByEmail(input.email);
 
   if (!user) {
-    // Timing attack mitigation: always hash even when user not found
-    // This ensures the response time is the same whether user exists or not
-    await verifyPassword(input.password, '$2a$12$000000000000000000000000000000000000000000000000000000');
+    // Timing attack mitigation: always run full bcrypt even when user not found
+    // Uses a lazily-computed real bcrypt hash (cost 12) so the timing is identical
+    await verifyPassword(input.password, await getDummyHash());
     logAudit({
       actorId: 'anonymous',
       actorEmail: input.email,
@@ -120,8 +131,8 @@ export async function login(input: LoginInput): Promise<AuthResult> {
     throw new UnauthorizedError('Usuário bloqueado. Entre em contato com o suporte.');
   }
 
-  // Atualizar last_active
-  await userRepo.updateUser(user.id, { lastActive: new Date().toISOString() });
+  // NOTE: last_active is NOT updated here — it is set exclusively by the daily check-in
+  // so that streak detection and "already done today" logic remain correct.
 
   const accessToken = await signAccessToken({
     userId: user.id,

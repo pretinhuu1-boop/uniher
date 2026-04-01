@@ -1,118 +1,130 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/Card';
 
 export default function WelcomeColaboradoraPage() {
   const router = useRouter();
 
   const handleStartCheckin = () => {
-    // Para demo, o papel é setado localmente
     if (typeof window !== 'undefined') {
       localStorage.setItem('uniher-role', 'colaboradora');
     }
     router.push('/welcome-colaboradora/quiz');
   };
 
-  const handleGoToLogin = () => {
-    router.push('/auth');
+  const handleGoToPanel = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('uniher-skip-quiz', '1');
+    }
+    router.push('/colaboradora');
   };
 
   return (
-    <main className="min-h-screen bg-cream-50 flex items-center justify-center p-6 relative overflow-hidden font-body">
-      {/* Visual background layers */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-rose-50/50 via-cream-50 to-gold-50/20 pointer-events-none" />
-      <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-rose-100/30 blur-3xl pointer-events-none" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cream-50 p-6 font-body">
+      <div className="pointer-events-none absolute left-0 top-0 h-full w-full bg-gradient-to-br from-rose-50/50 via-cream-50 to-gold-50/20" />
+      <div className="pointer-events-none absolute right-[-10%] top-[-20%] h-[60%] w-[60%] rounded-full bg-rose-100/30 blur-3xl" />
 
-      <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
-        {/* Brand Presence Column */}
-        <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-          <div 
-            className="w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center border border-border-2 animate-float cursor-pointer hover:scale-110 transition-transform duration-500"
-            onClick={() => router.push('/')}
-          >
-            <Image src="/logo-uniher.png" alt="UniHER" width={48} height={40} priority className="object-contain" style={{ width: 48, height: 'auto' }} />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-uni-text-900 leading-tight">
-            Bem-vinda, <br />
-            <span className="text-rose-500 italic">Colaboradora!</span>
+      <div className="relative z-10 grid w-full max-w-4xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
+        <div className="flex flex-col items-center space-y-6 text-center lg:items-start lg:text-left">
+          <span className="flex h-32 w-32 items-center justify-center rounded-full border border-border-2 bg-white p-6 shadow-xl">
+            <Image
+              src="/logo-uniher.png"
+              alt="UniHER"
+              width={96}
+              height={96}
+              priority
+              className="object-contain"
+              style={{ width: 96, height: 'auto' }}
+            />
+          </span>
+
+          <h1 className="text-4xl font-bold leading-tight text-uni-text-900 md:text-5xl">
+            Seu check-in de saude
+            <br />
+            <span className="italic text-rose-500">comeca aqui.</span>
           </h1>
-          <p className="text-lg text-uni-text-600 max-w-md">
-            Você é a protagonista da sua saúde. Já tem uma conta ou deseja fazer seu primeiro check-in de saúde?
+
+          <p className="max-w-md text-lg text-uni-text-600">
+            Voce ja entrou na sua conta. Agora responda 6 perguntas simples para a UniHER entender seu momento e montar uma jornada personalizada para voce.
           </p>
-          <div className="flex items-center gap-6 pt-4 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
+
+          <div className="flex items-center gap-6 pt-4">
             <div className="flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md mb-2 border border-border-1 text-xl">🏥</div>
-              <span className="text-[10px] font-bold uppercase text-uni-text-400 tracking-wider">Saúde</span>
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-border-1 bg-white text-sm font-bold text-uni-text-700 shadow-md">
+                S
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-uni-text-400">Saude</span>
             </div>
             <div className="flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md mb-2 border border-border-1 text-xl">🧘‍♀️</div>
-              <span className="text-[10px] font-bold uppercase text-uni-text-400 tracking-wider">Foco</span>
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-border-1 bg-white text-sm font-bold text-uni-text-700 shadow-md">
+                F
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-uni-text-400">Foco</span>
             </div>
             <div className="flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md mb-2 border border-border-1 text-xl">⚡</div>
-              <span className="text-[10px] font-bold uppercase text-uni-text-400 tracking-wider">Energia</span>
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full border border-border-1 bg-white text-sm font-bold text-uni-text-700 shadow-md">
+                E
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-uni-text-400">Energia</span>
             </div>
           </div>
         </div>
 
-        {/* Action Cards Column */}
-        <div className="space-y-6 animate-fadeUp">
-          {/* Check-in Card */}
-          <Card 
-            className="group p-8 flex flex-col items-start gap-4 cursor-pointer hover:bg-rose-50/40 transition-all duration-300 border-border-2 animate-fadeIn"
+        <div className="space-y-6">
+          <Card
+            className="group flex cursor-pointer flex-col items-start gap-4 border-border-2 p-8 transition-all duration-300 hover:bg-rose-50/40"
             onClick={handleStartCheckin}
             variant="flat"
           >
-            <div className="w-12 h-12 rounded-xl bg-uni-green text-white flex items-center justify-center text-2xl shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-              ✨
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-uni-green text-xl font-bold text-white shadow-lg transition-all duration-500 group-hover:scale-110 group-hover:rotate-6">
+              +
             </div>
             <div>
-              <h2 className="text-xl font-display font-bold text-uni-text-900 group-hover:text-rose-700 transition-colors">Iniciar Check-in de Saúde</h2>
-              <p className="text-sm text-uni-text-500 mt-1 leading-relaxed">
-                Primeira vez? Descubra seu arquétipo de saúde e receba recomendações exclusivas e personalizadas.
+              <h2 className="text-xl font-display font-bold text-uni-text-900 transition-colors group-hover:text-rose-700">
+                Comecar meu check-in
+              </h2>
+              <p className="mt-1 text-sm leading-relaxed text-uni-text-500">
+                Voce vai arrastar uma balanca simples para mostrar como esta em cada tema. Leva cerca de 2 minutos.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-sm font-bold text-rose-500 group-hover:translate-x-2 transition-transform">
-              Começar agora 
+            <div className="flex items-center gap-2 text-sm font-bold text-rose-500 transition-transform group-hover:translate-x-2">
+              Responder agora
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </div>
           </Card>
 
-          {/* Login Card */}
-          <Card 
-            className="group p-8 flex flex-col items-start gap-4 cursor-pointer hover:bg-cream-100/50 transition-all duration-300 border-border-1 animate-fadeIn"
-            onClick={handleGoToLogin}
-            style={{ animationDelay: '0.2s' }}
+          <Card
+            className="group flex cursor-pointer flex-col items-start gap-4 border-border-1 p-8 transition-all duration-300 hover:bg-cream-100/50"
+            onClick={handleGoToPanel}
           >
-            <div className="w-12 h-12 rounded-xl bg-gold-200 text-gold-700 flex items-center justify-center text-2xl shadow-md transform group-hover:scale-110 transition-all duration-500">
-              🔑
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-200 text-xl font-bold text-gold-700 shadow-md transition-all duration-500 group-hover:scale-110">
+              &gt;
             </div>
             <div>
-              <h2 className="text-xl font-display font-bold text-uni-text-900">Já tenho uma conta</h2>
-              <p className="text-sm text-uni-text-500 mt-1 leading-relaxed">
-                Entre com seu email corporativo para acessar seus desafios, pontos e histórico.
+              <h2 className="text-xl font-display font-bold text-uni-text-900">Ir para minha area</h2>
+              <p className="mt-1 text-sm leading-relaxed text-uni-text-500">
+                Se preferir, voce pode pular esta etapa agora e voltar depois para finalizar seu perfil de saude.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-sm font-bold text-uni-text-400 group-hover:text-gold-700 group-hover:translate-x-2 transition-all">
-              Acessar minha área
+            <div className="flex items-center gap-2 text-sm font-bold text-uni-text-400 transition-all group-hover:translate-x-2 group-hover:text-gold-700">
+              Abrir painel
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </div>
           </Card>
 
-          <button 
-            type="button" 
-            onClick={() => router.push('/welcome')}
-            className="text-xs text-uni-text-400 hover:text-rose-500 transition-colors flex items-center gap-1 mx-auto lg:mx-0 w-fit pl-2"
+          <button
+            type="button"
+            onClick={handleGoToPanel}
+            className="mx-auto flex w-fit items-center gap-1 pl-2 text-xs text-uni-text-400 transition-colors hover:text-rose-500 lg:mx-0"
           >
-            ← Voltar para seleção de perfil
+            Voltar para o painel
           </button>
         </div>
       </div>

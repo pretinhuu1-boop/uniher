@@ -6,11 +6,27 @@ import { nanoid } from 'nanoid';
 // In production, Nginx/Cloudflare handles volumetric rate limiting.
 // App-level limiting is a second defense — generous enough for dev/test, strict enough for direct exposure.
 const isProd = process.env.NODE_ENV === 'production';
+const isTest = process.env.PLAYWRIGHT_TEST === '1';
 
-// Progressive lockout for auth
-const authLimiter1 = new RateLimiterMemory({ points: isProd ? 5 : 50, duration: 60, keyPrefix: 'auth1' });
-const authLimiter2 = new RateLimiterMemory({ points: isProd ? 10 : 100, duration: 300, keyPrefix: 'auth2' });
-const authLimiter3 = new RateLimiterMemory({ points: isProd ? 20 : 200, duration: 1800, keyPrefix: 'auth3' });
+// Progressive lockout for auth (general — relaxed in test mode to allow setup flows)
+const authLimiter1 = new RateLimiterMemory({ points: isTest ? 500 : isProd ? 5 : 10, duration: 60, keyPrefix: 'auth1' });
+const authLimiter2 = new RateLimiterMemory({ points: isTest ? 1000 : isProd ? 10 : 20, duration: 300, keyPrefix: 'auth2' });
+const authLimiter3 = new RateLimiterMemory({ points: isTest ? 2000 : isProd ? 20 : 40, duration: 1800, keyPrefix: 'auth3' });
+
+// Brute-force detector: counts FAILED login attempts only.
+// NOT relaxed by PLAYWRIGHT_TEST — brute force protection must always be active.
+//
+// Key: `ip:email` — each email address has its own per-IP quota.
+// This prevents parallel test workers (all using 127.0.0.1) from consuming
+// each other's budgets when they test different email addresses.
+// Email-enumeration is prevented at the application layer: both existing and
+// non-existing emails go through the same flow and produce the same response
+// until their individual bucket is exhausted — at which point BOTH return 429.
+//
+// Prod limit: 5 failed attempts/min (strict)
+// Dev limit : 15 failed attempts/min (accommodates E2E brute-force tests that
+//             send up to 15 requests with a dedicated brute-force email)
+const bruteForceBlocker = new RateLimiterMemory({ points: isProd ? 5 : 15, duration: 60, keyPrefix: 'bf1' });
 
 // Rate limiter geral para escrita: 30 req/min por IP
 const writeLimiter = new RateLimiterMemory({
@@ -101,6 +117,25 @@ export async function checkAuthRateLimit(req: Request): Promise<void> {
     await authLimiter1.consume(ip);
   } catch {
     throw new RateLimitError('Muitas tentativas. Aguarde 1 minuto.');
+  }
+}
+
+/**
+ * Record a failed authentication attempt.
+ * Enforces brute-force limit even in PLAYWRIGHT_TEST mode.
+ * Call this after verifying credentials failed (wrong password, user not found, etc.).
+ *
+ * Key is `ip:email` so parallel test workers (all using 127.0.0.1) with
+ * different email addresses don't share each other's rate-limit quota.
+ * Falls back to ip-only when email is not provided.
+ */
+export async function recordFailedAuth(req: Request, email?: string): Promise<void> {
+  const ip = getClientIp(req);
+  const key = email ? `${ip}:${email}` : ip;
+  try {
+    await bruteForceBlocker.consume(key);
+  } catch {
+    throw new RateLimitError('Muitas tentativas de login. Aguarde 1 minuto.');
   }
 }
 

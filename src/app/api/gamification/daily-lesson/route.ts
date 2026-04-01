@@ -7,6 +7,220 @@ import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
 import { addPoints } from '@/services/gamification.service';
 
+function extractTopicTitle(title: unknown): string {
+  if (typeof title !== 'string') return 'tema da licao';
+  const [, ...rest] = title.split(':');
+  return (rest.join(':').trim() || title).trim();
+}
+
+function firstSentence(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback;
+  const cleaned = value.replace(/\s+/g, ' ').trim();
+  if (!cleaned) return fallback;
+  const sentence = cleaned.split('.').map((part) => part.trim()).find(Boolean);
+  return sentence || fallback;
+}
+
+function buildCanonicalPairs(
+  topicTitle: string,
+  explanation: unknown,
+  question?: unknown,
+  correctOption?: unknown,
+  mythStatement?: unknown,
+  mythVerdict?: unknown,
+  challenge?: unknown,
+  reflection?: unknown
+) {
+  const summary = firstSentence(explanation, `Entenda melhor ${topicTitle.toLowerCase()}.`);
+  const questionText = typeof question === 'string' && question.trim()
+    ? question.trim()
+    : `Qual e o principal ponto sobre ${topicTitle.toLowerCase()}?`;
+  const bestAnswer = typeof correctOption === 'string' && correctOption.trim()
+    ? correctOption.trim()
+    : `Resposta correta sobre ${topicTitle.toLowerCase()}.`;
+  const mythText = typeof mythStatement === 'string' && mythStatement.trim()
+    ? mythStatement.trim()
+    : `Afirmacao comum sobre ${topicTitle.toLowerCase()}.`;
+  const verdictText = typeof mythVerdict === 'boolean'
+    ? (mythVerdict ? 'Verdadeiro' : 'Falso')
+    : 'Classifique como verdadeiro ou falso.';
+  const reflectionPrompt = typeof reflection === 'string' && reflection.trim()
+    ? reflection.trim()
+    : `Pensando na sua rotina, qual cuidado combina melhor com ${topicTitle.toLowerCase()}?`;
+  const practicalAction = typeof challenge === 'string' && challenge.trim()
+    ? challenge.trim()
+    : 'Leve esse aprendizado para uma acao simples no seu dia.';
+
+  return [
+    { left: questionText, right: bestAnswer },
+    { left: `Verdadeiro ou falso: ${mythText}`, right: verdictText },
+    { left: `O que profissionais de saude explicam sobre ${topicTitle.toLowerCase()}?`, right: summary },
+    { left: reflectionPrompt, right: practicalAction },
+  ];
+}
+
+function buildReflectionOptions(topicTitle: string, challenge?: unknown): string[] {
+  const topic = topicTitle.toLowerCase();
+  const action = typeof challenge === 'string' && challenge.trim()
+    ? challenge.trim()
+    : `Quero testar um cuidado simples com ${topic}.`;
+
+  return [
+    'Isso já acontece comigo.',
+    'Quero observar melhor esse sinal no meu dia.',
+    action,
+    'Se isso persistir, vou buscar orientação profissional.',
+  ];
+}
+
+function normalizeLessonContent(type: unknown, contentJson: unknown, lessonTitle?: unknown) {
+  if (!contentJson || typeof contentJson !== 'string') return null;
+  try {
+    const parsed = JSON.parse(contentJson) as Record<string, unknown>;
+    const topicTitle = extractTopicTitle(lessonTitle);
+    if (type === 'reflexao') {
+      const reflection =
+        typeof parsed.reflection === 'string'
+          ? parsed.reflection.trim()
+          : '';
+      const prompt =
+        typeof parsed.prompt === 'string'
+          ? parsed.prompt.trim()
+          : '';
+
+      const isInvalidReflection = (value: string) =>
+        !value ||
+        value.length < 8 ||
+        value === '///' ||
+        value === '...' ||
+        value === '--';
+
+      if (!isInvalidReflection(reflection)) {
+        return {
+          ...parsed,
+          reflection,
+          options: Array.isArray(parsed.options) && parsed.options.length > 1
+            ? parsed.options
+            : buildReflectionOptions(topicTitle, parsed.challenge ?? parsed.tip ?? parsed.d),
+          action_label: typeof parsed.action_label === 'string' && parsed.action_label.trim()
+            ? parsed.action_label
+            : 'Registrar minha escolha',
+        };
+      }
+      if (!isInvalidReflection(prompt)) {
+        return {
+          ...parsed,
+          reflection: parsed.prompt,
+          options: Array.isArray(parsed.options) && parsed.options.length > 1
+            ? parsed.options
+            : buildReflectionOptions(topicTitle, parsed.challenge ?? parsed.tip ?? parsed.d),
+          action_label: typeof parsed.action_label === 'string' && parsed.action_label.trim()
+            ? parsed.action_label
+            : 'Registrar minha escolha',
+        };
+      }
+      return {
+        ...parsed,
+        reflection: 'Pense em um cuidado simples que voce pode praticar hoje por voce.',
+        options: buildReflectionOptions(topicTitle, parsed.challenge ?? parsed.tip ?? parsed.d),
+        action_label: 'Registrar minha escolha',
+      };
+    }
+    if (type === 'parear') {
+      return {
+        ...parsed,
+        pairs: buildCanonicalPairs(
+          topicTitle,
+          parsed.explanation,
+          parsed.question,
+          Array.isArray(parsed.options) && typeof parsed.correct === 'number' ? parsed.options[parsed.correct] : undefined,
+          parsed.v,
+          parsed.vb,
+          parsed.challenge ?? parsed.tip ?? parsed.d,
+          parsed.reflection ?? parsed.r
+        ),
+      };
+    }
+    if (
+      type === 'quiz' &&
+      typeof parsed.question === 'string' &&
+      Array.isArray(parsed.options) &&
+      typeof parsed.correct === 'number' &&
+      !Array.isArray(parsed.questions)
+    ) {
+      return {
+        ...parsed,
+        questions: [{
+          question: parsed.question,
+          options: parsed.options,
+          correct: parsed.correct,
+          explanation: typeof parsed.explanation === 'string'
+            ? parsed.explanation
+            : firstSentence(parsed.context, `Entenda melhor ${topicTitle.toLowerCase()}.`),
+        }],
+      };
+    }
+    if (type === 'ordenar' && Array.isArray(parsed.steps) && Array.isArray(parsed.correctOrder)) {
+      return {
+        ...parsed,
+        items: parsed.steps,
+        correct_order: parsed.correctOrder,
+        explanation: typeof parsed.explanation === 'string'
+          ? parsed.explanation
+          : 'Organize os passos do cuidado do mais imediato ao mais continuo.',
+      };
+    }
+    if (type === 'historia' && Array.isArray(parsed.options) && typeof parsed.correct === 'number') {
+      const explanation = firstSentence(parsed.explanation, `A melhor escolha e a que mais combina com ${topicTitle.toLowerCase()}.`);
+      return {
+        ...parsed,
+        scenario: typeof parsed.scenario === 'string'
+          ? parsed.scenario
+          : `Voce esta lidando com ${topicTitle.toLowerCase()} e precisa escolher a melhor conduta.`,
+        choices: (parsed.options as string[]).map((text, idx) => ({
+          text,
+          correct: idx === parsed.correct,
+          feedback: idx === parsed.correct
+            ? `${explanation} Essa e a resposta mais alinhada com a licao.`
+            : `${explanation} Esta opcao parece plausivel, mas nao e a melhor resposta para esta situacao.`,
+        })),
+      };
+    }
+    if (type === 'flashcard' && Array.isArray(parsed.cards) && !parsed.front && !parsed.back) {
+      const firstCard = (parsed.cards as Array<Record<string, unknown>>)[0] ?? {};
+      return {
+        ...parsed,
+        front: typeof firstCard.front === 'string' ? firstCard.front : `O que observar sobre ${topicTitle}?`,
+        back: typeof firstCard.back === 'string'
+          ? firstCard.back
+          : firstSentence(parsed.explanation, `O principal ponto sobre ${topicTitle.toLowerCase()} e aplicar o cuidado com constancia.`),
+      };
+    }
+    if (type === 'desafio_dia') {
+      return {
+        ...parsed,
+        challenge: typeof parsed.challenge === 'string'
+          ? parsed.challenge
+          : `Escolha uma acao simples sobre ${topicTitle.toLowerCase()} para praticar hoje.`,
+        motivation: typeof parsed.motivation === 'string'
+          ? parsed.motivation
+          : firstSentence(parsed.reflection ?? parsed.context, `Um pequeno passo hoje ajuda a consolidar o cuidado com ${topicTitle.toLowerCase()}.`),
+        tip: typeof parsed.tip === 'string'
+          ? parsed.tip
+          : firstSentence(parsed.context, 'Comece pelo passo mais simples e sustentavel para voce.'),
+      };
+    }
+    return parsed;
+  } catch {
+    if (type === 'reflexao') {
+      return {
+        reflection: 'Pense em um cuidado simples que voce pode praticar hoje por voce.',
+      };
+    }
+    return null;
+  }
+}
+
 // GET /api/gamification/daily-lesson - Returns today's lesson for logged-in user
 export const GET = withAuth(async (_req, { auth }) => {
   try {
@@ -26,8 +240,8 @@ export const GET = withAuth(async (_req, { auth }) => {
     const dayOfWeek = new Date().getDay() || 7; // 1=Mon, 7=Sun
     const currentWeek = Math.floor(completedCount / 7) + 1;
 
-    // Try company-specific lessons first, then global (company_id IS NULL)
-    let lesson = db.prepare(
+    // Build daily path (Duolingo-like): multiple lessons in sequence for today
+    let path = db.prepare(
       `SELECT dl.*,
               ulp.completed as user_completed,
               ulp.score as user_score,
@@ -37,12 +251,12 @@ export const GET = withAuth(async (_req, { auth }) => {
        LEFT JOIN user_lesson_progress ulp ON ulp.lesson_id = dl.id AND ulp.user_id = ?
        WHERE dl.company_id = ? AND dl.week_number = ? AND dl.day_of_week = ? AND dl.active = 1
        ORDER BY dl.order_index ASC
-       LIMIT 1`
-    ).get(userId, companyId, currentWeek, dayOfWeek) as Record<string, unknown> | undefined;
+       LIMIT 4`
+    ).all(userId, companyId, currentWeek, dayOfWeek) as Record<string, unknown>[];
 
-    if (!lesson) {
+    if (!path || path.length === 0) {
       // Fallback to global lessons
-      lesson = db.prepare(
+      path = db.prepare(
         `SELECT dl.*,
                 ulp.completed as user_completed,
                 ulp.score as user_score,
@@ -52,13 +266,13 @@ export const GET = withAuth(async (_req, { auth }) => {
          LEFT JOIN user_lesson_progress ulp ON ulp.lesson_id = dl.id AND ulp.user_id = ?
          WHERE dl.company_id IS NULL AND dl.week_number = ? AND dl.day_of_week = ? AND dl.active = 1
          ORDER BY dl.order_index ASC
-         LIMIT 1`
-      ).get(userId, currentWeek, dayOfWeek) as Record<string, unknown> | undefined;
+         LIMIT 4`
+      ).all(userId, currentWeek, dayOfWeek) as Record<string, unknown>[];
     }
 
-    if (!lesson) {
+    if (!path || path.length === 0) {
       // Try any unfinished lesson for today's day_of_week
-      lesson = db.prepare(
+      path = db.prepare(
         `SELECT dl.*,
                 ulp.completed as user_completed,
                 ulp.score as user_score,
@@ -70,13 +284,13 @@ export const GET = withAuth(async (_req, { auth }) => {
                AND dl.day_of_week = ? AND dl.active = 1
                AND (ulp.completed IS NULL OR ulp.completed = 0)
          ORDER BY dl.week_number ASC, dl.order_index ASC
-         LIMIT 1`
-      ).get(userId, companyId, dayOfWeek) as Record<string, unknown> | undefined;
+         LIMIT 4`
+      ).all(userId, companyId, dayOfWeek) as Record<string, unknown>[];
     }
 
-    if (!lesson) {
+    if (!path || path.length === 0) {
       // Final fallback: any unfinished lesson regardless of day (weekends, holidays, etc.)
-      lesson = db.prepare(
+      path = db.prepare(
         `SELECT dl.*,
                 ulp.completed as user_completed,
                 ulp.score as user_score,
@@ -88,9 +302,18 @@ export const GET = withAuth(async (_req, { auth }) => {
                AND dl.active = 1
                AND (ulp.completed IS NULL OR ulp.completed = 0)
          ORDER BY dl.week_number ASC, dl.day_of_week ASC, dl.order_index ASC
-         LIMIT 1`
-      ).get(userId, companyId) as Record<string, unknown> | undefined;
+         LIMIT 4`
+      ).all(userId, companyId) as Record<string, unknown>[];
     }
+
+    const normalizedPath = (path || []).map((row) => ({
+      ...row,
+      user_completed: !!row.user_completed,
+      content_json: normalizeLessonContent(row.type, row.content_json, row.title),
+    }));
+    const nextLesson = normalizedPath.find((l) => !l.user_completed) || null;
+    const pathCompleted = normalizedPath.filter((l) => l.user_completed).length;
+    const pathTotal = normalizedPath.length;
 
     // Get gamification config for hearts info
     const config = db.prepare(
@@ -110,10 +333,13 @@ export const GET = withAuth(async (_req, { auth }) => {
     ).get(userId, today) as { count: number }).count;
 
     return NextResponse.json({
-      lesson: lesson ? {
-        ...lesson,
-        content_json: lesson.content_json ? JSON.parse(lesson.content_json as string) : null,
-      } : null,
+      lesson: nextLesson,
+      path: normalizedPath,
+      pathProgress: {
+        completed: pathCompleted,
+        total: pathTotal,
+        remaining: Math.max(0, pathTotal - pathCompleted),
+      },
       progress: {
         totalCompleted: completedCount,
         currentWeek,

@@ -217,16 +217,15 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
 
   // ─── Step 11: Colaboradora acessa dashboard ──────────────────────────────────
 
-  test('Step 11: Colaboradora acessa dashboard', async ({ request }) => {
+  test('Step 11: Colaboradora NÃO acessa dashboard de RH (403)', async ({ request }) => {
     test.skip(!colabToken, 'Login da colaboradora falhou');
 
     const res = await request.get('/api/dashboard', {
       headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
-    expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty('kpis');
+    // Dashboard é restrito a admin/rh/lideranca — colaboradora recebe 403
+    expect(res.status()).toBe(403);
   });
 
   // ─── Step 12: Colaboradora faz check-in ──────────────────────────────────────

@@ -22,30 +22,30 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { href: '/colaboradoras-gestao', label: 'Colaboradoras', icon: 'colaboradoras' },
     { href: '/departamentos', label: 'Departamentos', icon: 'departamentos' },
-    { href: '/semaforo', label: 'Semáforo de Saúde', icon: 'semaforo' },
+    { href: '/semaforo', label: 'Semaforo de Saude', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
     { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios/gerenciar', label: 'Gerenciar Desafios', icon: 'desafios' },
     { href: '/liga/gerenciar', label: 'Gerenciar Ligas', icon: 'liga' },
-    { href: '/gamificacao-config', label: 'Config. Gamificação', icon: 'config' },
+    { href: '/gamificacao-config', label: 'Config. Gamificacao', icon: 'config' },
     { href: '/convites', label: 'Convites', icon: 'invite' },
-    { href: '/agenda', label: 'Agenda de Saúde', icon: 'agenda' },
-    { href: '/historico', label: 'Histórico', icon: 'historico' },
-    { href: '/analytics-emails', label: 'Comunicação', icon: 'analytics' },
+    { href: '/agenda', label: 'Agenda de Saude', icon: 'agenda' },
+    { href: '/historico', label: 'Historico', icon: 'historico' },
+    { href: '/analytics-emails', label: 'Comunicacao', icon: 'analytics' },
     { href: '/company-profile', label: 'Perfil da Empresa', icon: 'profile' },
   ],
   lideranca: [
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { href: '/semaforo', label: 'Semáforo da Equipe', icon: 'semaforo' },
+    { href: '/semaforo', label: 'Semaforo da Equipe', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
     { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios', label: 'Desafios', icon: 'desafios' },
-    { href: '/agenda', label: 'Agenda de Saúde', icon: 'agenda' },
-    { href: '/historico', label: 'Histórico', icon: 'historico' },
+    { href: '/agenda', label: 'Agenda de Saude', icon: 'agenda' },
+    { href: '/historico', label: 'Historico', icon: 'historico' },
   ],
   colaboradora: [
     { href: '/colaboradora', label: 'Meu Painel', icon: 'dashboard' },
-    { href: '/semaforo', label: 'Meu Semáforo', icon: 'semaforo' },
+    { href: '/semaforo', label: 'Meu Semaforo', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
     { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios', label: 'Desafios', icon: 'desafios' },
@@ -58,12 +58,12 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Master',
   rh: 'Admin',
-  lideranca: 'Liderança',
+  lideranca: 'Lideranca',
   colaboradora: 'Colaboradora',
 };
 
 const BOTTOM_ITEMS = [
-  { href: '/configuracoes', label: 'Configurações', icon: 'config' },
+  { href: '/configuracoes', label: 'Configuracoes', icon: 'config' },
 ];
 
 interface SidebarProps {
@@ -80,10 +80,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const alsoCollab = user?.also_collaborator || realRole === 'lideranca';
   const canSwitchView = alsoCollab && realRole !== 'colaboradora';
 
-  // Active view: real role or 'colaboradora' mode
   const [activeView, setActiveView] = useState<string>(realRole);
 
-  // Restore view mode from sessionStorage, reset when user changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = sessionStorage.getItem('uniher-view-mode');
@@ -97,22 +95,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const role = activeView;
   const navItems = NAV_ITEMS_BY_ROLE[role] || NAV_ITEMS_BY_ROLE.colaboradora;
+  const visibleNavItems = role === 'admin' ? navItems : navItems.filter(item => item.href !== '/admin');
   const roleLabel = ROLE_LABELS[role] || 'Colaboradora';
 
   const handleSwitchView = (view: string) => {
     setActiveView(view);
-    // Store in sessionStorage so it persists across navigations
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('uniher-view-mode', view);
     }
-    // Navigate to the default page of the selected view
     if (view === 'colaboradora') router.push('/colaboradora');
     else if (view === 'admin') router.push('/admin');
     else router.push('/dashboard');
     onClose();
   };
 
-  // Company branding (only for non-admin users with a company, skip on first-access)
   const skipCompanyFetch = role === 'admin' || pathname === '/primeiro-acesso';
   const { data: companyData } = useSWR<{ company: { name: string; trade_name: string | null; logo_url: string | null; primary_color: string | null } }>(
     !skipCompanyFetch ? '/api/company' : null,
@@ -121,7 +117,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   );
   const company = companyData?.company;
 
-  // Notification count (real data)
   const { data: notifData } = useSWR<{ unread: number }>(
     pathname !== '/primeiro-acesso' ? '/api/notifications/count' : null,
     fetcher,
@@ -135,35 +130,30 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Overlay Mobile */}
       <div
         className={cn(
-          "fixed inset-0 bg-rose-700/20 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden",
-          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          'fixed inset-0 bg-rose-700/20 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden',
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
         onClick={onClose}
       />
 
-      {/* Sidebar Aside */}
       <aside
         className={cn(
-          "fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-white border-r border-border-1 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          'fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-white border-r border-border-1 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0',
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        {/* Brand */}
         <div className="border-b border-border-1">
           <div
             className="h-16 flex items-center gap-3 px-6 cursor-pointer group hover:bg-cream-50/50 transition-colors"
             onClick={() => router.push('/')}
           >
-          {/* Logo oficial */}
-          <div className="relative flex-shrink-0 transform transition-transform group-hover:scale-105">
-            <Image src="/logo-uniher.png" alt="UniHER" width={140} height={56} className="object-contain" style={{ width: 140, height: 'auto' }} />
-          </div>
+            <div className="relative flex-shrink-0 transform transition-transform group-hover:scale-105">
+              <Image src="/logo-uniher.png" alt="UniHER" width={140} height={56} className="object-contain" style={{ width: 140, height: 'auto' }} />
+            </div>
           </div>
 
-          {/* Company branding strip — shown below UniHER, never replaces it */}
           {company && (
             <div className="flex items-center gap-2.5 px-6 py-2.5 bg-cream-50/80 border-t border-border-1">
               <div
@@ -183,7 +173,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
         </div>
 
-        {/* View Switcher — for multi-role users */}
         {canSwitchView && (
           <div className="px-4 py-2 border-b border-border-1 bg-cream-50/50">
             <div className="text-[10px] font-bold uppercase tracking-widest text-uni-text-300 mb-1.5 px-1">Visualizar como</div>
@@ -191,10 +180,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <button
                 onClick={() => handleSwitchView(realRole)}
                 className={cn(
-                  "flex-1 text-xs py-1.5 px-2 rounded-lg font-semibold transition-all",
+                  'flex-1 text-xs py-1.5 px-2 rounded-lg font-semibold transition-all',
                   activeView === realRole
-                    ? "bg-gold-500 text-white shadow-sm"
-                    : "bg-white text-uni-text-500 border border-border-1 hover:bg-cream-50"
+                    ? 'bg-gold-500 text-white shadow-sm'
+                    : 'bg-white text-uni-text-500 border border-border-1 hover:bg-cream-50'
                 )}
               >
                 {ROLE_LABELS[realRole]}
@@ -202,10 +191,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <button
                 onClick={() => handleSwitchView('colaboradora')}
                 className={cn(
-                  "flex-1 text-xs py-1.5 px-2 rounded-lg font-semibold transition-all",
+                  'flex-1 text-xs py-1.5 px-2 rounded-lg font-semibold transition-all',
                   activeView === 'colaboradora'
-                    ? "bg-gold-500 text-white shadow-sm"
-                    : "bg-white text-uni-text-500 border border-border-1 hover:bg-cream-50"
+                    ? 'bg-gold-500 text-white shadow-sm'
+                    : 'bg-white text-uni-text-500 border border-border-1 hover:bg-cream-50'
                 )}
               >
                 Colaboradora
@@ -214,11 +203,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         )}
 
-        {/* Scrollable Nav List */}
         <nav role="navigation" aria-label="Menu principal" className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-thin scrollbar-thumb-cream-200">
           <div className="space-y-1">
             <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">Principal</div>
-            {navItems.map(item => (
+            {visibleNavItems.map(item => (
               <SidebarNavItem
                 key={item.href}
                 href={item.href}
@@ -235,7 +223,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <SidebarNavItem
               href="/notificacoes"
               icon="notifications"
-              label="Notificações"
+              label="Notificacoes"
               isActive={pathname === '/notificacoes'}
               onClick={onClose}
             >
@@ -265,13 +253,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </nav>
 
-        {/* User Card */}
         <div className="p-4 border-t border-border-1 bg-cream-50/50">
           <div className="flex items-center gap-3 px-2 py-1">
             <Avatar fallback={role === 'admin' ? '🔑' : initials} size="sm" className={role === 'admin' ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-rose-100 text-rose-700 border-rose-200'} />
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center gap-1.5 overflow-hidden">
-                <span className="text-xs font-bold text-uni-text-900 truncate uppercase tracking-wide">{user?.name || 'Usuário'}</span>
+                <span className="text-xs font-bold text-uni-text-900 truncate uppercase tracking-wide">{user?.name || 'Usuario'}</span>
                 <Badge variant="secondary" size="sm" className="text-[9px] px-1 py-0">{roleLabel}</Badge>
               </div>
               <span className="text-[10px] text-uni-text-600 truncate">{role === 'admin' ? 'Sistema UniHER' : (user?.email || '')}</span>

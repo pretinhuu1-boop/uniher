@@ -40,8 +40,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Mulheres precisam de mais água do que homens devido ao peso corporal maior.',
     vb: false,
-    r: 'Você sabe quanto água bebe por dia? Como poderia tornar isso mais fácil de acompanhar?',
-    d: 'Encha uma garrafa de 500ml ao acordar e beba antes do almoço. Repita à tarde.',
+    r: 'Qual é a sua relação com a água? Beber é uma tarefa ou um prazer?',
+    d: 'Escolha um copo ou garrafa que você goste visualmente e use só para água. Deixe-o sempre à vista.',
   },
   {
     t: 'Sinais de desidratação',
@@ -51,19 +51,19 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'Sentir sede é um sinal precoce e confiável de desidratação.',
     vb: false,
-    r: 'Você reconhece os sinais de desidratação no seu próprio corpo? O que geralmente sente quando esquece de beber água?',
-    d: 'Observe a cor da sua urina ao longo do dia. O objetivo é mantê-la amarelo-clara.',
+    r: 'Como seu corpo fala com você? Que sinais você reconhece quando está desidratada?',
+    d: 'Observe a cor da sua urina nas próximas 24h e veja se consegue associar cores escuras a momentos em que bebeu menos.',
   },
   {
     t: 'Hidratação no trabalho',
     p: 'Ambientes com ar-condicionado reduzem a umidade do ar e aumentam a perda de água pelo corpo. Funcionárias em escritórios climatizados perdem até 500ml a mais de água por dia sem perceber.',
     q: 'O que ajuda mais a manter a hidratação no ambiente de trabalho?',
-    o: ['Beber café a cada hora', 'Manter garrafa d\'água visível na mesa', 'Tomar refrigerante light', 'Comer salgadinhos'],
+    o: ['Beber café a cada hora', 'Manter garrafa de água visível no seu espaço de trabalho', 'Tomar refrigerante light', 'Comer salgadinhos'],
     c: 1,
     v: 'O ar-condicionado do escritório pode aumentar a necessidade de hidratação.',
     vb: true,
-    r: 'Quais barreiras te impedem de beber água regularmente no trabalho? Como você poderia superá-las?',
-    d: 'Coloque sua garrafa de água em cima da mesa hoje e beba um gole a cada vez que olhar para ela.',
+    r: 'Que barreiras você encontra para se hidratar bem no seu dia? Elas são reais ou hábitos?',
+    d: 'Identifique 2 momentos do seu dia em que sempre se hidrata (ex: café da manhã, fim de expediente) e comece daí.',
   },
   {
     t: 'Água versus refrigerante',
@@ -73,8 +73,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'Refrigerante diet hidrata tão bem quanto a água.',
     vb: false,
-    r: 'Com que frequência você escolhe bebidas açucaradas em vez de água? O que motiva essa escolha?',
-    d: 'Troque uma bebida açucarada por água com limão ou infusão de frutas hoje.',
+    r: 'Qual é a sua relação com água? Por que algumas bebidas parecem mais atraentes que água pura?',
+    d: 'Crie sua própria "água aromática" hoje: coloque frutas, ervas ou chá fraco em agua gelada e descubra seu sabor favorito.',
   },
   {
     t: 'Hidratação na menstruação',
@@ -84,8 +84,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Beber mais água durante a menstruação pode ajudar a reduzir a retenção de líquidos.',
     vb: true,
-    r: 'Você percebe diferença na sua hidratação durante o período menstrual? Como seus sintomas mudam?',
-    d: 'Nos próximos dias de menstruação, adicione mais 2 copos de água à sua rotina e observe o impacto no inchaço.',
+    r: 'Você cuida da sua hidratação diferente em dias de ciclo? Que sintomas você relaciona com falta de água?',
+    d: 'Na próxima menstruação, beba um copo de água extra a cada 2 horas e anote se há melhora no inchaço e cólicas.',
   },
   {
     t: 'Hidratação no verão',
@@ -95,8 +95,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'No verão, beber água gelada é perigoso para a saúde.',
     vb: false,
-    r: 'Como você adapta sua hidratação nas épocas mais quentes do ano? Tem alguma estratégia que funcione bem?',
-    d: 'Prepare uma garrafa térmica com água fresca e carregue-a em todos os deslocamentos de hoje.',
+    r: 'Como seu corpo reage ao calor? Você consegue beber água regularmente em dias quentes ou esquece?',
+    d: 'Em um dia quente, observe quanto você bebe naturalmente sem esforço. Veja se é suficiente ou precisa de lembretes.',
   },
   {
     t: 'Hidratação no inverno',
@@ -106,8 +106,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'No inverno, o corpo precisa de menos água porque não perdemos suor.',
     vb: false,
-    r: 'Você costuma beber menos água no inverno? Que estratégia poderia adotar para manter a hidratação?',
-    d: 'Prepare um chá de camomila ou erva-cidreira hoje à tarde como alternativa quente à água.',
+    r: 'Qual é a temperatura ideal de água ou bebida para você? Isso influencia quanto você bebe?',
+    d: 'Prepare um chá ou água morna hoje (sem açúcar) e beba lentamente. Note como você se sente após.',
   },
   {
     t: 'Hidratação e exercício',
@@ -117,8 +117,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Beber água durante o exercício prejudica o desempenho atlético.',
     vb: false,
-    r: 'Você se hidrata adequadamente durante os exercícios? Que diferença percebe quando se hidrata bem versus mal?',
-    d: 'Leve uma garrafa de água para seu próximo treino ou caminhada e beba a cada 15 minutos.',
+    r: 'Como você se sente quando se exercita hidratada versus desidratada? Qual a diferença real?',
+    d: 'No próximo exercício, leve água e beba regularmente. Depois, compare como seu corpo responde versus sem água.',
   },
   {
     t: 'Chás e infusões',
@@ -128,8 +128,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'O chá de hibisco tem propriedades antioxidantes benéficas para a saúde feminina.',
     vb: true,
-    r: 'Você tem o hábito de tomar chás? Quais são seus favoritos e como eles fazem você se sentir?',
-    d: 'Experimente preparar chá de hibisco hoje. Deixe esfriar e beba ao longo do dia como alternativa à água.',
+    r: 'O que torna uma bebida atraente para você? Sabor, temperatura, ritual, ou algo mais?',
+    d: 'Teste um chá novo hoje (hibisco, gengibre, menta) e beba devagar. Qual sua primeira impressão?',
   },
   {
     t: 'Hidratação e saúde da pele',
@@ -139,8 +139,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Beber muita água elimina completamente a necessidade de hidratante tópico.',
     vb: false,
-    r: 'Você percebe diferença na sua pele quando bebe mais água? Como ela reage?',
-    d: 'Beba 2 litros de água hoje e observe como sua pele está ao final do dia comparado a dias com pouca hidratação.',
+    r: 'Qual é a relação entre como você se hidrata e como sua pele se comporta? Você já notou isso?',
+    d: 'Acompanhe sua pele por 7 dias bebendo água regularmente e anote se há mudanças visíveis. Que tal documentar?',
   },
   {
     t: 'Dor de cabeça por desidratação',
@@ -150,8 +150,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'Beber água pode aliviar dores de cabeça causadas por desidratação em até 30 minutos.',
     vb: true,
-    r: 'Você já associou sua dor de cabeça à falta de água? Como costuma tratar esse sintoma?',
-    d: 'Da próxima vez que sentir dor de cabeça leve, beba 500ml de água antes de tomar qualquer remédio.',
+    r: 'Você já testou beber água para dor de cabeça? O resultado foi inesperado ou confirmou o que sabia?',
+    d: 'Quando sentir dor de cabeça leve, tente o teste: beba água devagar por 20 minutos antes de medicar. Qual foi o resultado?',
   },
   {
     t: 'Cor da urina como indicador',
@@ -161,8 +161,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Urina completamente incolor (transparente) significa que você está bebendo a quantidade ideal de água.',
     vb: false,
-    r: 'Você já prestou atenção na cor da sua urina como termômetro de hidratação? O que descobriu?',
-    d: 'Use a cor da urina como guia de hidratação hoje: sempre que estiver escura, beba um copo de água imediatamente.',
+    r: 'Você observe seu corpo regularmente ou é algo que raramente nota? Como seria prestar atenção nisso?',
+    d: 'Ao longo de hoje, observe a cor da sua urina em 3-4 momentos. Você consegue notar diferenças?',
   },
   {
     t: 'Eletrólitos e hidratação',
@@ -172,8 +172,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'Em situações de diarreia ou vômito, repor apenas água sem eletrólitos pode ser insuficiente.',
     vb: true,
-    r: 'Você sabe quando precisa de bebidas com eletrólitos e quando a água pura é suficiente?',
-    d: 'Prepare uma limonada caseira com pitada de sal e mel — uma fonte natural de eletrólitos — para beber após o próximo exercício.',
+    r: 'Você conhece seu corpo bem o bastante para saber quando precisa de mais que água? Como descobriria?',
+    d: 'Teste em casa: após um exercício ou situação de suor, beba água pura em um momento e soro caseiro no outro. Qual te fez sentir melhor?',
   },
   {
     t: 'Frutas hidratantes',
@@ -183,8 +183,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Alimentos sólidos como frutas e legumes podem contribuir significativamente para a hidratação diária.',
     vb: true,
-    r: 'Quantas frutas e verduras hidratantes você consome por dia? Como poderia aumentar essa ingestão?',
-    d: 'Inclua pepino fatiado ou melancia na sua alimentação de hoje como fonte extra de hidratação.',
+    r: 'Você já pensou em frutas e verduras como forma de se hidratar? Qual sua relação com elas?',
+    d: 'Coma uma fruta rica em água hoje (melancia, melão, laranja) e note: o sabor ajuda a aproveitar mais a hidratação?',
   },
   {
     t: 'Hidratação na gravidez',
@@ -194,8 +194,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'A desidratação durante a gravidez pode provocar contrações prematuras.',
     vb: true,
-    r: 'Se você está grávida ou planeja engravidar, como está sua hidratação atualmente?',
-    d: 'Mantenha uma garrafa de água de 1 litro e complete pelo menos 3 vezes ao dia durante a gestação.',
+    r: 'Se isso fosse aplicável a você (gravidez futura ou atual), como você se prepararia? E agora, como está sua hidratação?',
+    d: 'Tenha uma meta clara: quantidade de água por dia (ex: 2-3L). Escolha 3 bebidas/alimentos que goste que contem água.',
   },
   {
     t: 'Hidratação na amamentação',
@@ -205,8 +205,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'Mães que amamentam precisam aumentar a ingestão diária de líquidos para manter a produção de leite.',
     vb: true,
-    r: 'Como você cuida (ou cuidou) da sua hidratação durante a amamentação?',
-    d: 'Se estiver amamentando, beba um copo de água cada vez que for amamentar o bebê.',
+    r: 'Se isso é ou foi sua realidade, como foi cuidar da hidratação naquele período? Aprendeu algo importante?',
+    d: 'Crie um lembrete para você ou para outras mulheres que amamentam sobre a importância de beber água regularmente.',
   },
   {
     t: 'Hidratação na menopausa',
@@ -216,8 +216,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Os fogachos da menopausa aumentam a perda de água pelo corpo.',
     vb: true,
-    r: 'Você já refletiu sobre como as mudanças hormonais ao longo da vida afetam sua necessidade de hidratação?',
-    d: 'Mantenha uma garrafa de água gelada na cabeceira e beba durante os episódios de calor.',
+    r: 'Como seu corpo muda ao longo dos anos? Você ajusta seus cuidados conforme essas mudanças acontecem?',
+    d: 'Identifique uma mudança que seu corpo passa e como a hidratação poderia ajudar. Crie seu próprio plano.',
   },
   {
     t: 'Estresse e desidratação',
@@ -227,8 +227,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'Em períodos de estresse intenso, é comum esquecer de se hidratar adequadamente.',
     vb: true,
-    r: 'Você percebe que bebe menos água em dias mais estressantes? Como poderia criar lembretes nesses momentos?',
-    d: 'Configure 4 alarmes no celular com mensagem "Hora de beber água!" distribuídos ao longo do dia.',
+    r: 'Em períodos de estresse, você se esquece de si mesma? Como você poderia priorizar autossaúde mesmo quando está caótico?',
+    d: 'Na próxima semana estressante, crie um lembrete visível (post-it, alarme no celular, ou nota) para beber água regularmente.',
   },
   {
     t: 'Sono e hidratação',
@@ -238,8 +238,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Beber água antes de dormir pode prejudicar a qualidade do sono.',
     vb: false,
-    r: 'Como você se sente ao acordar? Você tem o hábito de beber água assim que acorda?',
-    d: 'Deixe um copo de água na cabeceira e beba ao acordar, antes de qualquer outra coisa.',
+    r: 'Como é sua primeira ação ao acordar? Qual seria o impacto de começar hidratando seu corpo?',
+    d: 'Deixe água ao alcance da cama por 3 dias e beba assim que acordar. Como isso afeta seu dia?',
   },
   {
     t: 'Estratégias para beber mais água',
@@ -249,8 +249,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'Ter uma garrafa de água visível na mesa aumenta o consumo de água de forma significativa.',
     vb: true,
-    r: 'Quais estratégias você já tentou para beber mais água? O que funcionou e o que não funcionou?',
-    d: 'Escolha uma atividade que você faz todo dia (escovar os dentes, abrir o e-mail) e associe a ela beber um copo de água.',
+    r: 'Qual estratégia foi mais simples e funcional para você até agora? O que a diferenciou das outras?',
+    d: 'Escolha 1 atividade que já faz automaticamente todo dia e conecte água a ela. Teste por 7 dias.',
   },
   {
     t: 'Mitos da água com limão',
@@ -260,8 +260,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'A água com limão em jejum tem comprovação científica de "desintoxicar" o fígado.',
     vb: false,
-    r: 'Você acredita em algum mito sobre hidratação que talvez precise rever?',
-    d: 'Experimente água com rodelas de pepino e hortelã como alternativa saborosa e sem mitos à água com limão.',
+    r: 'Qual mito sobre saúde você desconstruiu ao aprender a verdade? Como isso mudou suas ações?',
+    d: 'Crie sua própria água aromática (pepino, morango, hortelã, limão) e teste qual gosto você mantém por mais tempo.',
   },
   {
     t: 'Saúde renal e hidratação',
@@ -271,8 +271,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'Beber pelo menos 2 litros de água por dia pode reduzir significativamente o risco de cálculos renais.',
     vb: true,
-    r: 'Você tem histórico de pedra nos rins na família? Como isso influencia seu cuidado com hidratação?',
-    d: 'Beba um copo de água extra antes de cada refeição hoje — simples e eficaz para os rins.',
+    r: 'Como o histórico de saúde da sua família influencia suas escolhas de auto-cuidado? Faz diferença?',
+    d: 'Estabeleça sua meta de água diária clara e simplesmente acompanhe se consegue atingir. Sua saúde futura agradece.',
   },
   {
     t: 'Produtividade e hidratação',
@@ -282,8 +282,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Uma leve desidratação pode prejudicar significativamente a tomada de decisões e o foco.',
     vb: true,
-    r: 'Você já percebeu diferença no seu foco e produtividade em dias que bebe mais versus menos água?',
-    d: 'Beba um copo de água antes de qualquer reunião importante hoje e veja se percebe diferença no foco.',
+    r: 'Quando você está bem focada, qual é seu estado físico? Fadiga, sede ou algo mais?',
+    d: 'Antes de sua próxima tarefa importante, beba água e observe seu foco pelos 30min seguintes. Fez diferença?',
   },
   {
     t: 'Concentração e água',
@@ -293,8 +293,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'A hidratação adequada melhora a memória de trabalho e a capacidade de concentração.',
     vb: true,
-    r: 'Como você percebe o efeito da hidratação no seu pensamento e criatividade?',
-    d: 'Antes de iniciar uma tarefa difícil hoje, beba um copo de água e observe se seu raciocínio flui com mais facilidade.',
+    r: 'Qual é a diferença entre seus melhores e piores dias? Hidratação é um fator que você já considerou?',
+    d: 'Teste: beba água antes de uma tarefa criativa e depois sem beber. Qual foi diferente no fluxo de idéias?',
   },
   {
     t: 'Mitos sobre hidratação',
@@ -304,8 +304,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'A regra de 8 copos por dia é uma recomendação universal válida para todas as pessoas.',
     vb: false,
-    r: 'Que mitos sobre hidratação você acreditou e precisou desconstruir ao longo da vida?',
-    d: 'Descubra sua necessidade real de água: monitore a cor da urina por 1 dia inteiro e ajuste conforme necessário.',
+    r: 'Qual "regra de ouro" você segue sem questionar? Vale a pena ou é tempo de personalizar seu próprio cuidado?',
+    d: 'Por 1 semana, ignore a regra de 8 copos e simplesmente observe como você naturally se hidrata. Qual foi sua realidade?',
   },
   {
     t: 'Melhores horários para beber água',
@@ -315,8 +315,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Beber água logo ao acordar ajuda a reidratar o corpo após horas sem ingestão de líquidos.',
     vb: true,
-    r: 'Você tem momentos fixos no dia para beber água? Como poderia tornar isso mais intencional?',
-    d: 'Defina 5 momentos fixos para beber água hoje: ao acordar, antes do almoço, às 15h, antes do jantar e antes de dormir.',
+    r: 'Qual é o seu ritmo natural de comer e beber? Como você poderia trabalhar com seu corpo, não contra?',
+    d: 'Identifique seus 3 momentos do dia em que naturalmente você sente vontade de beber. Potencialize esses momentos.',
   },
   {
     t: 'Água mineral versus filtrada',
@@ -326,8 +326,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Água filtrada em bom filtro é segura e igualmente eficaz para a hidratação diária.',
     vb: true,
-    r: 'Que tipo de água você consome e como garante a qualidade da sua fonte de hidratação?',
-    d: 'Verifique quando foi a última vez que trocou o filtro de água ou teve a qualidade da sua água testada.',
+    r: 'Como você escolhe sua fonte de água? É por conveniência, qualidade, ou apenas o que está disponível?',
+    d: 'Pesquise a qualidade da sua água atual (filtrada/mineral/torneira). Se houver dúvida, procure orientação local.',
   },
   {
     t: 'Hidratação em viagens',
@@ -337,8 +337,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'A umidade muito baixa nos aviões pode aumentar significativamente a perda de água durante o voo.',
     vb: true,
-    r: 'Como você cuida da sua hidratação durante viagens longas? O que poderia melhorar?',
-    d: 'Na próxima viagem de avião, leve uma garrafa vazia para encher após o embarque e beba regularmente.',
+    r: 'Você viaja? Como seu corpo reage ao ambiente de viagem? Quais cuidados você deveria priorizar?',
+    d: 'Se você viaja, teste um novo ritual de hidratação: quanto beber, quando beber, e como isso muda seu bem-estar na viagem?',
   },
   {
     t: 'Medicamentos e hidratação',
@@ -348,8 +348,8 @@ const HIDRATACAO: Topic[] = [
     c: 2,
     v: 'Alguns medicamentos aumentam a perda de água ou reduzem a sensação de sede, exigindo mais atenção à hidratação.',
     vb: true,
-    r: 'Você já verificou se algum medicamento que toma afeta sua necessidade de hidratação?',
-    d: 'Verifique a bula de qualquer medicamento que você toma regularmente e veja se há orientação sobre hidratação.',
+    r: 'Você conhece seus medicamentos e como eles impactam seu corpo? Vale investigar essa relação?',
+    d: 'Se você toma medicamentos regularmente, verifique a bula ou converse com seu farmacêutico sobre a hidratação.',
   },
   {
     t: 'Hidratação no escritório',
@@ -359,8 +359,8 @@ const HIDRATACAO: Topic[] = [
     c: 1,
     v: 'A conveniência e o acesso fácil à água no trabalho aumentam significativamente o consumo.',
     vb: true,
-    r: 'Como é o acesso à água no seu ambiente de trabalho? O que poderia ser melhorado?',
-    d: 'Posicione sua garrafa de água no local mais visível e acessível do seu espaço de trabalho hoje.',
+    r: 'Seu ambiente de trabalho facilita ou dificulta seus cuidados com saúde? Como você navega isso?',
+    d: 'Se possível, crie uma estação de água fácil no seu espaço (sua mesa, um ponto que você controla). Observe o impacto.',
   },
 ];
 
@@ -374,8 +374,8 @@ const SONO: Topic[] = [
     c: 2,
     v: 'Dormir menos de 6 horas cronicamente aumenta o risco de doenças metabólicas.',
     vb: true,
-    r: 'Você dorme as horas recomendadas? Como você se sente nos dias em que dorme bem versus mal?',
-    d: 'Determine seu horário ideal de dormir para acordar descansada e respeite-o esta noite.',
+    r: 'Como seu corpo e mente se comportam com diferentes quantidades de sono? Qual é sua realidade?',
+    d: 'Por 1 semana, observe quanto você naturalmente dorme. Depois ajuste gradualmente para sua meta ideal.',
   },
   {
     t: 'Higiene do sono',
@@ -385,8 +385,8 @@ const SONO: Topic[] = [
     c: 1,
     v: 'Bons hábitos de higiene do sono podem ser mais eficazes que remédios para insônia leve.',
     vb: true,
-    r: 'Quais hábitos de higiene do sono você já pratica? Qual seria o mais difícil de implementar?',
-    d: 'Desligue todas as telas (celular, TV, computador) 1 hora antes do horário de dormir esta noite.',
+    r: 'Qual é seu maior desafio para dormir bem? Hábitos, ambiente, ou algo fora de seu controle?',
+    d: 'Escolha 1 hábito de higiene do sono que poderia melhorar seu caso específico e teste por 5 noites.',
   },
   {
     t: 'Ciclo circadiano feminino',
@@ -407,8 +407,8 @@ const SONO: Topic[] = [
     c: 1,
     v: 'A privação de sono tem efeito semelhante ao de estar levemente embriagado no desempenho cognitivo.',
     vb: true,
-    r: 'Como você lida com os dias em que dormiu mal? Quais estratégias usa para compensar?',
-    d: 'Priorize dormir 7-8 horas esta noite como se fosse uma reunião importante — agende no calendário.',
+    r: 'Como seu corpo e mente se recuperam quando você não dorme bem? Que sinais você percebe?',
+    d: 'Quando dormir mal, observe como seu dia muda. O que ajudaria? Pausa curta? Refeição melhor? Movimento?',
   },
   {
     t: 'Sono e hormônios femininos',
@@ -440,8 +440,8 @@ const SONO: Topic[] = [
     c: 1,
     v: 'Mais de metade das mulheres na menopausa relatam problemas de sono.',
     vb: true,
-    r: 'Se você está na menopausa ou perimenopausa, como seus padrões de sono mudaram?',
-    d: 'Mantenha o quarto fresco (entre 18-21°C) esta noite para ajudar a minimizar os fogachos noturnos.',
+    r: 'Se essa fase da vida é/foi sua realidade, como o sono mudou para você? O que ajudou?',
+    d: 'Teste um ambiente mais fresco quando dormir. Note se há diferença. Qual foi sua experiência?',
   },
   {
     t: 'TPM e qualidade do sono',
@@ -709,8 +709,8 @@ const PREVENCAO: Topic[] = [
     c: 2,
     v: 'O câncer de mama detectado precocemente tem chance de cura superior a 95%.',
     vb: true,
-    r: 'Você está em dia com seus exames de mama? O que impede ou facilita esse cuidado?',
-    d: 'Marque um lembrete mensal no celular para fazer o autoexame das mamas após a menstruação.',
+    r: 'Como você cuida da sua saúde de mama? Que dúvidas ou medos você tem sobre preventivo?',
+    d: 'Pesquise como fazer o autoexame de mama corretamente. Crie um método que funcione para sua rotina.',
   },
   {
     t: 'Autoexame das mamas',
@@ -720,8 +720,8 @@ const PREVENCAO: Topic[] = [
     c: 1,
     v: 'O autoexame das mamas deve ser feito mensalmente e não substitui os exames médicos.',
     vb: true,
-    r: 'Você faz o autoexame regularmente? Como aprendeu a fazer corretamente?',
-    d: 'Faça o autoexame das mamas hoje: inspeção no espelho e palpação deitada com braço levantado.',
+    r: 'Você conhece bem seu próprio corpo? Como seria notar mudanças sutis que importam?',
+    d: 'Aprenda a técnica correta do autoexame (procure em video ou artigo confiável). Depois aplique mensalmente.',
   },
   {
     t: 'Mamografia: quando fazer',
@@ -731,8 +731,8 @@ const PREVENCAO: Topic[] = [
     c: 2,
     v: 'Mulheres com histórico familiar de câncer de mama podem precisar iniciar a mamografia antes dos 50 anos.',
     vb: true,
-    r: 'Você sabe quando deve fazer sua próxima mamografia e está em dia com esse exame?',
-    d: 'Verifique quando foi sua última mamografia e agende a próxima se estiver atrasada.',
+    r: 'Você sabe qual é sua situação pessoal de risco? Como isso deveria guiar seus cuidados?',
+    d: 'Identifique sua faixa de risco pessoal (histórico familiar, idade). Depois agende com seu médico se necessário.',
   },
   {
     t: 'Papanicolau preventivo',
@@ -742,8 +742,8 @@ const PREVENCAO: Topic[] = [
     c: 1,
     v: 'O Papanicolau pode detectar alterações celulares antes de se tornarem câncer de colo do útero.',
     vb: true,
-    r: 'Você está em dia com seus exames ginecológicos preventivos? O que te motiva ou dificulta fazê-los?',
-    d: 'Verifique quando foi seu último Papanicolau e agende o próximo se necessário.',
+    r: 'Como você se sente com sua saúde ginecológica? Há barreiras (acesso, constrangimento, medo)?',
+    d: 'Identifique quando foi seu último exame e crie um plano realista para o próximo (timing, local, suporte).',
   },
   {
     t: 'Câncer de colo do útero',
@@ -753,8 +753,8 @@ const PREVENCAO: Topic[] = [
     c: 2,
     v: 'O câncer de colo do útero é quase inteiramente prevenível por vacinação contra HPV e rastreamento regular.',
     vb: true,
-    r: 'Você foi vacinada contra HPV? Sabe a importância do rastreamento mesmo após a vacinação?',
-    d: 'Verifique seu status de vacinação para HPV e agende a vacina se ainda não foi vacinada.',
+    r: 'Como você se relaciona com a prevenção? É ativa ou espera por sinais de alerta?',
+    d: 'Pesquise sua situação pessoal de vacinação/rastreamento. Depois converse com seu médico se necessário.',
   },
   {
     t: 'Vacina HPV: proteção real',
@@ -764,8 +764,8 @@ const PREVENCAO: Topic[] = [
     c: 1,
     v: 'A vacina HPV pode prevenir até 90% dos casos de câncer de colo do útero.',
     vb: true,
-    r: 'Você e as pessoas que você cuida estão vacinadas contra HPV? Que dúvidas têm sobre essa vacina?',
-    d: 'Verifique se sua filha ou adolescente próxima está em dia com a vacina HPV no SUS.',
+    r: 'Como você enxerga a vacinação? Qual é sua confiança nela e por quê?',
+    d: 'Pesquise sobre a vacina HPV e seus beneficios. Se aplicável em sua vida, considere conversar com um médico.',
   },
   {
     t: 'Câncer de ovário silencioso',
@@ -775,8 +775,8 @@ const PREVENCAO: Topic[] = [
     c: 1,
     v: 'O câncer de ovário frequentemente é diagnosticado em estágio avançado devido a sintomas vagos.',
     vb: true,
-    r: 'Você conhece os sintomas do câncer de ovário? Que atenção presta a sinais persistentes do seu corpo?',
-    d: 'Se você tem distensão abdominal persistente ou pressão pélvica por mais de 2 semanas, consulte um ginecologista.',
+    r: 'Como você monitora os sinais do seu corpo? Que atenção dá aos sintomas persistentes?',
+    d: 'Se notar sintomas vagos mas persistentes (inchaço, pressão), não hesite em conversar com seu médico sobre a preocupação.',
   },
   {
     t: 'Doenças cardíacas em mulheres',
@@ -1043,8 +1043,8 @@ const NUTRICAO: Topic[] = [
     c: 1,
     v: 'Mulheres acima de 50 anos têm maior necessidade de proteína para manter a massa muscular.',
     vb: true,
-    r: 'Você tem certeza de que está consumindo proteína suficiente? Em que refeições ela aparece?',
-    d: 'Adicione uma fonte de proteína ao café da manhã de hoje: ovo, iogurte grego, queijo cottage ou leguminosas.',
+    r: 'Como é sua relação com proteína? Você priori za isso ou é algo que passa despercebido?',
+    d: 'Acompanhe seu consumo de proteína em 1 dia. Quantas gramas você comeu? Está longe da meta ou perto?',
   },
   {
     t: 'Ferro e anemia alimentar',
@@ -1054,8 +1054,8 @@ const NUTRICAO: Topic[] = [
     c: 1,
     v: 'A vitamina C pode triplicar a absorção do ferro de fontes vegetais.',
     vb: true,
-    r: 'Você inclui fontes de ferro na sua dieta? Sabe se está consumindo na quantidade adequada?',
-    d: 'No almoço de hoje, combine feijão ou lentilha com uma fonte de vitamina C como salada com limão ou tomate.',
+    r: 'Você cuida da sua energia considerando micronutrientes? Como você sabe se está bem em ferro?',
+    d: 'Teste uma combinação: legumina + vitamina C (ex: feijão + suco natural) por 1 semana. Como você se sente?',
   },
   {
     t: 'Cálcio e saúde óssea',
@@ -1065,8 +1065,8 @@ const NUTRICAO: Topic[] = [
     c: 2,
     v: 'A vitamina D é essencial para a absorção adequada do cálcio pelo organismo.',
     vb: true,
-    r: 'Você consome cálcio suficiente diariamente? Sabe combinar com vitamina D para melhor aproveitamento?',
-    d: 'Inclua uma fonte de cálcio em cada refeição de hoje: laticínio, couve refogada ou sardinha.',
+    r: 'Como você enxerga seus ossos e sua saúde futura? Que hábitos você constrói hoje para isso?',
+    d: 'Identifique 3 fontes de cálcio que você gosta e que podem se encaixar em sua dieta regular. Depois use essas.',
   },
   {
     t: 'Ácido fólico na gestação',
@@ -1076,8 +1076,8 @@ const NUTRICAO: Topic[] = [
     c: 2,
     v: 'O ácido fólico deve ser iniciado antes da gravidez confirmada para proteger o tubo neural do bebê.',
     vb: true,
-    r: 'Você sabia que o ácido fólico precisa ser iniciado antes de engravidar? Quem mais precisaria dessa informação?',
-    d: 'Se planeja engravidar, inicie 400mcg de ácido fólico hoje. Caso contrário, inclua feijão, espinafre e brócolis.',
+    r: 'Como você pensa sobre maternidade futura? Que conhecimentos você construiria antes disso?',
+    d: 'Se planeja engravidar, pesquise sobre suplementação com seu médico. Se não, considere alimentos ricos em folato.',
   },
   {
     t: 'Vitamina D feminina',
@@ -1087,8 +1087,8 @@ const NUTRICAO: Topic[] = [
     c: 1,
     v: 'A exposição solar é a principal fonte de vitamina D para o organismo humano.',
     vb: true,
-    r: 'Você se expõe ao sol regularmente? Já verificou seus níveis de vitamina D com exame de sangue?',
-    d: 'Tome 15-20 minutos de sol hoje entre 10h-14h sem protetor nesse período breve para sintetizar vitamina D.',
+    r: 'Qual é sua relação com o sol? Como você equilibra proteção com síntese de vitamina D?',
+    d: 'Crie um hábito pequeno relacionado ao sol (caminhada matinal, almoço em local aberto). Teste por 2 semanas.',
   },
   {
     t: 'Vitamina B12 e energia',
@@ -1098,8 +1098,8 @@ const NUTRICAO: Topic[] = [
     c: 1,
     v: 'Mulheres veganas devem suplementar vitamina B12 obrigatoriamente, pois ela só é encontrada em alimentos animais.',
     vb: true,
-    r: 'Você consome B12 adequadamente? Se vegetariana ou vegana, como garante essa nutrição?',
-    d: 'Se é vegana ou vegetariana, verifique seus níveis de B12 no próximo exame de sangue.',
+    r: 'Como você cuida de nutrientes que podem ser "invisíveis" na sua dieta? Qual é sua estratégia?',
+    d: 'Se segue dieta restritiva, estude quais nutrientes precisam de atenção. Crie um plano de acompanhamento com profissional.',
   },
   {
     t: 'Ômega-3 e saúde feminina',
@@ -1109,8 +1109,8 @@ const NUTRICAO: Topic[] = [
     c: 1,
     v: 'O ômega-3 pode reduzir os sintomas de TPM além de seus benefícios cardiovasculares.',
     vb: true,
-    r: 'Você consome fontes regulares de ômega-3? Percebe diferença nos seus sintomas de TPM?',
-    d: 'Adicione uma colher de sopa de chia ou linhaça ao seu iogurte, smoothie ou salada hoje.',
+    r: 'Como é sua sintomatologia menstrual? Você buscou compreender o que melhora ou piora seus sintomas?',
+    d: 'Teste incluir fontes de ômega-3 na sua rotina por 1 mês. Anote como seus sintomas variam. Fez diferença?',
   },
   {
     t: 'Fibras e saúde digestiva',
@@ -1378,8 +1378,8 @@ const MENTAL: Topic[] = [
     c: 1,
     v: 'O burnout afeta desproporcionalmente mulheres no ambiente corporativo.',
     vb: true,
-    r: 'Você se reconhece em algum sinal de burnout? Qual dos três pilares está mais presente na sua vida?',
-    d: 'Identifique uma tarefa que pode ser delegada ou eliminada esta semana para reduzir sua carga.',
+    r: 'Como você sente seu corpo e mente no trabalho? Há sinais que você ignora regularmente?',
+    d: 'Observe sua experiência de trabalho por 3 dias. Quais momentos geram mais exaustão? Há padrão?',
   },
   {
     t: 'Síndrome da impostora',
@@ -1389,8 +1389,8 @@ const MENTAL: Topic[] = [
     c: 1,
     v: 'A síndrome da impostora é muito mais comum em mulheres de alta performance do que em iniciantes.',
     vb: true,
-    r: 'Você já se sentiu não merecedora de conquistas que claramente foram resultado do seu esforço?',
-    d: 'Liste 3 conquistas suas da última semana que foram resultado direto das suas habilidades e esforço.',
+    r: 'Como você relaciona sucesso com sorte versus habilidade pessoal? Qual histórico você carrega?',
+    d: 'Documente uma vitória sua da última semana com todos os detalhes de como VOCÊ a criou, passo a passo.',
   },
   {
     t: 'Ansiedade no trabalho',
@@ -1400,8 +1400,8 @@ const MENTAL: Topic[] = [
     c: 1,
     v: 'A ansiedade é mais prevalente em mulheres do que em homens.',
     vb: true,
-    r: 'Quais situações de trabalho ativam mais sua ansiedade? Você tem estratégias para lidar com elas?',
-    d: 'Quando sentir ansiedade hoje, faça 3 respirações profundas antes de reagir — simples e comprovado.',
+    r: 'O que dispara sua ansiedade? E mais importante: como você sabe que algo funciona para você?',
+    d: 'Teste uma técnica de calma (respiração, movimento, conversa) que seja realista para seu contexto de trabalho.',
   },
   {
     t: 'Depressão: reconhecendo sintomas',
@@ -1411,8 +1411,8 @@ const MENTAL: Topic[] = [
     c: 1,
     v: 'A depressão é diagnosticada quando sintomas persistem por mais de 2 semanas e prejudicam a vida diária.',
     vb: true,
-    r: 'Você distingue tristeza passageira de depressão em si mesma e nas pessoas ao redor?',
-    d: 'Se você ou alguém próximo tem sintomas persistentes de depressão, o primeiro passo é procurar um médico de confiança.',
+    r: 'Como você diferencia tristeza normal de algo mais profundo? Você escuta esses sinais em si e em outros?',
+    d: 'Se sintomas persistem, conversar com um profissional não é fraqueza — é auto-cuidado essencial.',
   },
   {
     t: 'Saúde mental no trabalho',
@@ -1422,8 +1422,8 @@ const MENTAL: Topic[] = [
     c: 2,
     v: 'Investir em saúde mental no trabalho gera retorno financeiro significativo para as empresas.',
     vb: true,
-    r: 'Sua empresa apoia sua saúde mental? O que você faz individualmente para cuidar dela no trabalho?',
-    d: 'Identifique um recurso de saúde mental disponível no seu trabalho e acesse-o esta semana.',
+    r: 'Sua saúde mental no trabalho é você quem cuida ou existe suporte? Como seria ideal para você?',
+    d: 'Pesquise 1 recurso de saúde mental (interno na empresa, app, profissional) e considere usando se necessário.',
   },
   {
     t: 'Mindfulness no dia a dia',
@@ -1712,8 +1712,8 @@ const CICLO: Topic[] = [
     c: 1,
     v: 'O ciclo menstrual tem 4 fases distintas com características hormonais únicas.',
     vb: true,
-    r: 'Você conhece as fases do seu ciclo e como elas afetam seu humor, energia e apetite?',
-    d: 'Baixe um aplicativo de rastreamento de ciclo (Clue, Flo) e registre hoje onde você está no ciclo.',
+    r: 'Como seu corpo e humor mudam ao longo do mês? Você já conectou isso ao seu ciclo?',
+    d: 'Observe seu ciclo por 2 meses (app, agenda ou anotações simples). Veja se consegue notar padrões pessoais.',
   },
   {
     t: 'TPM: manejo e alívio',
@@ -1723,8 +1723,8 @@ const CICLO: Topic[] = [
     c: 1,
     v: 'O exercício aeróbico regular pode reduzir os sintomas de TPM em até 30%.',
     vb: true,
-    r: 'Você tem estratégias para lidar com a TPM? O que funciona melhor para você?',
-    d: 'Na próxima semana pré-menstrual, aumente o magnésio (banana, abacate, castanhas) e reduza a cafeína.',
+    r: 'Qual é sua experiência com TPM? Ela é algo que você gerencia ou que a controla?',
+    d: 'Teste 1 estratégia simples (movimento leve, alimento específico, técnica de calma) na próxima TPM.',
   },
   {
     t: 'Cólicas menstruais',
@@ -2047,8 +2047,8 @@ const GERAL: Topic[] = [
     c: 2,
     v: 'A OMS recomenda pelo menos 150 minutos de atividade física moderada por semana para adultos.',
     vb: true,
-    r: 'Você atinge a recomendação mínima de atividade física semanal? O que te impede de se mover mais?',
-    d: 'Programe 30 minutos de caminhada para hoje — é a atividade física mais acessível e com mais benefícios comprovados.',
+    r: 'Qual é sua relação com movimento? Você o associa com prazer, obrigação, ou não pensa nisso?',
+    d: 'Experimente um tipo de movimento que você gosta (dança, caminhada, ioga). Quantas vezes você conseguiria fazer isso?',
   },
   {
     t: 'Combatendo o sedentarismo',
@@ -2058,8 +2058,8 @@ const GERAL: Topic[] = [
     c: 1,
     v: 'Ficar sentada por mais de 8 horas diárias é prejudicial mesmo para quem se exercita regularmente.',
     vb: true,
-    r: 'Quantas horas por dia você fica sentada? Você faz pausas para se movimentar?',
-    d: 'Configure um alarme para se levantar e caminhar por 2 minutos a cada hora de trabalho sentada.',
+    r: 'Como seu corpo se sente ao final do dia de trabalho? Você escuta seus sinais de que precisa se mover?',
+    d: 'Por 1 dia, anote quantas vezes você se levanta e se move. Qual é a realidade? Como você gostaria que fosse?',
   },
   {
     t: 'Ergonomia no home office',
@@ -2464,8 +2464,16 @@ function mkReflexao(topic: Topic, theme: string, week: number, day: number, orde
     type: 'reflexao',
     theme,
     content_json: JSON.stringify({
-      prompt: topic.r,
+      reflection: topic.r,
       context: topic.p,
+      challenge: topic.d,
+      options: [
+        'Isso já faz sentido para mim hoje.',
+        'Quero observar melhor esse tema na minha rotina.',
+        topic.d,
+        'Se isso continuar me incomodando, vou buscar orientação profissional.',
+      ],
+      action_label: 'Registrar minha escolha',
     }),
     xp_reward: 20,
     duration_seconds: 90,
@@ -2500,8 +2508,10 @@ function mkActivity(topic: Topic, theme: string, week: number, day: number, orde
   } else if (mod === 1) {
     // parear
     type = 'parear';
+    const shortFact = topic.p.split('.').map(s => s.trim()).find(Boolean) || topic.p;
+    const safeOption = (optionIdx: number) => topic.o[optionIdx] || `Item ${optionIdx + 1}`;
     content = {
-      instruction: `Relacione os conceitos sobre ${topic.t}`,
+      instruction: `Combine cada texto com o papel que ele exerce na licao sobre ${topic.t}.`,
       pairs: [
         { term: topic.o[0], definition: topic.o[0] === topic.o[topic.c] ? topic.p.substring(0, 60) : `Opção: ${topic.o[0]}` },
         { term: topic.o[1], definition: `Relacionado a: ${topic.t}` },
@@ -2510,6 +2520,15 @@ function mkActivity(topic: Topic, theme: string, week: number, day: number, orde
       ],
       explanation: topic.p,
     };
+    if (Array.isArray((content as any).pairs)) {
+      (content as any).pairs = [
+        { left: safeOption(0), right: 'Sinal ou fator relacionado ao tema.' },
+        { left: safeOption(1), right: `Conecta com: ${topic.t}.` },
+        { left: safeOption(2), right: 'Ponto de atenção para o cuidado diário.' },
+        { left: safeOption(3), right: 'Contexto prático de saúde feminina.' },
+      ];
+      (content as any).explanation = shortFact;
+    }
   } else if (mod === 2) {
     // ordenar
     type = 'ordenar';
@@ -2567,6 +2586,70 @@ function mkActivity(topic: Topic, theme: string, week: number, day: number, orde
       context: topic.p,
       duration: 'hoje',
       reflection: topic.r,
+    };
+  }
+
+  const topicTitle = topic.t;
+  const shortFact = topic.p.split('.').map((s) => s.trim()).find(Boolean) || topic.p;
+  if (type === 'parear') {
+    content = {
+      instruction: `Relacione cada pergunta ou afirmacao com a resposta que melhor representa o cuidado profissional sobre ${topicTitle}.`,
+      question: topic.q,
+      options: topic.o,
+      correct: topic.c,
+      v: topic.v,
+      vb: topic.vb,
+      reflection: topic.r,
+      challenge: topic.d,
+      pairs: [
+        { left: topic.q, right: topic.o[topic.c] },
+        { left: `Verdadeiro ou falso: ${topic.v}`, right: topic.vb ? 'Verdadeiro' : 'Falso' },
+        { left: `O que profissionais de saude explicam sobre ${topicTitle.toLowerCase()}?`, right: shortFact },
+        { left: topic.r, right: topic.d },
+      ],
+      explanation: shortFact,
+    };
+  }
+
+  if (type === 'ordenar') {
+    content = {
+      instruction: 'Organize a sequencia mais coerente para transformar esse aprendizado em acao.',
+      items: [
+        `Perceba o tema: ${topicTitle}`,
+        `Entenda a ideia principal: ${shortFact}`,
+        `Escolha a melhor orientacao: ${topic.o[topic.c]}`,
+        `Leve para a rotina: ${topic.d}`,
+      ],
+      correct_order: [0, 1, 2, 3],
+      explanation: 'Primeiro voce reconhece o tema, depois entende a informacao, escolhe a orientacao correta e aplica na pratica.',
+    };
+  }
+
+  if (type === 'historia') {
+    content = {
+      scenario: `Voce esta diante de uma situacao relacionada a ${topicTitle.toLowerCase()}. Pensando no que aprendeu, qual resposta faz mais sentido?`,
+      choices: topic.o.map((option, idx) => ({
+        text: option,
+        correct: idx === topic.c,
+        feedback: idx === topic.c
+          ? `${shortFact} Essa e a resposta mais alinhada com a licao.`
+          : `${shortFact} Essa opcao pode parecer possivel, mas nao e a melhor resposta nesse contexto.`,
+      })),
+    };
+  }
+
+  if (type === 'flashcard') {
+    content = {
+      front: topic.q,
+      back: `${topic.o[topic.c]}. ${shortFact}`,
+    };
+  }
+
+  if (type === 'desafio_dia') {
+    content = {
+      challenge: topic.d,
+      motivation: shortFact,
+      tip: topic.r,
     };
   }
 
@@ -2636,8 +2719,16 @@ export function seedGamificationLessons(db: Database.Database): void {
   const existing = db.prepare(
     'SELECT COUNT(*) as count FROM daily_lessons WHERE company_id IS NULL'
   ).get() as { count: number };
+  const sampleParear = db.prepare(
+    "SELECT content_json FROM daily_lessons WHERE company_id IS NULL AND type = 'parear' LIMIT 1"
+  ).get() as { content_json: string } | undefined;
+  const parearUpToDate =
+    !!sampleParear?.content_json &&
+    sampleParear.content_json.includes('"question"') &&
+    sampleParear.content_json.includes('"reflection"') &&
+    sampleParear.content_json.includes('"challenge"');
 
-  if (existing.count >= 1000) {
+  if (existing.count >= 1000 && parearUpToDate) {
     console.log(`[Seed] Already have ${existing.count} global lessons, skipping.`);
     return;
   }

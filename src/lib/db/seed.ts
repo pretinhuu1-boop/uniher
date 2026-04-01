@@ -85,8 +85,26 @@ async function seed() {
         console.log('[seed] Desafios padrão já existem, pulando...');
       }
 
+      // ─── Demo Company + RH (usados pelos testes visuais E2E) ──────────────
+      const existingDemo = db.prepare("SELECT id FROM companies WHERE cnpj = '00.000.000/0001-00'").get();
+      if (!existingDemo) {
+        console.log('[seed] Criando empresa demo + RH para testes visuais...');
+        const demoCompanyId = 'company_demo_visual';
+        db.prepare(`
+          INSERT INTO companies (id, name, cnpj, sector, plan)
+          VALUES (?, 'Eduardo e Yurimara Marketing LTDA', '00.000.000/0001-00', 'Marketing', 'pro')
+        `).run(demoCompanyId);
+        db.prepare(`
+          INSERT INTO users (id, company_id, department_id, name, email, password_hash, role, level, points, is_approved)
+          VALUES (?, ?, NULL, 'Contabilidade RH', 'contabilidade@eduardaeyurimarketingltda.com.br', ?, 'rh', 1, 0, 1)
+        `).run('user_demo_rh', demoCompanyId, adminPassword);
+      } else {
+        console.log('[seed] Empresa demo já existe, pulando...');
+      }
+
       console.log('[seed] ✅ Seed base concluído!');
       console.log('[seed] Admin: admin@uniher.com.br / Admin@2026');
+      console.log('[seed] Demo RH: contabilidade@eduardaeyurimarketingltda.com.br / Admin@2026');
     })();
     db.pragma('foreign_keys = ON');
   });
@@ -110,7 +128,9 @@ async function seed() {
   console.log('[seed] ✅ Seed de homologação completo!');
 }
 
-seed().catch(err => {
-  console.error('[seed] ERRO:', err);
-  process.exit(1);
-});
+seed()
+  .then(() => process.exit(0))
+  .catch(err => {
+    console.error('[seed] ERRO:', err);
+    process.exit(1);
+  });

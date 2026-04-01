@@ -19,6 +19,7 @@ interface CompanyData {
   department_count: number;
   total_points: number;
   missions_active: number;
+  feed_company_enabled?: boolean;
 }
 
 function EditField({ label, value, onChange, isEditing, type = 'text' }: {
@@ -65,6 +66,7 @@ export default function CompanyProfilePage() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [feedCompanyEnabled, setFeedCompanyEnabled] = useState(true);
 
   const [snap, setSnap] = useState({ companyName: '', tradeName: '', cnpj: '', sector: '', contactName: '', contactEmail: '', contactPhone: '' });
 
@@ -87,6 +89,7 @@ export default function CompanyProfilePage() {
         setContactEmail(c.contact_email || '');
         setContactPhone(c.contact_phone || '');
         setLogoUrl(c.logo_url || null);
+        setFeedCompanyEnabled(c.feed_company_enabled !== false);
       })
       .catch(() => setError('Empresa nao encontrada. Verifique se sua conta esta vinculada a uma empresa.'))
       .finally(() => setLoading(false));
@@ -116,11 +119,13 @@ export default function CompanyProfilePage() {
           contactName,
           contactEmail,
           contactPhone,
+          feedCompanyEnabled,
         }),
       });
       if (!res.ok) throw new Error('Erro ao salvar');
       const { company: updated } = await res.json();
       setCompany(prev => prev ? { ...prev, ...updated } : prev);
+      setCompany(prev => prev ? { ...prev, feed_company_enabled: feedCompanyEnabled } : prev);
       setSaveLabel('Salvo!');
       setIsEditing(false);
     } catch {
@@ -284,6 +289,45 @@ export default function CompanyProfilePage() {
             <EditField label="E-mail"              value={contactEmail} onChange={setContactEmail} isEditing={isEditing} type="email" />
             <EditField label="Telefone"            value={contactPhone} onChange={setContactPhone} isEditing={isEditing} type="tel" />
           </dl>
+        </div>
+
+        {/* Feed Setting */}
+        <div className="bg-white rounded-2xl p-7 border border-border-1 shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-uni-text-900 mb-6">
+            <span className="text-rose-500">📣</span> Feed da Comunidade
+          </h2>
+          <div className="space-y-3">
+            <p className="text-sm text-uni-text-600">
+              Defina se colaboradoras podem ver atividades de toda a empresa ou somente do proprio grupo/setor.
+            </p>
+            <label className="flex items-center justify-between gap-4 p-4 rounded-xl border border-border-1 bg-cream-50">
+              <div>
+                <p className="text-sm font-bold text-uni-text-900">Mostrar feed da empresa inteira</p>
+                <p className="text-xs text-uni-text-500 mt-1">Quando desligado, colaboradoras veem apenas o feed do proprio grupo.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFeedCompanyEnabled(v => !v)}
+                disabled={!isEditing}
+                className={cn(
+                  'relative w-12 h-7 rounded-full transition-all flex-shrink-0',
+                  feedCompanyEnabled ? 'bg-emerald-500' : 'bg-uni-text-300',
+                  !isEditing && 'opacity-60 cursor-not-allowed'
+                )}
+                aria-label="Alternar feed da empresa inteira"
+              >
+                <span
+                  className={cn(
+                    'absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-all',
+                    feedCompanyEnabled ? 'left-6' : 'left-1'
+                  )}
+                />
+              </button>
+            </label>
+            {!isEditing && (
+              <p className="text-xs text-uni-text-400">Clique em "Editar Dados" para alterar essa configuracao.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

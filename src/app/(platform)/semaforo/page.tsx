@@ -1,55 +1,80 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { cn } from '@/lib/utils';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 const TIPS_DATA: Record<string, string[]> = {
-  'Prevenção': ['Agende mamografia anual', 'Consulte ginecologista a cada 6 meses', 'Mantenha exames de sangue em dia'],
-  'Sono': ['Evite telas 1h antes de dormir', 'Mantenha horário regular de sono'],
-  'Energia': ['Faça pausas de 5 min a cada 2h', 'Hidrate-se com 2L de água por dia', 'Pratique alongamento entre reuniões'],
-  'Saúde Mental': ['Continue com práticas de mindfulness', 'Reserve 10 min diários para respiração guiada'],
-  'Hábitos': ['Mantenha a hidratação ao longo do dia', 'Inclua frutas e verduras em todas as refeições', 'Caminhe pelo menos 30 min por dia'],
+  'Prevencao': ['Agende mamografia anual', 'Consulte ginecologista a cada 6 meses', 'Mantenha exames de sangue em dia'],
+  'Sono': ['Evite telas 1h antes de dormir', 'Mantenha horario regular de sono'],
+  'Energia': ['Faca pausas de 5 min a cada 2h', 'Hidrate-se com 2L de agua por dia', 'Pratique alongamento entre reunioes'],
+  'Saude Mental': ['Continue com praticas de mindfulness', 'Reserve 10 min diarios para respiracao guiada'],
+  'Habitos': ['Mantenha a hidratacao ao longo do dia', 'Inclua frutas e verduras em todas as refeicoes', 'Caminhe pelo menos 30 min por dia'],
   'Engajamento': ['Continue participando dos desafios semanais', 'Convide colegas para participar da plataforma'],
 };
 
 const SCORE_GUIDANCE: Record<string, { low: string; medium: string; high: string }> = {
-  'Prevenção': {
+  'Prevencao': {
     low: 'Agende um check-up preventivo. Exames em dia reduzem riscos!',
     medium: 'Bom progresso! Continue com exames regulares.',
-    high: 'Excelente! Seus exames estão em dia. Continue assim!'
+    high: 'Excelente! Seus exames estao em dia. Continue assim!'
   },
   'Sono': {
     low: 'Tente dormir 7-8h por noite. Evite telas 1h antes de dormir.',
-    medium: 'Seu sono está melhorando! Mantenha uma rotina regular.',
-    high: 'Ótima qualidade de sono! Continue com hábitos saudáveis.'
+    medium: 'Seu sono esta melhorando! Mantenha uma rotina regular.',
+    high: 'Otima qualidade de sono! Continue com habitos saudaveis.'
   },
   'Energia': {
-    low: 'Faça pausas ativas a cada 2h. Beba água regularmente.',
+    low: 'Faca pausas ativas a cada 2h. Beba agua regularmente.',
     medium: 'Boa energia! Adicione caminhadas curtas ao seu dia.',
-    high: 'Energia excelente! Você está no caminho certo.'
+    high: 'Energia excelente! Voce esta no caminho certo.'
   },
-  'Saúde Mental': {
-    low: 'Reserve 10 min diários para meditação ou respiração.',
-    medium: 'Continue praticando autocuidado. Está fazendo diferença!',
-    high: 'Saúde mental forte! Continue com suas práticas.'
+  'Saude Mental': {
+    low: 'Reserve 10 min diarios para meditacao ou respiracao.',
+    medium: 'Continue praticando autocuidado. Esta fazendo diferenca!',
+    high: 'Saude mental forte! Continue com suas praticas.'
   },
-  'Hábitos': {
-    low: 'Comece com 1 hábito novo por semana. Pequenos passos!',
-    medium: 'Bons hábitos se formando! Mantenha a consistência.',
-    high: 'Hábitos exemplares! Você é uma inspiração.'
+  'Habitos': {
+    low: 'Comece com 1 habito novo por semana. Pequenos passos!',
+    medium: 'Bons habitos se formando! Mantenha a consistencia.',
+    high: 'Habitos exemplares! Voce e uma inspiracao.'
   },
   'Engajamento': {
     low: 'Participe de 1 desafio ativo para aumentar seu engajamento.',
-    medium: 'Bom engajamento! Explore as campanhas disponíveis.',
-    high: 'Engajamento máximo! Continue participando ativamente.'
+    medium: 'Bom engajamento! Explore as campanhas disponiveis.',
+    high: 'Engajamento maximo! Continue participando ativamente.'
   }
 };
 
+function normalizeDimensionKey(input: string): string {
+  const cleaned = input
+    .replace(/Ã§/g, 'c')
+    .replace(/Ã£/g, 'a')
+    .replace(/Ã¡|Ã¢|Ã /g, 'a')
+    .replace(/Ã©|Ãª/g, 'e')
+    .replace(/Ã­/g, 'i')
+    .replace(/Ã³|Ã´|Ãµ/g, 'o')
+    .replace(/Ãº/g, 'u')
+    .replace(/[^\w\s]/g, '')
+    .trim()
+    .toLowerCase();
+
+  if (cleaned.includes('preven')) return 'Prevencao';
+  if (cleaned.includes('saude mental') || cleaned.includes('mental')) return 'Saude Mental';
+  if (cleaned.includes('habito')) return 'Habitos';
+  if (cleaned.includes('sono')) return 'Sono';
+  if (cleaned.includes('energia')) return 'Energia';
+  if (cleaned.includes('engaj')) return 'Engajamento';
+  return input;
+}
+
 function getScoreGuidance(dimension: string, score: number): string {
-  const guidance = SCORE_GUIDANCE[dimension];
+  const guidance = SCORE_GUIDANCE[normalizeDimensionKey(dimension)];
   if (!guidance) return '';
   if (score < 4) return guidance.low;
   if (score <= 7) return guidance.medium;
@@ -63,15 +88,23 @@ function formatHistoryEntries(entries: { score: number; recorded_at: string }[])
     .map((e, i) => `Sem ${i + 1}: ${e.score.toFixed(1)}`);
 }
 
+function getLocalDateValue(base = new Date()): string {
+  const year = base.getFullYear();
+  const month = `${base.getMonth() + 1}`.padStart(2, '0');
+  const day = `${base.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 type FilterType = 'all' | 'red' | 'yellow' | 'green';
 
 const STATUS_CONFIG = {
-  green:  { label: 'Saudável', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500', text: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' },
-  yellow: { label: 'Atenção',  bg: 'bg-amber-50',   border: 'border-amber-200',   dot: 'bg-amber-400',   text: 'text-amber-600',   badge: 'bg-amber-100 text-amber-700'   },
+  green:  { label: 'Saudavel', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500', text: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' },
+  yellow: { label: 'Atencao',  bg: 'bg-amber-50',   border: 'border-amber-200',   dot: 'bg-amber-400',   text: 'text-amber-600',   badge: 'bg-amber-100 text-amber-700'   },
   red:    { label: 'Urgente',  bg: 'bg-rose-50',     border: 'border-rose-200',    dot: 'bg-rose-500',    text: 'text-rose-600',    badge: 'bg-rose-100 text-rose-700'     },
 };
 
 export default function SemaforoPage() {
+  const searchParams = useSearchParams();
   const { data: apiData } = useSWR('/api/collaborator/semaforo', fetcher, { revalidateOnFocus: false });
   const { data: historyData } = useSWR('/api/collaborator/semaforo/history', fetcher, { revalidateOnFocus: false });
   const semaforoData: any[] = apiData ?? [];
@@ -83,8 +116,14 @@ export default function SemaforoPage() {
   const [expandedCard, setExpandedCard]     = useState<string | null>(null);
   const [activeFilter, setActiveFilter]     = useState<FilterType>('all');
   const [animatedScores, setAnimatedScores] = useState<Record<string, number>>({});
-  const [reminderFeedback, setReminderFeedback] = useState<string | null>(null);
+  const [reminderFeedback, setReminderFeedback] = useState<Record<string, string>>({});
   const [currentReminders, setCurrentReminders] = useState<Record<string, boolean>>({});
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [reminderDimension, setReminderDimension] = useState('');
+  const [reminderDate, setReminderDate] = useState(getLocalDateValue());
+  const [reminderTime, setReminderTime] = useState('08:00');
+  const [reminderError, setReminderError] = useState('');
+  const [reminderSaving, setReminderSaving] = useState(false);
 
   // Fetch current notification preferences
   useEffect(() => {
@@ -96,19 +135,89 @@ export default function SemaforoPage() {
       .catch(() => {});
   }, []);
 
-  async function handleScheduleReminder(dimension: string) {
-    const key = dimension.toLowerCase().replace(/\s/g, '_');
-    setReminderFeedback(dimension);
+  function openReminderModal(dimension: string) {
+    setReminderDimension(dimension);
+    setReminderDate(getLocalDateValue());
+    setReminderTime('08:00');
+    setReminderError('');
+    setReminderModalOpen(true);
+  }
+
+  function closeReminderModal(force = false) {
+    if (reminderSaving && !force) return;
+    setReminderModalOpen(false);
+    setReminderDimension('');
+    setReminderDate(getLocalDateValue());
+    setReminderTime('08:00');
+    setReminderError('');
+  }
+
+  function isValidTime(value: string): boolean {
+    if (!/^\d{2}:\d{2}$/.test(value)) return false;
+    const [hh, mm] = value.split(':').map(Number);
+    return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
+  }
+
+  async function handleScheduleReminder() {
+    const dimension = reminderDimension;
+    const date = reminderDate.trim();
+    const time = reminderTime.trim();
+
+    if (!dimension) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setReminderError('Escolha uma data valida para o lembrete.');
+      return;
+    }
+    if (!isValidTime(time)) {
+      setReminderError('Horario invalido. Use HH:MM (ex: 08:00).');
+      return;
+    }
+
+    setReminderSaving(true);
+    setReminderError('');
+
+    const scheduled = new Date(`${date}T${time}:00`);
+    if (Number.isNaN(scheduled.getTime())) {
+      setReminderError('Nao foi possivel interpretar a data e o horario escolhidos.');
+      setReminderSaving(false);
+      return;
+    }
+
     try {
-      const updated = { ...currentReminders, [key]: true };
+      const eventRes = await fetch('/api/collaborator/agenda', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `Lembrete de ${dimension}`,
+          type: 'lembrete',
+          date,
+          time,
+          notes: `Lembrete criado no Semaforo de Saude para acompanhar ${dimension}.`,
+        }),
+      });
+
+      if (!eventRes.ok) {
+        setReminderError('Nao foi possivel agendar agora. Tente novamente.');
+        setReminderSaving(false);
+        return;
+      }
+
+      const updated = { ...currentReminders, update_semaforo: true };
       await fetch('/api/users/me/notification-preferences', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mission_reminders: updated }),
       });
       setCurrentReminders(updated);
-    } catch { /* silently fail */ }
-    setTimeout(() => setReminderFeedback(null), 2000);
+      setReminderFeedback(prev => ({ ...prev, [dimension]: `Lembrete agendado para ${scheduled.toLocaleDateString('pt-BR')} as ${time}.` }));
+      closeReminderModal(true);
+    } catch {
+      setReminderError('Falha de conexao ao agendar. Verifique a internet e tente novamente.');
+    } finally {
+      setReminderSaving(false);
+    }
+
+    setTimeout(() => setReminderFeedback(prev => ({ ...prev, [dimension]: '' })), 3000);
   }
 
   // Stabilize dependency to prevent infinite loop
@@ -134,6 +243,23 @@ export default function SemaforoPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [semaforoKey]);
 
+  useEffect(() => {
+    const focus = searchParams.get('focus');
+    if (!focus || !semaforoData.length) return;
+
+    const target = semaforoData.find((item: any) => normalizeDimensionKey(item.dimension) === normalizeDimensionKey(focus));
+    if (!target) return;
+
+    setExpandedCard(target.dimension);
+    const timer = window.setTimeout(() => {
+      const cards = Array.from(document.querySelectorAll('[data-semaforo-dimension]')) as HTMLElement[];
+      const card = cards.find((element) => normalizeDimensionKey(element.dataset.semaforoDimension || '') === normalizeDimensionKey(target.dimension));
+      card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [searchParams, semaforoData]);
+
   const filteredItems = semaforoData.filter(item =>
     activeFilter === 'all' || item.status === activeFilter
   );
@@ -142,15 +268,15 @@ export default function SemaforoPage() {
     <div className="min-h-screen bg-cream-50 p-6 md:p-10 font-body animate-fadeIn space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-display font-bold text-uni-text-900">Semáforo de Saúde</h1>
-        <p className="text-uni-text-500 mt-1">Acompanhe suas dimensões de saúde e bem-estar.</p>
+        <h1 className="text-4xl font-display font-bold text-uni-text-900">Semaforo de Saude</h1>
+        <p className="text-uni-text-500 mt-1">Acompanhe suas dimensoes de saude e bem-estar.</p>
       </div>
 
       {/* How it works */}
       <div className="bg-cream-100 border border-border-1 rounded-xl p-4">
         <p className="text-sm text-uni-text-600">
-          <strong>Como funciona:</strong> Cada dimensão é avaliada de 0 a 10.{' '}
-          <span className="text-red-500">Vermelho (&lt;4)</span> = atenção urgente,{' '}
+          <strong>Como funciona:</strong> Cada dimensao e avaliada de 0 a 10.{' '}
+          <span className="text-red-500">Vermelho (&lt;4)</span> = atencao urgente,{' '}
           <span className="text-amber-500">Amarelo (4-7)</span> = melhorando,{' '}
           <span className="text-green-600">Verde (&gt;7)</span> = excelente.
         </p>
@@ -160,8 +286,8 @@ export default function SemaforoPage() {
       <div className="flex flex-wrap gap-3">
         {([
           { status: 'red',    count: redCount,    label: 'urgentes'           },
-          { status: 'yellow', count: yellowCount,  label: 'precisam de atenção'},
-          { status: 'green',  count: greenCount,   label: 'saudáveis'          },
+          { status: 'yellow', count: yellowCount,  label: 'precisam de atencao'},
+          { status: 'green',  count: greenCount,   label: 'saudaveis'          },
         ] as { status: 'red'|'yellow'|'green', count: number, label: string }[]).map(({ status, count, label }) => {
           const cfg = STATUS_CONFIG[status];
           return (
@@ -192,15 +318,17 @@ export default function SemaforoPage() {
           const cfg = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.green;
           const isExpanded = expandedCard === item.dimension;
           const historyEntries = historyData?.[item.dimension];
+          const normalizedDimension = normalizeDimensionKey(item.dimension);
           const detail = {
             history: historyEntries ? formatHistoryEntries(historyEntries) : [],
-            tips: TIPS_DATA[item.dimension] || [],
+            tips: TIPS_DATA[normalizedDimension] || [],
           };
           const displayScore = animatedScores[item.dimension] ?? 0;
 
           return (
             <div
               key={item.dimension}
+              data-semaforo-dimension={item.dimension}
               onClick={() => setExpandedCard(isExpanded ? null : item.dimension)}
               className={cn(
                 "bg-white rounded-2xl border cursor-pointer transition-all duration-300 overflow-hidden",
@@ -241,13 +369,13 @@ export default function SemaforoPage() {
 
               <div className="px-5 py-3">
                 <p className="text-xs text-uni-text-500 leading-relaxed">{item.recommendation}</p>
-                {getScoreGuidance(item.dimension, item.score) && (
+                {getScoreGuidance(normalizedDimension, item.score) && (
                   <p className="text-xs text-uni-text-600 mt-2 bg-cream-50 border border-border-1 rounded-lg px-3 py-2">
-                    {getScoreGuidance(item.dimension, item.score)}
+                    {getScoreGuidance(normalizedDimension, item.score)}
                   </p>
                 )}
                 <div className={cn("mt-2 text-xs font-bold transition-all flex items-center gap-1", cfg.text)}>
-                  {isExpanded ? '▲ Ver menos' : '▾ Ver detalhes e dicas'}
+                  {isExpanded ? '^ Ver menos' : 'v Ver detalhes e dicas'}
                 </div>
               </div>
 
@@ -258,37 +386,37 @@ export default function SemaforoPage() {
                   onClick={e => e.stopPropagation()}
                 >
                   <div>
-                    <h4 className="text-xs font-black uppercase tracking-widest text-uni-text-400 mb-2">📊 Histórico</h4>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-uni-text-400 mb-2">Historico</h4>
                     <div className="flex items-center gap-2 flex-wrap">
                       {detail.history.map((entry, i) => (
                         <span key={i} className="flex items-center gap-1 text-xs text-uni-text-600">
                           <span className="font-bold">{entry}</span>
-                          {i < detail.history.length - 1 && <span className="text-uni-text-300">→</span>}
+                          {i < detail.history.length - 1 && <span className="text-uni-text-300">{'->'}</span>}
                         </span>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="text-xs font-black uppercase tracking-widest text-uni-text-400 mb-2">💡 Dicas personalizadas</h4>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-uni-text-400 mb-2">Dicas personalizadas</h4>
                     <ul className="space-y-1">
                       {detail.tips.map((tip, i) => (
                         <li key={i} className="text-xs text-uni-text-600 flex items-start gap-2">
-                          <span className="text-uni-green mt-0.5">✓</span>
+                          <span className="text-uni-green mt-0.5">OK</span>
                           {tip}
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  {reminderFeedback === item.dimension ? (
-                    <p className="text-xs font-bold text-emerald-600">✓ Lembrete agendado!</p>
+                  {reminderFeedback[item.dimension] ? (
+                    <p className="text-xs font-bold text-emerald-600">{reminderFeedback[item.dimension]}</p>
                   ) : (
                     <button
-                      onClick={() => handleScheduleReminder(item.dimension)}
+                      onClick={() => openReminderModal(item.dimension)}
                       className="text-xs font-bold text-uni-text-500 border border-border-1 rounded-lg px-4 py-2 hover:border-rose-300 hover:text-rose-500 transition-all"
                     >
-                      🔔 Agendar lembrete
+                      Agendar lembrete
                     </button>
                   )}
                 </div>
@@ -297,6 +425,65 @@ export default function SemaforoPage() {
           );
         })}
       </div>
+
+      <Modal
+        isOpen={reminderModalOpen}
+        onClose={closeReminderModal}
+        title="Agendar lembrete"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-uni-text-600">
+            Escolha a data e o horario para receber lembrete de <strong>{reminderDimension}</strong>.
+          </p>
+
+          <Input
+            label="Data"
+            type="date"
+            value={reminderDate}
+            onChange={(e) => {
+              setReminderDate(e.target.value);
+              if (reminderError) setReminderError('');
+            }}
+            aria-label="Data do lembrete"
+          />
+
+          <Input
+            label="Horario"
+            type="time"
+            value={reminderTime}
+            onChange={(e) => {
+              setReminderTime(e.target.value);
+              if (reminderError) setReminderError('');
+            }}
+            error={reminderError || undefined}
+            aria-label="Horario do lembrete"
+          />
+
+          <p className="text-xs text-uni-text-400">
+            O lembrete sera criado na sua agenda pessoal e, perto do horario, pode aparecer como popup e notificacao no app instalado.
+          </p>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => closeReminderModal()}
+              disabled={reminderSaving}
+              className="flex-1 px-4 py-2.5 rounded-xl border border-border-1 text-sm font-semibold text-uni-text-600 hover:bg-cream-50 transition-all disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleScheduleReminder}
+              disabled={reminderSaving}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-gold-500 text-white text-sm font-semibold hover:bg-gold-600 transition-all disabled:opacity-50"
+            >
+              {reminderSaving ? 'Salvando...' : 'Confirmar lembrete'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
+

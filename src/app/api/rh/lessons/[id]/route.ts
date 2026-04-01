@@ -29,6 +29,24 @@ const LESSON_THEMES = [
   'geral',
 ] as const;
 
+function normalizeReflectionContent(content: Record<string, unknown>) {
+  const reflection =
+    typeof content.reflection === 'string'
+      ? content.reflection.trim()
+      : typeof content.prompt === 'string'
+        ? content.prompt.trim()
+        : '';
+
+  const invalid =
+    !reflection ||
+    reflection.length < 8 ||
+    reflection === '///' ||
+    reflection === '...' ||
+    reflection === '--';
+
+  return { reflection: invalid ? '' : reflection };
+}
+
 const patchLessonSchema = z.object({
   title: z.string().min(3).optional(),
   description: z.string().optional(),
@@ -85,6 +103,27 @@ export const PATCH = withRole('rh')(async (req, { auth, params }) => {
     }
 
     const data = parsed.data;
+    const currentLesson = db.prepare(
+      'SELECT type FROM daily_lessons WHERE id = ?'
+    ).get(id) as { type: string } | undefined;
+    const nextType = data.type ?? currentLesson?.type;
+
+    if (nextType === 'reflexao') {
+      if (!data.content_json) {
+        return NextResponse.json(
+          { error: 'Reflexao obrigatoria: envie content_json.reflection.' },
+          { status: 400 }
+        );
+      }
+      const normalized = normalizeReflectionContent(data.content_json);
+      if (!normalized.reflection) {
+        return NextResponse.json(
+          { error: 'Reflexao obrigatoria: preencha o campo reflection.' },
+          { status: 400 }
+        );
+      }
+      data.content_json = normalized;
+    }
     const fields: string[] = [];
     const values: unknown[] = [];
 

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback, createContext, useContext, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { MockUser, UserRole } from '@/types/platform';
 
 const STORAGE_KEY_USER = 'uniher-user';
@@ -58,12 +58,19 @@ export function useAuthState(): AuthContextValue {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [approved, setApproved] = useState<boolean>(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   // Verify session on mount (via /api/auth/me).
   // Don't set user from localStorage immediately — verify with API first,
   // falling back to localStorage only if API fails (offline support).
   useEffect(() => {
     const stored = getStoredUser();
+    const publicPathsWithoutSessionCheck = ['/', '/auth', '/esqueci-senha', '/redefinir-senha'];
+
+    if (!stored && pathname && publicPathsWithoutSessionCheck.includes(pathname)) {
+      setIsLoading(false);
+      return;
+    }
 
     fetch('/api/auth/me')
       .then(r => r.ok ? r.json() : null)
@@ -115,7 +122,7 @@ export function useAuthState(): AuthContextValue {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [router]);
+  }, [pathname, router]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole, withAuth } from '@/lib/auth/middleware';
+import { withRole } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
@@ -13,8 +13,8 @@ const createSchema = z.object({
   rarity: z.enum(['common', 'rare', 'epic', 'legendary']).default('common'),
 });
 
-// GET — public for authenticated users, lists all platform badges
-export const GET = withAuth(async (_req: NextRequest) => {
+// GET — admin only
+export const GET = withRole('admin')(async (_req: NextRequest) => {
   await initDb();
   const db = getReadDb();
   const badges = db.prepare(`

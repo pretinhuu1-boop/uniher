@@ -62,13 +62,14 @@ export const POST = withRole('rh')(async (req, context) => {
     return NextResponse.json({ error: 'RH não pode convidar outros usuários RH' }, { status: 403 });
   }
 
-  // Check if already invited and pending
+  // Check if already invited and pending (same company)
   const existing = db.prepare("SELECT id FROM invites WHERE email = ? AND company_id = ? AND status = 'pending'").get(email, user.company_id);
   if (existing) return NextResponse.json({ error: 'Já existe um convite pendente para este email' }, { status: 409 });
 
-  // Check if already registered
-  const registered = db.prepare('SELECT id FROM users WHERE email = ? AND company_id = ?').get(email, user.company_id);
-  if (registered) return NextResponse.json({ error: 'Este email já está cadastrado na empresa' }, { status: 409 });
+  // Check if email is already registered anywhere in the platform (global check)
+  // Prevents inviting existing users regardless of which company they belong to
+  const registered = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  if (registered) return NextResponse.json({ error: 'Este email já possui uma conta na plataforma' }, { status: 409 });
 
   const token = nanoid(32);
   const id = nanoid();

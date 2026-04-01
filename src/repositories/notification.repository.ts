@@ -1,6 +1,8 @@
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
 
+const inflightReadUpdates = new Map<string, Promise<void>>();
+
 export interface NotificationRow {
   id: string;
   user_id: string;
@@ -27,10 +29,37 @@ export function countUnread(userId: string): number {
 }
 
 export async function markAsRead(notificationId: string, userId: string): Promise<void> {
+  await setReadStatus(notificationId, userId, true);
+}
+
+export async function setReadStatus(notificationId: string, userId: string, read: boolean): Promise<void> {
+  const inflightKey = `${userId}:${notificationId}:${read ? 1 : 0}`;
+  const existing = inflightReadUpdates.get(inflightKey);
+  if (existing) {
+    await existing;
+    return;
+  }
+
   const writeQueue = getWriteQueue();
-  await writeQueue.enqueue((db) => {
-    db.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?').run(notificationId, userId);
+  const task = writeQueue.enqueue((db) => {
+    const current = db.prepare(
+      'SELECT read FROM notifications WHERE id = ? AND user_id = ?'
+    ).get(notificationId, userId) as { read: number } | undefined;
+
+    if (!current || current.read === (read ? 1 : 0)) {
+      return;
+    }
+
+    db.prepare('UPDATE notifications SET read = ? WHERE id = ? AND user_id = ?').run(read ? 1 : 0, notificationId, userId);
   });
+
+  inflightReadUpdates.set(inflightKey, task);
+
+  try {
+    await task;
+  } finally {
+    inflightReadUpdates.delete(inflightKey);
+  }
 }
 
 export async function markAllAsRead(userId: string): Promise<void> {

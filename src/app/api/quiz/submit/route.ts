@@ -6,13 +6,6 @@ import { quizSubmitSchema } from '@/lib/validation/schemas';
 import * as quizRepo from '@/repositories/quiz.repository';
 import * as healthRepo from '@/repositories/health-score.repository';
 
-const ARCHETYPE_MAP: Record<string, string> = {
-  guardia: 'arch_guardia',
-  protetora: 'arch_protetora',
-  guerreira: 'arch_guerreira',
-  equilibrista: 'arch_equilibrista',
-};
-
 // POST /api/quiz/submit - salvar resultado e calcular scores iniciais
 export const POST = withAuth(async (req, { auth }) => {
   try {
@@ -37,7 +30,19 @@ export const POST = withAuth(async (req, { auth }) => {
       }
     }
 
-    return NextResponse.json({ success: true, archetypeKey: input.archetypeKey });
+    const archetype = quizRepo.getArchetypeByKey(input.archetypeKey);
+
+    return NextResponse.json({
+      success: true,
+      archetypeKey: input.archetypeKey,
+      archetype: archetype
+        ? {
+            key: archetype.key,
+            name: archetype.name,
+            description: archetype.description,
+          }
+        : null,
+    });
   } catch (error) {
     return handleApiError(error);
   }
