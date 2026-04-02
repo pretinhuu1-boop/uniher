@@ -32,6 +32,13 @@ mkdir -p data backups
 echo "[4/6] Build de producao..."
 npm run build
 
+echo "[4.1/6] Preparando standalone..."
+mkdir -p .next/standalone/.next
+rm -rf .next/standalone/.next/static
+cp -R .next/static .next/standalone/.next/static
+rm -rf .next/standalone/public
+cp -R public .next/standalone/public
+
 echo "[5/6] Migracoes e seed base..."
 npm run db:seed
 

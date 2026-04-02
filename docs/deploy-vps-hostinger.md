@@ -123,7 +123,20 @@ Usuários padrão do seed:
 
 Troque essas senhas depois do primeiro acesso.
 
-## 7. Subir com PM2
+## 7. Preparar standalone
+
+Depois do build, copie os assets públicos para o diretório standalone:
+
+```bash
+cd /var/www/uniher
+mkdir -p .next/standalone/.next
+rm -rf .next/standalone/.next/static
+cp -R .next/static .next/standalone/.next/static
+rm -rf .next/standalone/public
+cp -R public .next/standalone/public
+```
+
+## 8. Subir com PM2
 
 ```bash
 cd /var/www/uniher
@@ -143,7 +156,7 @@ pm2 logs uniher
 curl http://127.0.0.1:3000
 ```
 
-## 8. Configurar Nginx
+## 9. Configurar Nginx
 
 Copiar a configuração pronta:
 
@@ -157,7 +170,7 @@ systemctl restart nginx
 
 Se já tiver domínio, troque `server_name _;` pelo domínio real.
 
-## 9. HTTPS com Certbot
+## 10. HTTPS com Certbot
 
 Se o domínio já apontar para a VPS:
 
@@ -166,7 +179,7 @@ apt install -y certbot python3-certbot-nginx
 certbot --nginx -d SEU-DOMINIO -d www.SEU-DOMINIO
 ```
 
-## 10. Atualizações futuras
+## 11. Atualizações futuras
 
 Há um script pronto no projeto:
 
@@ -184,7 +197,7 @@ Esse script:
 - roda `db:seed`
 - reinicia no PM2
 
-## 11. O que revisar depois do deploy
+## 12. O que revisar depois do deploy
 
 - login do admin
 - criação de evento na agenda
@@ -193,7 +206,7 @@ Esse script:
 - lembretes popup
 - permissões por perfil
 
-## 12. Observações importantes
+## 13. Observações importantes
 
 - Como usa SQLite, mantenha o app em uma instância
 - Faça backup periódico de `/var/www/uniher/data/uniher.db`

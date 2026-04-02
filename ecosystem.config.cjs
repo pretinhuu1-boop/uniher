@@ -2,9 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'uniher',
-      cwd: '/var/www/uniher',
+      cwd: '/var/www/uniher/.next/standalone',
       script: 'node',
-      args: '.next/standalone/server.js',
+      args: 'server.js',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
