@@ -11,20 +11,20 @@ fi
 
 cd "$APP_DIR"
 
-if [ -f ".env.production" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source ".env.production"
-  set +a
-fi
-
 echo "[1/6] Atualizando codigo..."
 git fetch origin
 git checkout "$BRANCH"
 git pull origin "$BRANCH"
 
 echo "[2/6] Instalando dependencias..."
-npm ci
+npm ci --include=dev
+
+if [ -f ".env.production" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source ".env.production"
+  set +a
+fi
 
 echo "[3/6] Garantindo pasta de dados..."
 mkdir -p data backups

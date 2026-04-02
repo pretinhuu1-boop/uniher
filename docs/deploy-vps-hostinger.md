@@ -3,7 +3,7 @@
 Este projeto roda melhor nessa VPS com:
 
 - `Node.js 22 LTS`
-- `npm ci`
+- `npm ci --include=dev`
 - `Next.js` em modo produção
 - `PM2` para manter o processo vivo
 - `Nginx` como proxy reverso
@@ -97,7 +97,10 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 
 ```bash
 cd /var/www/uniher
-npm ci
+npm ci --include=dev
+set -a
+source .env.production
+set +a
 npm run build
 ```
 
@@ -175,7 +178,7 @@ bash deploy/vps/deploy.sh main
 Esse script:
 
 - faz `git pull`
-- roda `npm ci`
+- roda `npm ci --include=dev`
 - garante `data/` e `backups/`
 - roda `build`
 - roda `db:seed`
