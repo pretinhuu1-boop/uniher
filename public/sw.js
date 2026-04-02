@@ -24,8 +24,8 @@ self.addEventListener('notificationclick', function(event) {
 });
 
 // PWA Cache strategy
-const CACHE_NAME = 'uniher-v2';
-const PRECACHE_URLS = ['/', '/logo-uniher.png', '/manifest.json'];
+const CACHE_NAME = 'uniher-v3';
+const PRECACHE_URLS = ['/logo-uniher.png', '/manifest.json'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -43,21 +43,47 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Network-first strategy for API, cache-first for static assets
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+// Never cache Next internals or API. For HTML/navigation, prefer network to avoid
+// stale documents referencing old chunk names after deploys.
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) return;
   if (event.request.method !== 'GET') return;
+
+  const isNavigation = event.request.mode === 'navigate'
+    || event.request.headers.get('accept')?.includes('text/html');
+
+  if (isNavigation) {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, fresh.clone());
+        return fresh;
+      } catch {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        return Response.error();
+      }
+    })());
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(async cached => {
       if (cached) return cached;
       try {
-        return await fetch(event.request);
+        const fresh = await fetch(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, fresh.clone());
+        return fresh;
       } catch {
-        if (event.request.mode === 'navigate') {
-          const fallback = await caches.match('/');
-          if (fallback) return fallback;
-        }
         return Response.error();
       }
     })
