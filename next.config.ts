@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const isProd = process.env.NODE_ENV === "production";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 const hasHttpsAppUrl = /^https:\/\//i.test(appUrl);
+const isTrustworthyOrigin =
+  hasHttpsAppUrl || /^http:\/\/localhost(?::\d+)?$/i.test(appUrl);
 
 const nextConfig: NextConfig = {
   output: isProd ? 'standalone' : undefined,
@@ -38,20 +40,24 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
           },
-          {
-            key: "Cross-Origin-Opener-Policy",
-            value: "same-origin",
-          },
-          {
-            key: "Cross-Origin-Resource-Policy",
-            value: "same-origin",
-          },
+          ...(isTrustworthyOrigin
+            ? [
+                {
+                  key: "Cross-Origin-Opener-Policy",
+                  value: "same-origin",
+                },
+                {
+                  key: "Cross-Origin-Resource-Policy",
+                  value: "same-origin",
+                },
+              ]
+            : []),
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
               isProd
-                ? "script-src 'self'"
+                ? "script-src 'self' 'unsafe-inline'"
                 : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",

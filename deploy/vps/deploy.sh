@@ -14,7 +14,8 @@ cd "$APP_DIR"
 echo "[1/6] Atualizando codigo..."
 git fetch origin
 git checkout "$BRANCH"
-git pull origin "$BRANCH"
+git reset --hard "origin/$BRANCH"
+git clean -fd
 
 echo "[2/6] Instalando dependencias..."
 npm ci --include=dev
