@@ -67,6 +67,7 @@ NODE_ENV=production
 PORT=3000
 NEXT_PUBLIC_APP_URL=https://SEU-DOMINIO
 DATABASE_PATH=/var/www/uniher/data/uniher.db
+ALLOW_INSECURE_HTTP_COOKIES=false
 
 JWT_SECRET=GERAR_UM_SEGREDO_FORTE_COM_32+_CARACTERES
 JWT_REFRESH_SECRET=GERAR_OUTRO_SEGREDO_FORTE_COM_32+_CARACTERES
@@ -85,6 +86,11 @@ Notas:
 - `RESEND_API_KEY` só é necessário se quiser email real
 - push só funciona se preencher `NEXT_PUBLIC_VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`
 - o nome correto da chave pública VAPID neste projeto é `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+
+Observação de cookies:
+
+- em homologação HTTP provisória, use `NEXT_PUBLIC_APP_URL=http://...` e `ALLOW_INSECURE_HTTP_COOKIES=true`
+- em produção correta com domínio + HTTPS, mantenha `NEXT_PUBLIC_APP_URL=https://...` e `ALLOW_INSECURE_HTTP_COOKIES=false`
 
 Gerar secrets:
 

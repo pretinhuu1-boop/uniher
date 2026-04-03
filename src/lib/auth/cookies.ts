@@ -2,10 +2,12 @@ import { cookies } from 'next/headers';
 
 const ACCESS_TOKEN_NAME = 'uniher-access-token';
 const REFRESH_TOKEN_NAME = 'uniher-refresh-token';
+const allowInsecureHttpCookies = process.env.ALLOW_INSECURE_HTTP_COOKIES === 'true';
+const useSecureCookies = process.env.NODE_ENV === 'production' && !allowInsecureHttpCookies;
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: useSecureCookies,
   sameSite: 'lax' as const,
   path: '/',
 };
