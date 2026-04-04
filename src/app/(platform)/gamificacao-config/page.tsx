@@ -10,7 +10,7 @@ const fetcher = (url: string) => fetch(url).then(r => {
 });
 
 function normalizeText(value: string) {
-  if (!value || !/[ÃÂâð�]/.test(value)) return value;
+  if (!value || !/[\u00C3\u00C2\u00E2\u00F0\uFFFD]/.test(value)) return value;
   try {
     return decodeURIComponent(escape(value));
   } catch {

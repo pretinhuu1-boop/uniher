@@ -276,7 +276,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
   if (!data)
     return (
       <div className="p-6 flex items-center gap-2 text-sm text-uni-text-400">
-        <Spinner /> Carregando usu�rios...
+        <Spinner /> Carregando usuários...
       </div>
     );
 
@@ -284,8 +284,8 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
     return (
       <div className="text-center py-10 space-y-3">
         <span className="text-3xl block">👤</span>
-        <p className="text-uni-text-700 font-medium text-sm">Nenhum usu�rio nesta empresa</p>
-        <p className="text-xs text-uni-text-400">Adicione um Admin Empresa para come�ar.</p>
+        <p className="text-uni-text-700 font-medium text-sm">Nenhum usuário nesta empresa</p>
+        <p className="text-xs text-uni-text-400">Adicione um Admin Empresa para começar.</p>
         {onGoToUsers && (
           <button onClick={onGoToUsers} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg" style={{ background: '#C9A264' }}>
             + Adicionar Admin Empresa
@@ -299,7 +299,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
       {tempPass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
           <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Tempor�ria</h3>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center gap-2">
                 <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
@@ -315,7 +315,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
             </div>
             <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
               <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela n�o será mostrada novamente.
+              Anote esta senha! Ela não será mostrada novamente.
             </p>
             <button
               onClick={() => setTempPass(null)}
@@ -355,7 +355,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
                   {ROLE_LABELS[u.role] ?? u.role}
                 </span>
                 {u.department_name && <span>{u.department_name}</span>}
-                <span>N�vel {u.level}</span>
+                <span>Nível {u.level}</span>
                 <span>{u.points.toLocaleString('pt-BR')} pts</span>
               </div>
               <div className="flex gap-2">
@@ -393,13 +393,13 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border-1">
-                    <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usu?ria</th>
+                    <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usuária</th>
               <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Departamento</th>
               <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">N?vel</th>
+                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Nível</th>
               <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Pts</th>
               <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
-                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A??es</th>
+                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-1">
@@ -514,7 +514,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
       } else {
         setFeedback({ type: 'error', msg: json.error || 'Erro ao atualizar' });
       }
-    } catch { setFeedback({ type: 'error', msg: 'Erro de conex�o' }); }
+    } catch { setFeedback({ type: 'error', msg: 'Erro de conexão' }); }
     setSavingEdit(false);
   }
   const companies = data?.companies ?? [];
@@ -536,7 +536,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
       } else {
         setFeedback({ type: 'error', msg: json.error || 'Erro ao cadastrar' });
       }
-    } catch { setFeedback({ type: 'error', msg: 'Erro de conex�o' }); }
+    } catch { setFeedback({ type: 'error', msg: 'Erro de conexão' }); }
     setSaving(false);
     setTimeout(() => setFeedback(null), 3000);
   }
@@ -571,11 +571,11 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
           <h3 className="font-display font-bold text-uni-text-900">Nova Empresa</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {([
-              { field: 'name', label: 'Raz�o Social *', placeholder: 'Empresa Ltda.' },
+              { field: 'name', label: 'Razão Social *', placeholder: 'Empresa Ltda.' },
               { field: 'trade_name', label: 'Nome Fantasia', placeholder: 'Empresa' },
               { field: 'cnpj', label: 'CNPJ *', placeholder: '00.000.000/0001-00' },
               { field: 'sector', label: 'Setor', placeholder: 'Tecnologia' },
-              { field: 'contact_name', label: 'Contato', placeholder: 'Nome do respons�vel' },
+              { field: 'contact_name', label: 'Contato', placeholder: 'Nome do responsável' },
               { field: 'contact_email', label: 'Email contato', placeholder: 'rh@empresa.com' },
               { field: 'contact_phone', label: 'Telefone', placeholder: '(11) 99999-9999' },
             ] as const).map(({ field, label, placeholder }) => (
@@ -842,7 +842,7 @@ function UsersTab() {
     // Embaralha tudo
     const pass = [...required, ...rest].sort(() => Math.random() - 0.5).join('');
     setUserForm(f => ({ ...f, password: pass }));
-    setShowPassText(false); // oculta após gerar — usu�rio decide se quer ver
+    setShowPassText(false); // oculta após gerar — usuário decide se quer ver
   }
 
   async function copyPassword() {
@@ -922,14 +922,14 @@ function UsersTab() {
       });
       const json = await res.json();
       if (json.success) {
-        setUserFeedback({ type: 'success', msg: 'Usu�rio criado com sucesso!' });
+        setUserFeedback({ type: 'success', msg: 'Usuário criado com sucesso!' });
         setShowCreateUser(false);
         setUserForm(EMPTY_USER_FORM);
         await loadAllUsers();
       } else {
-        setUserFeedback({ type: 'error', msg: json.error || 'Erro ao criar usu�rio' });
+        setUserFeedback({ type: 'error', msg: json.error || 'Erro ao criar usuário' });
       }
-    } catch { setUserFeedback({ type: 'error', msg: 'Erro de conex�o' }); }
+    } catch { setUserFeedback({ type: 'error', msg: 'Erro de conexão' }); }
     setSavingUser(false);
     setTimeout(() => setUserFeedback(null), 3000);
   }
@@ -951,7 +951,7 @@ function UsersTab() {
       {/* Create User Form */}
       {showCreateUser && (
         <div className="bg-white rounded-xl border border-border-1 p-6 space-y-4">
-          <h3 className="font-display font-bold text-uni-text-900">Novo usu�rio Master / Admin</h3>
+          <h3 className="font-display font-bold text-uni-text-900">Novo usuário Master / Admin</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Nome *</label>
@@ -1018,13 +1018,13 @@ function UsersTab() {
               />
               <span className="text-sm text-uni-text-600">Também participa como colaboradora</span>
             </label>
-            <span className="text-[10px] text-uni-text-400" title="Se marcado, este usu�rio pode alternar entre a visão de gestor e a de colaboradora (check-ins, desafios, etc)">ℹ️</span>
+            <span className="text-[10px] text-uni-text-400" title="Se marcado, este usuário pode alternar entre a visão de gestor e a de colaboradora (check-ins, desafios, etc)">ℹ️</span>
           </div>
           <div className="flex gap-3 mt-3">
             <button onClick={() => setShowCreateUser(false)} className="px-4 py-2 rounded-lg border border-border-1 text-sm font-bold text-uni-text-600 hover:bg-cream-50">Cancelar</button>
             <button onClick={createUser} disabled={savingUser || !userForm.name || !userForm.email || userForm.password.length < 8}
               className="px-6 py-2 rounded-lg bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 disabled:opacity-50">
-              {savingUser ? 'Criando...' : 'Criar usu�rio'}
+              {savingUser ? 'Criando...' : 'Criar usuário'}
             </button>
           </div>
         </div>
@@ -1035,7 +1035,7 @@ function UsersTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-uni-text-900 text-lg">Editar usu�rio</h3>
+              <h3 className="font-display font-bold text-uni-text-900 text-lg">Editar usuário</h3>
               <button onClick={() => setEditingUser(null)} className="text-uni-text-400 hover:text-uni-text-700 text-xl leading-none">×</button>
             </div>
             <div className="space-y-3">
@@ -1052,12 +1052,12 @@ function UsersTab() {
               <div>
                 <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">
                   Papel
-                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usu�ria padrão — check-ins, campanhas e pontos'}>?</span>
+                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usuária padrão — check-ins, campanhas e pontos'}>?</span>
                 </label>
                 <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
                   className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400">
                   <option value="rh">Admin Empresa</option>
-                  <option value="lideranca">Lideran�a</option>
+                  <option value="lideranca">Liderança</option>
                   <option value="colaboradora">Colaboradora</option>
                 </select>
               </div>
@@ -1108,14 +1108,14 @@ function UsersTab() {
           ))}
         </select>
         <span className="self-center text-xs text-uni-text-400">
-          {filtered.length} Usu�ria{filtered.length !== 1 ? 's' : ''}
+          {filtered.length} Usuária{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {tempPass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
           <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Tempor�ria</h3>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center gap-2">
                 <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
@@ -1131,7 +1131,7 @@ function UsersTab() {
             </div>
             <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
               <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela n�o será mostrada novamente.
+              Anote esta senha! Ela não será mostrada novamente.
             </p>
             <button
               onClick={() => setTempPass(null)}
@@ -1144,20 +1144,20 @@ function UsersTab() {
       )}
 
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-        <SectionHeader title="Usu�rios" count={filtered.length} action={
+        <SectionHeader title="Usuários" count={filtered.length} action={
           <button onClick={() => setShowCreateUser(s => !s)} className="px-4 py-2 rounded-lg bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 transition-all">
-            + Novo usu�rio
+            + Novo usuário
           </button>
         } />
         {fetching ? (
           <div className="p-12 flex items-center justify-center gap-3 text-sm text-uni-text-400">
-            <Spinner /> Carregando usu�rias...
+            <Spinner /> Carregando usuárias...
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 space-y-2">
             <span className="text-4xl block">👥</span>
-            <p className="text-uni-text-700 font-medium">Nenhuma Usu�ria encontrada</p>
-            <p className="text-sm text-uni-text-400">Tente ajustar os filtros ou crie uma nova Usu�ria.</p>
+            <p className="text-uni-text-700 font-medium">Nenhuma Usuária encontrada</p>
+            <p className="text-sm text-uni-text-400">Tente ajustar os filtros ou crie uma nova Usuária.</p>
           </div>
         ) : (
           <>
@@ -1365,7 +1365,7 @@ function AdminMasterTab() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
-      setFeedback({ type: 'error', msg: 'As senhas do novo admin n�o coincidem.' });
+      setFeedback({ type: 'error', msg: 'As senhas do novo admin não coincidem.' });
       return;
     }
     if (!form.confirmCurrentPassword) {
@@ -1395,7 +1395,7 @@ function AdminMasterTab() {
         setFeedback({ type: 'error', msg: json.error || 'Erro ao criar Admin Master' });
       }
     } catch {
-      setFeedback({ type: 'error', msg: 'Erro de conex�o' });
+      setFeedback({ type: 'error', msg: 'Erro de conexão' });
     } finally {
       setSaving(false);
       setTimeout(() => setFeedback(null), 4000);
@@ -1433,7 +1433,7 @@ function AdminMasterTab() {
       {tempPass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
           <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Tempor�ria</h3>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center gap-2">
                 <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
@@ -1449,7 +1449,7 @@ function AdminMasterTab() {
             </div>
             <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
               <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela n�o será mostrada novamente.
+              Anote esta senha! Ela não será mostrada novamente.
             </p>
             <button
               onClick={() => setTempPass(null)}
@@ -1467,7 +1467,7 @@ function AdminMasterTab() {
           <div className="px-6 py-4 border-b border-border-1 flex items-center justify-between">
             <div>
               <h3 className="font-display font-bold text-uni-text-900">Novo Admin Master</h3>
-              <p className="text-[11px] text-uni-text-400 mt-0.5">N�o vinculado a nenhuma empresa — acesso total ao sistema</p>
+              <p className="text-[11px] text-uni-text-400 mt-0.5">Não vinculado a nenhuma empresa — acesso total ao sistema</p>
             </div>
             <button onClick={resetForm} className="text-uni-text-400 hover:text-uni-text-700 text-xl leading-none">×</button>
           </div>
@@ -1497,7 +1497,7 @@ function AdminMasterTab() {
                     type={showPass ? 'text' : 'password'}
                     value={form.password}
                     onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                    placeholder="M�nimo 8 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     className={cn(inputCls, 'pr-10 font-mono')}
                     required
                   />
@@ -1525,7 +1525,7 @@ function AdminMasterTab() {
                 required
               />
               {form.confirmPassword && form.password !== form.confirmPassword && (
-                <p className="text-[11px] text-red-500 mt-1">As senhas n�o coincidem</p>
+                <p className="text-[11px] text-red-500 mt-1">As senhas não coincidem</p>
               )}
             </div>
 
@@ -1534,7 +1534,7 @@ function AdminMasterTab() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-amber-500 text-base">🔐</span>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700">Confirma��o de identidade</p>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700">Confirma??o de identidade</p>
                   <p className="text-[11px] text-uni-text-400">Por segurança, confirme com <strong>sua senha atual</strong> para criar um Admin Master</p>
                 </div>
               </div>
@@ -1641,7 +1641,7 @@ function AdminMasterTab() {
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Tipo</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Criado em</th>
                     <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
-                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A��es</th>
+                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-1">
@@ -1700,8 +1700,8 @@ const RARITY_OPTIONS = ['common', 'rare', 'epic', 'legendary'] as const;
 const RARITY_LABELS: Record<string, string> = {
   common: 'Comum',
   rare: 'Raro',
-  epic: '�pico',
-  legendary: 'Lend�rio',
+  epic: 'Épico',
+  legendary: 'Lendário',
 };
 
 const emptyBadgeForm = { name: '', description: '', icon: '🏅', points: 0, rarity: 'common' as const };
@@ -1815,7 +1815,7 @@ function BadgesTab() {
               />
             </div>
             <div className="md:col-span-2 space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Descri��o</label>
+              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Descrição</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -1946,7 +1946,7 @@ function BadgesTab() {
                         : 'bg-red-50 text-red-700 hover:bg-red-100',
                       deleting === b.id && 'opacity-50 cursor-wait'
                     )}
-                    title={b.holder_count > 0 ? 'Não é possível excluir: usu�rias possuem este badge' : 'Excluir badge'}
+                    title={b.holder_count > 0 ? 'Não é possível excluir: usuárias possuem este badge' : 'Excluir badge'}
                   >
                     {deleting === b.id ? '...' : 'Excluir'}
                   </button>
@@ -2081,7 +2081,7 @@ function BrandingEditor() {
           <span className="font-bold text-lg" style={{ color: form.primary_color || '#C9A264' }}>
             {form.app_name || 'UniHER'}
           </span>
-          <span className="ml-auto text-xs opacity-60">pr�-visualiza��o</span>
+          <span className="ml-auto text-xs opacity-60">pré-visualização</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -2094,14 +2094,14 @@ function BrandingEditor() {
             <input className={inputCls} value={form.app_logo_url ?? ''} onChange={e => set('app_logo_url', e.target.value)} placeholder="https://..." />
           </div>
           <div>
-            <label className={labelCls}>Cor Prim�ria</label>
+            <label className={labelCls}>Cor Primária</label>
             <div className="flex items-center gap-2">
               <input type="color" value={form.primary_color ?? '#C9A264'} onChange={e => set('primary_color', e.target.value)} className="h-10 w-14 rounded-lg border border-border-1 cursor-pointer p-0.5" />
               <input className={`${inputCls} flex-1`} value={form.primary_color ?? ''} onChange={e => set('primary_color', e.target.value)} placeholder="#C9A264" />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Cor Secund�ria</label>
+            <label className={labelCls}>Cor Secundária</label>
             <div className="flex items-center gap-2">
               <input type="color" value={form.secondary_color ?? '#B8922A'} onChange={e => set('secondary_color', e.target.value)} className="h-10 w-14 rounded-lg border border-border-1 cursor-pointer p-0.5" />
               <input className={`${inputCls} flex-1`} value={form.secondary_color ?? ''} onChange={e => set('secondary_color', e.target.value)} placeholder="#B8922A" />
@@ -2271,7 +2271,7 @@ function SystemTab() {
           accent="text-emerald-600"
         />
         <StatCard label="Challenges" value={data?.challenges ?? '—'} sub="na plataforma" />
-        <StatCard label="Notifica��es" value={data?.notifications ?? '—'} sub="total geradas" />
+        <StatCard label="Notificações" value={data?.notifications ?? '—'} sub="total geradas" />
       </div>
 
       {/* Health checks */}
@@ -2297,7 +2297,7 @@ function SystemTab() {
               { label: 'Banco de Dados (SQLite)', ok: !!data, value: data ? `${data.db_size_kb} KB` : 'Indisponível' },
               { label: 'Processo Node.js', ok: !!data, value: data ? `Uptime: ${formatUptime(data.uptime_seconds)}` : 'Desconhecido' },
               { label: 'Empresas', ok: !!data, value: data ? `${data.companies} cadastradas` : '—' },
-              { label: 'Usu�rias', ok: !!data, value: data ? `${data.users} ativas` : '—' },
+              { label: 'Usuárias', ok: !!data, value: data ? `${data.users} ativas` : '—' },
               { label: 'Campanhas Ativas', ok: !!data, value: data ? `${data.campaigns} em andamento` : '—' },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between px-6 py-3.5">
@@ -2408,7 +2408,7 @@ function SystemTab() {
 
           {/* Actions */}
           <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-            <SectionHeader title="A��es do Sistema" />
+            <SectionHeader title="Ações do Sistema" />
             <div className="p-5 space-y-4">
               <div className="flex flex-wrap gap-3">
                 <MasterActionButton icon="💾" label="Backup do Banco" onClick={handleBackup} loading={backupLoading} />
@@ -2515,7 +2515,7 @@ function AlertasTab() {
   const roleLabels: Record<string, string> = {
     admin: 'Admin Master',
     rh: 'RH',
-    lideranca: 'Lideran�a',
+    lideranca: 'Liderança',
     colaboradora: 'Colaboradoras',
   };
   const typeLabels: Record<string, string> = {
@@ -2523,8 +2523,8 @@ function AlertasTab() {
     system: 'Sistema',
     campaign: 'Campanha',
     challenge: 'Desafio',
-    lesson: 'Li��o',
-    gamification: 'Gamifica��o',
+    lesson: 'Lição',
+    gamification: 'Gamificação',
   };
   const isGlobalAdminAudience = targetRole === 'admin';
   const selectedCompany = companies.find((c: any) => c.id === companyId);
@@ -2534,8 +2534,8 @@ function AlertasTab() {
     : [
         departmentId && selectedDepartment ? `Departamento ${selectedDepartment.name}` : '',
         companyId && selectedCompany ? `Empresa ${selectedCompany.name}` : '',
-        targetRole ? roleLabels[targetRole] : 'Todos os funcion�rios',
-      ].filter(Boolean).join(' � ');
+        targetRole ? roleLabels[targetRole] : 'Todos os funcionários',
+      ].filter(Boolean).join(' ? ');
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -2568,7 +2568,7 @@ function AlertasTab() {
         setSendError(d.error ?? 'Erro ao enviar');
       }
     } catch {
-      setSendError('Erro de conex�o');
+      setSendError('Erro de conexão');
     } finally {
       setSending(false);
     }
@@ -2579,11 +2579,11 @@ function AlertasTab() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-        <SectionHeader title="Enviar Notifica��o para a Equipe" />
+        <SectionHeader title="Enviar Notificação para a Equipe" />
         <form onSubmit={handleSend} className="p-4 sm:p-6 space-y-4">
           {sent && (
             <div className="flex flex-col gap-1 p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-sm text-emerald-700 font-medium">
-              <span>? Notifica��o enviada para {sent.recipients} pessoa{sent.recipients !== 1 ? 's' : ''}!</span>
+              <span>Notificação enviada para {sent.recipients} pessoa{sent.recipients !== 1 ? 's' : ''}!</span>
               {sent.audienceLabel && <span className="font-normal text-emerald-800 break-words">{sent.audienceLabel}</span>}
             </div>
           )}
@@ -2592,8 +2592,8 @@ function AlertasTab() {
           )}
 
           <div className="rounded-xl border border-border-1 bg-amber-50/50 px-4 py-3 text-sm leading-6 text-uni-text-600">
-            Use este painel para mandar alertas, avisos de sistema e outras notifica��es por empresa, departamento ou perfil.
-            O padr�o sem perfil selecionado envia para os funcion�rios. Admin Master � sempre global.
+            Use este painel para mandar alertas, avisos de sistema e outras notificações por empresa, departamento ou perfil.
+            O padrão sem perfil selecionado envia para os funcionários. Admin Master é sempre global.
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -2604,8 +2604,8 @@ function AlertasTab() {
                 <option value="system">Sistema</option>
                 <option value="campaign">Campanha</option>
                 <option value="challenge">Desafio</option>
-                <option value="lesson">Li��o</option>
-                <option value="gamification">Gamifica��o</option>
+                <option value="lesson">Lição</option>
+                <option value="gamification">Gamificação</option>
               </select>
             </div>
             <div>
@@ -2619,7 +2619,7 @@ function AlertasTab() {
                 className={inputCls}
                 disabled={isGlobalAdminAudience}
               >
-                <option value="">{isGlobalAdminAudience ? 'Admin Master n�o usa empresa' : '� Todas as empresas �'}</option>
+                <option value="">{isGlobalAdminAudience ? 'Admin Master não usa empresa' : 'Todas as empresas'}</option>
                 {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
@@ -2633,9 +2633,9 @@ function AlertasTab() {
               >
                 <option value="">
                   {isGlobalAdminAudience
-                    ? 'Admin Master n�o usa departamento'
+                    ? 'Admin Master não usa departamento'
                     : companyId
-                      ? '� Todos os departamentos �'
+                      ? 'Todos os departamentos'
                       : 'Selecione uma empresa antes'}
                 </option>
                 {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -2655,10 +2655,10 @@ function AlertasTab() {
                 }}
                 className={inputCls}
               >
-                <option value="">� Todos os funcion�rios �</option>
+                <option value="">Todos os funcionários</option>
                 <option value="admin">Admin Master</option>
                 <option value="rh">RH</option>
-                <option value="lideranca">Lideran�a</option>
+                <option value="lideranca">Liderança</option>
                 <option value="colaboradora">Colaboradoras</option>
               </select>
             </div>
@@ -2666,19 +2666,19 @@ function AlertasTab() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">T�tulo *</label>
+              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">Título *</label>
               <input
                 className={inputCls}
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="Ex: Atualiza��o importante da campanha"
+                placeholder="Ex: Atualização importante da campanha"
                 maxLength={100}
                 required
               />
             </div>
             <div className="rounded-xl border border-border-1 bg-slate-50 px-4 py-3 text-sm text-uni-text-500">
               <p className="font-semibold text-uni-text-700 mb-1">Alvo atual</p>
-              <p className="break-words leading-6">{audienceSummary || 'Todos os funcion�rios'}</p>
+              <p className="break-words leading-6">{audienceSummary || 'Todos os funcionários'}</p>
             </div>
           </div>
 
@@ -2689,7 +2689,7 @@ function AlertasTab() {
               rows={4}
               value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder="Escreva a comunica��o que esse p�blico deve receber."
+              placeholder="Escreva a comunicação que esse público deve receber."
               maxLength={500}
               required
             />
@@ -2703,18 +2703,18 @@ function AlertasTab() {
               className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 disabled:opacity-50 transition-all"
             >
               {sending && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {sending ? 'Enviando...' : '?? Enviar notifica��o'}
+              {sending ? 'Enviando...' : 'Enviar notificação'}
             </button>
           </div>
         </form>
       </div>
 
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-        <SectionHeader title="Hist�rico de envios" count={alerts.length} />
+        <SectionHeader title="Histórico de envios" count={alerts.length} />
         {alerts.length === 0 ? (
           <div className="p-10 text-center text-sm text-uni-text-400">
             <div className="text-2xl mb-2">??</div>
-            Nenhuma notifica��o enviada ainda.
+            Nenhuma notificação enviada ainda.
           </div>
         ) : (
           <div className="divide-y divide-border-1">
@@ -2725,10 +2725,10 @@ function AlertasTab() {
                     <span className="font-bold text-sm text-uni-text-900 break-words">{a.title}</span>
                     <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[11px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full">
-                      {typeLabels[a.notification_type ?? 'alert'] ?? 'Notifica��o'}
+                      {typeLabels[a.notification_type ?? 'alert'] ?? 'Notificação'}
                     </span>
                     <span className="text-[11px] bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded-full">
-                      {a.recipients_count} destinat�ria{a.recipients_count !== 1 ? 's' : ''}
+                      {a.recipients_count} destinatária{a.recipients_count !== 1 ? 's' : ''}
                     </span>
                     {(a.audience_label || a.department_name || a.company_name || a.target_role) && (
                       <span className="text-[11px] bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-full">
@@ -2742,8 +2742,8 @@ function AlertasTab() {
                   </div>
                   <p className="text-xs text-uni-text-500 mt-2 break-words leading-5">{a.message}</p>
                   <p className="text-[11px] text-uni-text-400 mt-2 leading-5">
-                    Por {a.sent_by_name ?? '�'}
-                    <span className="hidden sm:inline"> � </span>
+                    Por {a.sent_by_name ?? '—'}
+                    <span className="hidden sm:inline"> • </span>
                     <span className="sm:hidden block" />
                     {new Date(a.created_at).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -2784,10 +2784,10 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   login: 'Login',
   logout: 'Logout',
   first_access_password_change: 'Primeira senha definida',
-  user_create: 'Usu�rio criado',
-  user_edit: 'Usu�rio editado',
-  user_block: 'Usu�rio bloqueado',
-  user_unblock: 'Usu�rio reativado',
+  user_create: 'Usuário criado',
+  user_edit: 'Usuário editado',
+  user_block: 'Usuário bloqueado',
+  user_unblock: 'Usuário reativado',
   password_reset: 'Senha resetada',
   company_create: 'Empresa criada',
   company_edit: 'Empresa editada',
@@ -2796,7 +2796,7 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   system_settings_update: 'Config. do sistema',
   profile_update: 'Perfil atualizado',
   quiz_submit: 'Quiz respondido',
-  challenge_complete: 'Desafio conclu�do',
+  challenge_complete: 'Desafio concluído',
   challenge_create: 'Desafio criado',
   campaign_join: 'Campanha aderida',
   badge_unlock: 'Badge desbloqueada',
@@ -2915,7 +2915,7 @@ function AuditoriaTab() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide">At�</label>
+              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide">Até</label>
               <input
                 type="date"
                 value={to}
@@ -2941,7 +2941,7 @@ function AuditoriaTab() {
             type="search"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Buscar por usu�rio, ação, entidade..."
+            placeholder="Buscar por usuário, ação, entidade..."
             className="flex-1 min-w-[200px] border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
           />
           <button
@@ -3009,7 +3009,7 @@ function AuditoriaTab() {
                   <tr className="border-b border-border-1">
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Data/Hora</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ator</th>
-                    <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A��o</th>
+                    <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ação</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Entidade</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Detalhes</th>
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">IP</th>
