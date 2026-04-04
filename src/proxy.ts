@@ -2,12 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const isProd = process.env.NODE_ENV === 'production';
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
-const hasHttpsAppUrl = /^https:\/\//i.test(appUrl);
-const isTrustworthyOrigin =
-  hasHttpsAppUrl || /^http:\/\/localhost(?::\d+)?$/i.test(appUrl);
-
 const PUBLIC_ROUTES = [
   '/',
   '/auth',
@@ -39,59 +33,11 @@ function isPublicRoute(pathname: string): boolean {
   return false;
 }
 
-function generateNonce() {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return btoa(String.fromCharCode(...bytes));
-}
-
-function buildCsp(nonce: string) {
-  return [
-    "default-src 'self'",
-    isProd
-      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
-      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`,
-    `style-src 'self' 'nonce-${nonce}'`,
-    "img-src 'self' data: blob:",
-    "font-src 'self' data:",
-    "connect-src 'self' https://wa.me",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    ...(hasHttpsAppUrl ? ['upgrade-insecure-requests'] : []),
-  ].join('; ');
-}
-
-function withSecurityHeaders(response: NextResponse, nonce: string) {
-  response.headers.set('Content-Security-Policy', buildCsp(nonce));
-  response.headers.set('x-nonce', nonce);
-
-  if (isTrustworthyOrigin) {
-    response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-    response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
-  }
-
-  return response;
-}
-
-function nextWithNonce(request: NextRequest, nonce: string) {
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-nonce', nonce);
-
-  return withSecurityHeaders(
-    NextResponse.next({
-      request: { headers: requestHeaders },
-    }),
-    nonce,
-  );
-}
-
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const nonce = generateNonce();
 
   if (isPublicRoute(pathname)) {
-    return nextWithNonce(request, nonce);
+    return NextResponse.next();
   }
 
   const cookieToken = request.cookies.get('uniher-access-token')?.value;
@@ -101,15 +47,12 @@ export async function proxy(request: NextRequest) {
 
   if (!accessToken) {
     if (pathname.startsWith('/api/')) {
-      return withSecurityHeaders(
-        NextResponse.json({ error: 'Nao autenticado' }, { status: 401 }),
-        nonce,
-      );
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 });
     }
 
     const loginUrl = new URL('/auth', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return withSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
+    return NextResponse.redirect(loginUrl);
   }
 
   try {
@@ -121,16 +64,10 @@ export async function proxy(request: NextRequest) {
 
     if (role !== 'admin' && isAdminSurface) {
       if (pathname.startsWith('/api/')) {
-        return withSecurityHeaders(
-          NextResponse.json({ error: 'Permissao insuficiente' }, { status: 403 }),
-          nonce,
-        );
+        return NextResponse.json({ error: 'Permissao insuficiente' }, { status: 403 });
       }
 
-      return withSecurityHeaders(
-        NextResponse.redirect(new URL('/dashboard', request.url)),
-        nonce,
-      );
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     if (mustChangePassword) {
@@ -146,39 +83,30 @@ export async function proxy(request: NextRequest) {
 
       if (!allowedPaths.some((path) => pathname.startsWith(path))) {
         if (pathname.startsWith('/api/')) {
-          return withSecurityHeaders(
-            NextResponse.json(
-              { error: 'Troca de senha obrigatoria', mustChangePassword: true },
-              { status: 403 },
-            ),
-            nonce,
+          return NextResponse.json(
+            { error: 'Troca de senha obrigatoria', mustChangePassword: true },
+            { status: 403 },
           );
         }
 
-        return withSecurityHeaders(
-          NextResponse.redirect(new URL('/primeiro-acesso', request.url)),
-          nonce,
-        );
+        return NextResponse.redirect(new URL('/primeiro-acesso', request.url));
       }
     }
 
-    return nextWithNonce(request, nonce);
+    return NextResponse.next();
   } catch {
     if (pathname.startsWith('/api/')) {
-      return withSecurityHeaders(
-        NextResponse.json({ error: 'Token expirado' }, { status: 401 }),
-        nonce,
-      );
+      return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
 
     const refreshToken = request.cookies.get('uniher-refresh-token')?.value;
     if (refreshToken) {
-      return nextWithNonce(request, nonce);
+      return NextResponse.next();
     }
 
     const loginUrl = new URL('/auth', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return withSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
+    return NextResponse.redirect(loginUrl);
   }
 }
 
