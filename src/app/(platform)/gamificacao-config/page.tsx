@@ -960,27 +960,27 @@ export default function GamificacaoConfigPage() {
         const correct = Math.min(Math.max(asNumber(lessonContent.correct, 0), 0), options.length - 1);
         return (
           <div className={styles.contentBuilder}>
-            {lessonForm.type === 'historia' ? (
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Cenário</label>
-                <textarea className={styles.textarea} value={asString(lessonContent.scenario)} onChange={e => updateLessonContentField('scenario', e.target.value)} />
-              </div>
-            ) : (
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>{lessonForm.type === 'quiz' ? 'Pergunta' : 'Texto com lacuna'}</label>
-                <textarea className={styles.textarea} value={asString(lessonForm.type === 'quiz' ? lessonContent.question : lessonContent.text)} onChange={e => updateLessonContentField(lessonForm.type === 'quiz' ? 'question' : 'text', e.target.value)} />
-              </div>
-            )}
-            {lessonForm.type === 'historia' && (
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>Pergunta final</label>
-                <textarea className={styles.textarea} value={asString(lessonContent.question)} onChange={e => updateLessonContentField('question', e.target.value)} />
-              </div>
-            )}
-            <div className={styles.contentGrid}>
-              {options.map((option, index) => (
-                <div key={`${lessonForm.type}-option-${index}`} className={styles.fieldGroup}>
-                  <label className={styles.label}>Opção {index + 1}</label>
+              {lessonForm.type === 'historia' ? (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Cenário</label>
+                  <textarea className={`${styles.textarea} ${isLessonEditorMobile ? styles.textareaCompact : ''}`} value={asString(lessonContent.scenario)} onChange={e => updateLessonContentField('scenario', e.target.value)} />
+                </div>
+              ) : (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>{lessonForm.type === 'quiz' ? 'Pergunta' : 'Texto com lacuna'}</label>
+                  <textarea className={`${styles.textarea} ${isLessonEditorMobile ? styles.textareaCompact : ''}`} value={asString(lessonForm.type === 'quiz' ? lessonContent.question : lessonContent.text)} onChange={e => updateLessonContentField(lessonForm.type === 'quiz' ? 'question' : 'text', e.target.value)} />
+                </div>
+              )}
+              {lessonForm.type === 'historia' && (
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Pergunta final</label>
+                  <textarea className={`${styles.textarea} ${isLessonEditorMobile ? styles.textareaCompact : ''}`} value={asString(lessonContent.question)} onChange={e => updateLessonContentField('question', e.target.value)} />
+                </div>
+              )}
+              <div className={isLessonEditorMobile ? styles.contentGridMobile : styles.contentGrid}>
+                {options.map((option, index) => (
+                  <div key={`${lessonForm.type}-option-${index}`} className={styles.fieldGroup}>
+                    <label className={styles.label}>Opção {index + 1}</label>
                   <input className={styles.input} value={option} onChange={e => updateLessonContentArray('options', index, e.target.value, 4, 'Opção')} />
                 </div>
               ))}
@@ -2007,7 +2007,7 @@ export default function GamificacaoConfigPage() {
 
             <div className={styles.lessonModalFooter}>
             {isLessonEditorMobile ? (
-              <div className={styles.lessonMobileFooterActions}>
+              <div className={`${styles.lessonMobileFooterActions} ${styles.lessonMobileFooterActionsStacked}`}>
                 <button
                   className={styles.saveBtnOutline}
                   onClick={() => {
