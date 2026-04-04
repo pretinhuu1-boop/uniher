@@ -5,6 +5,7 @@ import { registerSchema } from '@/lib/validation/schemas';
 import { checkAuthRateLimit } from '@/lib/security/rate-limit';
 import { handleApiError, ConflictError } from '@/lib/errors';
 import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
+import { getReadDb } from '@/lib/db';
 
 export async function POST(req: Request) {
   try {
@@ -16,8 +17,16 @@ export async function POST(req: Request) {
     input.name = input.name.replace(/<[^>]*>/g, '').trim();
 
     const result = await register(input);
+    const prefRow = getReadDb()
+      .prepare("SELECT pref_value FROM user_preferences WHERE user_id = ? AND pref_key = 'first_access_tour_completed'")
+      .get(result.user.id) as { pref_value?: string } | undefined;
     const response = NextResponse.json({
-      user: result.user,
+      user: {
+        ...result.user,
+        isMasterAdmin: result.user.is_master_admin === 1,
+        mustChangePassword: result.user.must_change_password === 1,
+        firstAccessTourCompleted: prefRow?.pref_value === '1',
+      },
     }, { status: 201 });
     return setAuthCookiesOnResponse(response, result.accessToken, result.refreshToken);
   } catch (error) {

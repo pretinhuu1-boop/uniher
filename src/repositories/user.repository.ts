@@ -17,6 +17,7 @@ export interface UserRow {
   streak: number;
   blocked: number; // 0 or 1
   approved: number; // 0 = pending, 1 = approved
+  must_change_password: number;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   last_active: string | null;
@@ -88,6 +89,14 @@ export async function createUser(data: {
       data.role,
       data.isMasterAdmin ? 1 : 0
     );
+
+    db.prepare(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+      VALUES (?, 'first_access_tour_completed', '0', datetime('now'))
+      ON CONFLICT(user_id, pref_key) DO UPDATE SET
+        pref_value = excluded.pref_value,
+        updated_at = excluded.updated_at
+    `).run(id);
 
     return db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow;
   });

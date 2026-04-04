@@ -29,6 +29,13 @@ export const POST = withAuth(async (req: NextRequest, context) => {
   await wq.enqueue((db) => {
     db.prepare("UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = datetime('now') WHERE id = ?")
       .run(passwordHash, context.auth.userId);
+    db.prepare(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+      VALUES (?, 'first_access_tour_completed', '0', datetime('now'))
+      ON CONFLICT(user_id, pref_key) DO UPDATE SET
+        pref_value = excluded.pref_value,
+        updated_at = excluded.updated_at
+    `).run(context.auth.userId);
   });
 
   const user = getReadDb()

@@ -15,6 +15,8 @@ interface StoredUserData {
   name: string;
   role: UserRole;
   isMasterAdmin?: boolean;
+  firstAccessTourCompleted?: boolean;
+  mustChangePassword?: boolean;
 }
 
 function getStoredUser(): StoredUserData | null {
@@ -34,6 +36,8 @@ function persistUser(user: MockUser) {
       name: user.name,
       role: user.role,
       isMasterAdmin: user.isMasterAdmin,
+      firstAccessTourCompleted: user.firstAccessTourCompleted,
+      mustChangePassword: user.mustChangePassword,
     };
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(minimal));
   } catch {}
@@ -50,11 +54,11 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   approved: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<MockUser | null>;
   register: (data: any) => Promise<boolean>;
   selectRole: (role: UserRole) => void;
   logout: () => void;
-  refreshUser: () => void;
+  refreshUser: () => Promise<MockUser | null>;
 }
 
 export function useAuthState(): AuthContextValue {
@@ -96,13 +100,15 @@ export function useAuthState(): AuthContextValue {
             also_collaborator: u.also_collaborator || (u.role === 'lideranca' ? 1 : 0),
             nickname: u.nickname,
             can_approve: u.can_approve,
+            mustChangePassword: u.mustChangePassword === true,
+            firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
           };
           setUser(updated);
           setApproved(u.approved !== 0);
           persistUser(updated);
           // Mark session as active for the fetch interceptor
           try { sessionStorage.setItem('uniher-session-active', '1'); } catch {}
-          if (u.mustChangePassword === true) {
+          if (u.mustChangePassword === true || u.firstAccessTourCompleted === false) {
             router.push('/primeiro-acesso');
           }
         } else {
@@ -124,6 +130,8 @@ export function useAuthState(): AuthContextValue {
             points: 0,
             streak: 0,
             joinedAt: '',
+            mustChangePassword: stored.mustChangePassword === true,
+            firstAccessTourCompleted: stored.firstAccessTourCompleted !== false,
           });
         }
       })
@@ -132,14 +140,14 @@ export function useAuthState(): AuthContextValue {
       });
   }, [pathname, router]);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<MockUser | null> => {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) return false;
+      if (!res.ok) return null;
 
       const data = await res.json();
       const u = data.user;
@@ -155,15 +163,17 @@ export function useAuthState(): AuthContextValue {
         streak: u.streak,
         joinedAt: u.created_at,
         also_collaborator: u.also_collaborator || (u.role === 'lideranca' ? 1 : 0),
+        mustChangePassword: u.mustChangePassword === true,
+        firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
       };
 
       setUser(loggedUser);
       persistUser(loggedUser);
       // Mark session as active so fetch interceptor doesn't show reauth modal on fresh login
       try { sessionStorage.setItem('uniher-session-active', '1'); } catch {}
-      return true;
+      return loggedUser;
     } catch {
-      return false;
+      return null;
     }
   }, []);
 
@@ -189,6 +199,8 @@ export function useAuthState(): AuthContextValue {
         points: u.points,
         streak: u.streak,
         joinedAt: u.created_at,
+        mustChangePassword: u.mustChangePassword === true,
+        firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
       };
 
       setUser(registered);
@@ -220,21 +232,38 @@ export function useAuthState(): AuthContextValue {
     window.location.href = '/';
   }, []);
 
-  const refreshUser = useCallback(() => {
-    fetch('/api/auth/me').then(r => r.json()).then(data => {
-      if (data?.user) {
-        const u = data.user;
-        const updated: MockUser = {
-          id: u.id, name: u.name, email: u.email, role: u.role as UserRole,
-          isMasterAdmin: u.isMasterAdmin === true,
-          level: u.level, points: u.points, streak: u.streak, joinedAt: u.created_at,
-          also_collaborator: u.also_collaborator || (u.role === 'lideranca' ? 1 : 0),
-          nickname: u.nickname, can_approve: u.can_approve,
-        };
-        setUser(updated);
-        persistUser(updated);
+  const refreshUser = useCallback(async (): Promise<MockUser | null> => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json().catch(() => null);
+
+      if (!data?.user) {
+        return null;
       }
-    }).catch(() => {});
+
+      const u = data.user;
+      const updated: MockUser = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role as UserRole,
+        isMasterAdmin: u.isMasterAdmin === true,
+        level: u.level,
+        points: u.points,
+        streak: u.streak,
+        joinedAt: u.created_at,
+        also_collaborator: u.also_collaborator || (u.role === 'lideranca' ? 1 : 0),
+        nickname: u.nickname,
+        can_approve: u.can_approve,
+        mustChangePassword: u.mustChangePassword === true,
+        firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
+      };
+      setUser(updated);
+      persistUser(updated);
+      return updated;
+    } catch {
+      return null;
+    }
   }, []);
 
   return {
@@ -255,11 +284,11 @@ export const AuthContext = createContext<AuthContextValue>({
   isAuthenticated: false,
   isLoading: true,
   approved: true,
-  login: async () => false,
+  login: async () => null,
   register: async () => false,
   selectRole: () => {},
   logout: () => {},
-  refreshUser: () => {},
+  refreshUser: async () => null,
 });
 
 export const useAuth = () => useContext(AuthContext);

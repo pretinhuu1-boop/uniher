@@ -22,6 +22,7 @@ export interface MockUser {
   also_collaborator?: number;
   can_approve?: number;
   mustChangePassword?: boolean;
+  firstAccessTourCompleted?: boolean;
 }
 
 export interface Department {

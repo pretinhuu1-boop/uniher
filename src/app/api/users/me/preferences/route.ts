@@ -9,6 +9,7 @@ const VALID_KEYS = [
   'notif_campaigns',
   'notif_challenges',
   'notif_email',
+  'first_access_tour_completed',
   'privacy_ranking',
   'privacy_profile',
   'privacy_analytics',

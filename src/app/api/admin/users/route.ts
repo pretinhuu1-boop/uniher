@@ -87,6 +87,14 @@ export const POST = withMasterAdmin(async (req: NextRequest, context) => {
       INSERT INTO users (id, name, email, password_hash, role, company_id, is_master_admin, approved, level, points, streak, must_change_password, also_collaborator)
       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 0, 0, ?, ?)
     `).run(id, name, email, passwordHash, role, finalCompanyId, role === 'admin' ? 1 : 0, mustChangePw, alsoCollaborator);
+
+    db.prepare(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+      VALUES (?, 'first_access_tour_completed', '0', datetime('now'))
+      ON CONFLICT(user_id, pref_key) DO UPDATE SET
+        pref_value = excluded.pref_value,
+        updated_at = excluded.updated_at
+    `).run(id);
   });
 
   await logAudit({
