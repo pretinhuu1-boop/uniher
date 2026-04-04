@@ -1534,7 +1534,7 @@ function AdminMasterTab() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-amber-500 text-base">🔐</span>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700">Confirma??o de identidade</p>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700">Confirmação de identidade</p>
                   <p className="text-[11px] text-uni-text-400">Por segurança, confirme com <strong>sua senha atual</strong> para criar um Admin Master</p>
                 </div>
               </div>
@@ -2535,7 +2535,7 @@ function AlertasTab() {
         departmentId && selectedDepartment ? `Departamento ${selectedDepartment.name}` : '',
         companyId && selectedCompany ? `Empresa ${selectedCompany.name}` : '',
         targetRole ? roleLabels[targetRole] : 'Todos os funcionários',
-      ].filter(Boolean).join(' ? ');
+      ].filter(Boolean).join(' • ');
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -2713,7 +2713,7 @@ function AlertasTab() {
         <SectionHeader title="Histórico de envios" count={alerts.length} />
         {alerts.length === 0 ? (
           <div className="p-10 text-center text-sm text-uni-text-400">
-            <div className="text-2xl mb-2">??</div>
+            <div className="text-2xl mb-2">🔔</div>
             Nenhuma notificação enviada ainda.
           </div>
         ) : (
