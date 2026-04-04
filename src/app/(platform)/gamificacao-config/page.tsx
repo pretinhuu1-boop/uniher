@@ -859,6 +859,21 @@ export default function GamificacaoConfigPage() {
     setLessonEditorStep(1);
   }
 
+  function openLessonEditor() {
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        setShowLessonForm(true);
+      }, 0);
+      return;
+    }
+
+    setShowLessonForm(true);
+  }
+
   function openCreateLesson() {
     setLessonEditorSessionKey((current) => current + 1);
     setEditingLesson(null);
@@ -876,7 +891,7 @@ export default function GamificacaoConfigPage() {
       duration_seconds: 90,
       campaign_context: '',
     });
-    setShowLessonForm(true);
+    openLessonEditor();
   }
 
   function openEditLesson(lesson: Lesson) {
@@ -896,7 +911,7 @@ export default function GamificacaoConfigPage() {
       xp_reward: lesson.xp_reward, duration_seconds: lesson.duration_seconds,
       campaign_context: lesson.campaign_context ?? '',
     });
-    setShowLessonForm(true);
+    openLessonEditor();
   }
 
   async function saveLesson() {
