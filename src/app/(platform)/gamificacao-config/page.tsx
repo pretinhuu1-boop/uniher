@@ -508,6 +508,7 @@ function BodyPortal({ children }: { children: ReactNode }) {
 export default function GamificacaoConfigPage() {
   const lessonModalRef = useRef<HTMLDivElement | null>(null);
   const lessonModalContentRef = useRef<HTMLDivElement | null>(null);
+  const lessonStepSectionRefs = useRef<Record<number, HTMLDivElement | null>>({ 1: null, 2: null, 3: null });
   const [isLessonEditorMobile, setIsLessonEditorMobile] = useState(false);
   const [lessonEditorStep, setLessonEditorStep] = useState(1);
 
@@ -816,21 +817,38 @@ export default function GamificacaoConfigPage() {
     document.documentElement.style.overflow = 'hidden';
     window.scrollTo({ top: 0, behavior: 'auto' });
 
-    const frame = window.requestAnimationFrame(() => {
-      if (lessonModalContentRef.current) {
-        lessonModalContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
-      }
+    const syncLessonStepViewport = () => {
       if (lessonModalRef.current) {
+        lessonModalRef.current.focus({ preventScroll: true });
         lessonModalRef.current.scrollTop = 0;
       }
-    });
+
+      const content = lessonModalContentRef.current;
+      if (!content) return;
+
+      const targetSection = isLessonEditorMobile
+        ? lessonStepSectionRefs.current[lessonEditorStep]
+        : lessonStepSectionRefs.current[1];
+
+      if (targetSection) {
+        const targetTop = Math.max(0, targetSection.offsetTop - 10);
+        content.scrollTo({ top: targetTop, behavior: 'auto' });
+        return;
+      }
+
+      content.scrollTo({ top: 0, behavior: 'auto' });
+    };
+
+    const frame = window.requestAnimationFrame(syncLessonStepViewport);
+    const timeout = window.setTimeout(syncLessonStepViewport, 140);
 
     return () => {
       window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
     };
-  }, [showLessonForm, lessonEditorStep]);
+  }, [showLessonForm, lessonEditorStep, isLessonEditorMobile]);
 
   const isStepVisible = (step: number) => !isLessonEditorMobile || lessonEditorStep === step;
 
@@ -1914,7 +1932,7 @@ export default function GamificacaoConfigPage() {
       <BodyPortal>
       {showLessonForm && (
         <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) closeLessonForm(); }}>
-          <div ref={lessonModalRef} className={`${styles.modal} ${styles.lessonModal}`}>
+          <div ref={lessonModalRef} tabIndex={-1} className={`${styles.modal} ${styles.lessonModal}`}>
             <div className={styles.lessonModalHeader}>
               <div>
                 <h3 className={styles.modalTitle}>{editingLesson ? 'Editar Lição' : 'Nova Lição'}</h3>
@@ -1941,7 +1959,7 @@ export default function GamificacaoConfigPage() {
               </div>
             )}
 
-            {isStepVisible(1) && <div className={styles.lessonFormSection}>
+            {isStepVisible(1) && <div ref={node => { lessonStepSectionRefs.current[1] = node; }} className={styles.lessonFormSection}>
               <div className={styles.lessonFormSectionHead}>
                 <span className={styles.lessonStep}>1</span>
                 <div>
@@ -1985,7 +2003,7 @@ export default function GamificacaoConfigPage() {
               </div>
             </div>}
 
-            {isStepVisible(2) && <div className={styles.lessonFormSection}>
+            {isStepVisible(2) && <div ref={node => { lessonStepSectionRefs.current[2] = node; }} className={styles.lessonFormSection}>
               <div className={styles.lessonFormSectionHead}>
                 <span className={styles.lessonStep}>2</span>
                 <div>
@@ -2023,7 +2041,7 @@ export default function GamificacaoConfigPage() {
               </div>
             </div>}
 
-            {isStepVisible(3) && <div className={styles.lessonFormSection}>
+            {isStepVisible(3) && <div ref={node => { lessonStepSectionRefs.current[3] = node; }} className={styles.lessonFormSection}>
               <div className={styles.lessonFormSectionHead}>
                 <span className={styles.lessonStep}>3</span>
                 <div>
