@@ -526,6 +526,12 @@
   gap: 14px;
 }
 
+.contentPairRowMobile {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
 .lessonList {
   display: flex;
   flex-direction: column;

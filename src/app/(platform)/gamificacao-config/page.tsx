@@ -1054,7 +1054,10 @@ export default function GamificacaoConfigPage() {
         return (
           <div className={styles.contentBuilder}>
             {pairs.map((pair, index) => (
-              <div key={`pair-${index}`} className={styles.contentPairRow}>
+              <div
+                key={`pair-${index}`}
+                className={isLessonEditorMobile ? styles.contentPairRowMobile : styles.contentPairRow}
+              >
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>Item {index + 1}</label>
                   <input className={styles.input} value={pair.left} onChange={e => updateLessonPair(index, 'left', e.target.value)} />
@@ -1073,14 +1076,25 @@ export default function GamificacaoConfigPage() {
         return (
           <div className={styles.contentBuilder}>
             {cards.map((card, index) => (
-              <div key={`card-${index}`} className={styles.contentPairRow}>
+              <div
+                key={`card-${index}`}
+                className={isLessonEditorMobile ? styles.contentPairRowMobile : styles.contentPairRow}
+              >
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>Frente do card {index + 1}</label>
-                  <textarea className={styles.textarea} value={card.front} onChange={e => updateLessonCard(index, 'front', e.target.value)} />
+                  <textarea
+                    className={`${styles.textarea} ${isLessonEditorMobile ? styles.textareaCompact : ''}`}
+                    value={card.front}
+                    onChange={e => updateLessonCard(index, 'front', e.target.value)}
+                  />
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>Verso do card {index + 1}</label>
-                  <textarea className={styles.textarea} value={card.back} onChange={e => updateLessonCard(index, 'back', e.target.value)} />
+                  <textarea
+                    className={`${styles.textarea} ${isLessonEditorMobile ? styles.textareaCompact : ''}`}
+                    value={card.back}
+                    onChange={e => updateLessonCard(index, 'back', e.target.value)}
+                  />
                 </div>
               </div>
             ))}
@@ -1094,10 +1108,17 @@ export default function GamificacaoConfigPage() {
           <div className={styles.contentBuilder}>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Pergunta</label>
-              <textarea className={styles.textarea} value={asString(lessonContent.question)} onChange={e => updateLessonContentField('question', e.target.value)} />
+              <textarea
+                className={`${styles.textarea} ${isLessonEditorMobile ? styles.textareaCompact : ''}`}
+                value={asString(lessonContent.question)}
+                onChange={e => updateLessonContentField('question', e.target.value)}
+              />
             </div>
             {options.map((option, index) => (
-              <div key={`image-option-${index}`} className={styles.contentPairRow}>
+              <div
+                key={`image-option-${index}`}
+                className={isLessonEditorMobile ? styles.contentPairRowMobile : styles.contentPairRow}
+              >
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>Emoji da opção {index + 1}</label>
                   <input className={styles.input} value={option.emoji} onChange={e => updateLessonImageOption(index, 'emoji', e.target.value)} />
