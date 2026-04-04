@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
-import { setAuthCookies } from '@/lib/auth/cookies';
+import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 import * as refreshTokenRepo from '@/repositories/refresh-token.repository';
 
 export const POST = withAuth(async (_req, context) => {
@@ -40,7 +40,6 @@ export const POST = withAuth(async (_req, context) => {
   await refreshTokenRepo.deleteAllUserTokens(userId);
   const refreshToken = await signRefreshToken({ userId });
   await refreshTokenRepo.createRefreshToken(userId, refreshToken);
-  await setAuthCookies(accessToken, refreshToken);
-
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  return setAuthCookiesOnResponse(response, accessToken, refreshToken);
 });

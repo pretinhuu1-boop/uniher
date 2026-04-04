@@ -4,6 +4,7 @@ import { register } from '@/services/auth.service';
 import { registerSchema } from '@/lib/validation/schemas';
 import { checkAuthRateLimit } from '@/lib/security/rate-limit';
 import { handleApiError, ConflictError } from '@/lib/errors';
+import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 
 export async function POST(req: Request) {
   try {
@@ -15,8 +16,11 @@ export async function POST(req: Request) {
     input.name = input.name.replace(/<[^>]*>/g, '').trim();
 
     const result = await register(input);
-
-    return NextResponse.json(result, { status: 201 });
+    const response = NextResponse.json({
+      user: result.user,
+      accessToken: result.accessToken,
+    }, { status: 201 });
+    return setAuthCookiesOnResponse(response, result.accessToken, result.refreshToken);
   } catch (error) {
     // Prevent email enumeration: return generic 400 for conflict errors
     if (error instanceof ConflictError) {

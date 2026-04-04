@@ -11,7 +11,7 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { hashPassword } from '@/lib/auth/password';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
-import { setAuthCookies } from '@/lib/auth/cookies';
+import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 
 const RegisterSchema = z.object({
   name: z.string().min(2).max(120),
@@ -110,8 +110,8 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
       .run(nanoid(), userId, tokenHash);
   });
 
-  await setAuthCookies(accessToken, refreshToken);
-  return NextResponse.json({ success: true, message: 'Conta criada com sucesso!' });
+  const response = NextResponse.json({ success: true, message: 'Conta criada com sucesso!' });
+  return setAuthCookiesOnResponse(response, accessToken, refreshToken);
 }
 
 // RH — revogar convite

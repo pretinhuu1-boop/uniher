@@ -4,6 +4,7 @@ import { login } from '@/services/auth.service';
 import { loginSchema } from '@/lib/validation/schemas';
 import { checkAuthRateLimit, recordFailedAuth } from '@/lib/security/rate-limit';
 import { handleApiError, UnauthorizedError } from '@/lib/errors';
+import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +16,11 @@ export async function POST(req: Request) {
 
     try {
       const result = await login(input);
-      return NextResponse.json(result);
+      const response = NextResponse.json({
+        user: result.user,
+        accessToken: result.accessToken,
+      });
+      return setAuthCookiesOnResponse(response, result.accessToken, result.refreshToken);
     } catch (authError) {
       // Record failed attempt in brute-force tracker (never bypassed by PLAYWRIGHT_TEST).
       // If limit exceeded, recordFailedAuth throws RateLimitError → return 429.

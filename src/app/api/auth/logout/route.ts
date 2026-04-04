@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { initDb } from '@/lib/db/init';
 import { logout } from '@/services/auth.service';
 import { handleApiError } from '@/lib/errors';
-import { getAccessToken } from '@/lib/auth/cookies';
+import { clearAuthCookiesOnResponse, getAccessToken } from '@/lib/auth/cookies';
 import { blacklistToken } from '@/lib/auth/token-blacklist';
 
 export async function POST(req: NextRequest) {
@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     }
 
     await logout();
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    return clearAuthCookiesOnResponse(response);
   } catch (error) {
     return handleApiError(error);
   }

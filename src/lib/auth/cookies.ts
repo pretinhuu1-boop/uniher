@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import type { NextResponse } from 'next/server';
 
 const ACCESS_TOKEN_NAME = 'uniher-access-token';
 const REFRESH_TOKEN_NAME = 'uniher-refresh-token';
@@ -11,6 +12,14 @@ const COOKIE_OPTIONS = {
   sameSite: 'lax' as const,
   path: '/',
 };
+
+function getDeleteCookieOptions() {
+  return {
+    ...COOKIE_OPTIONS,
+    maxAge: 0,
+    expires: new Date(0),
+  };
+}
 
 export async function setAuthCookies(accessToken: string, refreshToken: string): Promise<void> {
   const cookieStore = await cookies();
@@ -40,4 +49,24 @@ export async function clearAuthCookies(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(ACCESS_TOKEN_NAME);
   cookieStore.delete(REFRESH_TOKEN_NAME);
+}
+
+export function setAuthCookiesOnResponse(response: NextResponse, accessToken: string, refreshToken: string): NextResponse {
+  response.cookies.set(ACCESS_TOKEN_NAME, accessToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 15 * 60,
+  });
+
+  response.cookies.set(REFRESH_TOKEN_NAME, refreshToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 48 * 60 * 60,
+  });
+
+  return response;
+}
+
+export function clearAuthCookiesOnResponse(response: NextResponse): NextResponse {
+  response.cookies.set(ACCESS_TOKEN_NAME, '', getDeleteCookieOptions());
+  response.cookies.set(REFRESH_TOKEN_NAME, '', getDeleteCookieOptions());
+  return response;
 }
