@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { devOnlyGuard } from '@/lib/api/dev-only';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-export const POST = withRole('admin')(async (req: NextRequest) => {
+export const POST = withMasterAdmin(async (req: NextRequest) => {
   const blocked = devOnlyGuard();
   if (blocked) return blocked;
 

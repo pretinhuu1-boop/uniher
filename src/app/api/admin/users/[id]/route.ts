@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getWriteQueue, getReadDb } from '@/lib/db';
 import { z } from 'zod';
 import { hashPassword } from '@/lib/auth/password';
@@ -20,7 +20,7 @@ const schema = z.discriminatedUnion('action', [
   }),
 ]);
 
-export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
+export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
   const params = await context.params;
   const { id: userId } = params;
 
@@ -94,7 +94,7 @@ export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
     case 'update_role': {
       const role = parsed.data.action === 'update_role' ? parsed.data.role : undefined;
       await writeQueue.enqueue((d) => {
-        d.prepare(`UPDATE users SET role = ?, updated_at = datetime('now') WHERE id = ?`).run(role, userId);
+        d.prepare(`UPDATE users SET role = ?, is_master_admin = 0, updated_at = datetime('now') WHERE id = ?`).run(role, userId);
       });
       await logAudit({
         actorId: context.auth.userId,
@@ -116,7 +116,12 @@ export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
       const values: unknown[] = [];
       if (name !== undefined) { fields.push('name = ?'); values.push(name); }
       if (email !== undefined) { fields.push('email = ?'); values.push(email); }
-      if (role !== undefined) { fields.push('role = ?'); values.push(role); }
+      if (role !== undefined) {
+        fields.push('role = ?');
+        values.push(role);
+        fields.push('is_master_admin = ?');
+        values.push(role === 'admin' ? 1 : 0);
+      }
       if (company_id !== undefined) { fields.push('company_id = ?'); values.push(company_id); }
       if (fields.length === 0) return NextResponse.json({ success: true });
       fields.push("updated_at = datetime('now')");
@@ -140,7 +145,7 @@ export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
   }
 });
 
-export const DELETE = withRole('admin')(async (req: NextRequest, context) => {
+export const DELETE = withMasterAdmin(async (req: NextRequest, context) => {
   const params = await context.params;
   const { id: userId } = params;
   const db = getReadDb();

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { devOnlyGuard } from '@/lib/api/dev-only';
 import { getReadDb, walCheckpoint } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 
-export const POST = withRole('admin')(async (_req: NextRequest) => {
+export const POST = withMasterAdmin(async (_req: NextRequest) => {
   const blocked = devOnlyGuard();
   if (blocked) return blocked;
   await initDb();

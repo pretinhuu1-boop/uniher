@@ -9,42 +9,63 @@ const fetcher = (url: string) => fetch(url).then(r => {
   return r.json();
 });
 
+function normalizeText(value: string) {
+  if (!value || !/[ÃÂâð�]/.test(value)) return value;
+  try {
+    return decodeURIComponent(escape(value));
+  } catch {
+    return value
+      .replace(/Ã§/g, 'ç')
+      .replace(/Ã£/g, 'ã')
+      .replace(/Ã¡/g, 'á')
+      .replace(/Ã©/g, 'é')
+      .replace(/Ãª/g, 'ê')
+      .replace(/Ã­/g, 'í')
+      .replace(/Ã³/g, 'ó')
+      .replace(/Ãµ/g, 'õ')
+      .replace(/Ãº/g, 'ú')
+      .replace(/Ã‰/g, 'É')
+      .replace(/Ã‡/g, 'Ç')
+      .replace(/Â·/g, '·');
+  }
+}
+
 const THEME_LABELS: Record<string, string> = {
-  hidratacao: 'HidrataÃ§Ã£o',
+  hidratacao: 'Hidratação',
   sono: 'Sono',
-  prevencao: 'PrevenÃ§Ã£o',
-  nutricao: 'NutriÃ§Ã£o',
-  mental: 'SaÃºde Mental',
+  prevencao: 'Prevenção',
+  nutricao: 'Nutrição',
+  mental: 'Saúde Mental',
   ciclo: 'Ciclo Menstrual',
   geral: 'Geral',
 };
 
 const LESSON_TYPE_LABELS: Record<string, string> = {
-  pilula: 'ðŸ’Š PÃ­lula',
-  quiz: 'â“ Quiz',
-  reflexao: 'ðŸªž ReflexÃ£o',
-  lacuna: 'âœï¸ Lacuna',
-  verdadeiro_falso: 'âœ… V/F',
-  ordenar: 'ðŸ”¢ Ordenar',
-  parear: 'ðŸ”— Parear',
-  historia: 'ðŸ“– HistÃ³ria',
-  flashcard: 'ðŸƒ Flashcard',
-  imagem: 'ðŸ–¼ï¸ Imagem',
-  desafio_dia: 'ðŸŽ¯ Desafio',
+  pilula: '💊 Pílula',
+  quiz: '❓ Quiz',
+  reflexao: '🪞 Reflexão',
+  lacuna: '✏️ Lacuna',
+  verdadeiro_falso: '✅ V/F',
+  ordenar: '🔢 Ordenar',
+  parear: '🔗 Parear',
+  historia: '📖 História',
+  flashcard: '🎴 Flashcard',
+  imagem: '🖼️ Imagem',
+  desafio_dia: '🎯 Desafio',
 };
 
 const CONTENT_TEMPLATES: Record<string, object> = {
-  pilula: { tip: 'Texto informativo aqui.', fact: 'Dado cientÃ­fico relevante.', action: 'AÃ§Ã£o prÃ¡tica sugerida.' },
-  quiz: { question: 'Pergunta aqui?', options: ['OpÃ§Ã£o A', 'OpÃ§Ã£o B', 'OpÃ§Ã£o C', 'OpÃ§Ã£o D'], correct: 0 },
-  reflexao: { reflection: 'Como voce se sente em relacao a este tema hoje?' },
+  pilula: { tip: 'Texto informativo aqui.', fact: 'Dado científico relevante.', action: 'Ação prática sugerida.' },
+  quiz: { question: 'Pergunta aqui?', options: ['Opção A', 'Opção B', 'Opção C', 'Opção D'], correct: 0 },
+  reflexao: { reflection: 'Como você se sente em relação a este tema hoje?' },
   lacuna: { text: 'Complete: A mulher precisa de ___ horas de sono por dia.', options: ['6', '7-9', '10', '12'], correct: 1 },
-  verdadeiro_falso: { statement: 'AfirmaÃ§Ã£o aqui.', correct: true, explanation: 'ExplicaÃ§Ã£o.' },
+  verdadeiro_falso: { statement: 'Afirmação aqui.', correct: true, explanation: 'Explicação.' },
   ordenar: { instruction: 'Coloque na ordem correta:', items: ['Passo 1', 'Passo 2', 'Passo 3', 'Passo 4'], correct_order: [0, 1, 2, 3] },
-  parear: { pairs: [{ left: 'Termo A', right: 'DefiniÃ§Ã£o A' }, { left: 'Termo B', right: 'DefiniÃ§Ã£o B' }] },
-  historia: { scenario: 'CenÃ¡rio aqui.', question: 'O que fazer?', options: ['A', 'B', 'C', 'D'], correct: 0 },
+  parear: { pairs: [{ left: 'Termo A', right: 'Definição A' }, { left: 'Termo B', right: 'Definição B' }] },
+  historia: { scenario: 'Cenário aqui.', question: 'O que fazer?', options: ['A', 'B', 'C', 'D'], correct: 0 },
   flashcard: { cards: [{ front: 'Pergunta', back: 'Resposta' }, { front: 'Pergunta 2', back: 'Resposta 2' }] },
-  imagem: { question: 'Qual opÃ§Ã£o Ã© mais saudÃ¡vel?', options: [{ emoji: 'ðŸ¥—', label: 'Salada' }, { emoji: 'ðŸ”', label: 'HambÃºrguer' }], correct: 0 },
-  desafio_dia: { challenge: 'DescriÃ§Ã£o do desafio.', duration: 'hoje', tips: ['Dica 1', 'Dica 2'] },
+  imagem: { question: 'Qual opção é mais saudável?', options: [{ emoji: '🥗', label: 'Salada' }, { emoji: '🍔', label: 'Hambúrguer' }], correct: 0 },
+  desafio_dia: { challenge: 'Descrição do desafio.', duration: 'hoje', tips: ['Dica 1', 'Dica 2'] },
 };
 
 interface Lesson {
@@ -68,7 +89,7 @@ const REWARD_TYPE_LABELS: Record<string, string> = {
   voucher: 'Voucher',
   folga: 'Folga',
   produto: 'Produto',
-  experiencia: 'Experiencia',
+  experiencia: 'Experiência',
 };
 
 interface GamificationConfig {
@@ -123,7 +144,7 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
       onClick={onClose}
       role="alert"
     >
-      {type === 'success' ? 'âœ“ ' : 'âœ• '}{message}
+      {type === 'success' ? '✓ ' : '✕ '}{message}
     </div>
   );
 }
@@ -183,11 +204,11 @@ export default function GamificacaoConfigPage() {
         const d = await res.json();
         showToast(d.error || 'Erro ao salvar XP', 'error');
       } else {
-        showToast('Configuracao de XP salva!', 'success');
+        showToast('Configura??o de XP salva!', 'success');
         mutate('/api/gamification/config');
       }
     } catch {
-      showToast('Erro de conexao', 'error');
+      showToast('Erro de conex?o', 'error');
     }
     setXpSaving(false);
   }
@@ -210,7 +231,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/config');
       }
     } catch {
-      showToast('Erro de conexao', 'error');
+      showToast('Erro de conex?o', 'error');
     }
     setToggleSaving(null);
   }
@@ -230,7 +251,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/config');
       }
     } catch {
-      showToast('Erro de conexao', 'error');
+      showToast('Erro de conex?o', 'error');
     }
   }
 
@@ -277,7 +298,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/config');
       }
     } catch {
-      showToast('Erro de conexao', 'error');
+      showToast('Erro de conex?o', 'error');
     }
     setThemesSaving(false);
   }
@@ -291,7 +312,7 @@ export default function GamificacaoConfigPage() {
 
   async function createReward() {
     if (!rewardForm.title.trim()) {
-      showToast('Titulo obrigatorio', 'error');
+      showToast('T?tulo obrigat?rio', 'error');
       return;
     }
     setRewardSaving(true);
@@ -317,7 +338,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/rewards');
       }
     } catch {
-      showToast('Erro de conexao', 'error');
+      showToast('Erro de conex?o', 'error');
     }
     setRewardSaving(false);
   }
@@ -342,7 +363,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/rewards');
       }
     } catch {
-      showToast('Erro de conexao', 'error');
+      showToast('Erro de conex?o', 'error');
     }
     setProcessingRedemption(null);
   }
@@ -395,7 +416,7 @@ export default function GamificacaoConfigPage() {
 
   async function saveLesson() {
     let contentParsed: Record<string, unknown>;
-    try { contentParsed = JSON.parse(lessonForm.content_json); } catch { showToast('JSON do conteÃºdo invÃ¡lido', 'error'); return; }
+    try { contentParsed = JSON.parse(lessonForm.content_json); } catch { showToast('JSON do conteúdo inválido', 'error'); return; }
     setLessonSaving(true);
     try {
       const body = {
@@ -410,20 +431,20 @@ export default function GamificacaoConfigPage() {
       const url = editingLesson ? `/api/rh/lessons/${editingLesson.id}` : '/api/rh/lessons';
       const method = editingLesson ? 'PATCH' : 'POST';
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) { const d = await res.json(); showToast(d.error || 'Erro ao salvar liÃ§Ã£o', 'error'); }
-      else { showToast(editingLesson ? 'LiÃ§Ã£o atualizada!' : 'LiÃ§Ã£o criada!', 'success'); setShowLessonForm(false); mutateLessons(); }
-    } catch { showToast('Erro de conexÃ£o', 'error'); }
+      if (!res.ok) { const d = await res.json(); showToast(d.error || 'Erro ao salvar lição', 'error'); }
+      else { showToast(editingLesson ? 'Lição atualizada!' : 'Lição criada!', 'success'); setShowLessonForm(false); mutateLessons(); }
+    } catch { showToast('Erro de conexão', 'error'); }
     setLessonSaving(false);
   }
 
   async function deleteLesson(id: string) {
-    if (!confirm('Excluir esta liÃ§Ã£o?')) return;
+    if (!confirm('Excluir esta lição?')) return;
     setDeletingLesson(id);
     try {
       const res = await fetch(`/api/rh/lessons/${id}`, { method: 'DELETE' });
       if (!res.ok) { const d = await res.json(); showToast(d.error || 'Erro ao excluir', 'error'); }
-      else { showToast('LiÃ§Ã£o excluÃ­da', 'success'); mutateLessons(); }
-    } catch { showToast('Erro de conexÃ£o', 'error'); }
+      else { showToast('Lição excluída', 'success'); mutateLessons(); }
+    } catch { showToast('Erro de conexão', 'error'); }
     setDeletingLesson(null);
   }
 
@@ -452,8 +473,8 @@ export default function GamificacaoConfigPage() {
   const pendingRedemptions = redemptionsData?.redemptions ?? [];
 
   const XP_FIELDS = [
-    { key: 'xp_checkin', label: 'Check-in Diario', max: 200 },
-    { key: 'xp_lesson', label: 'Licao Concluida', max: 200 },
+    { key: 'xp_checkin', label: 'Check-in Diário', max: 200 },
+    { key: 'xp_lesson', label: 'Lição Concluída', max: 200 },
     { key: 'xp_quiz', label: 'Quiz Respondido', max: 200 },
     { key: 'xp_challenge', label: 'Desafio Completo', max: 300 },
     { key: 'xp_exam', label: 'Exame Realizado', max: 500 },
@@ -461,18 +482,18 @@ export default function GamificacaoConfigPage() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>Configuracao de Gamificacao</h1>
-      <p className={styles.subtitle}>Personalize as regras de pontuacao, mecanicas e recompensas da sua empresa</p>
+      <h1 className={styles.title}>Configuração de Gamificação</h1>
+      <p className={styles.subtitle}>Personalize as regras de pontuação, mecânicas e recompensas da sua empresa</p>
 
       <div className={styles.sections}>
         {/* â•â•â• Section 1: XP & Pontuacao â•â•â• */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionIcon}>âš¡</span>
-            <h2 className={styles.sectionTitle}>XP e Pontuacao</h2>
+            <span className={styles.sectionIcon}>⚡</span>
+            <h2 className={styles.sectionTitle}>XP e Pontuação</h2>
           </div>
           <p className={styles.sectionDesc}>
-            Defina quantos pontos de experiencia (XP) cada atividade concede as colaboradoras.
+            Defina quantos pontos de experiência (XP) cada atividade concede às colaboradoras.
           </p>
 
           {XP_FIELDS.map(({ key, label, max }) => (
@@ -495,8 +516,8 @@ export default function GamificacaoConfigPage() {
           <div style={{ marginTop: 16 }}>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>
-                Meta diaria de XP
-                <span className={styles.labelHint}> (minimo para considerar o dia como ativo)</span>
+                Meta diária de XP
+                <span className={styles.labelHint}> (mínimo para considerar o dia como ativo)</span>
               </label>
               <input
                 type="number"
@@ -520,17 +541,17 @@ export default function GamificacaoConfigPage() {
         {/* â•â•â• Section 2: Streak â•â•â• */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionIcon}>ðŸ”¥</span>
-            <h2 className={styles.sectionTitle}>Streak (Sequencia)</h2>
+            <span className={styles.sectionIcon}>🔥</span>
+            <h2 className={styles.sectionTitle}>Streak (Sequência)</h2>
           </div>
           <p className={styles.sectionDesc}>
-            A streak conta dias consecutivos de atividade. Colaboradoras que mantiverem a sequencia ganham bonus de XP e badges especiais em marcos como 7, 14, 30 e 60 dias.
+            A streak conta dias consecutivos de atividade. Colaboradoras que mantiverem a sequência ganham bônus de XP e badges especiais em marcos como 7, 14, 30 e 60 dias.
           </p>
 
           <div className={styles.toggleRow}>
             <div className={styles.toggleInfo}>
-              <span className={styles.toggleLabel}>Notificacoes de streak</span>
-              <span className={styles.toggleDesc}>Enviar lembretes para nao perder a sequencia</span>
+              <span className={styles.toggleLabel}>Notificações de streak</span>
+              <span className={styles.toggleDesc}>Enviar lembretes para não perder a sequência</span>
             </div>
             <label className={styles.toggle}>
               <input
@@ -546,7 +567,7 @@ export default function GamificacaoConfigPage() {
 
           <div style={{ marginTop: 16 }}>
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Dias minimos para streak</label>
+              <label className={styles.label}>Dias mínimos para streak</label>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <input
                   type="number"
@@ -572,17 +593,17 @@ export default function GamificacaoConfigPage() {
         {/* â•â•â• Section 3: Hearts/Vidas â•â•â• */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionIcon}>â¤ï¸</span>
+            <span className={styles.sectionIcon}>❤️</span>
             <h2 className={styles.sectionTitle}>Vidas (Hearts)</h2>
           </div>
           <p className={styles.sectionDesc}>
-            O sistema de vidas limita quantas atividades incorretas a colaboradora pode fazer por dia. Ao errar um quiz ou desafio, perde uma vida. Quando acabam as vidas, precisa esperar o recarregamento. Isso incentiva atenÃ§Ã£o e estudo.
+            O sistema de vidas limita quantas atividades incorretas a colaboradora pode fazer por dia. Ao errar um quiz ou desafio, perde uma vida. Quando acabam as vidas, precisa esperar o recarregamento. Isso incentiva atenção e estudo.
           </p>
 
           <div className={styles.toggleRow}>
             <div className={styles.toggleInfo}>
               <span className={styles.toggleLabel}>Ativar sistema de vidas</span>
-              <span className={styles.toggleDesc}>Quando desativado, erros nao consomem vidas</span>
+              <span className={styles.toggleDesc}>Quando desativado, erros não consomem vidas</span>
             </div>
             <label className={styles.toggle}>
               <input
@@ -647,18 +668,18 @@ export default function GamificacaoConfigPage() {
         {/* â•â•â• Section 4: Liga & Competicao â•â•â• */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionIcon}>ðŸ†</span>
-            <h2 className={styles.sectionTitle}>Liga e Competicao</h2>
+            <span className={styles.sectionIcon}>🏆</span>
+            <h2 className={styles.sectionTitle}>Liga e Competição</h2>
           </div>
           <p className={styles.sectionDesc}>
-            Ligas criam competicoes semanais entre colaboradoras. Quem pontuar mais sobe de divisao. A opcao anonima mostra apenas apelidos/iniciais no ranking.
+            Ligas criam competições semanais entre colaboradoras. Quem pontuar mais sobe de divisão. A opção anônima mostra apenas apelidos/iniciais no ranking.
           </p>
 
           <div className={styles.toggleList}>
             <div className={styles.toggleRow}>
               <div className={styles.toggleInfo}>
                 <span className={styles.toggleLabel}>Ativar ligas</span>
-                <span className={styles.toggleDesc}>Competicao semanal com ranking e divisoes</span>
+                  <span className={styles.toggleDesc}>Competição semanal com ranking e divisões</span>
               </div>
               <label className={styles.toggle}>
                 <input
@@ -675,7 +696,7 @@ export default function GamificacaoConfigPage() {
             {(config?.league_enabled ?? 1) === 1 && (
               <div className={styles.toggleRow}>
                 <div className={styles.toggleInfo}>
-                  <span className={styles.toggleLabel}>Ranking anonimo</span>
+                  <span className={styles.toggleLabel}>Ranking anônimo</span>
                   <span className={styles.toggleDesc}>Exibir apenas apelidos/iniciais em vez de nomes completos</span>
                 </div>
                 <label className={styles.toggle}>
@@ -696,11 +717,11 @@ export default function GamificacaoConfigPage() {
         {/* â•â•â• Section 5: Temas & Trilha â•â•â• */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionIcon}>ðŸ“š</span>
-            <h2 className={styles.sectionTitle}>Temas e Trilha de Saude</h2>
+            <span className={styles.sectionIcon}>📚</span>
+            <h2 className={styles.sectionTitle}>Temas e Trilha de Saúde</h2>
           </div>
           <p className={styles.sectionDesc}>
-            Selecione quais temas de saude estao ativos para a empresa e defina a ordem em que aparecem na trilha.
+            Selecione quais temas de saúde estão ativos para a empresa e defina a ordem em que aparecem na trilha.
           </p>
 
           <div style={{ marginBottom: 16 }}>
@@ -719,7 +740,7 @@ export default function GamificacaoConfigPage() {
                       checked={isActive}
                       onChange={() => toggleTheme(key)}
                     />
-                    {label}
+                    {normalizeText(label)}
                   </label>
                 );
               })}
@@ -732,7 +753,7 @@ export default function GamificacaoConfigPage() {
               {themeOrder.filter(t => activeThemes.includes(t)).map((theme, idx) => (
                 <div key={theme} className={styles.themeOrderItem}>
                   <span className={styles.themeOrderIndex}>{idx + 1}.</span>
-                  <span className={styles.themeOrderName}>{THEME_LABELS[theme] || theme}</span>
+                  <span className={styles.themeOrderName}>{normalizeText(THEME_LABELS[theme] || theme)}</span>
                   <div className={styles.themeOrderBtns}>
                     <button
                       className={styles.themeOrderBtn}
@@ -740,7 +761,7 @@ export default function GamificacaoConfigPage() {
                       disabled={idx === 0}
                       aria-label={`Mover ${THEME_LABELS[theme]} para cima`}
                     >
-                      â–²
+                      ▲
                     </button>
                     <button
                       className={styles.themeOrderBtn}
@@ -748,7 +769,7 @@ export default function GamificacaoConfigPage() {
                       disabled={idx === themeOrder.filter(t => activeThemes.includes(t)).length - 1}
                       aria-label={`Mover ${THEME_LABELS[theme]} para baixo`}
                     >
-                      â–¼
+                      ▼
                     </button>
                   </div>
                 </div>
@@ -766,7 +787,7 @@ export default function GamificacaoConfigPage() {
         {/* â•â•â• Section 6: Recompensas â•â•â• */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionIcon}>ðŸŽ</span>
+            <span className={styles.sectionIcon}>🎁</span>
             <h2 className={styles.sectionTitle}>Recompensas</h2>
           </div>
           <p className={styles.sectionDesc}>
@@ -778,7 +799,7 @@ export default function GamificacaoConfigPage() {
             <div className={styles.skeletonBlock} />
           ) : rewards.length === 0 ? (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>ðŸŽ</div>
+              <div className={styles.emptyIcon}>🎁</div>
               <p className={styles.emptyText}>Nenhuma recompensa cadastrada. Crie a primeira!</p>
             </div>
           ) : (
@@ -786,7 +807,7 @@ export default function GamificacaoConfigPage() {
               <table className={styles.rewardsTable}>
                 <thead>
                   <tr>
-                    <th>Titulo</th>
+                    <th>Título</th>
                     <th>Custo</th>
                     <th>Tipo</th>
                     <th>Qtd</th>
@@ -855,7 +876,7 @@ export default function GamificacaoConfigPage() {
                     <option value="voucher">Voucher</option>
                     <option value="folga">Folga</option>
                     <option value="produto">Produto</option>
-                    <option value="experiencia">Experiencia</option>
+                    <option value="experiencia">Experiência</option>
                   </select>
                 </div>
                 <div className={styles.fieldGroup}>
@@ -870,7 +891,7 @@ export default function GamificacaoConfigPage() {
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>
-                    Quantidade disponivel
+                    Quantidade disponível
                     <span className={styles.labelHint}> (-1 = ilimitado)</span>
                   </label>
                   <input
@@ -882,11 +903,11 @@ export default function GamificacaoConfigPage() {
                   />
                 </div>
                 <div className={`${styles.fieldGroup} ${styles.fieldGroupFull}`}>
-                  <label className={styles.label}>Descricao</label>
+                  <label className={styles.label}>Descrição</label>
                   <input
                     className={styles.input}
                     type="text"
-                    placeholder="Descricao opcional da recompensa"
+                    placeholder="Descrição opcional da recompensa"
                     value={rewardForm.description}
                     onChange={e => setRewardForm(f => ({ ...f, description: e.target.value }))}
                     maxLength={1000}
@@ -911,7 +932,7 @@ export default function GamificacaoConfigPage() {
         {/* â•â•â• Section 7: Resgates Pendentes â•â•â• */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionIcon}>ðŸ“‹</span>
+            <span className={styles.sectionIcon}>📋</span>
             <h2 className={styles.sectionTitle}>Resgates Pendentes</h2>
           </div>
           <p className={styles.sectionDesc}>
@@ -922,7 +943,7 @@ export default function GamificacaoConfigPage() {
             <div className={styles.skeletonBlock} />
           ) : pendingRedemptions.length === 0 ? (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>âœ…</div>
+              <div className={styles.emptyIcon}>✅</div>
               <p className={styles.emptyText}>Nenhum resgate pendente no momento</p>
             </div>
           ) : (
@@ -932,7 +953,7 @@ export default function GamificacaoConfigPage() {
                   <div className={styles.redemptionInfo}>
                     <div className={styles.redemptionUser}>{r.user_name}</div>
                     <div className={styles.redemptionReward}>
-                      {r.reward_title} â€” <strong>{r.points_spent} pts</strong>
+                      {r.reward_title} — <strong>{r.points_spent} pts</strong>
                       {' '}
                       <span className={`${styles.typeBadge} ${
                         r.reward_type === 'voucher' ? styles.typeVoucher :
@@ -971,26 +992,26 @@ export default function GamificacaoConfigPage() {
         {/* â•â•â• Section 8: Gerenciamento de LiÃ§Ãµes â•â•â• */}
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionIcon}>ðŸ“š</span>
-            <h2 className={styles.sectionTitle}>Gerenciamento de LiÃ§Ãµes</h2>
+            <span className={styles.sectionIcon}>📚</span>
+            <h2 className={styles.sectionTitle}>Gerenciamento de Lições</h2>
           </div>
           <p className={styles.sectionDesc}>
-            Visualize as {lessonsData?.total ?? 'â€¦'} liÃ§Ãµes disponÃ­veis e crie conteÃºdo personalizado para sua empresa. LiÃ§Ãµes globais sÃ£o somente leitura.
+            Visualize as {lessonsData?.total ?? '...'} lições disponíveis e crie conteúdo personalizado para sua empresa. Lições globais são somente leitura.
           </p>
 
           {/* Filters */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-            <input className={styles.input} style={{ flex: '1 1 160px', minWidth: 120 }} placeholder="ðŸ” Buscar tÃ­tulo..." value={lessonSearch} onChange={e => { setLessonSearch(e.target.value); setLessonPage(1); }} />
-            <select className={styles.input} style={{ flex: '0 0 auto' }} value={lessonThemeFilter} onChange={e => { setLessonThemeFilter(e.target.value); setLessonPage(1); }}>
+          <div className={styles.lessonFilters}>
+            <input className={styles.input} placeholder="🔍 Buscar título..." value={lessonSearch} onChange={e => { setLessonSearch(e.target.value); setLessonPage(1); }} />
+            <select className={styles.input} value={lessonThemeFilter} onChange={e => { setLessonThemeFilter(e.target.value); setLessonPage(1); }}>
               <option value="">Todos os temas</option>
-              {Object.entries(THEME_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              {Object.entries(THEME_LABELS).map(([k, v]) => <option key={k} value={k}>{normalizeText(v)}</option>)}
             </select>
-            <select className={styles.input} style={{ flex: '0 0 auto' }} value={lessonTypeFilter} onChange={e => { setLessonTypeFilter(e.target.value); setLessonPage(1); }}>
+            <select className={styles.input} value={lessonTypeFilter} onChange={e => { setLessonTypeFilter(e.target.value); setLessonPage(1); }}>
               <option value="">Todos os tipos</option>
-              {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{normalizeText(v)}</option>)}
             </select>
-            <input className={styles.input} style={{ flex: '0 0 80px', minWidth: 60 }} type="number" min={1} max={52} placeholder="Semana" value={lessonWeekFilter} onChange={e => { setLessonWeekFilter(e.target.value); setLessonPage(1); }} />
-            <button className={styles.saveBtn} onClick={openCreateLesson} style={{ marginLeft: 'auto' }}>+ Nova LiÃ§Ã£o</button>
+            <input className={styles.input} type="number" min={1} max={52} placeholder="Semana" value={lessonWeekFilter} onChange={e => { setLessonWeekFilter(e.target.value); setLessonPage(1); }} />
+            <button className={`${styles.saveBtn} ${styles.newLessonBtn}`} onClick={openCreateLesson}>+ Nova Lição</button>
           </div>
 
           {/* Lesson list */}
@@ -998,28 +1019,34 @@ export default function GamificacaoConfigPage() {
             <div className={styles.skeletonBlock} />
           ) : (lessonsData?.lessons ?? []).length === 0 ? (
             <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>ðŸ“­</div>
-              <p className={styles.emptyText}>Nenhuma liÃ§Ã£o encontrada com esses filtros</p>
+              <div className={styles.emptyIcon}>📝</div>
+              <p className={styles.emptyText}>Nenhuma lição encontrada com esses filtros</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className={styles.lessonList}>
               {(lessonsData?.lessons ?? []).map(lesson => (
-                <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-secondary, #f8f8f8)', borderRadius: 8, border: '1px solid var(--border-subtle, #e0e0e0)' }}>
-                  <span style={{ fontSize: 13, opacity: .6, minWidth: 24 }}>S{lesson.week_number}</span>
-                  <span style={{ fontSize: 12, background: '#e8f4fd', color: '#1565c0', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{LESSON_TYPE_LABELS[lesson.type] ?? lesson.type}</span>
-                  <span style={{ fontSize: 12, background: '#f3e5f5', color: '#6a1b9a', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{THEME_LABELS[lesson.theme] ?? lesson.theme}</span>
-                  <span style={{ flex: 1, fontWeight: 500, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lesson.title}</span>
-                  {lesson.campaign_context && <span style={{ fontSize: 11, opacity: .7, whiteSpace: 'nowrap' }}>ðŸ·ï¸ {lesson.campaign_context}</span>}
+                <div key={lesson.id} className={styles.lessonCard}>
+                  <div className={styles.lessonTopRow}>
+                    <span className={styles.lessonWeek}>S{lesson.week_number}</span>
+                    <div className={styles.lessonBadges}>
+                      <span className={`${styles.lessonBadge} ${styles.lessonTypeBadge}`}>{normalizeText(LESSON_TYPE_LABELS[lesson.type] ?? lesson.type)}</span>
+                      <span className={`${styles.lessonBadge} ${styles.lessonThemeBadge}`}>{normalizeText(THEME_LABELS[lesson.theme] ?? lesson.theme)}</span>
+                    </div>
+                  </div>
+                  <span className={styles.lessonTitle}>{normalizeText(lesson.title)}</span>
+                  {lesson.campaign_context && <span className={styles.lessonCampaign}>🏷️ {normalizeText(lesson.campaign_context)}</span>}
+                  <div className={styles.lessonActions}>
                   {lesson.isGlobal ? (
-                    <span style={{ fontSize: 11, color: '#888', background: '#f0f0f0', padding: '2px 8px', borderRadius: 4 }}>Global</span>
+                    <span className={`${styles.lessonBadge} ${styles.lessonGlobalBadge}`}>Global</span>
                   ) : (
                     <>
-                      <button className={styles.saveBtnSmall} onClick={() => openEditLesson(lesson)} style={{ padding: '4px 10px', fontSize: 12 }}>Editar</button>
-                      <button className={styles.saveBtnDanger} onClick={() => deleteLesson(lesson.id)} disabled={deletingLesson === lesson.id} style={{ padding: '4px 10px', fontSize: 12 }}>
+                      <button className={`${styles.saveBtnSmall} ${styles.lessonActionBtn}`} onClick={() => openEditLesson(lesson)}>Editar</button>
+                      <button className={`${styles.saveBtnDanger} ${styles.lessonActionBtn}`} onClick={() => deleteLesson(lesson.id)} disabled={deletingLesson === lesson.id}>
                         {deletingLesson === lesson.id ? '...' : 'Excluir'}
                       </button>
                     </>
                   )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1028,9 +1055,9 @@ export default function GamificacaoConfigPage() {
           {/* Pagination */}
           {(lessonsData?.totalPages ?? 1) > 1 && (
             <div style={{ display: 'flex', gap: 8, marginTop: 16, alignItems: 'center', justifyContent: 'center' }}>
-              <button className={styles.saveBtn} onClick={() => setLessonPage(p => Math.max(1, p - 1))} disabled={lessonPage === 1} style={{ padding: '4px 12px' }}>â† Anterior</button>
-              <span style={{ fontSize: 13 }}>PÃ¡g. {lessonPage} / {lessonsData?.totalPages}</span>
-              <button className={styles.saveBtn} onClick={() => setLessonPage(p => Math.min(lessonsData?.totalPages ?? 1, p + 1))} disabled={lessonPage === (lessonsData?.totalPages ?? 1)} style={{ padding: '4px 12px' }}>PrÃ³xima â†’</button>
+              <button className={styles.saveBtn} onClick={() => setLessonPage(p => Math.max(1, p - 1))} disabled={lessonPage === 1} style={{ padding: '4px 12px' }}>← Anterior</button>
+              <span style={{ fontSize: 13 }}>Pág. {lessonPage} / {lessonsData?.totalPages}</span>
+              <button className={styles.saveBtn} onClick={() => setLessonPage(p => Math.min(lessonsData?.totalPages ?? 1, p + 1))} disabled={lessonPage === (lessonsData?.totalPages ?? 1)} style={{ padding: '4px 12px' }}>Próxima →</button>
             </div>
           )}
         </section>
@@ -1040,16 +1067,16 @@ export default function GamificacaoConfigPage() {
       {showLessonForm && (
         <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) setShowLessonForm(false); }}>
           <div className={styles.modal} style={{ maxWidth: 640, maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 className={styles.modalTitle}>{editingLesson ? 'Editar LiÃ§Ã£o' : 'Nova LiÃ§Ã£o'}</h3>
+            <h3 className={styles.modalTitle}>{editingLesson ? 'Editar Lição' : 'Nova Lição'}</h3>
 
             <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>TÃ­tulo *</label>
-                <input className={styles.input} placeholder="TÃ­tulo da liÃ§Ã£o" value={lessonForm.title} onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))} />
+                <label className={styles.label}>Título *</label>
+                <input className={styles.input} placeholder="Título da lição" value={lessonForm.title} onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))} />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>DescriÃ§Ã£o *</label>
-                <input className={styles.input} placeholder="Breve descriÃ§Ã£o" value={lessonForm.description} onChange={e => setLessonForm(f => ({ ...f, description: e.target.value }))} />
+                <label className={styles.label}>Descrição *</label>
+                <input className={styles.input} placeholder="Breve descrição" value={lessonForm.description} onChange={e => setLessonForm(f => ({ ...f, description: e.target.value }))} />
               </div>
             </div>
 
@@ -1057,13 +1084,13 @@ export default function GamificacaoConfigPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Tipo *</label>
                 <select className={styles.input} value={lessonForm.type} onChange={e => setLessonForm(f => ({ ...f, type: e.target.value, content_json: JSON.stringify(CONTENT_TEMPLATES[e.target.value] ?? {}, null, 2) }))}>
-                  {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{normalizeText(v)}</option>)}
                 </select>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Tema *</label>
                 <select className={styles.input} value={lessonForm.theme} onChange={e => setLessonForm(f => ({ ...f, theme: e.target.value }))}>
-                  {Object.entries(THEME_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {Object.entries(THEME_LABELS).map(([k, v]) => <option key={k} value={k}>{normalizeText(v)}</option>)}
                 </select>
               </div>
               <div className={styles.fieldGroup}>
@@ -1074,7 +1101,7 @@ export default function GamificacaoConfigPage() {
 
             <div className={styles.formGrid3}>
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Semana (1â€“52)</label>
+                <label className={styles.label}>Semana (1-52)</label>
                 <input type="number" className={styles.input} min={1} max={52} placeholder="Atual" value={lessonForm.week_number} onChange={e => setLessonForm(f => ({ ...f, week_number: e.target.value }))} />
               </div>
               <div className={styles.fieldGroup}>
@@ -1082,18 +1109,18 @@ export default function GamificacaoConfigPage() {
                 <input type="number" className={styles.input} min={1} max={7} placeholder="Hoje" value={lessonForm.day_of_week} onChange={e => setLessonForm(f => ({ ...f, day_of_week: e.target.value }))} />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>DuraÃ§Ã£o (seg)</label>
+                <label className={styles.label}>Duração (seg)</label>
                 <input type="number" className={styles.input} min={30} value={lessonForm.duration_seconds} onChange={e => setLessonForm(f => ({ ...f, duration_seconds: Number(e.target.value) }))} />
               </div>
             </div>
 
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Campanha <span className={styles.labelHint}>(opcional â€” ex: Outubro Rosa)</span></label>
-              <input className={styles.input} placeholder="Ex: Outubro Rosa - CÃ¢ncer de Mama" value={lessonForm.campaign_context} onChange={e => setLessonForm(f => ({ ...f, campaign_context: e.target.value }))} />
+              <label className={styles.label}>Campanha <span className={styles.labelHint}>(opcional — ex: Outubro Rosa)</span></label>
+              <input className={styles.input} placeholder="Ex: Outubro Rosa - Câncer de Mama" value={lessonForm.campaign_context} onChange={e => setLessonForm(f => ({ ...f, campaign_context: e.target.value }))} />
             </div>
 
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>ConteÃºdo (JSON) *</label>
+              <label className={styles.label}>Conteúdo (JSON) *</label>
               <textarea
                 className={styles.input}
                 style={{ minHeight: 180, fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
@@ -1101,12 +1128,12 @@ export default function GamificacaoConfigPage() {
                 onChange={e => setLessonForm(f => ({ ...f, content_json: e.target.value }))}
                 spellCheck={false}
               />
-              <span className={styles.labelHint}>Edite o JSON conforme o tipo selecionado. Ao trocar o tipo, o template Ã© atualizado.</span>
+              <span className={styles.labelHint}>Edite o JSON conforme o tipo selecionado. Ao trocar o tipo, o template é atualizado.</span>
             </div>
 
             <div className={styles.saveRow}>
               <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.description}>
-                {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar AlteraÃ§Ãµes' : 'Criar LiÃ§Ã£o'}
+                {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar Alterações' : 'Criar Lição'}
               </button>
               <button className={styles.saveBtnDanger} onClick={() => setShowLessonForm(false)} style={{ marginLeft: 8 }}>Cancelar</button>
             </div>

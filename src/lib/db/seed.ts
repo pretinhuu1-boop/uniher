@@ -25,11 +25,12 @@ async function seed() {
       if (!existingAdmin) {
         console.log('[seed] Criando admin master...');
         db.prepare(`
-          INSERT INTO users (id, company_id, department_id, name, email, password_hash, role, level, points)
-          VALUES ('user_admin', NULL, NULL, 'Admin UniHER', 'admin@uniher.com.br', ?, 'admin', 99, 0)
+          INSERT INTO users (id, company_id, department_id, name, email, password_hash, role, is_master_admin, level, points)
+          VALUES ('user_admin', NULL, NULL, 'Admin UniHER', 'admin@uniher.com.br', ?, 'admin', 1, 99, 0)
         `).run(adminPassword);
       } else {
         console.log('[seed] Admin master já existe, pulando...');
+        db.prepare(`UPDATE users SET is_master_admin = 1 WHERE email = 'admin@uniher.com.br'`).run();
       }
 
       // ─── Arquétipos (estrutura base do sistema) ───

@@ -47,4 +47,17 @@ echo "[6/6] Reiniciando app..."
 pm2 startOrReload ecosystem.config.cjs --env production
 pm2 save
 
+echo "[6.1/6] Aguardando app responder..."
+for i in $(seq 1 30); do
+  if curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1; then
+    echo "App online."
+    break
+  fi
+  if [ "$i" -eq 30 ]; then
+    echo "App nao respondeu a tempo."
+    exit 1
+  fi
+  sleep 1
+done
+
 echo "Deploy concluido."

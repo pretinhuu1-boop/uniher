@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ const updateSchema = z.object({
   rarity: z.enum(['common', 'rare', 'epic', 'legendary']).optional(),
 });
 
-export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
+export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
   await initDb();
   const params = await context.params;
   const { id } = params;
@@ -39,7 +39,7 @@ export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
   return NextResponse.json({ success: true });
 });
 
-export const DELETE = withRole('admin')(async (_req: NextRequest, context) => {
+export const DELETE = withMasterAdmin(async (_req: NextRequest, context) => {
   await initDb();
   const params = await context.params;
   const { id } = params;

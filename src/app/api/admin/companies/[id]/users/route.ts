@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb } from '@/lib/db';
 
-export const GET = withRole('admin')(async (_req: NextRequest, context) => {
+export const GET = withMasterAdmin(async (_req: NextRequest, context) => {
   const params = await context.params;
   const { id: companyId } = params;
 

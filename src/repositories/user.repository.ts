@@ -3,13 +3,14 @@ import { nanoid } from 'nanoid';
 
 export interface UserRow {
   id: string;
-  company_id: string;
+  company_id: string | null;
   department_id: string | null;
   name: string;
   nickname: string | null;
   email: string;
   password_hash: string;
   role: string;
+  is_master_admin: number;
   avatar_url: string | null;
   level: number;
   points: number;
@@ -66,17 +67,27 @@ export async function createUser(data: {
   email: string;
   passwordHash: string;
   role: string;
-  companyId: string;
+  companyId: string | null;
   departmentId?: string;
+  isMasterAdmin?: boolean;
 }): Promise<UserRow> {
   const writeQueue = getWriteQueue();
   const id = nanoid();
 
   return writeQueue.enqueue((db) => {
     db.prepare(`
-      INSERT INTO users (id, company_id, department_id, name, email, password_hash, role)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, data.companyId, data.departmentId || null, data.name, data.email, data.passwordHash, data.role);
+      INSERT INTO users (id, company_id, department_id, name, email, password_hash, role, is_master_admin)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      data.companyId,
+      data.departmentId || null,
+      data.name,
+      data.email,
+      data.passwordHash,
+      data.role,
+      data.isMasterAdmin ? 1 : 0
+    );
 
     return db.prepare('SELECT * FROM users WHERE id = ?').get(id) as UserRow;
   });

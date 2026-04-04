@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UniHER
 
-## Getting Started
+Aplicação Next.js com autenticação por cookie httpOnly, SQLite local e deploy em VPS com Nginx + PM2.
 
-First, run the development server:
+## Desenvolvimento local
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App local:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `http://localhost:3000`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Build
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Seed base
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run db:seed
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Usuário master padrão:
 
-## Deploy on Vercel
+- Email: `admin@uniher.com.br`
+- Senha: `Admin@2026`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy na VPS
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Diretório esperado na VPS:
+
+- `/var/www/uniher`
+
+Deploy padrão:
+
+```bash
+cd /var/www/uniher
+bash deploy/vps/deploy.sh main
+```
+
+O script:
+
+- atualiza código
+- instala dependências
+- faz build
+- prepara standalone
+- roda seed
+- recarrega PM2
+- espera a aplicação responder em `/api/health`
+
+## HTTP temporário para testes
+
+Enquanto estiver sem HTTPS, ajuste `.env.production`:
+
+```env
+NEXT_PUBLIC_APP_URL=http://srv1373909.hstgr.cloud
+ALLOW_INSECURE_HTTP_COOKIES=true
+```
+
+Esse modo é só para teste.
+
+## HTTPS com hostname da Hostinger
+
+Para configurar HTTPS com `srv1373909.hstgr.cloud`:
+
+```bash
+cd /var/www/uniher
+bash deploy/vps/setup-https.sh srv1373909.hstgr.cloud seu-email@dominio.com
+```
+
+O script:
+
+- instala `certbot`
+- emite certificado
+- aplica Nginx com redirect para HTTPS
+- troca `NEXT_PUBLIC_APP_URL` para `https://...`
+- desativa `ALLOW_INSECURE_HTTP_COOKIES`
+- reinicia a app com `pm2 restart uniher --update-env`
+
+## Arquivos de deploy
+
+- [deploy/vps/deploy.sh](C:/Users/User/projetoss/uniher/deploy/vps/deploy.sh)
+- [deploy/vps/nginx-uniher.conf](C:/Users/User/projetoss/uniher/deploy/vps/nginx-uniher.conf)
+- [deploy/vps/nginx-uniher-https.conf](C:/Users/User/projetoss/uniher/deploy/vps/nginx-uniher-https.conf)
+- [deploy/vps/setup-https.sh](C:/Users/User/projetoss/uniher/deploy/vps/setup-https.sh)
+
+## Testes rápidos na VPS
+
+```bash
+curl -I http://127.0.0.1:3000/api/health
+curl -I http://srv1373909.hstgr.cloud/
+curl -I https://srv1373909.hstgr.cloud/
+```

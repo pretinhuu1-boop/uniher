@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ const createSchema = z.object({
 });
 
 // GET — admin only
-export const GET = withRole('admin')(async (_req: NextRequest) => {
+export const GET = withMasterAdmin(async (_req: NextRequest) => {
   await initDb();
   const db = getReadDb();
   const badges = db.prepare(`
@@ -29,7 +29,7 @@ export const GET = withRole('admin')(async (_req: NextRequest) => {
 });
 
 // POST — admin only
-export const POST = withRole('admin')(async (req: NextRequest) => {
+export const POST = withMasterAdmin(async (req: NextRequest) => {
   await initDb();
   const body = await req.json();
   const parsed = createSchema.safeParse(body);

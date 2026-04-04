@@ -69,3 +69,16 @@ export function withRole(...roles: string[]) {
     });
   };
 }
+
+export function withMasterAdmin(handler: ApiHandler) {
+  return withRole('admin')(async (req, context) => {
+    const hasLegacyAdminToken = context.auth.isMasterAdmin === undefined && context.auth.role === 'admin';
+    if (context.auth.isMasterAdmin !== true && !hasLegacyAdminToken) {
+      return NextResponse.json(
+        { error: 'Acesso restrito ao Admin Master' },
+        { status: 403 }
+      );
+    }
+    return handler(req, context);
+  });
+}

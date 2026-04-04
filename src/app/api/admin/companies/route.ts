@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { listAllCompanies, createCompany } from '@/repositories/company.repository';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
@@ -17,7 +17,7 @@ const CreateSchema = z.object({
   contact_phone: z.string().max(20).optional(),
 });
 
-export const GET = withRole('admin')(async (req: NextRequest) => {
+export const GET = withMasterAdmin(async (req: NextRequest) => {
   await initDb();
   const url = new URL(req.url);
   const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '50', 10) || 50, 1), 200);
@@ -38,7 +38,7 @@ export const GET = withRole('admin')(async (req: NextRequest) => {
   return NextResponse.json({ companies, total, limit, offset });
 });
 
-export const POST = withRole('admin')(async (req: NextRequest, context) => {
+export const POST = withMasterAdmin(async (req: NextRequest, context) => {
   await initDb();
   const body = await req.json().catch(() => ({}));
   const parsed = CreateSchema.safeParse(body);

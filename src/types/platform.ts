@@ -11,6 +11,7 @@ export interface MockUser {
   name: string;
   email: string;
   role: UserRole;
+  isMasterAdmin?: boolean;
   avatar?: string;
   department?: string;
   level: number;

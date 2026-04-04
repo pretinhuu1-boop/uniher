@@ -79,7 +79,7 @@ const PLAN_COLORS: Record<string, string> = {
 
 const ROLE_LABELS: Record<string, string> = {
   rh: 'Admin Empresa',
-  lideranca: 'Liderança',
+  lideranca: 'Lideran�a',
   colaboradora: 'Colaboradora',
   admin: 'Admin Master',
 };
@@ -91,7 +91,7 @@ const RARITY_COLORS: Record<string, string> = {
   legendary: 'bg-amber-100 text-amber-700',
 };
 
-const TABS = ['Visão Geral', 'Empresas', 'Usuários', 'Admin Master', 'Badges', 'Sistema', 'Alertas', 'Auditoria'] as const;
+const TABS = ['Vis�o Geral', 'Empresas', 'Usu�rios', 'Admin Master', 'Badges', 'Sistema', 'Alertas', 'Auditoria'] as const;
 type Tab = (typeof TABS)[number];
 
 // ─── Shared Components ────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ function OverviewTab() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Empresas" value={sysData?.companies ?? companies.length} sub="cadastradas" />
-        <StatCard label="Usuárias" value={sysData?.users ?? '—'} sub="total na plataforma" />
+        <StatCard label="Usu�rias" value={sysData?.users ?? '—'} sub="total na plataforma" />
         <StatCard
           label="Campanhas Ativas"
           value={sysData?.campaigns ?? '—'}
@@ -212,7 +212,7 @@ function OverviewTab() {
           <div className="text-center py-12 space-y-2">
             <span className="text-4xl block">🏢</span>
             <p className="text-uni-text-700 font-medium text-sm">Nenhuma empresa cadastrada</p>
-            <p className="text-xs text-uni-text-400">As empresas recentes aparecerão aqui.</p>
+            <p className="text-xs text-uni-text-400">As empresas recentes aparecer�o aqui.</p>
           </div>
         ) : (
           <div className="divide-y divide-border-1">
@@ -223,7 +223,7 @@ function OverviewTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-uni-text-900 truncate">{c.trade_name || c.name}</div>
-                  <div className="text-[11px] text-uni-text-400">{c.user_count} usuárias</div>
+                  <div className="text-[11px] text-uni-text-400">{c.user_count} usu�rias</div>
                 </div>
                 <span
                   className={cn(
@@ -276,7 +276,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
   if (!data)
     return (
       <div className="p-6 flex items-center gap-2 text-sm text-uni-text-400">
-        <Spinner /> Carregando usuários...
+        <Spinner /> Carregando usu�rios...
       </div>
     );
 
@@ -284,8 +284,8 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
     return (
       <div className="text-center py-10 space-y-3">
         <span className="text-3xl block">👤</span>
-        <p className="text-uni-text-700 font-medium text-sm">Nenhum usuário nesta empresa</p>
-        <p className="text-xs text-uni-text-400">Adicione um Admin Empresa para começar.</p>
+        <p className="text-uni-text-700 font-medium text-sm">Nenhum usu�rio nesta empresa</p>
+        <p className="text-xs text-uni-text-400">Adicione um Admin Empresa para come�ar.</p>
         {onGoToUsers && (
           <button onClick={onGoToUsers} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg" style={{ background: '#C9A264' }}>
             + Adicionar Admin Empresa
@@ -299,7 +299,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
       {tempPass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
           <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Tempor�ria</h3>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center gap-2">
                 <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
@@ -315,7 +315,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
             </div>
             <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
               <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela não será mostrada novamente.
+              Anote esta senha! Ela n�o será mostrada novamente.
             </p>
             <button
               onClick={() => setTempPass(null)}
@@ -355,7 +355,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
                   {ROLE_LABELS[u.role] ?? u.role}
                 </span>
                 {u.department_name && <span>{u.department_name}</span>}
-                <span>Nível {u.level}</span>
+                <span>N�vel {u.level}</span>
                 <span>{u.points.toLocaleString('pt-BR')} pts</span>
               </div>
               <div className="flex gap-2">
@@ -393,13 +393,13 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border-1">
-              <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usuária</th>
+              <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usu�ria</th>
               <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Departamento</th>
               <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-              <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Nível</th>
+              <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">N�vel</th>
               <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Pts</th>
               <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
-              <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
+              <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A��es</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-1">
@@ -514,7 +514,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
       } else {
         setFeedback({ type: 'error', msg: json.error || 'Erro ao atualizar' });
       }
-    } catch { setFeedback({ type: 'error', msg: 'Erro de conexão' }); }
+    } catch { setFeedback({ type: 'error', msg: 'Erro de conex�o' }); }
     setSavingEdit(false);
   }
   const companies = data?.companies ?? [];
@@ -536,7 +536,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
       } else {
         setFeedback({ type: 'error', msg: json.error || 'Erro ao cadastrar' });
       }
-    } catch { setFeedback({ type: 'error', msg: 'Erro de conexão' }); }
+    } catch { setFeedback({ type: 'error', msg: 'Erro de conex�o' }); }
     setSaving(false);
     setTimeout(() => setFeedback(null), 3000);
   }
@@ -571,11 +571,11 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
           <h3 className="font-display font-bold text-uni-text-900">Nova Empresa</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {([
-              { field: 'name', label: 'Razão Social *', placeholder: 'Empresa Ltda.' },
+              { field: 'name', label: 'Raz�o Social *', placeholder: 'Empresa Ltda.' },
               { field: 'trade_name', label: 'Nome Fantasia', placeholder: 'Empresa' },
               { field: 'cnpj', label: 'CNPJ *', placeholder: '00.000.000/0001-00' },
               { field: 'sector', label: 'Setor', placeholder: 'Tecnologia' },
-              { field: 'contact_name', label: 'Contato', placeholder: 'Nome do responsável' },
+              { field: 'contact_name', label: 'Contato', placeholder: 'Nome do respons�vel' },
               { field: 'contact_email', label: 'Email contato', placeholder: 'rh@empresa.com' },
               { field: 'contact_phone', label: 'Telefone', placeholder: '(11) 99999-9999' },
             ] as const).map(({ field, label, placeholder }) => (
@@ -628,7 +628,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
           <div className="text-center py-12 space-y-3">
             <span className="text-4xl block">🏢</span>
             <p className="text-uni-text-700 font-medium">Nenhuma empresa cadastrada</p>
-            <p className="text-sm text-uni-text-400">Crie a primeira empresa para começar a usar a plataforma.</p>
+            <p className="text-sm text-uni-text-400">Crie a primeira empresa para come�ar a usar a plataforma.</p>
             <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 bg-rose-500 text-white rounded-lg text-sm font-medium hover:bg-rose-600 transition-all">
               + Criar Empresa
             </button>
@@ -641,7 +641,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
               const isBlocked = company.is_active === 0;
               return (
                 <div key={company.id} className={cn('border-b border-border-1 last:border-b-0', isBlocked && 'bg-red-50/30')}>
-                  <div className="flex items-center gap-4 px-6 py-4 hover:bg-cream-50/50 transition-colors">
+                  <div className="flex flex-col items-stretch gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-6 hover:bg-cream-50/50 transition-colors">
                     {/* Company logo or initials */}
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden"
@@ -656,25 +656,25 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       }
                     </div>
 
-                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>
+                    <div className="w-full flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-uni-text-900 text-sm">{company.trade_name || company.name}</span>
                         {isBlocked && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">SUSPENSA</span>}
                       </div>
-                      <div className="text-[11px] text-uni-text-400 font-mono mt-0.5">{company.cnpj}</div>
-                      <div className="text-[11px] text-uni-text-500 md:hidden">{company.sector || ''}</div>
+                      <div className="text-[11px] text-uni-text-400 font-mono mt-0.5 break-all">{company.cnpj}</div>
+                      <div className="text-[11px] text-uni-text-500 md:hidden break-words">{company.sector || ''}</div>
                     </div>
 
                     <div className="hidden md:block text-xs text-uni-text-500 w-32 truncate" title={company.sector || ''}>{company.sector || '—'}</div>
-                    <div className="text-center w-14 cursor-pointer" onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>
+                    <div className="flex items-center justify-between sm:block text-left sm:text-center w-full sm:w-14 cursor-pointer" onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>
                       <div className="text-sm font-bold text-uni-text-900">{company.user_count}</div>
-                      <div className="text-[10px] text-uni-text-400">usuárias</div>
+                      <div className="text-[10px] text-uni-text-400">usu�rias</div>
                     </div>
-                    <span className={cn('inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide hidden sm:inline-flex', PLAN_COLORS[company.plan] ?? 'bg-gray-100 text-gray-600')}>
+                    <span className={cn('inline-flex self-start px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide', PLAN_COLORS[company.plan] ?? 'bg-gray-100 text-gray-600')}>
                       {company.plan}
                     </span>
 
-                    <button onClick={() => startEditCompany(company)} className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-all flex-shrink-0">
+                    <button onClick={() => startEditCompany(company)} className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-all flex-shrink-0">
                       Editar
                     </button>
 
@@ -682,7 +682,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       onClick={() => toggleBlock(company)}
                       disabled={blocking === company.id}
                       className={cn(
-                        'px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex-shrink-0',
+                        'w-full sm:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex-shrink-0',
                         isBlocked ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200',
                         blocking === company.id && 'opacity-50 cursor-wait'
                       )}
@@ -698,7 +698,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       <p className="text-xs font-bold text-uni-text-600 mb-4 uppercase tracking-wide">Editar Empresa</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Razão Social *</label>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Raz�o Social *</label>
                           <input value={editCompanyForm.name} onChange={e => setEditCompanyForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
                         </div>
                         <div>
@@ -743,14 +743,14 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       <p className="text-xs font-bold text-uni-text-500 mt-5 mb-3 uppercase tracking-wide">Identidade Visual</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Primária</label>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Prim�ria</label>
                           <div className="flex items-center gap-2">
                             <input type="color" value={editCompanyForm.primary_color || '#C9A264'} onChange={e => setEditCompanyForm(f => ({ ...f, primary_color: e.target.value }))} className="w-10 h-10 rounded-lg border border-border-1 cursor-pointer" />
                             <input value={editCompanyForm.primary_color} onChange={e => setEditCompanyForm(f => ({ ...f, primary_color: e.target.value }))} placeholder="#C9A264" className="flex-1 border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400 font-mono" />
                           </div>
                         </div>
                         <div>
-                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Secundária</label>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Secund�ria</label>
                           <div className="flex items-center gap-2">
                             <input type="color" value={editCompanyForm.secondary_color || '#1A3A6B'} onChange={e => setEditCompanyForm(f => ({ ...f, secondary_color: e.target.value }))} className="w-10 h-10 rounded-lg border border-border-1 cursor-pointer" />
                             <input value={editCompanyForm.secondary_color} onChange={e => setEditCompanyForm(f => ({ ...f, secondary_color: e.target.value }))} placeholder="#1A3A6B" className="flex-1 border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400 font-mono" />
@@ -844,7 +844,7 @@ function UsersTab() {
     // Embaralha tudo
     const pass = [...required, ...rest].sort(() => Math.random() - 0.5).join('');
     setUserForm(f => ({ ...f, password: pass }));
-    setShowPassText(false); // oculta após gerar — usuário decide se quer ver
+    setShowPassText(false); // oculta após gerar — usu�rio decide se quer ver
   }
 
   async function copyPassword() {
@@ -924,14 +924,14 @@ function UsersTab() {
       });
       const json = await res.json();
       if (json.success) {
-        setUserFeedback({ type: 'success', msg: 'Usuário criado com sucesso!' });
+        setUserFeedback({ type: 'success', msg: 'Usu�rio criado com sucesso!' });
         setShowCreateUser(false);
         setUserForm(EMPTY_USER_FORM);
         await loadAllUsers();
       } else {
-        setUserFeedback({ type: 'error', msg: json.error || 'Erro ao criar usuário' });
+        setUserFeedback({ type: 'error', msg: json.error || 'Erro ao criar usu�rio' });
       }
-    } catch { setUserFeedback({ type: 'error', msg: 'Erro de conexão' }); }
+    } catch { setUserFeedback({ type: 'error', msg: 'Erro de conex�o' }); }
     setSavingUser(false);
     setTimeout(() => setUserFeedback(null), 3000);
   }
@@ -953,7 +953,7 @@ function UsersTab() {
       {/* Create User Form */}
       {showCreateUser && (
         <div className="bg-white rounded-xl border border-border-1 p-6 space-y-4">
-          <h3 className="font-display font-bold text-uni-text-900">Novo Usuário Master / Admin</h3>
+          <h3 className="font-display font-bold text-uni-text-900">Novo usu�rio Master / Admin</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Nome *</label>
@@ -1020,13 +1020,13 @@ function UsersTab() {
               />
               <span className="text-sm text-uni-text-600">Também participa como colaboradora</span>
             </label>
-            <span className="text-[10px] text-uni-text-400" title="Se marcado, este usuário pode alternar entre a visão de gestor e a de colaboradora (check-ins, desafios, etc)">ℹ️</span>
+            <span className="text-[10px] text-uni-text-400" title="Se marcado, este usu�rio pode alternar entre a visão de gestor e a de colaboradora (check-ins, desafios, etc)">ℹ️</span>
           </div>
           <div className="flex gap-3 mt-3">
             <button onClick={() => setShowCreateUser(false)} className="px-4 py-2 rounded-lg border border-border-1 text-sm font-bold text-uni-text-600 hover:bg-cream-50">Cancelar</button>
             <button onClick={createUser} disabled={savingUser || !userForm.name || !userForm.email || userForm.password.length < 8}
               className="px-6 py-2 rounded-lg bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 disabled:opacity-50">
-              {savingUser ? 'Criando...' : 'Criar Usuário'}
+              {savingUser ? 'Criando...' : 'Criar usu�rio'}
             </button>
           </div>
         </div>
@@ -1037,7 +1037,7 @@ function UsersTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-uni-text-900 text-lg">Editar Usuário</h3>
+              <h3 className="font-display font-bold text-uni-text-900 text-lg">Editar usu�rio</h3>
               <button onClick={() => setEditingUser(null)} className="text-uni-text-400 hover:text-uni-text-700 text-xl leading-none">×</button>
             </div>
             <div className="space-y-3">
@@ -1054,12 +1054,12 @@ function UsersTab() {
               <div>
                 <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">
                   Papel
-                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usuária padrão — check-ins, campanhas e pontos'}>?</span>
+                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usu�ria padrão — check-ins, campanhas e pontos'}>?</span>
                 </label>
                 <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
                   className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400">
                   <option value="rh">Admin Empresa</option>
-                  <option value="lideranca">Liderança</option>
+                  <option value="lideranca">Lideran�a</option>
                   <option value="colaboradora">Colaboradora</option>
                 </select>
               </div>
@@ -1110,14 +1110,14 @@ function UsersTab() {
           ))}
         </select>
         <span className="self-center text-xs text-uni-text-400">
-          {filtered.length} usuária{filtered.length !== 1 ? 's' : ''}
+          {filtered.length} Usu�ria{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {tempPass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
           <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Tempor�ria</h3>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center gap-2">
                 <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
@@ -1133,7 +1133,7 @@ function UsersTab() {
             </div>
             <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
               <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela não será mostrada novamente.
+              Anote esta senha! Ela n�o será mostrada novamente.
             </p>
             <button
               onClick={() => setTempPass(null)}
@@ -1146,20 +1146,20 @@ function UsersTab() {
       )}
 
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-        <SectionHeader title="Usuários" count={filtered.length} action={
+        <SectionHeader title="Usu�rios" count={filtered.length} action={
           <button onClick={() => setShowCreateUser(s => !s)} className="px-4 py-2 rounded-lg bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 transition-all">
-            + Novo Usuário
+            + Novo usu�rio
           </button>
         } />
         {fetching ? (
           <div className="p-12 flex items-center justify-center gap-3 text-sm text-uni-text-400">
-            <Spinner /> Carregando usuárias...
+            <Spinner /> Carregando usu�rias...
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 space-y-2">
             <span className="text-4xl block">👥</span>
-            <p className="text-uni-text-700 font-medium">Nenhuma usuária encontrada</p>
-            <p className="text-sm text-uni-text-400">Tente ajustar os filtros ou crie uma nova usuária.</p>
+            <p className="text-uni-text-700 font-medium">Nenhuma Usu�ria encontrada</p>
+            <p className="text-sm text-uni-text-400">Tente ajustar os filtros ou crie uma nova Usu�ria.</p>
           </div>
         ) : (
           <>
@@ -1221,12 +1221,12 @@ function UsersTab() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-1">
-                    <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usuária</th>
+                    <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usu�ria</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Empresa</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Nível</th>
+                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">N�vel</th>
                     <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
-                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
+                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A��es</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-1">
@@ -1367,7 +1367,7 @@ function AdminMasterTab() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
-      setFeedback({ type: 'error', msg: 'As senhas do novo admin não coincidem.' });
+      setFeedback({ type: 'error', msg: 'As senhas do novo admin n�o coincidem.' });
       return;
     }
     if (!form.confirmCurrentPassword) {
@@ -1397,7 +1397,7 @@ function AdminMasterTab() {
         setFeedback({ type: 'error', msg: json.error || 'Erro ao criar Admin Master' });
       }
     } catch {
-      setFeedback({ type: 'error', msg: 'Erro de conexão' });
+      setFeedback({ type: 'error', msg: 'Erro de conex�o' });
     } finally {
       setSaving(false);
       setTimeout(() => setFeedback(null), 4000);
@@ -1435,7 +1435,7 @@ function AdminMasterTab() {
       {tempPass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
           <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
+            <h3 className="font-bold text-uni-text-900 text-lg">Senha Tempor�ria</h3>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center gap-2">
                 <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
@@ -1451,7 +1451,7 @@ function AdminMasterTab() {
             </div>
             <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
               <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela não será mostrada novamente.
+              Anote esta senha! Ela n�o será mostrada novamente.
             </p>
             <button
               onClick={() => setTempPass(null)}
@@ -1469,7 +1469,7 @@ function AdminMasterTab() {
           <div className="px-6 py-4 border-b border-border-1 flex items-center justify-between">
             <div>
               <h3 className="font-display font-bold text-uni-text-900">Novo Admin Master</h3>
-              <p className="text-[11px] text-uni-text-400 mt-0.5">Não vinculado a nenhuma empresa — acesso total ao sistema</p>
+              <p className="text-[11px] text-uni-text-400 mt-0.5">N�o vinculado a nenhuma empresa — acesso total ao sistema</p>
             </div>
             <button onClick={resetForm} className="text-uni-text-400 hover:text-uni-text-700 text-xl leading-none">×</button>
           </div>
@@ -1499,7 +1499,7 @@ function AdminMasterTab() {
                     type={showPass ? 'text' : 'password'}
                     value={form.password}
                     onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder="M�nimo 8 caracteres"
                     className={cn(inputCls, 'pr-10 font-mono')}
                     required
                   />
@@ -1527,7 +1527,7 @@ function AdminMasterTab() {
                 required
               />
               {form.confirmPassword && form.password !== form.confirmPassword && (
-                <p className="text-[11px] text-red-500 mt-1">As senhas não coincidem</p>
+                <p className="text-[11px] text-red-500 mt-1">As senhas n�o coincidem</p>
               )}
             </div>
 
@@ -1536,7 +1536,7 @@ function AdminMasterTab() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-amber-500 text-base">🔐</span>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700">Confirmação de identidade</p>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-amber-700">Confirma��o de identidade</p>
                   <p className="text-[11px] text-uni-text-400">Por segurança, confirme com <strong>sua senha atual</strong> para criar um Admin Master</p>
                 </div>
               </div>
@@ -1643,7 +1643,7 @@ function AdminMasterTab() {
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Tipo</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Criado em</th>
                     <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
-                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
+                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A��es</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-1">
@@ -1702,8 +1702,8 @@ const RARITY_OPTIONS = ['common', 'rare', 'epic', 'legendary'] as const;
 const RARITY_LABELS: Record<string, string> = {
   common: 'Comum',
   rare: 'Raro',
-  epic: 'Épico',
-  legendary: 'Lendário',
+  epic: '�pico',
+  legendary: 'Lend�rio',
 };
 
 const emptyBadgeForm = { name: '', description: '', icon: '🏅', points: 0, rarity: 'common' as const };
@@ -1817,7 +1817,7 @@ function BadgesTab() {
               />
             </div>
             <div className="md:col-span-2 space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Descrição</label>
+              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Descri��o</label>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -1948,7 +1948,7 @@ function BadgesTab() {
                         : 'bg-red-50 text-red-700 hover:bg-red-100',
                       deleting === b.id && 'opacity-50 cursor-wait'
                     )}
-                    title={b.holder_count > 0 ? 'Não é possível excluir: usuárias possuem este badge' : 'Excluir badge'}
+                    title={b.holder_count > 0 ? 'Não é possível excluir: usu�rias possuem este badge' : 'Excluir badge'}
                   >
                     {deleting === b.id ? '...' : 'Excluir'}
                   </button>
@@ -2083,7 +2083,7 @@ function BrandingEditor() {
           <span className="font-bold text-lg" style={{ color: form.primary_color || '#C9A264' }}>
             {form.app_name || 'UniHER'}
           </span>
-          <span className="ml-auto text-xs opacity-60">pré-visualização</span>
+          <span className="ml-auto text-xs opacity-60">pr�-visualiza��o</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -2096,14 +2096,14 @@ function BrandingEditor() {
             <input className={inputCls} value={form.app_logo_url ?? ''} onChange={e => set('app_logo_url', e.target.value)} placeholder="https://..." />
           </div>
           <div>
-            <label className={labelCls}>Cor Primária</label>
+            <label className={labelCls}>Cor Prim�ria</label>
             <div className="flex items-center gap-2">
               <input type="color" value={form.primary_color ?? '#C9A264'} onChange={e => set('primary_color', e.target.value)} className="h-10 w-14 rounded-lg border border-border-1 cursor-pointer p-0.5" />
               <input className={`${inputCls} flex-1`} value={form.primary_color ?? ''} onChange={e => set('primary_color', e.target.value)} placeholder="#C9A264" />
             </div>
           </div>
           <div>
-            <label className={labelCls}>Cor Secundária</label>
+            <label className={labelCls}>Cor Secund�ria</label>
             <div className="flex items-center gap-2">
               <input type="color" value={form.secondary_color ?? '#B8922A'} onChange={e => set('secondary_color', e.target.value)} className="h-10 w-14 rounded-lg border border-border-1 cursor-pointer p-0.5" />
               <input className={`${inputCls} flex-1`} value={form.secondary_color ?? ''} onChange={e => set('secondary_color', e.target.value)} placeholder="#B8922A" />
@@ -2273,7 +2273,7 @@ function SystemTab() {
           accent="text-emerald-600"
         />
         <StatCard label="Challenges" value={data?.challenges ?? '—'} sub="na plataforma" />
-        <StatCard label="Notificações" value={data?.notifications ?? '—'} sub="total geradas" />
+        <StatCard label="Notifica��es" value={data?.notifications ?? '—'} sub="total geradas" />
       </div>
 
       {/* Health checks */}
@@ -2299,7 +2299,7 @@ function SystemTab() {
               { label: 'Banco de Dados (SQLite)', ok: !!data, value: data ? `${data.db_size_kb} KB` : 'Indisponível' },
               { label: 'Processo Node.js', ok: !!data, value: data ? `Uptime: ${formatUptime(data.uptime_seconds)}` : 'Desconhecido' },
               { label: 'Empresas', ok: !!data, value: data ? `${data.companies} cadastradas` : '—' },
-              { label: 'Usuárias', ok: !!data, value: data ? `${data.users} ativas` : '—' },
+              { label: 'Usu�rias', ok: !!data, value: data ? `${data.users} ativas` : '—' },
               { label: 'Campanhas Ativas', ok: !!data, value: data ? `${data.campaigns} em andamento` : '—' },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between px-6 py-3.5">
@@ -2410,7 +2410,7 @@ function SystemTab() {
 
           {/* Actions */}
           <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-            <SectionHeader title="Ações do Sistema" />
+            <SectionHeader title="A��es do Sistema" />
             <div className="p-5 space-y-4">
               <div className="flex flex-wrap gap-3">
                 <MasterActionButton icon="💾" label="Backup do Banco" onClick={handleBackup} loading={backupLoading} />
@@ -2478,7 +2478,13 @@ function SystemTab() {
 
 interface AdminAlert {
   id: string;
-  company_id: string;
+  company_id: string | null;
+  company_name?: string | null;
+  department_id?: string | null;
+  department_name?: string | null;
+  target_role?: string | null;
+  notification_type?: string | null;
+  audience_label?: string | null;
   sent_by_name: string;
   title: string;
   message: string;
@@ -2489,16 +2495,49 @@ interface AdminAlert {
 function AlertasTab() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
+  const [notificationType, setNotificationType] = useState<'alert' | 'system' | 'campaign' | 'challenge' | 'lesson' | 'gamification'>('alert');
   const [companyId, setCompanyId] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+  const [targetRole, setTargetRole] = useState('');
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState<{ recipients: number } | null>(null);
+  const [sent, setSent] = useState<{ recipients: number; audienceLabel?: string } | null>(null);
   const [sendError, setSendError] = useState('');
 
   const { data: companiesData } = useSWR<{ companies: any[] }>('/api/admin/companies', fetcher, { revalidateOnFocus: false });
   const { data: alertsData, mutate: mutateAlerts } = useSWR<{ alerts: AdminAlert[] }>('/api/admin/alerts/send', fetcher, { revalidateOnFocus: false });
+  const { data: departmentsData } = useSWR<{ departments: { id: string; name: string }[] }>(
+    companyId ? `/api/departments?company_id=${encodeURIComponent(companyId)}` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
 
   const companies = companiesData?.companies ?? [];
   const alerts = alertsData?.alerts ?? [];
+  const departments = departmentsData?.departments ?? [];
+  const roleLabels: Record<string, string> = {
+    admin: 'Admin Master',
+    rh: 'RH',
+    lideranca: 'Lideran�a',
+    colaboradora: 'Colaboradoras',
+  };
+  const typeLabels: Record<string, string> = {
+    alert: 'Alerta',
+    system: 'Sistema',
+    campaign: 'Campanha',
+    challenge: 'Desafio',
+    lesson: 'Li��o',
+    gamification: 'Gamifica��o',
+  };
+  const isGlobalAdminAudience = targetRole === 'admin';
+  const selectedCompany = companies.find((c: any) => c.id === companyId);
+  const selectedDepartment = departments.find((d) => d.id === departmentId);
+  const audienceSummary = isGlobalAdminAudience
+    ? 'Admin Master global'
+    : [
+        departmentId && selectedDepartment ? `Departamento ${selectedDepartment.name}` : '',
+        companyId && selectedCompany ? `Empresa ${selectedCompany.name}` : '',
+        targetRole ? roleLabels[targetRole] : 'Todos os funcion�rios',
+      ].filter(Boolean).join(' � ');
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -2510,19 +2549,28 @@ function AlertasTab() {
       const res = await fetch('/api/admin/alerts/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, message, company_id: companyId || undefined }),
+        body: JSON.stringify({
+          title,
+          message,
+          company_id: companyId || undefined,
+          department_id: departmentId || undefined,
+          target_role: targetRole || undefined,
+          notification_type: notificationType,
+        }),
       });
       const d = await res.json();
       if (d.success) {
-        setSent({ recipients: d.recipients });
+        setSent({ recipients: d.recipients, audienceLabel: d.audienceLabel });
         setTitle('');
         setMessage('');
+        setDepartmentId('');
+        setTargetRole('');
         mutateAlerts();
       } else {
         setSendError(d.error ?? 'Erro ao enviar');
       }
     } catch {
-      setSendError('Erro de conexão');
+      setSendError('Erro de conex�o');
     } finally {
       setSending(false);
     }
@@ -2532,37 +2580,107 @@ function AlertasTab() {
 
   return (
     <div className="space-y-6">
-      {/* Send alert form */}
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-        <SectionHeader title="Enviar Alerta para a Equipe" />
-        <form onSubmit={handleSend} className="p-6 space-y-4">
+        <SectionHeader title="Enviar Notifica��o para a Equipe" />
+        <form onSubmit={handleSend} className="p-4 sm:p-6 space-y-4">
           {sent && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-sm text-emerald-700 font-medium">
-              ✓ Alerta enviado para {sent.recipients} usuária{sent.recipients !== 1 ? 's' : ''}!
+            <div className="flex flex-col gap-1 p-3 rounded-lg bg-emerald-50 border border-emerald-100 text-sm text-emerald-700 font-medium">
+              <span>? Notifica��o enviada para {sent.recipients} pessoa{sent.recipients !== 1 ? 's' : ''}!</span>
+              {sent.audienceLabel && <span className="font-normal text-emerald-800 break-words">{sent.audienceLabel}</span>}
             </div>
           )}
           {sendError && (
             <div className="p-3 rounded-lg bg-rose-50 border border-rose-100 text-sm text-rose-700">{sendError}</div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border-1 bg-amber-50/50 px-4 py-3 text-sm leading-6 text-uni-text-600">
+            Use este painel para mandar alertas, avisos de sistema e outras notifica��es por empresa, departamento ou perfil.
+            O padr�o sem perfil selecionado envia para os funcion�rios. Admin Master � sempre global.
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <div>
-              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">Empresa (vazio = todas)</label>
-              <select value={companyId} onChange={e => setCompanyId(e.target.value)} className={inputCls}>
-                <option value="">— Todas as empresas —</option>
+              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">Tipo</label>
+              <select value={notificationType} onChange={e => setNotificationType(e.target.value as typeof notificationType)} className={inputCls}>
+                <option value="alert">Alerta</option>
+                <option value="system">Sistema</option>
+                <option value="campaign">Campanha</option>
+                <option value="challenge">Desafio</option>
+                <option value="lesson">Li��o</option>
+                <option value="gamification">Gamifica��o</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">Empresa</label>
+              <select
+                value={companyId}
+                onChange={e => {
+                  setCompanyId(e.target.value);
+                  setDepartmentId('');
+                }}
+                className={inputCls}
+                disabled={isGlobalAdminAudience}
+              >
+                <option value="">{isGlobalAdminAudience ? 'Admin Master n�o usa empresa' : '� Todas as empresas �'}</option>
                 {companies.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">Título *</label>
+              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">Departamento</label>
+              <select
+                value={departmentId}
+                onChange={e => setDepartmentId(e.target.value)}
+                className={inputCls}
+                disabled={!companyId || isGlobalAdminAudience}
+              >
+                <option value="">
+                  {isGlobalAdminAudience
+                    ? 'Admin Master n�o usa departamento'
+                    : companyId
+                      ? '� Todos os departamentos �'
+                      : 'Selecione uma empresa antes'}
+                </option>
+                {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">Perfil</label>
+              <select
+                value={targetRole}
+                onChange={e => {
+                  const nextRole = e.target.value;
+                  setTargetRole(nextRole);
+                  if (nextRole === 'admin') {
+                    setCompanyId('');
+                    setDepartmentId('');
+                  }
+                }}
+                className={inputCls}
+              >
+                <option value="">� Todos os funcion�rios �</option>
+                <option value="admin">Admin Master</option>
+                <option value="rh">RH</option>
+                <option value="lideranca">Lideran�a</option>
+                <option value="colaboradora">Colaboradoras</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">T�tulo *</label>
               <input
                 className={inputCls}
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="Ex: Lembrete de check-in!"
+                placeholder="Ex: Atualiza��o importante da campanha"
                 maxLength={100}
                 required
               />
+            </div>
+            <div className="rounded-xl border border-border-1 bg-slate-50 px-4 py-3 text-sm text-uni-text-500">
+              <p className="font-semibold text-uni-text-700 mb-1">Alvo atual</p>
+              <p className="break-words leading-6">{audienceSummary || 'Todos os funcion�rios'}</p>
             </div>
           </div>
 
@@ -2570,10 +2688,10 @@ function AlertasTab() {
             <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide mb-1 block">Mensagem *</label>
             <textarea
               className={`${inputCls} resize-none`}
-              rows={3}
+              rows={4}
               value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder="Ex: Não esqueça de fazer seu check-in hoje e manter sua sequência! 🔥"
+              placeholder="Escreva a comunica��o que esse p�blico deve receber."
               maxLength={500}
               required
             />
@@ -2584,42 +2702,52 @@ function AlertasTab() {
             <button
               type="submit"
               disabled={sending || !title.trim() || !message.trim()}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 disabled:opacity-50 transition-all"
+              className="flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 disabled:opacity-50 transition-all"
             >
               {sending && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {sending ? 'Enviando...' : '📣 Enviar alerta'}
+              {sending ? 'Enviando...' : '?? Enviar notifica��o'}
             </button>
           </div>
         </form>
       </div>
 
-      {/* Alert history */}
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-        <SectionHeader title="Histórico de Alertas" count={alerts.length} />
+        <SectionHeader title="Hist�rico de envios" count={alerts.length} />
         {alerts.length === 0 ? (
           <div className="p-10 text-center text-sm text-uni-text-400">
-            <div className="text-2xl mb-2">📣</div>
-            Nenhum alerta enviado ainda.
+            <div className="text-2xl mb-2">??</div>
+            Nenhuma notifica��o enviada ainda.
           </div>
         ) : (
           <div className="divide-y divide-border-1">
             {alerts.map(a => (
-              <div key={a.id} className="px-6 py-4 flex flex-col sm:flex-row sm:items-start gap-3">
+              <div key={a.id} className="px-4 sm:px-6 py-4 flex flex-col gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-sm text-uni-text-900">{a.title}</span>
-                    <span className="text-[11px] bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded-full">
-                      {a.recipients_count} destinatária{a.recipients_count !== 1 ? 's' : ''}
+                  <div className="flex flex-col gap-2">
+                    <span className="font-bold text-sm text-uni-text-900 break-words">{a.title}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full">
+                      {typeLabels[a.notification_type ?? 'alert'] ?? 'Notifica��o'}
                     </span>
-                    {a.company_id !== 'all' && (
+                    <span className="text-[11px] bg-rose-50 text-rose-600 font-bold px-2 py-0.5 rounded-full">
+                      {a.recipients_count} destinat�ria{a.recipients_count !== 1 ? 's' : ''}
+                    </span>
+                    {(a.audience_label || a.department_name || a.company_name || a.target_role) && (
                       <span className="text-[11px] bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-full">
-                        {companies.find(c => c.id === a.company_id)?.name ?? a.company_id}
+                        {a.audience_label
+                          ?? a.department_name
+                          ?? a.company_name
+                          ?? (a.target_role ? roleLabels[a.target_role] : 'Segmentado')}
                       </span>
                     )}
+                    </div>
                   </div>
-                  <p className="text-xs text-uni-text-500 mt-1 line-clamp-2">{a.message}</p>
-                  <p className="text-[11px] text-uni-text-400 mt-1">
-                    Por {a.sent_by_name ?? '—'} · {new Date(a.created_at).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  <p className="text-xs text-uni-text-500 mt-2 break-words leading-5">{a.message}</p>
+                  <p className="text-[11px] text-uni-text-400 mt-2 leading-5">
+                    Por {a.sent_by_name ?? '�'}
+                    <span className="hidden sm:inline"> � </span>
+                    <span className="sm:hidden block" />
+                    {new Date(a.created_at).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
@@ -2658,10 +2786,10 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   login: 'Login',
   logout: 'Logout',
   first_access_password_change: 'Primeira senha definida',
-  user_create: 'Usuário criado',
-  user_edit: 'Usuário editado',
-  user_block: 'Usuário bloqueado',
-  user_unblock: 'Usuário reativado',
+  user_create: 'Usu�rio criado',
+  user_edit: 'Usu�rio editado',
+  user_block: 'Usu�rio bloqueado',
+  user_unblock: 'Usu�rio reativado',
   password_reset: 'Senha resetada',
   company_create: 'Empresa criada',
   company_edit: 'Empresa editada',
@@ -2670,7 +2798,7 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   system_settings_update: 'Config. do sistema',
   profile_update: 'Perfil atualizado',
   quiz_submit: 'Quiz respondido',
-  challenge_complete: 'Desafio concluído',
+  challenge_complete: 'Desafio conclu�do',
   challenge_create: 'Desafio criado',
   campaign_join: 'Campanha aderida',
   badge_unlock: 'Badge desbloqueada',
@@ -2789,7 +2917,7 @@ function AuditoriaTab() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide">Até</label>
+              <label className="text-[11px] font-bold text-uni-text-500 uppercase tracking-wide">At�</label>
               <input
                 type="date"
                 value={to}
@@ -2815,7 +2943,7 @@ function AuditoriaTab() {
             type="search"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Buscar por usuário, ação, entidade..."
+            placeholder="Buscar por usu�rio, ação, entidade..."
             className="flex-1 min-w-[200px] border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
           />
           <button
@@ -2883,7 +3011,7 @@ function AuditoriaTab() {
                   <tr className="border-b border-border-1">
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Data/Hora</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ator</th>
-                    <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ação</th>
+                    <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A��o</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Entidade</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Detalhes</th>
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">IP</th>
@@ -2961,20 +3089,20 @@ function AuditoriaTab() {
 export default function AdminPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('Visão Geral');
+  const [activeTab, setActiveTab] = useState<Tab>('Vis�o Geral');
   const { data: sysStats } = useSWR<SystemStats>('/api/admin/system', fetcher, { revalidateOnFocus: false });
 
   useEffect(() => {
-    if (isAuthenticated && user && user.role !== 'admin') {
+    if (isAuthenticated && user && user.isMasterAdmin !== true) {
       router.replace('/dashboard');
     }
   }, [isAuthenticated, user, router]);
 
-  if (user?.role !== 'admin') return null;
+  if (user?.isMasterAdmin !== true) return null;
 
   const tabCounts: Partial<Record<Tab, number>> = {
     'Empresas': sysStats?.companies,
-    'Usuários': sysStats?.users,
+    'Usu�rios': sysStats?.users,
     'Badges': sysStats?.badges,
   };
 
@@ -3009,9 +3137,9 @@ export default function AdminPage() {
 
       {/* Tab Content */}
       <div>
-        {activeTab === 'Visão Geral' && <OverviewTab />}
-        {activeTab === 'Empresas' && <CompaniesTab onGoToUsers={() => setActiveTab('Usuários')} />}
-        {activeTab === 'Usuários' && <UsersTab />}
+        {activeTab === 'Vis�o Geral' && <OverviewTab />}
+        {activeTab === 'Empresas' && <CompaniesTab onGoToUsers={() => setActiveTab('Usu�rios')} />}
+        {activeTab === 'Usu�rios' && <UsersTab />}
         {activeTab === 'Admin Master' && <AdminMasterTab />}
         {activeTab === 'Badges' && <BadgesTab />}
         {activeTab === 'Sistema' && <SystemTab />}

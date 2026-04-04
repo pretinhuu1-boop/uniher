@@ -67,12 +67,14 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     role: sanitized.role,
     companyId,
     departmentId: sanitized.departmentId,
+    isMasterAdmin: sanitized.role === 'admin',
   });
 
   const accessToken = await signAccessToken({
     userId: user.id,
     role: user.role,
-    companyId: user.company_id,
+    companyId: user.company_id ?? '',
+    isMasterAdmin: user.is_master_admin === 1,
   });
 
   const refreshToken = await signRefreshToken({ userId: user.id });
@@ -138,7 +140,8 @@ export async function login(input: LoginInput): Promise<AuthResult> {
   const accessToken = await signAccessToken({
     userId: user.id,
     role: user.role,
-    companyId: user.company_id,
+    companyId: user.company_id ?? '',
+    isMasterAdmin: user.is_master_admin === 1,
     mustChangePassword: (user as any).must_change_password === 1,
   });
 
@@ -186,7 +189,8 @@ export async function refresh(): Promise<{ accessToken: string; refreshToken: st
   const accessToken = await signAccessToken({
     userId: user.id,
     role: user.role,
-    companyId: user.company_id,
+    companyId: user.company_id ?? '',
+    isMasterAdmin: user.is_master_admin === 1,
   });
 
   const newRefreshToken = await signRefreshToken({ userId: user.id });

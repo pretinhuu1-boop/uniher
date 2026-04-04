@@ -14,11 +14,12 @@ export const GET = withAuth(async (_req, { auth }) => {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
-    const company = getCompanyById(user.company_id);
+    const company = user.company_id ? getCompanyById(user.company_id) : null;
 
     return NextResponse.json({
       user: {
         ...user,
+        isMasterAdmin: user.is_master_admin === 1 || auth.isMasterAdmin === true,
         mustChangePassword: auth.mustChangePassword === true,
       },
       company: company ? {

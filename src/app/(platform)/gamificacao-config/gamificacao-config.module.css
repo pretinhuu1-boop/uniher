@@ -455,6 +455,106 @@
   color: var(--gold-700, #9a7623);
 }
 
+.lessonFilters {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr)) auto;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: end;
+}
+
+.newLessonBtn {
+  white-space: nowrap;
+}
+
+.lessonList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lessonCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-secondary, #f8f8f8);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, #e0e0e0);
+}
+
+.lessonTopRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lessonWeek {
+  font-size: 13px;
+  opacity: 0.6;
+  min-width: 24px;
+}
+
+.lessonBadges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lessonBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+.lessonTypeBadge {
+  background: #e8f4fd;
+  color: #1565c0;
+}
+
+.lessonThemeBadge {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.lessonGlobalBadge {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.lessonTitle {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-900);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.lessonCampaign {
+  font-size: 12px;
+  color: var(--text-500);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.lessonActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lessonActionBtn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
 /* ── Rewards Table ── */
 .rewardsTable {
   width: 100%;
@@ -665,15 +765,71 @@
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .page { padding: 20px 16px; }
+  .section { padding: 22px 16px; }
   .formGrid { grid-template-columns: 1fr; }
   .formGrid3 { grid-template-columns: 1fr; }
   .themeGrid { grid-template-columns: 1fr 1fr; }
+  .xpRow { flex-wrap: wrap; }
+  .xpLabel { min-width: 100%; }
+  .xpValue { min-width: auto; width: 100%; text-align: left; }
+  .themeOrderItem { flex-wrap: wrap; align-items: flex-start; }
+  .themeOrderName { min-width: 0; width: calc(100% - 32px); }
+  .themeOrderBtns { width: 100%; justify-content: flex-end; }
   .rewardsTable th:nth-child(3),
   .rewardsTable td:nth-child(3) { display: none; }
   .redemptionCard { flex-direction: column; align-items: flex-start; }
   .redemptionActions { width: 100%; }
+  .lessonFilters { grid-template-columns: 1fr; }
+  .newLessonBtn { width: 100%; }
+  .lessonActions { width: 100%; }
+  .lessonActionBtn {
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+  }
 }
 
 @media (max-width: 480px) {
   .themeGrid { grid-template-columns: 1fr; }
+  .title {
+    font-size: 1.4rem;
+    line-height: 1.15;
+  }
+  .subtitle {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .sectionHeader {
+    align-items: flex-start;
+  }
+  .sectionTitle {
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+  .lessonTopRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .lessonBadge {
+    width: 100%;
+  }
+  .saveBtn,
+  .saveBtnOutline,
+  .saveBtnDanger,
+  .saveBtnSuccess {
+    width: 100%;
+    justify-content: center;
+  }
+  .saveRow {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .modal {
+    padding: 20px 16px;
+  }
+  .toast {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    padding: 12px 16px;
+  }
 }

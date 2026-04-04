@@ -8,8 +8,26 @@ export function ServiceWorkerRegistration() {
 
     const CACHE_VERSION = 'uniher-v3';
     let reloaded = false;
+    const isLocalhost =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const shouldEnableServiceWorker = window.isSecureContext || isLocalhost;
 
     const clearLegacyCaches = async () => {
+      if (!('caches' in window)) return;
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => key.startsWith('uniher-')).map((key) => caches.delete(key)));
+      window.localStorage.removeItem('uniher-cache-version');
+    };
+
+    if (!shouldEnableServiceWorker) {
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch(() => {});
+      void clearLegacyCaches();
+      return;
+    }
+
+    const clearStaleCaches = async () => {
       if (!('caches' in window)) return;
       const seenVersion = window.localStorage.getItem('uniher-cache-version');
       if (seenVersion === CACHE_VERSION) return;
@@ -20,7 +38,7 @@ export function ServiceWorkerRegistration() {
       window.localStorage.setItem('uniher-cache-version', CACHE_VERSION);
     };
 
-    void clearLegacyCaches();
+    void clearStaleCaches();
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (reloaded) return;

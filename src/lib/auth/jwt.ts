@@ -5,6 +5,7 @@ export interface TokenPayload extends JWTPayload {
   userId: string;
   role: string;
   companyId: string;
+  isMasterAdmin?: boolean;
   mustChangePassword?: boolean;
 }
 
@@ -23,12 +24,14 @@ export async function signAccessToken(payload: {
   userId: string;
   role: string;
   companyId: string;
+  isMasterAdmin?: boolean;
   mustChangePassword?: boolean;
 }): Promise<string> {
   return new SignJWT({
     userId: payload.userId,
     role: payload.role,
     companyId: payload.companyId,
+    isMasterAdmin: payload.isMasterAdmin ?? false,
     mustChangePassword: payload.mustChangePassword ?? false,
   })
     .setProtectedHeader({ alg: 'HS256' })

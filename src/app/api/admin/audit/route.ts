@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { initDb } from '@/lib/db/init';
 import { queryAuditLogs, countAuditLogs } from '@/lib/audit';
 
-export const GET = withRole('admin')(async (req: NextRequest) => {
+export const GET = withMasterAdmin(async (req: NextRequest) => {
   await initDb();
   const { searchParams } = new URL(req.url);
   const period = searchParams.get('period') as 'day' | 'week' | 'month' | 'custom' | null;

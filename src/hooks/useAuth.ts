@@ -14,6 +14,7 @@ interface StoredUserData {
   id: string;
   name: string;
   role: UserRole;
+  isMasterAdmin?: boolean;
 }
 
 function getStoredUser(): StoredUserData | null {
@@ -28,7 +29,12 @@ function getStoredUser(): StoredUserData | null {
 /** Only persist minimal non-sensitive data for UI routing */
 function persistUser(user: MockUser) {
   try {
-    const minimal: StoredUserData = { id: user.id, name: user.name, role: user.role };
+    const minimal: StoredUserData = {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      isMasterAdmin: user.isMasterAdmin,
+    };
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(minimal));
   } catch {}
 }
@@ -82,6 +88,7 @@ export function useAuthState(): AuthContextValue {
             name: u.name,
             email: u.email,
             role: u.role as UserRole,
+            isMasterAdmin: u.isMasterAdmin === true,
             level: u.level,
             points: u.points,
             streak: u.streak,
@@ -112,6 +119,7 @@ export function useAuthState(): AuthContextValue {
             name: stored.name,
             email: '',
             role: stored.role,
+            isMasterAdmin: stored.isMasterAdmin === true,
             level: 0,
             points: 0,
             streak: 0,
@@ -141,6 +149,7 @@ export function useAuthState(): AuthContextValue {
         name: u.name,
         email: u.email,
         role: u.role as UserRole,
+        isMasterAdmin: u.isMasterAdmin === true,
         level: u.level,
         points: u.points,
         streak: u.streak,
@@ -175,6 +184,7 @@ export function useAuthState(): AuthContextValue {
         name: u.name,
         email: u.email,
         role: u.role as UserRole,
+        isMasterAdmin: u.isMasterAdmin === true,
         level: u.level,
         points: u.points,
         streak: u.streak,
@@ -216,6 +226,7 @@ export function useAuthState(): AuthContextValue {
         const u = data.user;
         const updated: MockUser = {
           id: u.id, name: u.name, email: u.email, role: u.role as UserRole,
+          isMasterAdmin: u.isMasterAdmin === true,
           level: u.level, points: u.points, streak: u.streak, joinedAt: u.created_at,
           also_collaborator: u.also_collaborator || (u.role === 'lideranca' ? 1 : 0),
           nickname: u.nickname, can_approve: u.can_approve,

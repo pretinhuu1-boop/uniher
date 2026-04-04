@@ -3,7 +3,7 @@
  * POST /api/admin/users — cria novo usuário (admin master requer confirmação de senha)
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
@@ -13,18 +13,18 @@ import { logAudit } from '@/lib/audit';
 
 // ─── GET — lista admin masters ────────────────────────────────────────────────
 
-export const GET = withRole('admin')(async (req, _context) => {
+export const GET = withMasterAdmin(async (req, _context) => {
   await initDb();
   const url = new URL(req.url);
   const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '50', 10) || 50, 1), 200);
   const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
 
   const db = getReadDb();
-  const total = (db.prepare("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND deleted_at IS NULL").get() as { cnt: number }).cnt;
+  const total = (db.prepare("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND is_master_admin = 1 AND deleted_at IS NULL").get() as { cnt: number }).cnt;
   const users = db.prepare(`
-    SELECT id, name, email, role, level, points, blocked, created_at, company_id
+    SELECT id, name, email, role, is_master_admin, level, points, blocked, created_at, company_id
     FROM users
-    WHERE role = 'admin' AND deleted_at IS NULL
+    WHERE role = 'admin' AND is_master_admin = 1 AND deleted_at IS NULL
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
   `).all(limit, offset);
@@ -48,7 +48,7 @@ const CreateSchema = z.object({
   confirmCurrentPassword: z.string().optional(),
 });
 
-export const POST = withRole('admin')(async (req: NextRequest, context) => {
+export const POST = withMasterAdmin(async (req: NextRequest, context) => {
   await initDb();
   const body = await req.json().catch(() => ({}));
   const parsed = CreateSchema.safeParse(body);
@@ -84,9 +84,9 @@ export const POST = withRole('admin')(async (req: NextRequest, context) => {
   const wq = getWriteQueue();
   await wq.enqueue((db) => {
     db.prepare(`
-      INSERT INTO users (id, name, email, password_hash, role, company_id, approved, level, points, streak, must_change_password, also_collaborator)
-      VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, 0, ?, ?)
-    `).run(id, name, email, passwordHash, role, finalCompanyId, mustChangePw, alsoCollaborator);
+      INSERT INTO users (id, name, email, password_hash, role, company_id, is_master_admin, approved, level, points, streak, must_change_password, also_collaborator)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 0, 0, ?, ?)
+    `).run(id, name, email, passwordHash, role, finalCompanyId, role === 'admin' ? 1 : 0, mustChangePw, alsoCollaborator);
   });
 
   await logAudit({

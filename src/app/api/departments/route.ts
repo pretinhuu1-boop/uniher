@@ -8,19 +8,25 @@ import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { nanoid } from 'nanoid';
 
-export const GET = withAuth(async (_req, context) => {
+export const GET = withAuth(async (req, context) => {
   const userId = context.auth.userId;
   await initDb();
   const db = getReadDb();
+  const url = new URL(req.url);
+  const requestedCompanyId = url.searchParams.get('company_id');
 
   const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
-  if (!user?.company_id) return NextResponse.json({ departments: [] });
+  const canReadAnyCompany = context.auth.isMasterAdmin === true || (context.auth.isMasterAdmin === undefined && context.auth.role === 'admin');
+  const companyId = canReadAnyCompany && requestedCompanyId
+    ? requestedCompanyId
+    : user?.company_id;
+  if (!companyId) return NextResponse.json({ departments: [] });
 
   const departments = db.prepare(`
     SELECT id, name FROM departments
     WHERE company_id = ?
     ORDER BY name ASC
-  `).all(user.company_id) as any[];
+  `).all(companyId) as any[];
 
   return NextResponse.json({ departments });
 });

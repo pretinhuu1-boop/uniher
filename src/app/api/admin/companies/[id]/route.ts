@@ -4,7 +4,7 @@
  * DELETE /api/admin/companies/[id]        — remove company (cascades)
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
@@ -29,7 +29,7 @@ const PatchSchema = z.discriminatedUnion('action', [
   }),
 ]);
 
-export const GET = withRole('admin')(async (_req: NextRequest, context) => {
+export const GET = withMasterAdmin(async (_req: NextRequest, context) => {
   await initDb();
   const { id } = await context.params;
   const db = getReadDb();
@@ -38,7 +38,7 @@ export const GET = withRole('admin')(async (_req: NextRequest, context) => {
   return NextResponse.json({ company });
 });
 
-export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
+export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
   await initDb();
   const { id } = await context.params;
   const body = await req.json().catch(() => ({}));
@@ -120,7 +120,7 @@ export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
   return NextResponse.json({ success: true });
 });
 
-export const DELETE = withRole('admin')(async (req: NextRequest, context) => {
+export const DELETE = withMasterAdmin(async (req: NextRequest, context) => {
   await initDb();
   const { id } = await context.params;
   const db2 = getReadDb();

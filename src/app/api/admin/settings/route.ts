@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
@@ -21,7 +21,7 @@ const ALLOWED_KEYS = [
 
 type SettingKey = (typeof ALLOWED_KEYS)[number];
 
-export const GET = withRole('admin')(async (_req: NextRequest) => {
+export const GET = withMasterAdmin(async (_req: NextRequest) => {
   await initDb();
   const db = getReadDb();
   const rows = db.prepare('SELECT key, value FROM system_settings').all() as { key: string; value: string }[];
@@ -43,7 +43,7 @@ const patchSchema = z.object({
   master_password: z.string().min(1).max(200).optional(),
 });
 
-export const PATCH = withRole('admin')(async (req: NextRequest, context) => {
+export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
   await initDb();
   const body = await req.json();
   const parsed = patchSchema.safeParse(body);

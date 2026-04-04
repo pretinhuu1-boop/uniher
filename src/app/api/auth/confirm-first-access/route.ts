@@ -14,7 +14,7 @@ export const POST = withAuth(async (_req, context) => {
   const userId = context.auth.userId;
   const db = getReadDb();
 
-  const user = db.prepare('SELECT id, role, company_id, must_change_password FROM users WHERE id = ?').get(userId) as any;
+  const user = db.prepare('SELECT id, role, company_id, is_master_admin, must_change_password FROM users WHERE id = ?').get(userId) as any;
   if (!user) {
     return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
   }
@@ -32,7 +32,8 @@ export const POST = withAuth(async (_req, context) => {
   const accessToken = await signAccessToken({
     userId: user.id,
     role: user.role,
-    companyId: user.company_id,
+    companyId: user.company_id ?? '',
+    isMasterAdmin: user.is_master_admin === 1,
     mustChangePassword: false,
   });
 

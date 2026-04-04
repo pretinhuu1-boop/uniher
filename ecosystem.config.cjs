@@ -3,8 +3,7 @@ module.exports = {
     {
       name: 'uniher',
       cwd: '/var/www/uniher',
-      script: 'npm',
-      args: 'run start -- --hostname 127.0.0.1 --port 3000',
+      script: '.next/standalone/server.js',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
@@ -12,10 +11,12 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
+        HOSTNAME: '127.0.0.1',
       },
       env_production: {
         NODE_ENV: 'production',
         PORT: 3000,
+        HOSTNAME: '127.0.0.1',
       },
     },
   ],

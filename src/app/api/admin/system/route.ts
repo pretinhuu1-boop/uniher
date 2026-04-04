@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRole } from '@/lib/auth/middleware';
+import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-export const GET = withRole('admin')(async (_req: NextRequest) => {
+export const GET = withMasterAdmin(async (_req: NextRequest) => {
   await initDb();
   const db = getReadDb();
 
