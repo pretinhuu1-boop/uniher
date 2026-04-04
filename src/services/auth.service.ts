@@ -58,6 +58,13 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     }
   }
 
+  if (companyId) {
+    const company = companyRepo.getCompanyById(companyId);
+    if (!company) {
+      throw new ValidationError('Empresa informada nÃ£o foi encontrada');
+    }
+  }
+
   const passwordHash = await hashPassword(sanitized.password);
 
   const user = await userRepo.createUser({

@@ -27,6 +27,24 @@ if [ -f ".env.production" ]; then
   set +a
 fi
 
+ALLOW_HTTP_TESTING="${UNIHER_ALLOW_HTTP_TESTING:-false}"
+APP_URL="${NEXT_PUBLIC_APP_URL:-}"
+ALLOW_INSECURE_COOKIES="${ALLOW_INSECURE_HTTP_COOKIES:-false}"
+
+if [ "$ALLOW_HTTP_TESTING" != "true" ]; then
+  if [[ ! "$APP_URL" =~ ^https:// ]]; then
+    echo "NEXT_PUBLIC_APP_URL precisa usar https em producao."
+    echo "Se for um teste temporario em HTTP, rode com UNIHER_ALLOW_HTTP_TESTING=true."
+    exit 1
+  fi
+
+  if [ "$ALLOW_INSECURE_COOKIES" = "true" ]; then
+    echo "ALLOW_INSECURE_HTTP_COOKIES=true nao e permitido em deploy seguro."
+    echo "Se for um teste temporario em HTTP, rode com UNIHER_ALLOW_HTTP_TESTING=true."
+    exit 1
+  fi
+fi
+
 echo "[3/6] Garantindo pasta de dados..."
 mkdir -p data backups
 

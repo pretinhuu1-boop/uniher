@@ -54,6 +54,63 @@ const LESSON_TYPE_LABELS: Record<string, string> = {
   desafio_dia: '🎯 Desafio',
 };
 
+const DAY_LABELS: Record<number, string> = {
+  1: 'Segunda-feira',
+  2: 'Terça-feira',
+  3: 'Quarta-feira',
+  4: 'Quinta-feira',
+  5: 'Sexta-feira',
+  6: 'Sábado',
+  7: 'Domingo',
+};
+
+const LESSON_TYPE_HELP: Record<string, { title: string; description: string }> = {
+  pilula: {
+    title: 'Pílula educativa',
+    description: 'Boa para ensinar algo rápido: conceito central, fato importante e uma ação prática.',
+  },
+  quiz: {
+    title: 'Quiz de múltipla escolha',
+    description: 'A colaboradora lê uma pergunta, escolhe uma resposta e recebe feedback da opção correta.',
+  },
+  reflexao: {
+    title: 'Reflexão guiada',
+    description: 'Use uma pergunta única, simples e acolhedora, para incentivar autocuidado e observação.',
+  },
+  lacuna: {
+    title: 'Complete a frase',
+    description: 'Ideal para fixar um conceito curto com uma frase principal e opções de resposta.',
+  },
+  verdadeiro_falso: {
+    title: 'Verdadeiro ou falso',
+    description: 'Mostre uma afirmação clara de um lado e a explicação da resposta certa do outro.',
+  },
+  ordenar: {
+    title: 'Ordem correta',
+    description: 'Serve para sequências, rotinas e passo a passo de cuidados.',
+  },
+  parear: {
+    title: 'Associar itens',
+    description: 'A colaboradora relaciona um item com a orientação, benefício ou significado correto.',
+  },
+  historia: {
+    title: 'Caso prático',
+    description: 'Traga um cenário do dia a dia e peça a melhor decisão entre as alternativas.',
+  },
+  flashcard: {
+    title: 'Flashcards',
+    description: 'Perfeito para revisão rápida, com frente de um lado e resposta do outro.',
+  },
+  imagem: {
+    title: 'Escolha visual',
+    description: 'Use ícones ou emojis quando quiser comparar opções de forma mais intuitiva.',
+  },
+  desafio_dia: {
+    title: 'Desafio do dia',
+    description: 'Crie uma ação simples, possível de cumprir no mesmo dia, com orientação objetiva.',
+  },
+};
+
 const CONTENT_TEMPLATES: Record<string, object> = {
   pilula: {
     tip: 'Explique em linguagem simples o aprendizado principal desta lição.',
@@ -130,6 +187,7 @@ interface Lesson {
   campaign_context: string | null;
   content_json: Record<string, unknown> | null;
   isGlobal: boolean;
+  canManage?: boolean;
 }
 
 const REWARD_TYPE_LABELS: Record<string, string> = {
@@ -312,6 +370,35 @@ function sanitizeLessonContent(type: string, content: LessonContent): LessonCont
     default:
       return content;
   }
+}
+
+function getCurrentLessonWeek() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const diff = now.getTime() - start.getTime();
+  return Math.ceil(diff / (7 * 24 * 60 * 60 * 1000) + 1);
+}
+
+function getCurrentLessonDay() {
+  const day = new Date().getDay();
+  return day === 0 ? 7 : day;
+}
+
+function getLessonScheduleState(lesson: Pick<Lesson, 'week_number' | 'day_of_week'>) {
+  const currentWeek = getCurrentLessonWeek();
+  const currentDay = getCurrentLessonDay();
+
+  if (lesson.week_number < currentWeek) return 'past';
+  if (lesson.week_number === currentWeek && lesson.day_of_week < currentDay) return 'past';
+  if (lesson.week_number === currentWeek && lesson.day_of_week === currentDay) return 'today';
+  return 'future';
+}
+
+function getLessonScheduleLabel(lesson: Pick<Lesson, 'week_number' | 'day_of_week'>) {
+  const state = getLessonScheduleState(lesson);
+  if (state === 'today') return 'Hoje';
+  if (state === 'future') return 'Agendada';
+  return 'Já passou';
 }
 
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
@@ -558,7 +645,7 @@ export default function GamificacaoConfigPage() {
   const [lessonContent, setLessonContent] = useState<LessonContent>(() => cloneLessonTemplate('pilula'));
   const [lessonForm, setLessonForm] = useState({
     title: '', description: '', type: 'pilula', theme: 'hidratacao',
-    week_number: '', day_of_week: '', xp_reward: 20, duration_seconds: 90,
+    week_number: '', day_of_week: '', order_index: 0, xp_reward: 20, duration_seconds: 90,
     campaign_context: '',
   });
 
@@ -573,20 +660,46 @@ export default function GamificacaoConfigPage() {
   const { data: lessonsData, isLoading: lessonsLoading, mutate: mutateLessons } = useSWR<{ lessons: Lesson[]; total: number; totalPages: number }>(
     lessonsUrl, fetcher, { revalidateOnFocus: false }
   );
+  const visibleLessons = lessonsData?.lessons ?? [];
+  const lessonsToReview = visibleLessons.filter((lesson) => !lesson.isGlobal && getLessonScheduleState(lesson) !== 'past');
+  const todayLessonsToReview = lessonsToReview.filter((lesson) => getLessonScheduleState(lesson) === 'today');
+  const nextLessonsToReview = lessonsToReview.filter((lesson) => getLessonScheduleState(lesson) === 'future').slice(0, 3);
+
+  function closeLessonForm() {
+    setShowLessonForm(false);
+    setEditingLesson(null);
+  }
 
   function openCreateLesson() {
     setEditingLesson(null);
     setLessonContent(cloneLessonTemplate('pilula'));
-    setLessonForm({ title: '', description: '', type: 'pilula', theme: 'hidratacao', week_number: '', day_of_week: '', xp_reward: 20, duration_seconds: 90, campaign_context: '' });
+    setLessonForm({
+      title: '',
+      description: '',
+      type: 'pilula',
+      theme: 'hidratacao',
+      week_number: String(getCurrentLessonWeek()),
+      day_of_week: String(getCurrentLessonDay()),
+      order_index: 0,
+      xp_reward: 20,
+      duration_seconds: 90,
+      campaign_context: '',
+    });
     setShowLessonForm(true);
   }
 
   function openEditLesson(lesson: Lesson) {
+    if (lesson.canManage === false || getLessonScheduleState(lesson) === 'past') {
+      showToast('Essa lição já passou. Só é possível editar ou excluir antes ou no dia agendado.', 'error');
+      return;
+    }
+
     setEditingLesson(lesson);
     setLessonContent(sanitizeLessonContent(lesson.type, (lesson.content_json ?? {}) as LessonContent));
     setLessonForm({
       title: lesson.title, description: lesson.description, type: lesson.type,
       theme: lesson.theme, week_number: String(lesson.week_number), day_of_week: String(lesson.day_of_week),
+      order_index: lesson.order_index ?? 0,
       xp_reward: lesson.xp_reward, duration_seconds: lesson.duration_seconds,
       campaign_context: lesson.campaign_context ?? '',
     });
@@ -600,6 +713,7 @@ export default function GamificacaoConfigPage() {
       const body = {
         title: lessonForm.title.trim(), description: lessonForm.description.trim(),
         type: lessonForm.type, theme: lessonForm.theme,
+        order_index: lessonForm.order_index,
         xp_reward: lessonForm.xp_reward, duration_seconds: lessonForm.duration_seconds,
         content_json: contentParsed,
         ...(lessonForm.week_number ? { week_number: Number(lessonForm.week_number) } : {}),
@@ -610,7 +724,7 @@ export default function GamificacaoConfigPage() {
       const method = editingLesson ? 'PATCH' : 'POST';
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json(); showToast(d.error || 'Erro ao salvar lição', 'error'); }
-      else { showToast(editingLesson ? 'Lição atualizada!' : 'Lição criada!', 'success'); setShowLessonForm(false); mutateLessons(); }
+      else { showToast(editingLesson ? 'Lição atualizada!' : 'Lição criada!', 'success'); closeLessonForm(); mutateLessons(); }
     } catch { showToast('Erro de conexão', 'error'); }
     setLessonSaving(false);
   }
@@ -864,6 +978,12 @@ export default function GamificacaoConfigPage() {
   }
 
   async function deleteLesson(id: string) {
+    const lesson = (lessonsData?.lessons ?? []).find((item) => item.id === id);
+    if (lesson && (lesson.canManage === false || getLessonScheduleState(lesson) === 'past')) {
+      showToast('Essa lição já passou. Exclua ou altere somente antes ou no próprio dia.', 'error');
+      return;
+    }
+
     if (!confirm('Excluir esta lição?')) return;
     setDeletingLesson(id);
     try {
@@ -1425,6 +1545,25 @@ export default function GamificacaoConfigPage() {
             Visualize as {lessonsData?.total ?? '...'} lições disponíveis e crie conteúdo personalizado para sua empresa. Lições globais são somente leitura.
           </p>
 
+          {lessonsToReview.length > 0 && (
+            <div className={styles.lessonReminder}>
+              <div className={styles.lessonReminderIcon}>🔔</div>
+              <div className={styles.lessonReminderContent}>
+                <strong className={styles.lessonReminderTitle}>Lembrete de validação</strong>
+                <p className={styles.lessonReminderText}>
+                  {todayLessonsToReview.length > 0
+                    ? `Antes de liberar o dia, revise ${todayLessonsToReview.length} lição${todayLessonsToReview.length > 1 ? 'ões' : ''} programada${todayLessonsToReview.length > 1 ? 's' : ''} para hoje.`
+                    : 'Revise as próximas lições agendadas para garantir que pergunta, resposta e orientação estejam corretas.'}
+                </p>
+                {nextLessonsToReview.length > 0 && (
+                  <p className={styles.lessonReminderMeta}>
+                    Próximas para validar: {nextLessonsToReview.map((lesson) => `${lesson.title} (${DAY_LABELS[lesson.day_of_week] ?? `Dia ${lesson.day_of_week}`})`).join(' · ')}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Filters */}
           <div className={styles.lessonFilters}>
             <input className={styles.input} placeholder="🔍 Buscar título..." value={lessonSearch} onChange={e => { setLessonSearch(e.target.value); setLessonPage(1); }} />
@@ -1443,31 +1582,48 @@ export default function GamificacaoConfigPage() {
           {/* Lesson list */}
           {lessonsLoading ? (
             <div className={styles.skeletonBlock} />
-          ) : (lessonsData?.lessons ?? []).length === 0 ? (
+          ) : visibleLessons.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>📝</div>
               <p className={styles.emptyText}>Nenhuma lição encontrada com esses filtros</p>
             </div>
           ) : (
             <div className={styles.lessonList}>
-              {(lessonsData?.lessons ?? []).map(lesson => (
+              {visibleLessons.map(lesson => (
                 <div key={lesson.id} className={styles.lessonCard}>
                   <div className={styles.lessonTopRow}>
                     <span className={styles.lessonWeek}>S{lesson.week_number}</span>
                     <div className={styles.lessonBadges}>
                       <span className={`${styles.lessonBadge} ${styles.lessonTypeBadge}`}>{normalizeText(LESSON_TYPE_LABELS[lesson.type] ?? lesson.type)}</span>
                       <span className={`${styles.lessonBadge} ${styles.lessonThemeBadge}`}>{normalizeText(THEME_LABELS[lesson.theme] ?? lesson.theme)}</span>
+                      <span className={`${styles.lessonBadge} ${
+                        getLessonScheduleState(lesson) === 'past'
+                          ? styles.lessonPastBadge
+                          : getLessonScheduleState(lesson) === 'today'
+                            ? styles.lessonTodayBadge
+                            : styles.lessonFutureBadge
+                      }`}>
+                        {getLessonScheduleLabel(lesson)}
+                      </span>
                     </div>
                   </div>
                   <span className={styles.lessonTitle}>{normalizeText(lesson.title)}</span>
+                  <span className={styles.lessonMetaText}>
+                    {DAY_LABELS[lesson.day_of_week] ?? `Dia ${lesson.day_of_week}`} · ordem {lesson.order_index + 1} · {lesson.xp_reward} XP
+                  </span>
                   {lesson.campaign_context && <span className={styles.lessonCampaign}>🏷️ {normalizeText(lesson.campaign_context)}</span>}
+                  {!lesson.isGlobal && lesson.canManage === false && (
+                    <span className={styles.lessonWarning}>
+                      Essa lição já passou. A edição e a exclusão ficam liberadas somente antes ou no próprio dia.
+                    </span>
+                  )}
                   <div className={styles.lessonActions}>
                   {lesson.isGlobal ? (
                     <span className={`${styles.lessonBadge} ${styles.lessonGlobalBadge}`}>Global</span>
                   ) : (
                     <>
-                      <button className={`${styles.saveBtnSmall} ${styles.lessonActionBtn}`} onClick={() => openEditLesson(lesson)}>Editar</button>
-                      <button className={`${styles.saveBtnDanger} ${styles.lessonActionBtn}`} onClick={() => deleteLesson(lesson.id)} disabled={deletingLesson === lesson.id}>
+                      <button className={`${styles.saveBtnSmall} ${styles.lessonActionBtn}`} onClick={() => openEditLesson(lesson)} disabled={lesson.canManage === false}>Editar</button>
+                      <button className={`${styles.saveBtnDanger} ${styles.lessonActionBtn}`} onClick={() => deleteLesson(lesson.id)} disabled={deletingLesson === lesson.id || lesson.canManage === false}>
                         {deletingLesson === lesson.id ? '...' : 'Excluir'}
                       </button>
                     </>
@@ -1491,31 +1647,49 @@ export default function GamificacaoConfigPage() {
 
       {/* Lesson Create/Edit Modal */}
       {showLessonForm && (
-        <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) setShowLessonForm(false); }}>
+        <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) closeLessonForm(); }}>
           <div className={`${styles.modal} ${styles.lessonModal}`}>
-            <h3 className={styles.modalTitle}>{editingLesson ? 'Editar Lição' : 'Nova Lição'}</h3>
+            <div className={styles.lessonModalHeader}>
+              <div>
+                <h3 className={styles.modalTitle}>{editingLesson ? 'Editar Lição' : 'Nova Lição'}</h3>
+                <p className={styles.lessonModalSubtitle}>
+                  Monte a lição em três passos: o que será ensinado, quando ela aparece e como a colaboradora vai interagir.
+                </p>
+              </div>
+              <button type="button" className={styles.lessonCloseBtn} onClick={closeLessonForm} aria-label="Fechar editor de lição">
+                ✕
+              </button>
+            </div>
 
-            <div className={styles.formGrid}>
+            <div className={styles.lessonFormSection}>
+              <div className={styles.lessonFormSectionHead}>
+                <span className={styles.lessonStep}>1</span>
+                <div>
+                  <strong>Informações básicas</strong>
+                  <p>Defina um nome claro e uma descrição simples para a lição.</p>
+                </div>
+              </div>
+              <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Título *</label>
-                <input className={styles.input} placeholder="Título da lição" value={lessonForm.title} onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))} />
+                <input className={styles.input} placeholder="Ex: Verdades e mitos sobre hidratação" value={lessonForm.title} onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))} />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Descrição *</label>
-                <input className={styles.input} placeholder="Breve descrição" value={lessonForm.description} onChange={e => setLessonForm(f => ({ ...f, description: e.target.value }))} />
+                <input className={styles.input} placeholder="Ex: Lição curta para reforçar hábitos simples do dia a dia." value={lessonForm.description} onChange={e => setLessonForm(f => ({ ...f, description: e.target.value }))} />
               </div>
             </div>
 
             <div className={styles.formGrid3}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Tipo *</label>
-                <select className={styles.input} value={lessonForm.type} onChange={e => handleLessonTypeChange(e.target.value)}>
+                <select className={styles.select} value={lessonForm.type} onChange={e => handleLessonTypeChange(e.target.value)}>
                   {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{normalizeText(v)}</option>)}
                 </select>
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Tema *</label>
-                <select className={styles.input} value={lessonForm.theme} onChange={e => setLessonForm(f => ({ ...f, theme: e.target.value }))}>
+                <select className={styles.select} value={lessonForm.theme} onChange={e => setLessonForm(f => ({ ...f, theme: e.target.value }))}>
                   {Object.entries(THEME_LABELS).map(([k, v]) => <option key={k} value={k}>{normalizeText(v)}</option>)}
                 </select>
               </div>
@@ -1524,41 +1698,69 @@ export default function GamificacaoConfigPage() {
                 <input type="number" className={styles.input} min={10} max={100} value={lessonForm.xp_reward} onChange={e => setLessonForm(f => ({ ...f, xp_reward: Number(e.target.value) }))} />
               </div>
             </div>
+            </div>
 
+            <div className={styles.lessonFormSection}>
+              <div className={styles.lessonFormSectionHead}>
+                <span className={styles.lessonStep}>2</span>
+                <div>
+                  <strong>Agendamento da lição</strong>
+                  <p>Escolha a semana, o dia e a posição em que essa lição deve aparecer.</p>
+                </div>
+              </div>
             <div className={styles.formGrid3}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Semana (1-52)</label>
-                <input type="number" className={styles.input} min={1} max={52} placeholder="Atual" value={lessonForm.week_number} onChange={e => setLessonForm(f => ({ ...f, week_number: e.target.value }))} />
+                <input type="number" className={styles.input} min={1} max={52} placeholder="Semana da publicação" value={lessonForm.week_number} onChange={e => setLessonForm(f => ({ ...f, week_number: e.target.value }))} />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Dia (1=Seg, 7=Dom)</label>
-                <input type="number" className={styles.input} min={1} max={7} placeholder="Hoje" value={lessonForm.day_of_week} onChange={e => setLessonForm(f => ({ ...f, day_of_week: e.target.value }))} />
+                <label className={styles.label}>Dia da semana</label>
+                <select className={styles.select} value={lessonForm.day_of_week} onChange={e => setLessonForm(f => ({ ...f, day_of_week: e.target.value }))}>
+                  {Object.entries(DAY_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
               </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Posição do dia</label>
+                <input type="number" className={styles.input} min={0} max={99} value={lessonForm.order_index} onChange={e => setLessonForm(f => ({ ...f, order_index: Math.max(0, Number(e.target.value) || 0) }))} />
+              </div>
+            </div>
+            <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Duração (seg)</label>
                 <input type="number" className={styles.input} min={30} value={lessonForm.duration_seconds} onChange={e => setLessonForm(f => ({ ...f, duration_seconds: Number(e.target.value) }))} />
               </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Campanha <span className={styles.labelHint}>(opcional — ex: Outubro Rosa)</span></label>
+                <input className={styles.input} placeholder="Ex: Outubro Rosa - Câncer de Mama" value={lessonForm.campaign_context} onChange={e => setLessonForm(f => ({ ...f, campaign_context: e.target.value }))} />
+              </div>
+            </div>
             </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Campanha <span className={styles.labelHint}>(opcional — ex: Outubro Rosa)</span></label>
-              <input className={styles.input} placeholder="Ex: Outubro Rosa - Câncer de Mama" value={lessonForm.campaign_context} onChange={e => setLessonForm(f => ({ ...f, campaign_context: e.target.value }))} />
-            </div>
-
+            <div className={styles.lessonFormSection}>
+              <div className={styles.lessonFormSectionHead}>
+                <span className={styles.lessonStep}>3</span>
+                <div>
+                  <strong>Conteúdo e interação</strong>
+                  <p>Preencha como a colaboradora vai ler, responder ou refletir nessa etapa.</p>
+                </div>
+              </div>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Conteúdo da lição *</label>
               <div className={styles.contentIntroBox}>
-                <strong>{normalizeText(LESSON_TYPE_LABELS[lessonForm.type] ?? lessonForm.type)}</strong>
-                <span className={styles.labelHint}>Preencha os campos abaixo. O sistema monta a estrutura interna automaticamente.</span>
+                <strong>{normalizeText(LESSON_TYPE_LABELS[lessonForm.type] ?? lessonForm.type)} · {LESSON_TYPE_HELP[lessonForm.type]?.title}</strong>
+                <span className={styles.labelHint}>{LESSON_TYPE_HELP[lessonForm.type]?.description}</span>
               </div>
               {renderLessonContentEditor()}
+            </div>
             </div>
 
             <div className={styles.saveRow}>
               <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.description}>
                 {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar Alterações' : 'Criar Lição'}
               </button>
-              <button className={styles.saveBtnDanger} onClick={() => setShowLessonForm(false)} style={{ marginLeft: 8 }}>Cancelar</button>
+              <button className={styles.saveBtnDanger} onClick={closeLessonForm} style={{ marginLeft: 8 }}>Cancelar</button>
             </div>
           </div>
         </div>

@@ -47,6 +47,31 @@ function normalizeReflectionContent(content: Record<string, unknown>) {
   return { reflection: invalid ? '' : reflection };
 }
 
+function getCurrentWeek(): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const diff = now.getTime() - start.getTime();
+  return Math.ceil(diff / (7 * 24 * 60 * 60 * 1000) + 1);
+}
+
+function getCurrentDayOfWeek(): number {
+  const day = new Date().getDay();
+  return day === 0 ? 7 : day;
+}
+
+function isMasterAdmin(auth: { role: string; isMasterAdmin?: boolean }) {
+  return auth.isMasterAdmin === true || (auth.role === 'admin' && auth.isMasterAdmin === undefined);
+}
+
+function canManageLessonBySchedule(weekNumber: number, dayOfWeek: number) {
+  const currentWeek = getCurrentWeek();
+  const currentDay = getCurrentDayOfWeek();
+
+  if (weekNumber < currentWeek) return false;
+  if (weekNumber === currentWeek && dayOfWeek < currentDay) return false;
+  return true;
+}
+
 const patchLessonSchema = z.object({
   title: z.string().min(3).optional(),
   description: z.string().optional(),
@@ -62,32 +87,58 @@ const patchLessonSchema = z.object({
   campaign_context: z.string().optional(),
 });
 
-// PATCH /api/rh/lessons/[id]
-export const PATCH = withRole('rh')(async (req, { auth, params }) => {
+function parseLessonRow(row: Record<string, unknown>, masterAdmin: boolean) {
+  return {
+    ...row,
+    content_json: row.content_json ? JSON.parse(row.content_json as string) : null,
+    isGlobal: row.company_id === null,
+    canManage:
+      canManageLessonBySchedule(
+        Number(row.week_number ?? 0),
+        Number(row.day_of_week ?? 0),
+      ) && (masterAdmin || row.company_id !== null),
+  };
+}
+
+export const PATCH = withRole('rh', 'admin')(async (req, { auth, params }) => {
   try {
     await initDb();
     const { id } = await params;
     const companyId = auth.companyId;
+    const masterAdmin = isMasterAdmin(auth);
     const db = getReadDb();
 
     const lesson = db.prepare(
-      'SELECT id, company_id FROM daily_lessons WHERE id = ?'
-    ).get(id) as { id: string; company_id: string | null } | undefined;
+      'SELECT id, company_id, week_number, day_of_week, type FROM daily_lessons WHERE id = ?'
+    ).get(id) as {
+      id: string;
+      company_id: string | null;
+      week_number: number;
+      day_of_week: number;
+      type: string;
+    } | undefined;
 
     if (!lesson) {
-      return NextResponse.json({ error: 'Lição não encontrada' }, { status: 404 });
+      return NextResponse.json({ error: 'Licao nao encontrada' }, { status: 404 });
     }
 
-    if (lesson.company_id === null) {
+    if (lesson.company_id === null && !masterAdmin) {
       return NextResponse.json(
-        { error: 'Não é possível editar lições globais' },
+        { error: 'Nao e possivel editar licoes globais' },
         { status: 403 }
       );
     }
 
-    if (lesson.company_id !== companyId) {
+    if (!masterAdmin && lesson.company_id !== companyId) {
       return NextResponse.json(
-        { error: 'Permissão insuficiente' },
+        { error: 'Permissao insuficiente' },
+        { status: 403 }
+      );
+    }
+
+    if (!canManageLessonBySchedule(lesson.week_number, lesson.day_of_week)) {
+      return NextResponse.json(
+        { error: 'Essa licao so pode ser alterada antes ou no proprio dia agendado.' },
         { status: 403 }
       );
     }
@@ -103,10 +154,7 @@ export const PATCH = withRole('rh')(async (req, { auth, params }) => {
     }
 
     const data = parsed.data;
-    const currentLesson = db.prepare(
-      'SELECT type FROM daily_lessons WHERE id = ?'
-    ).get(id) as { type: string } | undefined;
-    const nextType = data.type ?? currentLesson?.type;
+    const nextType = data.type ?? lesson.type;
 
     if (nextType === 'reflexao') {
       if (!data.content_json) {
@@ -115,6 +163,7 @@ export const PATCH = withRole('rh')(async (req, { auth, params }) => {
           { status: 400 }
         );
       }
+
       const normalized = normalizeReflectionContent(data.content_json);
       if (!normalized.reflection) {
         return NextResponse.json(
@@ -122,8 +171,10 @@ export const PATCH = withRole('rh')(async (req, { auth, params }) => {
           { status: 400 }
         );
       }
+
       data.content_json = normalized;
     }
+
     const fields: string[] = [];
     const values: unknown[] = [];
 
@@ -147,49 +198,54 @@ export const PATCH = withRole('rh')(async (req, { auth, params }) => {
 
     const writeQueue = getWriteQueue();
     await writeQueue.enqueue((wdb) => {
-      wdb.prepare(
-        `UPDATE daily_lessons SET ${fields.join(', ')} WHERE id = ?`
-      ).run(...values);
+      wdb.prepare(`UPDATE daily_lessons SET ${fields.join(', ')} WHERE id = ?`).run(...values);
     });
 
     const updated = db.prepare('SELECT * FROM daily_lessons WHERE id = ?').get(id) as Record<string, unknown>;
-
-    return NextResponse.json({
-      ...updated,
-      content_json: updated.content_json ? JSON.parse(updated.content_json as string) : null,
-      isGlobal: false,
-    });
+    return NextResponse.json(parseLessonRow(updated, masterAdmin));
   } catch (error) {
     return handleApiError(error);
   }
 });
 
-// DELETE /api/rh/lessons/[id]
-export const DELETE = withRole('rh')(async (_req, { auth, params }) => {
+export const DELETE = withRole('rh', 'admin')(async (_req, { auth, params }) => {
   try {
     await initDb();
     const { id } = await params;
     const companyId = auth.companyId;
+    const masterAdmin = isMasterAdmin(auth);
     const db = getReadDb();
 
     const lesson = db.prepare(
-      'SELECT id, company_id FROM daily_lessons WHERE id = ?'
-    ).get(id) as { id: string; company_id: string | null } | undefined;
+      'SELECT id, company_id, week_number, day_of_week FROM daily_lessons WHERE id = ?'
+    ).get(id) as {
+      id: string;
+      company_id: string | null;
+      week_number: number;
+      day_of_week: number;
+    } | undefined;
 
     if (!lesson) {
-      return NextResponse.json({ error: 'Lição não encontrada' }, { status: 404 });
+      return NextResponse.json({ error: 'Licao nao encontrada' }, { status: 404 });
     }
 
-    if (lesson.company_id === null) {
+    if (lesson.company_id === null && !masterAdmin) {
       return NextResponse.json(
-        { error: 'Não é possível excluir lições globais' },
+        { error: 'Nao e possivel excluir licoes globais' },
         { status: 403 }
       );
     }
 
-    if (lesson.company_id !== companyId) {
+    if (!masterAdmin && lesson.company_id !== companyId) {
       return NextResponse.json(
-        { error: 'Permissão insuficiente' },
+        { error: 'Permissao insuficiente' },
+        { status: 403 }
+      );
+    }
+
+    if (!canManageLessonBySchedule(lesson.week_number, lesson.day_of_week)) {
+      return NextResponse.json(
+        { error: 'Essa licao so pode ser excluida antes ou no proprio dia agendado.' },
         { status: 403 }
       );
     }

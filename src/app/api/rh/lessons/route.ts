@@ -43,6 +43,19 @@ function getCurrentDayOfWeek(): number {
   return day === 0 ? 7 : day;
 }
 
+function isMasterAdmin(auth: { role: string; isMasterAdmin?: boolean }) {
+  return auth.isMasterAdmin === true || (auth.role === 'admin' && auth.isMasterAdmin === undefined);
+}
+
+function canManageLessonBySchedule(weekNumber: number, dayOfWeek: number) {
+  const currentWeek = getCurrentWeek();
+  const currentDay = getCurrentDayOfWeek();
+
+  if (weekNumber < currentWeek) return false;
+  if (weekNumber === currentWeek && dayOfWeek < currentDay) return false;
+  return true;
+}
+
 function normalizeReflectionContent(content: Record<string, unknown>) {
   const reflection =
     typeof content.reflection === 'string'
@@ -104,7 +117,7 @@ async function ensureWeeklyReflections(companyId: string, weekNumber: number) {
 }
 
 // GET /api/rh/lessons
-export const GET = withRole('rh')(async (req, { auth }) => {
+export const GET = withRole('rh', 'admin')(async (req, { auth }) => {
   try {
     await initDb();
     const db = getReadDb();
@@ -121,8 +134,18 @@ export const GET = withRole('rh')(async (req, { auth }) => {
     const type = url.searchParams.get('type');
     const search = url.searchParams.get('search');
 
-    const conditions: string[] = ['(dl.company_id = ? OR dl.company_id IS NULL)'];
-    const params: unknown[] = [companyId];
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (isMasterAdmin(auth)) {
+      if (companyId) {
+        conditions.push('(dl.company_id = ? OR dl.company_id IS NULL)');
+        params.push(companyId);
+      }
+    } else {
+      conditions.push('(dl.company_id = ? OR dl.company_id IS NULL)');
+      params.push(companyId);
+    }
 
     if (week) {
       conditions.push('dl.week_number = ?');
@@ -146,7 +169,9 @@ export const GET = withRole('rh')(async (req, { auth }) => {
     }
 
     const weekForProvision = week ? parseInt(week, 10) : getCurrentWeek();
-    await ensureWeeklyReflections(companyId, weekForProvision);
+    if (companyId) {
+      await ensureWeeklyReflections(companyId, weekForProvision);
+    }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -176,12 +201,19 @@ export const GET = withRole('rh')(async (req, { auth }) => {
        LIMIT ? OFFSET ?`
     ).all([...params, limit, offset]) as Record<string, unknown>[];
 
+    const masterAdmin = isMasterAdmin(auth);
+
     const mapped = lessons.map((lesson) => ({
       ...lesson,
       content_json: lesson.content_json
         ? JSON.parse(lesson.content_json as string)
         : null,
       isGlobal: lesson.company_id === null,
+      canManage:
+        canManageLessonBySchedule(
+          Number(lesson.week_number ?? 0),
+          Number(lesson.day_of_week ?? 0),
+        ) && (masterAdmin || lesson.company_id !== null),
     }));
 
     const total = countRow.total;
@@ -208,7 +240,7 @@ const createLessonSchema = z.object({
 });
 
 // POST /api/rh/lessons
-export const POST = withRole('rh')(async (req, { auth }) => {
+export const POST = withRole('rh', 'admin')(async (req, { auth }) => {
   try {
     await initDb();
     const body = await req.json();
