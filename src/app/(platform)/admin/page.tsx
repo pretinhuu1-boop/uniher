@@ -1238,7 +1238,7 @@ function UsersTab() {
                           <div className="font-medium text-uni-text-900">{u.name}</div>
                           <div className="text-[11px] text-uni-text-400">{u.email}</div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-uni-text-600">{u.company_name || '?'}</td>
+                        <td className="px-4 py-3 text-xs text-uni-text-600">{u.company_name || '—'}</td>
                         <td className="px-4 py-3">
                           <span className="text-[11px] font-bold bg-cream-100 text-uni-text-600 px-2 py-0.5 rounded-full">
                             {ROLE_LABELS[u.role] ?? u.role}
@@ -3070,7 +3070,7 @@ function AuditoriaTab() {
                     onClick={() => setPage(p => p + 1)}
                     className="px-3 py-1.5 rounded-lg text-xs font-bold border border-border-1 text-uni-text-600 hover:bg-cream-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
-                    Pr?xima ?
+                    Próxima →
                   </button>
                 </div>
               </div>

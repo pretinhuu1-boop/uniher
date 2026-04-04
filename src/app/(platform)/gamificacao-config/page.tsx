@@ -204,11 +204,11 @@ export default function GamificacaoConfigPage() {
         const d = await res.json();
         showToast(d.error || 'Erro ao salvar XP', 'error');
       } else {
-        showToast('Configura??o de XP salva!', 'success');
+        showToast('Configuração de XP salva!', 'success');
         mutate('/api/gamification/config');
       }
     } catch {
-      showToast('Erro de conex?o', 'error');
+      showToast('Erro de conexão', 'error');
     }
     setXpSaving(false);
   }
@@ -231,7 +231,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/config');
       }
     } catch {
-      showToast('Erro de conex?o', 'error');
+      showToast('Erro de conexão', 'error');
     }
     setToggleSaving(null);
   }
@@ -251,7 +251,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/config');
       }
     } catch {
-      showToast('Erro de conex?o', 'error');
+      showToast('Erro de conexão', 'error');
     }
   }
 
@@ -298,7 +298,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/config');
       }
     } catch {
-      showToast('Erro de conex?o', 'error');
+      showToast('Erro de conexão', 'error');
     }
     setThemesSaving(false);
   }
@@ -312,7 +312,7 @@ export default function GamificacaoConfigPage() {
 
   async function createReward() {
     if (!rewardForm.title.trim()) {
-      showToast('T?tulo obrigat?rio', 'error');
+      showToast('Título obrigatório', 'error');
       return;
     }
     setRewardSaving(true);
@@ -338,7 +338,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/rewards');
       }
     } catch {
-      showToast('Erro de conex?o', 'error');
+      showToast('Erro de conexão', 'error');
     }
     setRewardSaving(false);
   }
@@ -363,7 +363,7 @@ export default function GamificacaoConfigPage() {
         mutate('/api/gamification/rewards');
       }
     } catch {
-      showToast('Erro de conex?o', 'error');
+      showToast('Erro de conexão', 'error');
     }
     setProcessingRedemption(null);
   }

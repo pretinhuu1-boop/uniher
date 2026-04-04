@@ -90,6 +90,14 @@ O script:
 - [deploy/vps/setup-https.sh](C:/Users/User/projetoss/uniher/deploy/vps/setup-https.sh)
 - [docs/OPERACAO_VPS.md](C:/Users/User/projetoss/uniher/docs/OPERACAO_VPS.md)
 
+## Documentação operacional
+
+- [docs/OPERACAO_VPS.md](C:/Users/User/projetoss/uniher/docs/OPERACAO_VPS.md)
+- [docs/PERFIS_E_PERMISSOES.md](C:/Users/User/projetoss/uniher/docs/PERFIS_E_PERMISSOES.md)
+- [docs/MAPA_TELAS.md](C:/Users/User/projetoss/uniher/docs/MAPA_TELAS.md)
+- [docs/APIS_CRITICAS.md](C:/Users/User/projetoss/uniher/docs/APIS_CRITICAS.md)
+- [docs/CHECKLIST_PRODUCAO.md](C:/Users/User/projetoss/uniher/docs/CHECKLIST_PRODUCAO.md)
+
 ## Testes rápidos na VPS
 
 ```bash
