@@ -79,7 +79,7 @@ const PLAN_COLORS: Record<string, string> = {
 
 const ROLE_LABELS: Record<string, string> = {
   rh: 'Admin Empresa',
-  lideranca: 'Lideran�a',
+  lideranca: 'Liderança',
   colaboradora: 'Colaboradora',
   admin: 'Admin Master',
 };
@@ -91,7 +91,7 @@ const RARITY_COLORS: Record<string, string> = {
   legendary: 'bg-amber-100 text-amber-700',
 };
 
-const TABS = ['Vis�o Geral', 'Empresas', 'Usu�rios', 'Admin Master', 'Badges', 'Sistema', 'Alertas', 'Auditoria'] as const;
+const TABS = ['Visão Geral', 'Empresas', 'Usuários', 'Admin Master', 'Badges', 'Sistema', 'Alertas', 'Auditoria'] as const;
 type Tab = (typeof TABS)[number];
 
 // ─── Shared Components ────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ function OverviewTab() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Empresas" value={sysData?.companies ?? companies.length} sub="cadastradas" />
-        <StatCard label="Usu�rias" value={sysData?.users ?? '—'} sub="total na plataforma" />
+        <StatCard label="Usuárias" value={sysData?.users ?? '—'} sub="total na plataforma" />
         <StatCard
           label="Campanhas Ativas"
           value={sysData?.campaigns ?? '—'}
@@ -212,7 +212,7 @@ function OverviewTab() {
           <div className="text-center py-12 space-y-2">
             <span className="text-4xl block">🏢</span>
             <p className="text-uni-text-700 font-medium text-sm">Nenhuma empresa cadastrada</p>
-            <p className="text-xs text-uni-text-400">As empresas recentes aparecer�o aqui.</p>
+            <p className="text-xs text-uni-text-400">As empresas recentes aparecerão aqui.</p>
           </div>
         ) : (
           <div className="divide-y divide-border-1">
@@ -223,7 +223,7 @@ function OverviewTab() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-uni-text-900 truncate">{c.trade_name || c.name}</div>
-                  <div className="text-[11px] text-uni-text-400">{c.user_count} usu�rias</div>
+                  <div className="text-[11px] text-uni-text-400">{c.user_count} usuárias</div>
                 </div>
                 <span
                   className={cn(
@@ -393,13 +393,13 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border-1">
-              <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usu�ria</th>
+                    <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usu?ria</th>
               <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Departamento</th>
               <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-              <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">N�vel</th>
+                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">N?vel</th>
               <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Pts</th>
               <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
-              <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A��es</th>
+                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A??es</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-1">
@@ -628,7 +628,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
           <div className="text-center py-12 space-y-3">
             <span className="text-4xl block">🏢</span>
             <p className="text-uni-text-700 font-medium">Nenhuma empresa cadastrada</p>
-            <p className="text-sm text-uni-text-400">Crie a primeira empresa para come�ar a usar a plataforma.</p>
+            <p className="text-sm text-uni-text-400">Crie a primeira empresa para começar a usar a plataforma.</p>
             <button onClick={() => setShowCreate(true)} className="mt-2 px-4 py-2 bg-rose-500 text-white rounded-lg text-sm font-medium hover:bg-rose-600 transition-all">
               + Criar Empresa
             </button>
@@ -664,11 +664,10 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       <div className="text-[11px] text-uni-text-400 font-mono mt-0.5 break-all">{company.cnpj}</div>
                       <div className="text-[11px] text-uni-text-500 md:hidden break-words">{company.sector || ''}</div>
                     </div>
-
                     <div className="hidden md:block text-xs text-uni-text-500 w-32 truncate" title={company.sector || ''}>{company.sector || '—'}</div>
                     <div className="flex items-center justify-between sm:block text-left sm:text-center w-full sm:w-14 cursor-pointer" onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>
                       <div className="text-sm font-bold text-uni-text-900">{company.user_count}</div>
-                      <div className="text-[10px] text-uni-text-400">usu�rias</div>
+                      <div className="text-[10px] text-uni-text-400">usuárias</div>
                     </div>
                     <span className={cn('inline-flex self-start px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide', PLAN_COLORS[company.plan] ?? 'bg-gray-100 text-gray-600')}>
                       {company.plan}
@@ -687,9 +686,8 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                         blocking === company.id && 'opacity-50 cursor-wait'
                       )}
                     >
-                      {blocking === company.id ? '...' : isBlocked ? '✓ Reativar' : '⊘ Suspender'}
+                      {blocking === company.id ? '...' : isBlocked ? 'Reativar' : 'Suspender'}
                     </button>
-
                     <span className={cn('text-uni-text-400 transition-transform text-sm cursor-pointer', expandedCompany === company.id && 'rotate-180')} onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>▾</span>
                   </div>
 
@@ -698,7 +696,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       <p className="text-xs font-bold text-uni-text-600 mb-4 uppercase tracking-wide">Editar Empresa</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Raz�o Social *</label>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Razão Social *</label>
                           <input value={editCompanyForm.name} onChange={e => setEditCompanyForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400" />
                         </div>
                         <div>
@@ -743,14 +741,14 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       <p className="text-xs font-bold text-uni-text-500 mt-5 mb-3 uppercase tracking-wide">Identidade Visual</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Prim�ria</label>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Primária</label>
                           <div className="flex items-center gap-2">
                             <input type="color" value={editCompanyForm.primary_color || '#C9A264'} onChange={e => setEditCompanyForm(f => ({ ...f, primary_color: e.target.value }))} className="w-10 h-10 rounded-lg border border-border-1 cursor-pointer" />
                             <input value={editCompanyForm.primary_color} onChange={e => setEditCompanyForm(f => ({ ...f, primary_color: e.target.value }))} placeholder="#C9A264" className="flex-1 border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400 font-mono" />
                           </div>
                         </div>
                         <div>
-                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Secund�ria</label>
+                          <label className="block text-[11px] font-bold text-uni-text-500 mb-1 uppercase tracking-wide">Cor Secundária</label>
                           <div className="flex items-center gap-2">
                             <input type="color" value={editCompanyForm.secondary_color || '#1A3A6B'} onChange={e => setEditCompanyForm(f => ({ ...f, secondary_color: e.target.value }))} className="w-10 h-10 rounded-lg border border-border-1 cursor-pointer" />
                             <input value={editCompanyForm.secondary_color} onChange={e => setEditCompanyForm(f => ({ ...f, secondary_color: e.target.value }))} placeholder="#1A3A6B" className="flex-1 border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400 font-mono" />
@@ -1221,12 +1219,12 @@ function UsersTab() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-1">
-                    <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usu�ria</th>
+                    <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usuária</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Empresa</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">N�vel</th>
+                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Nível</th>
                     <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
-                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">A��es</th>
+                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-1">
@@ -1240,7 +1238,7 @@ function UsersTab() {
                           <div className="font-medium text-uni-text-900">{u.name}</div>
                           <div className="text-[11px] text-uni-text-400">{u.email}</div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-uni-text-600">{u.company_name || '—'}</td>
+                        <td className="px-4 py-3 text-xs text-uni-text-600">{u.company_name || '?'}</td>
                         <td className="px-4 py-3">
                           <span className="text-[11px] font-bold bg-cream-100 text-uni-text-600 px-2 py-0.5 rounded-full">
                             {ROLE_LABELS[u.role] ?? u.role}
@@ -3072,7 +3070,7 @@ function AuditoriaTab() {
                     onClick={() => setPage(p => p + 1)}
                     className="px-3 py-1.5 rounded-lg text-xs font-bold border border-border-1 text-uni-text-600 hover:bg-cream-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
-                    Próxima →
+                    Pr?xima ?
                   </button>
                 </div>
               </div>
@@ -3089,7 +3087,7 @@ function AuditoriaTab() {
 export default function AdminPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('Vis�o Geral');
+  const [activeTab, setActiveTab] = useState<Tab>('Visão Geral');
   const { data: sysStats } = useSWR<SystemStats>('/api/admin/system', fetcher, { revalidateOnFocus: false });
 
   useEffect(() => {
@@ -3102,7 +3100,7 @@ export default function AdminPage() {
 
   const tabCounts: Partial<Record<Tab, number>> = {
     'Empresas': sysStats?.companies,
-    'Usu�rios': sysStats?.users,
+    'Usuários': sysStats?.users,
     'Badges': sysStats?.badges,
   };
 
@@ -3137,9 +3135,9 @@ export default function AdminPage() {
 
       {/* Tab Content */}
       <div>
-        {activeTab === 'Vis�o Geral' && <OverviewTab />}
-        {activeTab === 'Empresas' && <CompaniesTab onGoToUsers={() => setActiveTab('Usu�rios')} />}
-        {activeTab === 'Usu�rios' && <UsersTab />}
+        {activeTab === 'Visão Geral' && <OverviewTab />}
+        {activeTab === 'Empresas' && <CompaniesTab onGoToUsers={() => setActiveTab('Usuários')} />}
+        {activeTab === 'Usuários' && <UsersTab />}
         {activeTab === 'Admin Master' && <AdminMasterTab />}
         {activeTab === 'Badges' && <BadgesTab />}
         {activeTab === 'Sistema' && <SystemTab />}
