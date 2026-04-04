@@ -45,6 +45,11 @@ yarn-error.log*
 
 # presentation artifacts
 *.pptx
+apresentacao-cliente.html
+apresentacao-cliente-v2.html
+apresentacao-uniher-unificada.html
+uniher_apresentacao.html
+Apresentação Uniher.html
 
 # temp
 /tmp/
