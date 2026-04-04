@@ -507,6 +507,7 @@ function BodyPortal({ children }: { children: ReactNode }) {
 
 export default function GamificacaoConfigPage() {
   const lessonModalRef = useRef<HTMLDivElement | null>(null);
+  const lessonModalContentRef = useRef<HTMLDivElement | null>(null);
   const [isLessonEditorMobile, setIsLessonEditorMobile] = useState(false);
   const [lessonEditorStep, setLessonEditorStep] = useState(1);
 
@@ -774,18 +775,35 @@ export default function GamificacaoConfigPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
-    const syncViewport = () => setIsLessonEditorMobile(mediaQuery.matches);
+    const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+    const syncViewport = () => {
+      const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+      const isCompactViewport = viewportWidth <= 900;
+      const isTouchTablet = coarsePointerQuery.matches && viewportWidth <= 1100;
+      setIsLessonEditorMobile(isCompactViewport || isTouchTablet);
+    };
 
     syncViewport();
 
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', syncViewport);
-      return () => mediaQuery.removeEventListener('change', syncViewport);
-    }
+    const viewport = window.visualViewport;
 
-    mediaQuery.addListener(syncViewport);
-    return () => mediaQuery.removeListener(syncViewport);
+    window.addEventListener('resize', syncViewport);
+    if (typeof coarsePointerQuery.addEventListener === 'function') {
+      coarsePointerQuery.addEventListener('change', syncViewport);
+    } else {
+      coarsePointerQuery.addListener(syncViewport);
+    }
+    viewport?.addEventListener('resize', syncViewport);
+
+    return () => {
+      window.removeEventListener('resize', syncViewport);
+      if (typeof coarsePointerQuery.removeEventListener === 'function') {
+        coarsePointerQuery.removeEventListener('change', syncViewport);
+      } else {
+        coarsePointerQuery.removeListener(syncViewport);
+      }
+      viewport?.removeEventListener('resize', syncViewport);
+    };
   }, []);
 
   useEffect(() => {
@@ -799,6 +817,9 @@ export default function GamificacaoConfigPage() {
     window.scrollTo({ top: 0, behavior: 'auto' });
 
     const frame = window.requestAnimationFrame(() => {
+      if (lessonModalContentRef.current) {
+        lessonModalContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
+      }
       if (lessonModalRef.current) {
         lessonModalRef.current.scrollTop = 0;
       }
@@ -1905,7 +1926,7 @@ export default function GamificacaoConfigPage() {
                 ✕
               </button>
             </div>
-            <div className={styles.lessonModalContent}>
+            <div ref={lessonModalContentRef} className={styles.lessonModalContent}>
             {isLessonEditorMobile && (
               <div className={styles.lessonMobileProgress}>
                 <span className={styles.lessonMobileProgressLabel}>Etapa {lessonEditorStep} de 3</span>
