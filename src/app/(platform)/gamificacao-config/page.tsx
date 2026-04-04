@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import styles from './gamificacao-config.module.css';
 
@@ -405,6 +405,80 @@ function getLessonScheduleLabel(lesson: Pick<Lesson, 'week_number' | 'day_of_wee
   return 'Já passou';
 }
 
+function getLessonContentIssues(type: string, content: LessonContent) {
+  const parsed = sanitizeLessonContent(type, content);
+
+  switch (type) {
+    case 'pilula': {
+      const issues: string[] = [];
+      if (!asString(parsed.tip).trim()) issues.push('preencha o texto principal');
+      if (!asString(parsed.fact).trim()) issues.push('adicione um fato importante');
+      if (!asString(parsed.action).trim()) issues.push('adicione uma ação prática');
+      return issues;
+    }
+    case 'quiz':
+      return [
+        !asString((parsed as { question?: string }).question).trim() ? 'escreva a pergunta do quiz' : '',
+        ...asStringArray((parsed as { options?: unknown }).options, 4, 'Opção')
+          .map((option, index) => (!option.trim() ? `preencha a alternativa ${index + 1}` : '')),
+      ].filter(Boolean);
+    case 'reflexao':
+      return !asString((parsed as { reflection?: string }).reflection).trim() ? ['escreva a pergunta de reflexão'] : [];
+    case 'lacuna':
+      return [
+        !asString((parsed as { text?: string }).text).trim() ? 'escreva o texto com lacuna' : '',
+        ...asStringArray((parsed as { options?: unknown }).options, 4, 'Resposta')
+          .map((option, index) => (!option.trim() ? `preencha a resposta ${index + 1}` : '')),
+      ].filter(Boolean);
+    case 'verdadeiro_falso': {
+      const issues: string[] = [];
+      if (!asString((parsed as { statement?: string }).statement).trim()) issues.push('escreva a afirmação');
+      if (!asString((parsed as { explanation?: string }).explanation).trim()) issues.push('adicione a explicação da resposta');
+      return issues;
+    }
+    case 'ordenar':
+      return [
+        !asString((parsed as { instruction?: string }).instruction).trim() ? 'escreva a instrução da atividade' : '',
+        ...asStringArray((parsed as { items?: unknown }).items, 4, 'Passo')
+          .map((item, index) => (!item.trim() ? `preencha o passo ${index + 1}` : '')),
+      ].filter(Boolean);
+    case 'parear':
+      return asPairArray((parsed as { pairs?: unknown }).pairs, 3).flatMap((pair, index) => ([
+        !pair.left.trim() ? `preencha o item ${index + 1}` : '',
+        !pair.right.trim() ? `preencha a correspondência ${index + 1}` : '',
+      ])).filter(Boolean);
+    case 'historia':
+      return [
+        !asString((parsed as { scenario?: string }).scenario).trim() ? 'descreva o cenário da história' : '',
+        !asString((parsed as { question?: string }).question).trim() ? 'escreva a pergunta final' : '',
+        ...asStringArray((parsed as { options?: unknown }).options, 4, 'Caminho')
+          .map((option, index) => (!option.trim() ? `preencha o caminho ${index + 1}` : '')),
+      ].filter(Boolean);
+    case 'flashcard':
+      return asCardArray((parsed as { cards?: unknown }).cards, 3).flatMap((card, index) => ([
+        !card.front.trim() ? `preencha a frente do card ${index + 1}` : '',
+        !card.back.trim() ? `preencha o verso do card ${index + 1}` : '',
+      ])).filter(Boolean);
+    case 'imagem':
+      return [
+        !asString((parsed as { question?: string }).question).trim() ? 'escreva a pergunta da imagem' : '',
+        ...asImageOptionArray((parsed as { options?: unknown }).options, 2).flatMap((option, index) => ([
+          !option.emoji.trim() ? `preencha o emoji da opção ${index + 1}` : '',
+          !option.label.trim() ? `preencha a legenda da opção ${index + 1}` : '',
+        ])),
+      ].filter(Boolean);
+    case 'desafio_dia':
+      return [
+        !asString((parsed as { challenge?: string }).challenge).trim() ? 'descreva o desafio do dia' : '',
+        !asString((parsed as { duration?: string }).duration).trim() ? 'informe o prazo ou duração' : '',
+        ...asStringArray((parsed as { tips?: unknown }).tips, 3, 'Dica')
+          .map((tip, index) => (!tip.trim() ? `preencha a dica ${index + 1}` : '')),
+      ].filter(Boolean);
+    default:
+      return [];
+  }
+}
+
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
   return (
     <div
@@ -656,6 +730,16 @@ export default function GamificacaoConfigPage() {
     week_number: '', day_of_week: '', order_index: 0, xp_reward: 20, duration_seconds: 90,
     campaign_context: '',
   });
+  const lessonStepOneIssues = useMemo(() => {
+    const issues: string[] = [];
+    if (!lessonForm.title.trim()) issues.push('informe um título para a lição');
+    if (!lessonForm.description.trim()) issues.push('adicione uma descrição simples do objetivo');
+    return issues;
+  }, [lessonForm.title, lessonForm.description]);
+  const lessonContentIssues = useMemo(
+    () => getLessonContentIssues(lessonForm.type, lessonContent),
+    [lessonContent, lessonForm.type]
+  );
 
   const lessonsUrl = (() => {
     const params = new URLSearchParams({ page: String(lessonPage), limit: '12' });
@@ -760,6 +844,18 @@ export default function GamificacaoConfigPage() {
   }
 
   async function saveLesson() {
+    if (lessonStepOneIssues.length > 0) {
+      showToast(`Para salvar, ${lessonStepOneIssues[0]}.`, 'error');
+      setLessonEditorStep(1);
+      return;
+    }
+
+    if (lessonContentIssues.length > 0) {
+      showToast(`Para salvar, ${lessonContentIssues[0]}.`, 'error');
+      setLessonEditorStep(3);
+      return;
+    }
+
     const contentParsed = sanitizeLessonContent(lessonForm.type, lessonContent);
     setLessonSaving(true);
     try {
@@ -785,6 +881,15 @@ export default function GamificacaoConfigPage() {
   function handleLessonTypeChange(type: string) {
     setLessonForm(f => ({ ...f, type }));
     setLessonContent(cloneLessonTemplate(type));
+  }
+
+  function goToNextLessonStep() {
+    if (lessonEditorStep === 1 && lessonStepOneIssues.length > 0) {
+      showToast(`Antes de continuar, ${lessonStepOneIssues[0]}.`, 'error');
+      return;
+    }
+
+    setLessonEditorStep((current) => Math.min(3, current + 1));
   }
 
   function updateLessonContentField(key: string, value: unknown) {
@@ -1796,9 +1901,14 @@ export default function GamificacaoConfigPage() {
                 <label className={styles.label}>Descrição *</label>
                 <input className={styles.input} placeholder="Ex: Lição curta para reforçar hábitos simples do dia a dia." value={lessonForm.description} onChange={e => setLessonForm(f => ({ ...f, description: e.target.value }))} />
               </div>
-            </div>
+              </div>
+              {lessonStepOneIssues.length > 0 && (
+                <span className={styles.lessonWarning}>
+                  Para continuar, {lessonStepOneIssues[0]}.
+                </span>
+              )}
 
-              <div className={styles.formGrid3}>
+                <div className={styles.formGrid3}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Tipo *</label>
                 <select className={styles.select} value={lessonForm.type} onChange={e => handleLessonTypeChange(e.target.value)}>
@@ -1870,6 +1980,11 @@ export default function GamificacaoConfigPage() {
                 <strong>{normalizeText(LESSON_TYPE_LABELS[lessonForm.type] ?? lessonForm.type)} · {LESSON_TYPE_HELP[lessonForm.type]?.title}</strong>
                 <span className={styles.labelHint}>{LESSON_TYPE_HELP[lessonForm.type]?.description}</span>
               </div>
+              {lessonContentIssues.length > 0 && (
+                <span className={styles.lessonWarning}>
+                  Ainda falta {lessonContentIssues[0]}.
+                </span>
+              )}
               {renderLessonContentEditor()}
               </div>
             </div>}
@@ -1893,19 +2008,19 @@ export default function GamificacaoConfigPage() {
                 {lessonEditorStep < 3 ? (
                   <button
                     className={styles.saveBtn}
-                    onClick={() => setLessonEditorStep((current) => Math.min(3, current + 1))}
+                    onClick={goToNextLessonStep}
                   >
                     Continuar
                   </button>
                 ) : (
-                  <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.description}>
+                  <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving}>
                     {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar Alterações' : 'Criar Lição'}
                   </button>
                 )}
               </div>
             ) : (
             <div className={styles.saveRow}>
-              <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.description}>
+              <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving}>
                 {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar Alterações' : 'Criar Lição'}
               </button>
               <button className={styles.saveBtnDanger} onClick={closeLessonForm} style={{ marginLeft: 8 }}>Cancelar</button>
