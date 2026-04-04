@@ -137,6 +137,136 @@ interface Redemption {
   user_email: string;
 }
 
+type LessonContent = Record<string, unknown>;
+
+function cloneLessonTemplate(type: string): LessonContent {
+  return JSON.parse(JSON.stringify(CONTENT_TEMPLATES[type] ?? {})) as LessonContent;
+}
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function asBoolean(value: unknown, fallback = false): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+function asStringArray(value: unknown, minLength: number, prefix: string): string[] {
+  const source = Array.isArray(value) ? value.filter((item) => typeof item === 'string') as string[] : [];
+  return Array.from({ length: Math.max(minLength, source.length || minLength) }, (_, index) => {
+    return source[index] ?? `${prefix} ${index + 1}`;
+  });
+}
+
+function asPairArray(value: unknown, minLength: number): Array<{ left: string; right: string }> {
+  const source = Array.isArray(value) ? value : [];
+  return Array.from({ length: Math.max(minLength, source.length || minLength) }, (_, index) => {
+    const current = source[index] as { left?: unknown; right?: unknown } | undefined;
+    return {
+      left: typeof current?.left === 'string' ? current.left : `Item ${index + 1}`,
+      right: typeof current?.right === 'string' ? current.right : `Descrição ${index + 1}`,
+    };
+  });
+}
+
+function asCardArray(value: unknown, minLength: number): Array<{ front: string; back: string }> {
+  const source = Array.isArray(value) ? value : [];
+  return Array.from({ length: Math.max(minLength, source.length || minLength) }, (_, index) => {
+    const current = source[index] as { front?: unknown; back?: unknown } | undefined;
+    return {
+      front: typeof current?.front === 'string' ? current.front : `Frente ${index + 1}`,
+      back: typeof current?.back === 'string' ? current.back : `Verso ${index + 1}`,
+    };
+  });
+}
+
+function asImageOptionArray(value: unknown, minLength: number): Array<{ emoji: string; label: string }> {
+  const source = Array.isArray(value) ? value : [];
+  return Array.from({ length: Math.max(minLength, source.length || minLength) }, (_, index) => {
+    const current = source[index] as { emoji?: unknown; label?: unknown } | undefined;
+    return {
+      emoji: typeof current?.emoji === 'string' ? current.emoji : index === 0 ? '🥗' : '🍎',
+      label: typeof current?.label === 'string' ? current.label : `Opção ${index + 1}`,
+    };
+  });
+}
+
+function sanitizeLessonContent(type: string, content: LessonContent): LessonContent {
+  switch (type) {
+    case 'pilula':
+      return {
+        tip: asString(content.tip),
+        fact: asString(content.fact),
+        action: asString(content.action),
+      };
+    case 'quiz': {
+      const options = asStringArray(content.options, 4, 'Opção');
+      return {
+        question: asString(content.question),
+        options,
+        correct: Math.min(Math.max(asNumber(content.correct, 0), 0), options.length - 1),
+      };
+    }
+    case 'reflexao':
+      return { reflection: asString(content.reflection) };
+    case 'lacuna': {
+      const options = asStringArray(content.options, 4, 'Resposta');
+      return {
+        text: asString(content.text),
+        options,
+        correct: Math.min(Math.max(asNumber(content.correct, 0), 0), options.length - 1),
+      };
+    }
+    case 'verdadeiro_falso':
+      return {
+        statement: asString(content.statement),
+        correct: asBoolean(content.correct, true),
+        explanation: asString(content.explanation),
+      };
+    case 'ordenar': {
+      const items = asStringArray(content.items, 4, 'Passo');
+      return {
+        instruction: asString(content.instruction),
+        items,
+        correct_order: items.map((_, index) => index),
+      };
+    }
+    case 'parear':
+      return { pairs: asPairArray(content.pairs, 3) };
+    case 'historia': {
+      const options = asStringArray(content.options, 4, 'Caminho');
+      return {
+        scenario: asString(content.scenario),
+        question: asString(content.question),
+        options,
+        correct: Math.min(Math.max(asNumber(content.correct, 0), 0), options.length - 1),
+      };
+    }
+    case 'flashcard':
+      return { cards: asCardArray(content.cards, 3) };
+    case 'imagem': {
+      const options = asImageOptionArray(content.options, 2);
+      return {
+        question: asString(content.question),
+        options,
+        correct: Math.min(Math.max(asNumber(content.correct, 0), 0), options.length - 1),
+      };
+    }
+    case 'desafio_dia':
+      return {
+        challenge: asString(content.challenge),
+        duration: asString(content.duration, 'hoje'),
+        tips: asStringArray(content.tips, 3, 'Dica'),
+      };
+    default:
+      return content;
+  }
+}
+
 function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
   return (
     <div
@@ -378,10 +508,11 @@ export default function GamificacaoConfigPage() {
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [lessonSaving, setLessonSaving] = useState(false);
   const [deletingLesson, setDeletingLesson] = useState<string | null>(null);
+  const [lessonContent, setLessonContent] = useState<LessonContent>(() => cloneLessonTemplate('pilula'));
   const [lessonForm, setLessonForm] = useState({
     title: '', description: '', type: 'pilula', theme: 'hidratacao',
     week_number: '', day_of_week: '', xp_reward: 20, duration_seconds: 90,
-    campaign_context: '', content_json: JSON.stringify(CONTENT_TEMPLATES.pilula, null, 2),
+    campaign_context: '',
   });
 
   const lessonsUrl = (() => {
@@ -398,25 +529,25 @@ export default function GamificacaoConfigPage() {
 
   function openCreateLesson() {
     setEditingLesson(null);
-    setLessonForm({ title: '', description: '', type: 'pilula', theme: 'hidratacao', week_number: '', day_of_week: '', xp_reward: 20, duration_seconds: 90, campaign_context: '', content_json: JSON.stringify(CONTENT_TEMPLATES.pilula, null, 2) });
+    setLessonContent(cloneLessonTemplate('pilula'));
+    setLessonForm({ title: '', description: '', type: 'pilula', theme: 'hidratacao', week_number: '', day_of_week: '', xp_reward: 20, duration_seconds: 90, campaign_context: '' });
     setShowLessonForm(true);
   }
 
   function openEditLesson(lesson: Lesson) {
     setEditingLesson(lesson);
+    setLessonContent(sanitizeLessonContent(lesson.type, (lesson.content_json ?? {}) as LessonContent));
     setLessonForm({
       title: lesson.title, description: lesson.description, type: lesson.type,
       theme: lesson.theme, week_number: String(lesson.week_number), day_of_week: String(lesson.day_of_week),
       xp_reward: lesson.xp_reward, duration_seconds: lesson.duration_seconds,
       campaign_context: lesson.campaign_context ?? '',
-      content_json: JSON.stringify(lesson.content_json ?? {}, null, 2),
     });
     setShowLessonForm(true);
   }
 
   async function saveLesson() {
-    let contentParsed: Record<string, unknown>;
-    try { contentParsed = JSON.parse(lessonForm.content_json); } catch { showToast('JSON do conteúdo inválido', 'error'); return; }
+    const contentParsed = sanitizeLessonContent(lessonForm.type, lessonContent);
     setLessonSaving(true);
     try {
       const body = {
@@ -435,6 +566,254 @@ export default function GamificacaoConfigPage() {
       else { showToast(editingLesson ? 'Lição atualizada!' : 'Lição criada!', 'success'); setShowLessonForm(false); mutateLessons(); }
     } catch { showToast('Erro de conexão', 'error'); }
     setLessonSaving(false);
+  }
+
+  function handleLessonTypeChange(type: string) {
+    setLessonForm(f => ({ ...f, type }));
+    setLessonContent(cloneLessonTemplate(type));
+  }
+
+  function updateLessonContentField(key: string, value: unknown) {
+    setLessonContent(prev => ({ ...prev, [key]: value }));
+  }
+
+  function updateLessonContentArray(key: string, index: number, value: string, minLength: number, prefix: string) {
+    const current = asStringArray(lessonContent[key], minLength, prefix);
+    current[index] = value;
+    updateLessonContentField(key, current);
+  }
+
+  function updateLessonPair(index: number, side: 'left' | 'right', value: string) {
+    const pairs = asPairArray(lessonContent.pairs, 3);
+    pairs[index] = { ...pairs[index], [side]: value };
+    updateLessonContentField('pairs', pairs);
+  }
+
+  function updateLessonCard(index: number, side: 'front' | 'back', value: string) {
+    const cards = asCardArray(lessonContent.cards, 3);
+    cards[index] = { ...cards[index], [side]: value };
+    updateLessonContentField('cards', cards);
+  }
+
+  function updateLessonImageOption(index: number, key: 'emoji' | 'label', value: string) {
+    const options = asImageOptionArray(lessonContent.options, 2);
+    options[index] = { ...options[index], [key]: value };
+    updateLessonContentField('options', options);
+  }
+
+  function renderLessonContentEditor() {
+    switch (lessonForm.type) {
+      case 'pilula':
+        return (
+          <div className={styles.contentBuilder}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Texto principal</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.tip)} onChange={e => updateLessonContentField('tip', e.target.value)} />
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Fato ou dado importante</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.fact)} onChange={e => updateLessonContentField('fact', e.target.value)} />
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Ação prática sugerida</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.action)} onChange={e => updateLessonContentField('action', e.target.value)} />
+            </div>
+          </div>
+        );
+      case 'quiz':
+      case 'lacuna':
+      case 'historia': {
+        const options = asStringArray(lessonContent.options, 4, 'Opção');
+        const correct = Math.min(Math.max(asNumber(lessonContent.correct, 0), 0), options.length - 1);
+        return (
+          <div className={styles.contentBuilder}>
+            {lessonForm.type === 'historia' ? (
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Cenário</label>
+                <textarea className={styles.textarea} value={asString(lessonContent.scenario)} onChange={e => updateLessonContentField('scenario', e.target.value)} />
+              </div>
+            ) : (
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>{lessonForm.type === 'quiz' ? 'Pergunta' : 'Texto com lacuna'}</label>
+                <textarea className={styles.textarea} value={asString(lessonForm.type === 'quiz' ? lessonContent.question : lessonContent.text)} onChange={e => updateLessonContentField(lessonForm.type === 'quiz' ? 'question' : 'text', e.target.value)} />
+              </div>
+            )}
+            {lessonForm.type === 'historia' && (
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Pergunta final</label>
+                <textarea className={styles.textarea} value={asString(lessonContent.question)} onChange={e => updateLessonContentField('question', e.target.value)} />
+              </div>
+            )}
+            <div className={styles.contentGrid}>
+              {options.map((option, index) => (
+                <div key={`${lessonForm.type}-option-${index}`} className={styles.fieldGroup}>
+                  <label className={styles.label}>Opção {index + 1}</label>
+                  <input className={styles.input} value={option} onChange={e => updateLessonContentArray('options', index, e.target.value, 4, 'Opção')} />
+                </div>
+              ))}
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Resposta correta</label>
+              <select className={styles.input} value={String(correct)} onChange={e => updateLessonContentField('correct', Number(e.target.value))}>
+                {options.map((option, index) => (
+                  <option key={`${lessonForm.type}-correct-${index}`} value={index}>
+                    {`Opção ${index + 1}: ${option || 'Sem texto'}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        );
+      }
+      case 'reflexao':
+        return (
+          <div className={styles.contentBuilder}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Pergunta de reflexão</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.reflection)} onChange={e => updateLessonContentField('reflection', e.target.value)} />
+            </div>
+          </div>
+        );
+      case 'verdadeiro_falso':
+        return (
+          <div className={styles.contentBuilder}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Afirmação</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.statement)} onChange={e => updateLessonContentField('statement', e.target.value)} />
+            </div>
+            <div className={styles.formGrid}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Resposta correta</label>
+                <select className={styles.input} value={String(asBoolean(lessonContent.correct, true))} onChange={e => updateLessonContentField('correct', e.target.value === 'true')}>
+                  <option value="true">Verdadeiro</option>
+                  <option value="false">Falso</option>
+                </select>
+              </div>
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Explicação para a resposta</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.explanation)} onChange={e => updateLessonContentField('explanation', e.target.value)} />
+            </div>
+          </div>
+        );
+      case 'ordenar': {
+        const items = asStringArray(lessonContent.items, 4, 'Passo');
+        return (
+          <div className={styles.contentBuilder}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Instrução</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.instruction)} onChange={e => updateLessonContentField('instruction', e.target.value)} />
+            </div>
+            <div className={styles.contentGrid}>
+              {items.map((item, index) => (
+                <div key={`ordenar-${index}`} className={styles.fieldGroup}>
+                  <label className={styles.label}>Passo {index + 1}</label>
+                  <input className={styles.input} value={item} onChange={e => updateLessonContentArray('items', index, e.target.value, 4, 'Passo')} />
+                </div>
+              ))}
+            </div>
+            <span className={styles.labelHint}>A ordem digitada acima será a ordem correta.</span>
+          </div>
+        );
+      }
+      case 'parear': {
+        const pairs = asPairArray(lessonContent.pairs, 3);
+        return (
+          <div className={styles.contentBuilder}>
+            {pairs.map((pair, index) => (
+              <div key={`pair-${index}`} className={styles.contentPairRow}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Item {index + 1}</label>
+                  <input className={styles.input} value={pair.left} onChange={e => updateLessonPair(index, 'left', e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Correspondência {index + 1}</label>
+                  <input className={styles.input} value={pair.right} onChange={e => updateLessonPair(index, 'right', e.target.value)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+      case 'flashcard': {
+        const cards = asCardArray(lessonContent.cards, 3);
+        return (
+          <div className={styles.contentBuilder}>
+            {cards.map((card, index) => (
+              <div key={`card-${index}`} className={styles.contentPairRow}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Frente do card {index + 1}</label>
+                  <textarea className={styles.textarea} value={card.front} onChange={e => updateLessonCard(index, 'front', e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Verso do card {index + 1}</label>
+                  <textarea className={styles.textarea} value={card.back} onChange={e => updateLessonCard(index, 'back', e.target.value)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+      case 'imagem': {
+        const options = asImageOptionArray(lessonContent.options, 2);
+        const correct = Math.min(Math.max(asNumber(lessonContent.correct, 0), 0), options.length - 1);
+        return (
+          <div className={styles.contentBuilder}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Pergunta</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.question)} onChange={e => updateLessonContentField('question', e.target.value)} />
+            </div>
+            {options.map((option, index) => (
+              <div key={`image-option-${index}`} className={styles.contentPairRow}>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Emoji da opção {index + 1}</label>
+                  <input className={styles.input} value={option.emoji} onChange={e => updateLessonImageOption(index, 'emoji', e.target.value)} />
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>Legenda da opção {index + 1}</label>
+                  <input className={styles.input} value={option.label} onChange={e => updateLessonImageOption(index, 'label', e.target.value)} />
+                </div>
+              </div>
+            ))}
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Resposta correta</label>
+              <select className={styles.input} value={String(correct)} onChange={e => updateLessonContentField('correct', Number(e.target.value))}>
+                {options.map((option, index) => (
+                  <option key={`image-correct-${index}`} value={index}>
+                    {`Opção ${index + 1}: ${option.label || 'Sem legenda'}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        );
+      }
+      case 'desafio_dia': {
+        const tips = asStringArray(lessonContent.tips, 3, 'Dica');
+        return (
+          <div className={styles.contentBuilder}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Desafio do dia</label>
+              <textarea className={styles.textarea} value={asString(lessonContent.challenge)} onChange={e => updateLessonContentField('challenge', e.target.value)} />
+            </div>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Prazo ou duração</label>
+              <input className={styles.input} value={asString(lessonContent.duration, 'hoje')} onChange={e => updateLessonContentField('duration', e.target.value)} />
+            </div>
+            <div className={styles.contentGrid}>
+              {tips.map((tip, index) => (
+                <div key={`tip-${index}`} className={styles.fieldGroup}>
+                  <label className={styles.label}>Dica {index + 1}</label>
+                  <input className={styles.input} value={tip} onChange={e => updateLessonContentArray('tips', index, e.target.value, 3, 'Dica')} />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+      default:
+        return null;
+    }
   }
 
   async function deleteLesson(id: string) {
@@ -1066,7 +1445,7 @@ export default function GamificacaoConfigPage() {
       {/* Lesson Create/Edit Modal */}
       {showLessonForm && (
         <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) setShowLessonForm(false); }}>
-          <div className={styles.modal} style={{ maxWidth: 640, maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className={`${styles.modal} ${styles.lessonModal}`}>
             <h3 className={styles.modalTitle}>{editingLesson ? 'Editar Lição' : 'Nova Lição'}</h3>
 
             <div className={styles.formGrid}>
@@ -1083,7 +1462,7 @@ export default function GamificacaoConfigPage() {
             <div className={styles.formGrid3}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Tipo *</label>
-                <select className={styles.input} value={lessonForm.type} onChange={e => setLessonForm(f => ({ ...f, type: e.target.value, content_json: JSON.stringify(CONTENT_TEMPLATES[e.target.value] ?? {}, null, 2) }))}>
+                <select className={styles.input} value={lessonForm.type} onChange={e => handleLessonTypeChange(e.target.value)}>
                   {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{normalizeText(v)}</option>)}
                 </select>
               </div>
@@ -1120,15 +1499,12 @@ export default function GamificacaoConfigPage() {
             </div>
 
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Conteúdo (JSON) *</label>
-              <textarea
-                className={styles.input}
-                style={{ minHeight: 180, fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
-                value={lessonForm.content_json}
-                onChange={e => setLessonForm(f => ({ ...f, content_json: e.target.value }))}
-                spellCheck={false}
-              />
-              <span className={styles.labelHint}>Edite o JSON conforme o tipo selecionado. Ao trocar o tipo, o template é atualizado.</span>
+              <label className={styles.label}>Conteúdo da lição *</label>
+              <div className={styles.contentIntroBox}>
+                <strong>{normalizeText(LESSON_TYPE_LABELS[lessonForm.type] ?? lessonForm.type)}</strong>
+                <span className={styles.labelHint}>Preencha os campos abaixo. O sistema monta a estrutura interna automaticamente.</span>
+              </div>
+              {renderLessonContentEditor()}
             </div>
 
             <div className={styles.saveRow}>

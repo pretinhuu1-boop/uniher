@@ -121,6 +121,26 @@
   background: var(--white);
 }
 
+.textarea {
+  min-height: 110px;
+  resize: vertical;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-1);
+  background: var(--cream-50);
+  font-size: 0.88rem;
+  color: var(--text-900);
+  transition: border-color 0.2s ease;
+  width: 100%;
+  font-family: inherit;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--gold-400, #d4a843);
+  background: var(--white);
+}
+
 .select {
   padding: 10px 14px;
   border-radius: var(--radius-sm);
@@ -467,6 +487,35 @@
   white-space: nowrap;
 }
 
+.contentIntroBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--gold-50, #fef9ec);
+  border: 1px solid var(--gold-200, #ead79a);
+  color: var(--text-700);
+}
+
+.contentBuilder {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.contentPairRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
 .lessonList {
   display: flex;
   flex-direction: column;
@@ -734,6 +783,12 @@
   box-shadow: 0 25px 50px rgba(0,0,0,0.15);
 }
 
+.lessonModal {
+  max-width: 640px;
+  max-height: min(90vh, 920px);
+  overflow-y: auto;
+}
+
 .modalTitle {
   font-family: var(--ff-display);
   font-size: 1.15rem;
@@ -768,6 +823,8 @@
   .section { padding: 22px 16px; }
   .formGrid { grid-template-columns: 1fr; }
   .formGrid3 { grid-template-columns: 1fr; }
+  .contentGrid { grid-template-columns: 1fr; }
+  .contentPairRow { grid-template-columns: 1fr; }
   .themeGrid { grid-template-columns: 1fr 1fr; }
   .xpRow { flex-wrap: wrap; }
   .xpLabel { min-width: 100%; }
@@ -782,6 +839,17 @@
   .lessonFilters { grid-template-columns: 1fr; }
   .newLessonBtn { width: 100%; }
   .lessonActions { width: 100%; }
+  .modalOverlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .lessonModal {
+    width: 100%;
+    max-width: none;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+    padding: 22px 16px 28px;
+  }
   .lessonActionBtn {
     flex: 1 1 calc(50% - 4px);
     text-align: center;
