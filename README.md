@@ -88,6 +88,7 @@ O script:
 - [deploy/vps/nginx-uniher.conf](C:/Users/User/projetoss/uniher/deploy/vps/nginx-uniher.conf)
 - [deploy/vps/nginx-uniher-https.conf](C:/Users/User/projetoss/uniher/deploy/vps/nginx-uniher-https.conf)
 - [deploy/vps/setup-https.sh](C:/Users/User/projetoss/uniher/deploy/vps/setup-https.sh)
+- [docs/OPERACAO_VPS.md](C:/Users/User/projetoss/uniher/docs/OPERACAO_VPS.md)
 
 ## Testes rápidos na VPS
 
