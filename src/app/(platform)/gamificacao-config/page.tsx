@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import styles from './gamificacao-config.module.css';
 
@@ -418,6 +418,8 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
 }
 
 export default function GamificacaoConfigPage() {
+  const lessonModalRef = useRef<HTMLDivElement | null>(null);
+
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
@@ -668,6 +670,29 @@ export default function GamificacaoConfigPage() {
   const lessonsToReview = visibleLessons.filter((lesson) => !lesson.isGlobal && !lesson.isValidated && getLessonScheduleState(lesson) !== 'past');
   const todayLessonsToReview = lessonsToReview.filter((lesson) => getLessonScheduleState(lesson) === 'today');
   const nextLessonsToReview = lessonsToReview.filter((lesson) => getLessonScheduleState(lesson) === 'future').slice(0, 3);
+
+  useEffect(() => {
+    if (!showLessonForm) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    window.scrollTo({ top: 0, behavior: 'auto' });
+
+    const frame = window.requestAnimationFrame(() => {
+      if (lessonModalRef.current) {
+        lessonModalRef.current.scrollTop = 0;
+      }
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [showLessonForm]);
 
   function closeLessonForm() {
     setShowLessonForm(false);
@@ -1703,7 +1728,7 @@ export default function GamificacaoConfigPage() {
       {/* Lesson Create/Edit Modal */}
       {showLessonForm && (
         <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) closeLessonForm(); }}>
-          <div className={`${styles.modal} ${styles.lessonModal}`}>
+          <div ref={lessonModalRef} className={`${styles.modal} ${styles.lessonModal}`}>
             <div className={styles.lessonModalHeader}>
               <div>
                 <h3 className={styles.modalTitle}>{editingLesson ? 'Editar Lição' : 'Nova Lição'}</h3>
@@ -1715,7 +1740,7 @@ export default function GamificacaoConfigPage() {
                 ✕
               </button>
             </div>
-
+            <div className={styles.lessonModalContent}>
             <div className={styles.lessonFormSection}>
               <div className={styles.lessonFormSectionHead}>
                 <span className={styles.lessonStep}>1</span>
@@ -1810,12 +1835,15 @@ export default function GamificacaoConfigPage() {
               {renderLessonContentEditor()}
             </div>
             </div>
+            </div>
 
+            <div className={styles.lessonModalFooter}>
             <div className={styles.saveRow}>
               <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.description}>
                 {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar Alterações' : 'Criar Lição'}
               </button>
               <button className={styles.saveBtnDanger} onClick={closeLessonForm} style={{ marginLeft: 8 }}>Cancelar</button>
+            </div>
             </div>
           </div>
         </div>

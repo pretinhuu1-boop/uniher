@@ -871,7 +871,9 @@
 .lessonModal {
   max-width: 640px;
   max-height: min(90vh, 920px);
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .lessonModalHeader {
@@ -880,6 +882,22 @@
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
+}
+
+.lessonModalContent {
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+
+.lessonModalFooter {
+  position: sticky;
+  bottom: 0;
+  margin: 0 -28px -28px;
+  padding: 16px 28px 20px;
+  border-top: 1px solid var(--border-1);
+  background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, #ffffff 28%);
+  backdrop-filter: blur(10px);
 }
 
 .lessonModalSubtitle {
@@ -1002,12 +1020,27 @@
   .lessonModal {
     width: 100%;
     max-width: none;
-    max-height: 92vh;
+    max-height: 100dvh;
+    min-height: 88dvh;
     border-radius: 20px 20px 0 0;
-    padding: 22px 16px 28px;
+    padding: 0;
   }
   .lessonModalHeader {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     gap: 12px;
+    margin-bottom: 0;
+    padding: 18px 16px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border-1);
+  }
+  .lessonModalContent {
+    padding: 14px 16px 20px;
+  }
+  .lessonModalFooter {
+    margin: 0;
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
   }
   .lessonReminder {
     padding: 14px;
@@ -1052,6 +1085,9 @@
   .saveRow {
     flex-direction: column;
     gap: 8px;
+  }
+  .saveRow button {
+    margin-left: 0 !important;
   }
   .modal {
     padding: 20px 16px;
