@@ -85,6 +85,8 @@ const patchLessonSchema = z.object({
   duration_seconds: z.number().int().min(30).max(3600).optional(),
   active: z.number().int().min(0).max(1).optional(),
   campaign_context: z.string().optional(),
+  validated: z.boolean().optional(),
+  validation_notes: z.string().max(500).optional(),
 });
 
 function parseLessonRow(row: Record<string, unknown>, masterAdmin: boolean) {
@@ -92,6 +94,7 @@ function parseLessonRow(row: Record<string, unknown>, masterAdmin: boolean) {
     ...row,
     content_json: row.content_json ? JSON.parse(row.content_json as string) : null,
     isGlobal: row.company_id === null,
+    isValidated: Boolean(row.validated_at),
     canManage:
       canManageLessonBySchedule(
         Number(row.week_number ?? 0),
@@ -178,8 +181,26 @@ export const PATCH = withRole('rh', 'admin')(async (req, { auth, params }) => {
     const fields: string[] = [];
     const values: unknown[] = [];
 
+    if (data.validated !== undefined) {
+      if (data.validated) {
+        fields.push("validated_at = datetime('now')");
+        fields.push('validated_by = ?');
+        values.push(auth.userId);
+        fields.push('validation_notes = ?');
+        values.push(data.validation_notes?.trim() || null);
+      } else {
+        fields.push('validated_at = NULL');
+        fields.push('validated_by = NULL');
+        fields.push('validation_notes = NULL');
+      }
+    } else if (data.validation_notes !== undefined) {
+      fields.push('validation_notes = ?');
+      values.push(data.validation_notes.trim() || null);
+    }
+
     for (const [key, val] of Object.entries(data)) {
       if (val === undefined) continue;
+      if (key === 'validated' || key === 'validation_notes') continue;
       if (key === 'content_json') {
         fields.push('content_json = ?');
         values.push(JSON.stringify(val));

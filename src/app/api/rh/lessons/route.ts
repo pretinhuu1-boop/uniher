@@ -190,9 +190,12 @@ export const GET = withRole('rh', 'admin')(async (req, { auth }) => {
         dl.day_of_week,
         dl.order_index,
         dl.xp_reward,
-        dl.duration_seconds,
-        dl.active,
-        dl.campaign_context,
+       dl.duration_seconds,
+       dl.active,
+       dl.campaign_context,
+        dl.validated_at,
+        dl.validated_by,
+        dl.validation_notes,
         dl.content_json,
         dl.company_id
        FROM daily_lessons dl
@@ -209,6 +212,7 @@ export const GET = withRole('rh', 'admin')(async (req, { auth }) => {
         ? JSON.parse(lesson.content_json as string)
         : null,
       isGlobal: lesson.company_id === null,
+      isValidated: Boolean(lesson.validated_at),
       canManage:
         canManageLessonBySchedule(
           Number(lesson.week_number ?? 0),

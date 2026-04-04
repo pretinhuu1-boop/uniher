@@ -187,6 +187,10 @@ interface Lesson {
   campaign_context: string | null;
   content_json: Record<string, unknown> | null;
   isGlobal: boolean;
+  isValidated?: boolean;
+  validated_at?: string | null;
+  validated_by?: string | null;
+  validation_notes?: string | null;
   canManage?: boolean;
 }
 
@@ -661,7 +665,7 @@ export default function GamificacaoConfigPage() {
     lessonsUrl, fetcher, { revalidateOnFocus: false }
   );
   const visibleLessons = lessonsData?.lessons ?? [];
-  const lessonsToReview = visibleLessons.filter((lesson) => !lesson.isGlobal && getLessonScheduleState(lesson) !== 'past');
+  const lessonsToReview = visibleLessons.filter((lesson) => !lesson.isGlobal && !lesson.isValidated && getLessonScheduleState(lesson) !== 'past');
   const todayLessonsToReview = lessonsToReview.filter((lesson) => getLessonScheduleState(lesson) === 'today');
   const nextLessonsToReview = lessonsToReview.filter((lesson) => getLessonScheduleState(lesson) === 'future').slice(0, 3);
 
@@ -992,6 +996,40 @@ export default function GamificacaoConfigPage() {
       else { showToast('Lição excluída', 'success'); mutateLessons(); }
     } catch { showToast('Erro de conexão', 'error'); }
     setDeletingLesson(null);
+  }
+
+  async function toggleLessonValidation(lesson: Lesson, validated: boolean) {
+    if (lesson.canManage === false) {
+      showToast('Essa lição não pode mais ser validada porque a data já passou.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/rh/lessons/${lesson.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          validated,
+          validation_notes: validated
+            ? `Validada em ${new Date().toLocaleDateString('pt-BR')}`
+            : '',
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        showToast(data.error || 'Erro ao atualizar validação da lição', 'error');
+        return;
+      }
+
+      showToast(
+        validated ? 'Lição marcada como validada.' : 'Lição voltou para pendente de validação.',
+        'success'
+      );
+      mutateLessons();
+    } catch {
+      showToast('Erro de conexão', 'error');
+    }
   }
 
   // â”€â”€ Debounced numeric inputs â”€â”€
@@ -1596,6 +1634,9 @@ export default function GamificacaoConfigPage() {
                     <div className={styles.lessonBadges}>
                       <span className={`${styles.lessonBadge} ${styles.lessonTypeBadge}`}>{normalizeText(LESSON_TYPE_LABELS[lesson.type] ?? lesson.type)}</span>
                       <span className={`${styles.lessonBadge} ${styles.lessonThemeBadge}`}>{normalizeText(THEME_LABELS[lesson.theme] ?? lesson.theme)}</span>
+                      <span className={`${styles.lessonBadge} ${lesson.isValidated ? styles.lessonValidatedBadge : styles.lessonPendingBadge}`}>
+                        {lesson.isValidated ? 'Validada' : 'Pendente'}
+                      </span>
                       <span className={`${styles.lessonBadge} ${
                         getLessonScheduleState(lesson) === 'past'
                           ? styles.lessonPastBadge
@@ -1612,6 +1653,13 @@ export default function GamificacaoConfigPage() {
                     {DAY_LABELS[lesson.day_of_week] ?? `Dia ${lesson.day_of_week}`} · ordem {lesson.order_index + 1} · {lesson.xp_reward} XP
                   </span>
                   {lesson.campaign_context && <span className={styles.lessonCampaign}>🏷️ {normalizeText(lesson.campaign_context)}</span>}
+                  {!lesson.isGlobal && (
+                    <span className={styles.lessonMetaText}>
+                      {lesson.isValidated
+                        ? `Status: validada${lesson.validated_at ? ` em ${new Date(lesson.validated_at).toLocaleDateString('pt-BR')}` : ''}`
+                        : 'Status: aguardando validação manual'}
+                    </span>
+                  )}
                   {!lesson.isGlobal && lesson.canManage === false && (
                     <span className={styles.lessonWarning}>
                       Essa lição já passou. A edição e a exclusão ficam liberadas somente antes ou no próprio dia.
@@ -1622,6 +1670,13 @@ export default function GamificacaoConfigPage() {
                     <span className={`${styles.lessonBadge} ${styles.lessonGlobalBadge}`}>Global</span>
                   ) : (
                     <>
+                      <button
+                        className={`${lesson.isValidated ? styles.saveBtnOutline : styles.saveBtnSuccess} ${styles.lessonActionBtn}`}
+                        onClick={() => toggleLessonValidation(lesson, !lesson.isValidated)}
+                        disabled={lesson.canManage === false}
+                      >
+                        {lesson.isValidated ? 'Voltar para pendente' : 'Marcar como validada'}
+                      </button>
                       <button className={`${styles.saveBtnSmall} ${styles.lessonActionBtn}`} onClick={() => openEditLesson(lesson)} disabled={lesson.canManage === false}>Editar</button>
                       <button className={`${styles.saveBtnDanger} ${styles.lessonActionBtn}`} onClick={() => deleteLesson(lesson.id)} disabled={deletingLesson === lesson.id || lesson.canManage === false}>
                         {deletingLesson === lesson.id ? '...' : 'Excluir'}
