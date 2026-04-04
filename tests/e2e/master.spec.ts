@@ -3,6 +3,7 @@
  * Cobre: login, empresas, usuários admin, health, system, backup, integrity
  */
 import { test, expect } from '@playwright/test';
+import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
@@ -23,12 +24,12 @@ test.describe('Admin Master — Autenticação e Gestão', () => {
     const body = await res.json();
 
     expect(body).toHaveProperty('user');
-    expect(body).toHaveProperty('accessToken');
     expect(body.user.email).toBe(ADMIN_EMAIL);
     expect(body.user.role).toBe('admin');
-    expect(typeof body.accessToken).toBe('string');
+    expect(body).not.toHaveProperty('accessToken');
 
-    accessToken = body.accessToken;
+    accessToken = extractAccessTokenFromSetCookie(res);
+    expect(accessToken).toBeTruthy();
   });
 
   test('POST /api/auth/login — rejeita senha incorreta', async ({ request }) => {

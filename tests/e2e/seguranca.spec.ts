@@ -3,6 +3,7 @@
  * Cobre: SQL injection, XSS, auth obrigatória, controle de role, rate limiting, IDOR, path traversal
  */
 import { test, expect } from '@playwright/test';
+import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
@@ -23,8 +24,7 @@ test.describe('Segurança — Testes de Proteção', () => {
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
     });
     if (adminRes.status() === 200) {
-      const body = await adminRes.json();
-      adminToken = body.accessToken;
+      adminToken = extractAccessTokenFromSetCookie(adminRes);
     }
 
     // Cria empresa para testes
@@ -59,7 +59,7 @@ test.describe('Segurança — Testes de Proteção', () => {
         data: { email: rhEmail, password: 'RhSeg@2026' },
       });
       if (rhLoginRes.status() === 200) {
-        rhToken = (await rhLoginRes.json()).accessToken;
+        rhToken = extractAccessTokenFromSetCookie(rhLoginRes);
       }
 
       // Cria colaboradora via convite
@@ -85,7 +85,7 @@ test.describe('Segurança — Testes de Proteção', () => {
       });
       if (regRes.status() === 201) {
         const regBody = await regRes.json();
-        colabToken = regBody.accessToken;
+        colabToken = extractAccessTokenFromSetCookie(regRes);
         // Aprovar
         await request.patch('/api/invites/approve', {
           headers: { Authorization: `Bearer ${rhToken}` },
@@ -96,7 +96,7 @@ test.describe('Segurança — Testes de Proteção', () => {
           data: { email: colabEmail, password: 'ColabSeg@2026' },
         });
         if (colabLogin.status() === 200) {
-          colabToken = (await colabLogin.json()).accessToken;
+          colabToken = extractAccessTokenFromSetCookie(colabLogin);
         }
       }
     }
@@ -333,7 +333,7 @@ test.describe('Segurança — Testes de Proteção', () => {
     // O rate limiter deve eventualmente bloquear
     // Se não bloqueou em 15 tentativas, pode ter threshold mais alto
     // Aceitável: bloqueou (429) ou continuou rejeitando (401)
-    expect(rateLimited || true).toBeTruthy();
+    expect(rateLimited).toBeTruthy();
   });
 
   // ─── IDOR — Acesso a dados de outra empresa ────────────────────────────────

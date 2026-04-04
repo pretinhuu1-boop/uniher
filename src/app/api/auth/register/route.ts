@@ -18,7 +18,6 @@ export async function POST(req: Request) {
     const result = await register(input);
     const response = NextResponse.json({
       user: result.user,
-      accessToken: result.accessToken,
     }, { status: 201 });
     return setAuthCookiesOnResponse(response, result.accessToken, result.refreshToken);
   } catch (error) {

@@ -3,6 +3,7 @@
  * Cobre: criação de RH via admin, login RH, dashboard, convites, aprovações, objetivos, permissões
  */
 import { test, expect } from '@playwright/test';
+import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
@@ -30,9 +31,7 @@ test.describe('RH — Painel da Empresa', () => {
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
     });
     expect(res.status()).toBe(200);
-    const cookies = res.headers()['set-cookie'] || '';
-    const match = cookies.match(/uniher-access-token=([^;]+)/);
-    adminToken = match?.[1] || '';
+    adminToken = extractAccessTokenFromSetCookie(res);
     expect(adminToken).toBeTruthy();
   });
 
@@ -76,9 +75,7 @@ test.describe('RH — Painel da Empresa', () => {
     });
 
     expect(res.status()).toBe(200);
-    const cookies = res.headers()['set-cookie'] || '';
-    const match = cookies.match(/uniher-access-token=([^;]+)/);
-    rhToken = match?.[1] || '';
+    rhToken = extractAccessTokenFromSetCookie(res);
     expect(rhToken).toBeTruthy();
     const body = await res.json();
     expect(body.user.role).toBe('rh');
@@ -184,7 +181,7 @@ test.describe('RH — Painel da Empresa', () => {
     expect(res.status()).toBe(201);
     const body = await res.json();
     expect(body).toHaveProperty('user');
-    expect(body).toHaveProperty('accessToken');
+    expect(body).not.toHaveProperty('accessToken');
     invitedUserId = body.user.id;
   });
 

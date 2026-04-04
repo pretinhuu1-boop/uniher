@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Rotas que nao precisam de autenticacao
+const isProd = process.env.NODE_ENV === 'production';
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+const hasHttpsAppUrl = /^https:\/\//i.test(appUrl);
+const isTrustworthyOrigin =
+  hasHttpsAppUrl || /^http:\/\/localhost(?::\d+)?$/i.test(appUrl);
+
 const PUBLIC_ROUTES = [
   '/',
   '/auth',
@@ -19,7 +24,6 @@ const PUBLIC_ROUTES = [
   '/api/push/vapid-key',
 ];
 
-// Prefixos publicos
 const PUBLIC_PREFIXES = [
   '/api/auth/',
   '/api/invites/',
@@ -31,76 +35,150 @@ const PUBLIC_PREFIXES = [
 function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.includes(pathname)) return true;
   if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
-  // Arquivos estaticos
   if (pathname.includes('.')) return true;
   return false;
 }
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+function generateNonce() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes));
+}
 
-  // Rotas publicas passam direto
-  if (isPublicRoute(pathname)) {
-    return NextResponse.next();
+function buildCsp(nonce: string) {
+  return [
+    "default-src 'self'",
+    isProd
+      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`,
+    `style-src 'self' 'nonce-${nonce}'`,
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://wa.me",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    ...(hasHttpsAppUrl ? ['upgrade-insecure-requests'] : []),
+  ].join('; ');
+}
+
+function withSecurityHeaders(response: NextResponse, nonce: string) {
+  response.headers.set('Content-Security-Policy', buildCsp(nonce));
+  response.headers.set('x-nonce', nonce);
+
+  if (isTrustworthyOrigin) {
+    response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+    response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
   }
 
-  // Verificar token de acesso no cookie ou header Authorization
+  return response;
+}
+
+function nextWithNonce(request: NextRequest, nonce: string) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  return withSecurityHeaders(
+    NextResponse.next({
+      request: { headers: requestHeaders },
+    }),
+    nonce,
+  );
+}
+
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const nonce = generateNonce();
+
+  if (isPublicRoute(pathname)) {
+    return nextWithNonce(request, nonce);
+  }
+
   const cookieToken = request.cookies.get('uniher-access-token')?.value;
   const authHeader = request.headers.get('Authorization');
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
   const accessToken = cookieToken || bearerToken;
 
   if (!accessToken) {
-    // Se e API, retornar 401
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return withSecurityHeaders(
+        NextResponse.json({ error: 'Nao autenticado' }, { status: 401 }),
+        nonce,
+      );
     }
-    // Se e pagina, redirecionar para login
+
     const loginUrl = new URL('/auth', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    return withSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
   }
 
-  // Verificar se o JWT e valido (sem checar DB, apenas assinatura)
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(accessToken, secret);
-
-    // Redirect/deny non-admin users trying to access admin pages or admin APIs
+    const role = typeof payload.role === 'string' ? payload.role : '';
+    const mustChangePassword = payload.mustChangePassword === true;
     const isAdminSurface = pathname.startsWith('/admin') || pathname.startsWith('/api/admin/');
-    if ((payload as any).role !== 'admin' && isAdminSurface) {
+
+    if (role !== 'admin' && isAdminSurface) {
       if (pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+        return withSecurityHeaders(
+          NextResponse.json({ error: 'Permissao insuficiente' }, { status: 403 }),
+          nonce,
+        );
       }
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+
+      return withSecurityHeaders(
+        NextResponse.redirect(new URL('/dashboard', request.url)),
+        nonce,
+      );
     }
 
-    // Redirecionar para troca obrigatoria de senha se necessario
-    if ((payload as any).mustChangePassword === true) {
-      const allowedPaths = ['/primeiro-acesso', '/api/auth/change-password', '/api/auth/confirm-first-access', '/api/auth/me', '/api/auth/logout', '/api/auth/refresh', '/api/users/me'];
-      if (!allowedPaths.some(p => pathname.startsWith(p))) {
+    if (mustChangePassword) {
+      const allowedPaths = [
+        '/primeiro-acesso',
+        '/api/auth/change-password',
+        '/api/auth/confirm-first-access',
+        '/api/auth/me',
+        '/api/auth/logout',
+        '/api/auth/refresh',
+        '/api/users/me',
+      ];
+
+      if (!allowedPaths.some((path) => pathname.startsWith(path))) {
         if (pathname.startsWith('/api/')) {
-          return NextResponse.json({ error: 'Troca de senha obrigatória', mustChangePassword: true }, { status: 403 });
+          return withSecurityHeaders(
+            NextResponse.json(
+              { error: 'Troca de senha obrigatoria', mustChangePassword: true },
+              { status: 403 },
+            ),
+            nonce,
+          );
         }
-        return NextResponse.redirect(new URL('/primeiro-acesso', request.url));
+
+        return withSecurityHeaders(
+          NextResponse.redirect(new URL('/primeiro-acesso', request.url)),
+          nonce,
+        );
       }
     }
 
-    return NextResponse.next();
+    return nextWithNonce(request, nonce);
   } catch {
-    // Token invalido ou expirado
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
+      return withSecurityHeaders(
+        NextResponse.json({ error: 'Token expirado' }, { status: 401 }),
+        nonce,
+      );
     }
-    // If refresh token exists, let page load — client-side interceptor will handle reauth
+
     const refreshToken = request.cookies.get('uniher-refresh-token')?.value;
     if (refreshToken) {
-      return NextResponse.next();
+      return nextWithNonce(request, nonce);
     }
-    // No refresh token either — full redirect to login
+
     const loginUrl = new URL('/auth', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    return withSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
   }
 }
 
