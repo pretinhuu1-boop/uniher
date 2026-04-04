@@ -619,7 +619,7 @@ export default function ColaboradoraPage() {
         </div>
 
         {!feedSettings?.companyFeedEnabled && (
-          <p className="text-[11px] text-uni-text-400 mb-3">Visao de empresa inteira desativada pelo RH/Admin.</p>
+          <p className="text-[11px] text-uni-text-400 mb-3">Visão da empresa inteira desativada pelo RH/Admin.</p>
         )}
 
         {feedLoading ? (
@@ -631,7 +631,7 @@ export default function ColaboradoraPage() {
         ) : (socialFeed as FeedItem[]).length === 0 ? (
           <div className="text-center py-8 bg-cream-50 border border-dashed border-border-1 rounded-xl">
             <p className="text-sm font-bold text-uni-text-700">Ainda sem atividades nesse feed</p>
-            <p className="text-xs text-uni-text-400 mt-1">Quando alguem concluir missoes e desbloquear badges, aparece aqui.</p>
+            <p className="text-xs text-uni-text-400 mt-1">Quando alguém concluir missões e desbloquear badges, o registro aparece aqui.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -648,7 +648,7 @@ export default function ColaboradoraPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-uni-text-700">
-                    <strong>{item.isSelf ? 'Voce' : item.userName}</strong> {item.message}
+                    <strong>{item.isSelf ? 'Você' : item.userName}</strong> {item.message}
                   </p>
                   <p className="text-[11px] text-uni-text-400 mt-0.5">{formatFeedDate(item.createdAt)}</p>
                 </div>

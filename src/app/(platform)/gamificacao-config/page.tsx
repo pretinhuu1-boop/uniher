@@ -55,17 +55,64 @@ const LESSON_TYPE_LABELS: Record<string, string> = {
 };
 
 const CONTENT_TEMPLATES: Record<string, object> = {
-  pilula: { tip: 'Texto informativo aqui.', fact: 'Dado científico relevante.', action: 'Ação prática sugerida.' },
-  quiz: { question: 'Pergunta aqui?', options: ['Opção A', 'Opção B', 'Opção C', 'Opção D'], correct: 0 },
-  reflexao: { reflection: 'Como você se sente em relação a este tema hoje?' },
+  pilula: {
+    tip: 'Explique em linguagem simples o aprendizado principal desta lição.',
+    fact: 'Compartilhe um fato confiável ou orientação importante sobre o tema.',
+    action: 'Sugira uma ação prática que a colaboradora possa aplicar hoje.',
+  },
+  quiz: {
+    question: 'Escreva uma pergunta objetiva sobre o conteúdo da lição.',
+    options: [
+      'Alternativa correta',
+      'Alternativa incorreta 1',
+      'Alternativa incorreta 2',
+      'Alternativa incorreta 3',
+    ],
+    correct: 0,
+  },
+  reflexao: { reflection: 'Escreva uma pergunta de reflexão que ajude a colaboradora a pensar sobre a própria rotina.' },
   lacuna: { text: 'Complete: A mulher precisa de ___ horas de sono por dia.', options: ['6', '7-9', '10', '12'], correct: 1 },
-  verdadeiro_falso: { statement: 'Afirmação aqui.', correct: true, explanation: 'Explicação.' },
-  ordenar: { instruction: 'Coloque na ordem correta:', items: ['Passo 1', 'Passo 2', 'Passo 3', 'Passo 4'], correct_order: [0, 1, 2, 3] },
-  parear: { pairs: [{ left: 'Termo A', right: 'Definição A' }, { left: 'Termo B', right: 'Definição B' }] },
-  historia: { scenario: 'Cenário aqui.', question: 'O que fazer?', options: ['A', 'B', 'C', 'D'], correct: 0 },
-  flashcard: { cards: [{ front: 'Pergunta', back: 'Resposta' }, { front: 'Pergunta 2', back: 'Resposta 2' }] },
-  imagem: { question: 'Qual opção é mais saudável?', options: [{ emoji: '🥗', label: 'Salada' }, { emoji: '🍔', label: 'Hambúrguer' }], correct: 0 },
-  desafio_dia: { challenge: 'Descrição do desafio.', duration: 'hoje', tips: ['Dica 1', 'Dica 2'] },
+  verdadeiro_falso: {
+    statement: 'Escreva uma afirmação clara para a colaboradora avaliar como verdadeira ou falsa.',
+    correct: true,
+    explanation: 'Explique por que essa afirmação está certa ou errada.',
+  },
+  ordenar: {
+    instruction: 'Descreva a ordem correta das etapas desta rotina ou cuidado.',
+    items: ['Primeira etapa', 'Segunda etapa', 'Terceira etapa', 'Quarta etapa'],
+    correct_order: [0, 1, 2, 3],
+  },
+  parear: {
+    pairs: [
+      { left: 'Sintoma', right: 'Orientação correspondente' },
+      { left: 'Hábito saudável', right: 'Benefício principal' },
+    ],
+  },
+  historia: {
+    scenario: 'Descreva uma situação realista vivida por uma colaboradora.',
+    question: 'Qual seria a melhor decisão nessa situação?',
+    options: ['Opção recomendada', 'Opção inadequada 1', 'Opção inadequada 2', 'Opção inadequada 3'],
+    correct: 0,
+  },
+  flashcard: {
+    cards: [
+      { front: 'Conceito ou pergunta', back: 'Resposta curta e clara' },
+      { front: 'Sinal de atenção', back: 'O que observar ou fazer' },
+    ],
+  },
+  imagem: {
+    question: 'Escreva a pergunta que a colaboradora deve responder ao analisar as opções.',
+    options: [
+      { emoji: '🥗', label: 'Opção saudável' },
+      { emoji: '🍔', label: 'Opção menos adequada' },
+    ],
+    correct: 0,
+  },
+  desafio_dia: {
+    challenge: 'Descreva um desafio simples e possível de cumprir no mesmo dia.',
+    duration: 'hoje',
+    tips: ['Explique como começar', 'Diga o que observar ao concluir'],
+  },
 };
 
 interface Lesson {
