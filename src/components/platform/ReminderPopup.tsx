@@ -82,7 +82,7 @@ export default function ReminderPopup() {
   const [rescheduleTime, setRescheduleTime] = useState('08:00');
   const [rescheduleError, setRescheduleError] = useState('');
 
-  const shouldLoad = !isLoading && !!user && pathname !== '/auth';
+  const shouldLoad = !isLoading && !!user && pathname !== '/auth' && pathname !== '/primeiro-acesso';
   const { data, mutate } = useSWR<ReminderNotification[]>(
     shouldLoad ? '/api/notifications' : null,
     fetcher,
