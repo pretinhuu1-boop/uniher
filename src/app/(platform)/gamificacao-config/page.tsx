@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import useSWR, { mutate } from 'swr';
 import { createPortal } from 'react-dom';
 import styles from './gamificacao-config.module.css';
@@ -511,6 +511,7 @@ export default function GamificacaoConfigPage() {
   const lessonStepSectionRefs = useRef<Record<number, HTMLDivElement | null>>({ 1: null, 2: null, 3: null });
   const [isLessonEditorMobile, setIsLessonEditorMobile] = useState(false);
   const [lessonEditorStep, setLessonEditorStep] = useState(1);
+  const [lessonEditorSessionKey, setLessonEditorSessionKey] = useState(0);
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -807,7 +808,7 @@ export default function GamificacaoConfigPage() {
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!showLessonForm) return;
 
     const previousBodyOverflow = document.body.style.overflow;
@@ -848,7 +849,7 @@ export default function GamificacaoConfigPage() {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
     };
-  }, [showLessonForm, lessonEditorStep, isLessonEditorMobile]);
+  }, [showLessonForm, lessonEditorStep, isLessonEditorMobile, lessonEditorSessionKey]);
 
   const isStepVisible = (step: number) => !isLessonEditorMobile || lessonEditorStep === step;
 
@@ -859,6 +860,7 @@ export default function GamificacaoConfigPage() {
   }
 
   function openCreateLesson() {
+    setLessonEditorSessionKey((current) => current + 1);
     setEditingLesson(null);
     setLessonEditorStep(1);
     setLessonContent(cloneLessonTemplate('pilula'));
@@ -883,6 +885,7 @@ export default function GamificacaoConfigPage() {
       return;
     }
 
+    setLessonEditorSessionKey((current) => current + 1);
     setLessonEditorStep(1);
     setEditingLesson(lesson);
     setLessonContent(sanitizeLessonContent(lesson.type, (lesson.content_json ?? {}) as LessonContent));
@@ -1932,7 +1935,7 @@ export default function GamificacaoConfigPage() {
       <BodyPortal>
       {showLessonForm && (
         <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) closeLessonForm(); }}>
-          <div ref={lessonModalRef} tabIndex={-1} className={`${styles.modal} ${styles.lessonModal}`}>
+          <div key={lessonEditorSessionKey} ref={lessonModalRef} tabIndex={-1} className={`${styles.modal} ${styles.lessonModal}`}>
             <div className={styles.lessonModalHeader}>
               <div>
                 <h3 className={styles.modalTitle}>{editingLesson ? 'Editar Lição' : 'Nova Lição'}</h3>

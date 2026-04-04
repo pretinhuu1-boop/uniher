@@ -49,6 +49,7 @@ echo "[3/6] Garantindo pasta de dados..."
 mkdir -p data backups
 
 echo "[4/6] Build de producao..."
+rm -rf .next
 npm run build
 
 echo "[4.1/6] Preparando standalone..."
