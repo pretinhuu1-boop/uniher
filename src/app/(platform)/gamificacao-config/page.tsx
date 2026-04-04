@@ -419,6 +419,8 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
 
 export default function GamificacaoConfigPage() {
   const lessonModalRef = useRef<HTMLDivElement | null>(null);
+  const [isLessonEditorMobile, setIsLessonEditorMobile] = useState(false);
+  const [lessonEditorStep, setLessonEditorStep] = useState(1);
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -672,6 +674,23 @@ export default function GamificacaoConfigPage() {
   const nextLessonsToReview = lessonsToReview.filter((lesson) => getLessonScheduleState(lesson) === 'future').slice(0, 3);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const syncViewport = () => setIsLessonEditorMobile(mediaQuery.matches);
+
+    syncViewport();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', syncViewport);
+      return () => mediaQuery.removeEventListener('change', syncViewport);
+    }
+
+    mediaQuery.addListener(syncViewport);
+    return () => mediaQuery.removeListener(syncViewport);
+  }, []);
+
+  useEffect(() => {
     if (!showLessonForm) return;
 
     const previousBodyOverflow = document.body.style.overflow;
@@ -692,15 +711,19 @@ export default function GamificacaoConfigPage() {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
     };
-  }, [showLessonForm]);
+  }, [showLessonForm, lessonEditorStep]);
+
+  const isStepVisible = (step: number) => !isLessonEditorMobile || lessonEditorStep === step;
 
   function closeLessonForm() {
     setShowLessonForm(false);
     setEditingLesson(null);
+    setLessonEditorStep(1);
   }
 
   function openCreateLesson() {
     setEditingLesson(null);
+    setLessonEditorStep(1);
     setLessonContent(cloneLessonTemplate('pilula'));
     setLessonForm({
       title: '',
@@ -723,6 +746,7 @@ export default function GamificacaoConfigPage() {
       return;
     }
 
+    setLessonEditorStep(1);
     setEditingLesson(lesson);
     setLessonContent(sanitizeLessonContent(lesson.type, (lesson.content_json ?? {}) as LessonContent));
     setLessonForm({
@@ -1741,7 +1765,21 @@ export default function GamificacaoConfigPage() {
               </button>
             </div>
             <div className={styles.lessonModalContent}>
-            <div className={styles.lessonFormSection}>
+            {isLessonEditorMobile && (
+              <div className={styles.lessonMobileProgress}>
+                <span className={styles.lessonMobileProgressLabel}>Etapa {lessonEditorStep} de 3</span>
+                <div className={styles.lessonMobileProgressDots} aria-hidden="true">
+                  {[1, 2, 3].map((step) => (
+                    <span
+                      key={step}
+                      className={`${styles.lessonMobileProgressDot} ${lessonEditorStep === step ? styles.lessonMobileProgressDotActive : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isStepVisible(1) && <div className={styles.lessonFormSection}>
               <div className={styles.lessonFormSectionHead}>
                 <span className={styles.lessonStep}>1</span>
                 <div>
@@ -1760,7 +1798,7 @@ export default function GamificacaoConfigPage() {
               </div>
             </div>
 
-            <div className={styles.formGrid3}>
+              <div className={styles.formGrid3}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Tipo *</label>
                 <select className={styles.select} value={lessonForm.type} onChange={e => handleLessonTypeChange(e.target.value)}>
@@ -1777,10 +1815,10 @@ export default function GamificacaoConfigPage() {
                 <label className={styles.label}>XP</label>
                 <input type="number" className={styles.input} min={10} max={100} value={lessonForm.xp_reward} onChange={e => setLessonForm(f => ({ ...f, xp_reward: Number(e.target.value) }))} />
               </div>
-            </div>
-            </div>
+              </div>
+            </div>}
 
-            <div className={styles.lessonFormSection}>
+            {isStepVisible(2) && <div className={styles.lessonFormSection}>
               <div className={styles.lessonFormSectionHead}>
                 <span className={styles.lessonStep}>2</span>
                 <div>
@@ -1806,7 +1844,7 @@ export default function GamificacaoConfigPage() {
                 <input type="number" className={styles.input} min={0} max={99} value={lessonForm.order_index} onChange={e => setLessonForm(f => ({ ...f, order_index: Math.max(0, Number(e.target.value) || 0) }))} />
               </div>
             </div>
-            <div className={styles.formGrid}>
+              <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Duração (seg)</label>
                 <input type="number" className={styles.input} min={30} value={lessonForm.duration_seconds} onChange={e => setLessonForm(f => ({ ...f, duration_seconds: Number(e.target.value) }))} />
@@ -1815,10 +1853,10 @@ export default function GamificacaoConfigPage() {
                 <label className={styles.label}>Campanha <span className={styles.labelHint}>(opcional — ex: Outubro Rosa)</span></label>
                 <input className={styles.input} placeholder="Ex: Outubro Rosa - Câncer de Mama" value={lessonForm.campaign_context} onChange={e => setLessonForm(f => ({ ...f, campaign_context: e.target.value }))} />
               </div>
-            </div>
-            </div>
+              </div>
+            </div>}
 
-            <div className={styles.lessonFormSection}>
+            {isStepVisible(3) && <div className={styles.lessonFormSection}>
               <div className={styles.lessonFormSectionHead}>
                 <span className={styles.lessonStep}>3</span>
                 <div>
@@ -1826,24 +1864,53 @@ export default function GamificacaoConfigPage() {
                   <p>Preencha como a colaboradora vai ler, responder ou refletir nessa etapa.</p>
                 </div>
               </div>
-            <div className={styles.fieldGroup}>
+              <div className={styles.fieldGroup}>
               <label className={styles.label}>Conteúdo da lição *</label>
               <div className={styles.contentIntroBox}>
                 <strong>{normalizeText(LESSON_TYPE_LABELS[lessonForm.type] ?? lessonForm.type)} · {LESSON_TYPE_HELP[lessonForm.type]?.title}</strong>
                 <span className={styles.labelHint}>{LESSON_TYPE_HELP[lessonForm.type]?.description}</span>
               </div>
               {renderLessonContentEditor()}
-            </div>
-            </div>
+              </div>
+            </div>}
             </div>
 
             <div className={styles.lessonModalFooter}>
+            {isLessonEditorMobile ? (
+              <div className={styles.lessonMobileFooterActions}>
+                <button
+                  className={styles.saveBtnOutline}
+                  onClick={() => {
+                    if (lessonEditorStep === 1) {
+                      closeLessonForm();
+                      return;
+                    }
+                    setLessonEditorStep((current) => Math.max(1, current - 1));
+                  }}
+                >
+                  {lessonEditorStep === 1 ? 'Cancelar' : 'Voltar'}
+                </button>
+                {lessonEditorStep < 3 ? (
+                  <button
+                    className={styles.saveBtn}
+                    onClick={() => setLessonEditorStep((current) => Math.min(3, current + 1))}
+                  >
+                    Continuar
+                  </button>
+                ) : (
+                  <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.description}>
+                    {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar Alterações' : 'Criar Lição'}
+                  </button>
+                )}
+              </div>
+            ) : (
             <div className={styles.saveRow}>
               <button className={styles.saveBtn} onClick={saveLesson} disabled={lessonSaving || !lessonForm.title || !lessonForm.description}>
                 {lessonSaving ? 'Salvando...' : editingLesson ? 'Salvar Alterações' : 'Criar Lição'}
               </button>
               <button className={styles.saveBtnDanger} onClick={closeLessonForm} style={{ marginLeft: 8 }}>Cancelar</button>
             </div>
+            )}
             </div>
           </div>
         </div>

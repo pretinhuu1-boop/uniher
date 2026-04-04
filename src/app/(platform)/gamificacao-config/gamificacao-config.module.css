@@ -900,6 +900,43 @@
   backdrop-filter: blur(10px);
 }
 
+.lessonMobileProgress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.lessonMobileProgressLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-600);
+}
+
+.lessonMobileProgressDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lessonMobileProgressDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border-1);
+}
+
+.lessonMobileProgressDotActive {
+  background: var(--gold-500, #c9952e);
+}
+
+.lessonMobileFooterActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .lessonModalSubtitle {
   margin-top: 6px;
   font-size: 0.84rem;
@@ -1042,6 +1079,9 @@
     margin: 0;
     padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
   }
+  .lessonMobileFooterActions {
+    grid-template-columns: 1fr 1fr;
+  }
   .lessonReminder {
     padding: 14px;
   }
@@ -1088,6 +1128,9 @@
   }
   .saveRow button {
     margin-left: 0 !important;
+  }
+  .lessonMobileFooterActions {
+    grid-template-columns: 1fr;
   }
   .modal {
     padding: 20px 16px;
