@@ -1,7 +1,8 @@
 ﻿'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import useSWR, { mutate } from 'swr';
+import { createPortal } from 'react-dom';
 import styles from './gamificacao-config.module.css';
 
 const fetcher = (url: string) => fetch(url).then(r => {
@@ -489,6 +490,19 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
       {type === 'success' ? '✓ ' : '✕ '}{message}
     </div>
   );
+}
+
+function BodyPortal({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(children, document.body);
 }
 
 export default function GamificacaoConfigPage() {
@@ -1768,7 +1782,7 @@ export default function GamificacaoConfigPage() {
               {Object.entries(LESSON_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{normalizeText(v)}</option>)}
             </select>
             <input className={styles.input} type="number" min={1} max={52} placeholder="Semana" value={lessonWeekFilter} onChange={e => { setLessonWeekFilter(e.target.value); setLessonPage(1); }} />
-            <button className={`${styles.saveBtn} ${styles.newLessonBtn}`} onClick={openCreateLesson}>+ Nova Lição</button>
+            <button type="button" className={`${styles.saveBtn} ${styles.newLessonBtn}`} onClick={openCreateLesson}>+ Nova Lição</button>
           </div>
 
           {/* Lesson list */}
@@ -1855,6 +1869,7 @@ export default function GamificacaoConfigPage() {
       </div>
 
       {/* Lesson Create/Edit Modal */}
+      <BodyPortal>
       {showLessonForm && (
         <div className={styles.modalOverlay} onClick={e => { if (e.target === e.currentTarget) closeLessonForm(); }}>
           <div ref={lessonModalRef} className={`${styles.modal} ${styles.lessonModal}`}>
@@ -2030,6 +2045,7 @@ export default function GamificacaoConfigPage() {
           </div>
         </div>
       )}
+      </BodyPortal>
 
       {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
