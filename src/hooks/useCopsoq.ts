@@ -127,6 +127,11 @@ export function useCopsoq(initialLocale: Locale = 'pt') {
         return;
       }
 
+      if (res.status === 503) {
+        // Integração indisponível (ex.: Yavix ainda não habilitada) — não sugerir retry imediato.
+        throw new Error('A avaliação está temporariamente indisponível. Tente mais tarde.');
+      }
+
       if (!res.ok) {
         throw new Error('Não foi possível carregar o questionário. Tente novamente.');
       }
@@ -249,6 +254,12 @@ export function useCopsoq(initialLocale: Locale = 'pt') {
         await loadBootstrap(state.locale);
         return true;
       }
+      if (res.status === 503) {
+        if (mounted.current) {
+          setState((s) => ({ ...s, error: 'A avaliação está temporariamente indisponível. Tente mais tarde.' }));
+        }
+        return false;
+      }
       throw new Error('consent-failed');
     } catch {
       if (mounted.current) {
@@ -292,6 +303,13 @@ export function useCopsoq(initialLocale: Locale = 'pt') {
           setState((s) => ({ ...s, submitting: false, missing }));
         }
         return { done: false, missing };
+      }
+
+      if (res.status === 503) {
+        if (mounted.current) {
+          setState((s) => ({ ...s, submitting: false, error: 'A avaliação está temporariamente indisponível. Tente mais tarde.' }));
+        }
+        return { done: false, missing: [] };
       }
 
       throw new Error('submit-failed');
