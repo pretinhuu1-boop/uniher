@@ -56,6 +56,10 @@ export interface CopsoqAnswerInput {
 
 export interface CopsoqSubmitResult {
   status: 'DONE';
+  // Recompensa de PARTICIPAÇÃO (derivada do ATO de concluir, nunca do conteúdo/score).
+  // INVARIANTE LGPD: NUNCA adicionar aqui answers/optionIndex/value/score/dimensão.
+  xpEarned?: number;
+  alreadyAwarded?: boolean;
 }
 
 /** 422 no submit quando incompleto */

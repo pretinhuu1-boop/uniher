@@ -238,26 +238,33 @@ export default function CopsoqFlow({ locale = 'pt' }: CopsoqFlowProps) {
               <p style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }} aria-hidden="true">🎉</p>
               <h3 className={styles.questionTitle}>Questionário concluído!</h3>
               <p className={styles.questionSub} style={{ marginBottom: '1.5rem' }}>
-                Obrigado por participar da avaliação psicossocial. Suas respostas são confidenciais.
+                Obrigado por participar da avaliação psicossocial. Suas respostas são confidenciais e nunca entram em ranking.
               </p>
-              {/* TODO(gamificação): creditar XP por CONCLUIR (participação), nunca pelo
-                  conteúdo das respostas (SPEC §6.7). Placeholder visual abaixo. */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '0.6rem 1rem',
-                  borderRadius: 'var(--radius-2xl)',
-                  background: 'var(--rose-50)',
-                  color: 'var(--rose-500)',
-                  fontFamily: 'var(--ff-body)',
-                  fontWeight: 700,
-                  fontSize: '0.9rem',
-                }}
-              >
-                ⭐ +XP por participação (em breve)
-              </div>
+              {/* XP por CONCLUIR (participação), NUNCA pelo conteúdo/score das respostas (SPEC §6.7).
+                  alreadyAwarded → mensagem neutra, sem celebração de XP (não treinar "completar por completar"). */}
+              {c.reward && !c.reward.alreadyAwarded && c.reward.xpEarned > 0 && (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '0.6rem 1rem',
+                    borderRadius: 'var(--radius-2xl)',
+                    background: 'var(--rose-50)',
+                    color: 'var(--rose-500)',
+                    fontFamily: 'var(--ff-body)',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  ⭐ +{c.reward.xpEarned} XP por participar
+                </div>
+              )}
+              {c.reward?.alreadyAwarded && (
+                <p className={styles.questionSub} style={{ fontSize: '0.85rem' }}>
+                  Você já havia concluído esta avaliação. Obrigado por cuidar de você. 💜
+                </p>
+              )}
             </div>
           )}
         </div>

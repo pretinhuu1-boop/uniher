@@ -10,6 +10,7 @@
     "db:seed": "tsx src/lib/db/seed.ts",
     "db:reset": "del data\\uniher.db && npm run db:seed",
     "test": "cd tests && npx playwright test --config=playwright.config.ts",
+    "test:unit": "vitest run",
     "test:master": "cd tests && npx playwright test --config=playwright.config.ts --project=master",
     "test:rh": "cd tests && npx playwright test --config=playwright.config.ts --project=rh",
     "test:colaboradora": "cd tests && npx playwright test --config=playwright.config.ts --project=colaboradora",

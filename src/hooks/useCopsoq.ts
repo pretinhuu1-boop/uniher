@@ -50,6 +50,8 @@ interface UseCopsoqState {
   consenting: boolean;
   /** code da 1ª pergunta pendente a receber foco (a11y); null = nada a focar */
   focusCode: number | null;
+  /** recompensa de PARTICIPAÇÃO após DONE (XP por concluir, nunca por conteúdo); null até submeter */
+  reward: { xpEarned: number; alreadyAwarded: boolean } | null;
 }
 
 const INITIAL: UseCopsoqState = {
@@ -65,6 +67,7 @@ const INITIAL: UseCopsoqState = {
   submitting: false,
   consenting: false,
   focusCode: null,
+  reward: null,
 };
 
 function readSessionId(): string | null {
@@ -267,8 +270,17 @@ export function useCopsoq(initialLocale: Locale = 'pt') {
       });
 
       if (res.status === 200) {
+        // Recompensa de PARTICIPAÇÃO (xpEarned/alreadyAwarded) — só o ATO de concluir,
+        // nunca conteúdo/score. O corpo é opcional; sem ele, segue sem recompensa visível.
+        let reward: { xpEarned: number; alreadyAwarded: boolean } | null = null;
+        try {
+          const body = (await res.json()) as { xpEarned?: number; alreadyAwarded?: boolean };
+          reward = { xpEarned: body.xpEarned ?? 0, alreadyAwarded: body.alreadyAwarded ?? false };
+        } catch {
+          /* corpo ausente/inválido — done sem recompensa */
+        }
         if (mounted.current) {
-          setState((s) => ({ ...s, submitting: false, screen: 'done', missing: [] }));
+          setState((s) => ({ ...s, submitting: false, screen: 'done', missing: [], reward }));
         }
         return { done: true, missing: [] };
       }
@@ -375,6 +387,7 @@ export function useCopsoq(initialLocale: Locale = 'pt') {
     submitting: state.submitting,
     consenting: state.consenting,
     focusCode: state.focusCode,
+    reward: state.reward,
     // derivados
     questions,
     questionItems,
