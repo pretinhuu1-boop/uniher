@@ -199,6 +199,11 @@ export interface SubmitResult {
 /** Valida completude (todas as QUESTION respondidas) e finaliza se completo. */
 export function submit(userId: string): SubmitResult {
   const session = getOrInit(userId);
+  // Idempotência: sessão já finalizada não é re-mutada nem reprocessada (defesa em
+  // profundidade para o crédito one-shot de gamificação). Ver SPEC §9 (reabertura = Onda 0).
+  if (session.status === 'DONE') {
+    return { done: true, missing: [] };
+  }
   const required = QUESTIONS.filter((qq) => qq.type === 'QUESTION');
   const missing = required
     .filter((qq) => !session.answers.has(qq.code))
