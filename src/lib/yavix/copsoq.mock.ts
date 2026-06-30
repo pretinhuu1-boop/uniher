@@ -47,6 +47,10 @@ function q(
 }
 
 // ── Definição do formulário (~12 perguntas: 11 QUESTION + 1 ELEMENT/TEXT) ─────
+// ⚠️ FIXTURE DE UI — NÃO é o instrumento COPSOQ real (validado tem ~120 itens com
+//    dimensões/cut-offs). Serve só para o front rodar sem a Yavix (YAVIX_MOCK=1).
+//    O instrumento real vem de GET /form da Yavix (Onda 3). NUNCA tratar como
+//    contrato de paridade COPSOQ nem subir com YAVIX_MOCK ligado em produção.
 const QUESTIONS: CopsoqQuestion[] = [
   // Bloco informativo (ELEMENT/TEXT) — não conta no progresso nem no submit.
   {

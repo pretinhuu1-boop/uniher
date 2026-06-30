@@ -20,7 +20,7 @@ function SaveIndicator({ saveState }: { saveState: ReturnType<typeof useCopsoq>[
   const map: Record<string, { text: string; color: string }> = {
     saving: { text: 'Salvando…', color: 'var(--text-400)' },
     saved: { text: 'Salvo', color: 'var(--rose-500)' },
-    error: { text: 'Erro ao salvar — tentaremos de novo', color: '#c0392b' },
+    error: { text: 'Erro ao salvar — toque na resposta novamente', color: '#c0392b' },
   };
   const item = map[saveState];
   return (

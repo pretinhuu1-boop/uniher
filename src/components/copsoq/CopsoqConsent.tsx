@@ -35,7 +35,7 @@ export default function CopsoqConsent({ term, locale, onAccept, submitting = fal
           onClick={() => setChecked((c) => !c)}
           role="checkbox"
           aria-checked={checked}
-          aria-describedby={checkboxId}
+          aria-labelledby={checkboxId}
         >
           <span className={styles.checkbox}>
             {checked && (
