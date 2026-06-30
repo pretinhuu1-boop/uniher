@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { withRole } from '@/lib/auth/middleware';
 import { handleApiError, ValidationError } from '@/lib/errors';
 import { saveAnswer } from '@/lib/yavix/copsoq.mock';
+import { isYavixMock } from '@/lib/yavix/config';
+import { checkWriteRateLimit } from '@/lib/security/rate-limit';
 import type { CopsoqAnswerInput } from '@/lib/yavix/copsoq.types';
 
 // SPEC §4-A. O FE manda SÓ { code, value }.
@@ -18,6 +20,7 @@ const answerSchema = z.object({
 // Índice 1-based(value) / 0-based(optionIndex): resolvido SÓ no servidor/mock.
 export const PATCH = withRole('colaboradora', 'lideranca')(async (req, { auth }) => {
   try {
+    await checkWriteRateLimit(req);
     const body = await req.json().catch(() => null);
     const parsed = answerSchema.safeParse(body);
     if (!parsed.success) {
@@ -25,7 +28,7 @@ export const PATCH = withRole('colaboradora', 'lideranca')(async (req, { auth })
     }
     const input: CopsoqAnswerInput = parsed.data;
 
-    if (process.env.YAVIX_MOCK !== '0') {
+    if (isYavixMock()) {
       const result = saveAnswer(auth.userId, input.code, input.value);
       if (!result.ok) {
         // code inexistente, não-QUESTION, ou value fora das opções → 400.

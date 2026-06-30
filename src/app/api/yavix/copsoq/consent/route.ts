@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { withRole } from '@/lib/auth/middleware';
 import { handleApiError, NotFoundError, ConflictError, ValidationError } from '@/lib/errors';
 import { acceptTerm } from '@/lib/yavix/copsoq.mock';
+import { isYavixMock } from '@/lib/yavix/config';
+import { checkWriteRateLimit } from '@/lib/security/rate-limit';
+import { getWriteQueue } from '@/lib/db';
+import { nanoid } from 'nanoid';
 
 // SPEC §4-C. Validação Zod do corpo.
 const consentSchema = z.object({
@@ -14,6 +18,7 @@ const consentSchema = z.object({
 //    na UI). NUNCA automatizar o aceite em nome dela pelo servidor.
 export const POST = withRole('colaboradora', 'lideranca')(async (req, { auth }) => {
   try {
+    await checkWriteRateLimit(req);
     const body = await req.json().catch(() => null);
     const parsed = consentSchema.safeParse(body);
     if (!parsed.success) {
@@ -21,7 +26,7 @@ export const POST = withRole('colaboradora', 'lideranca')(async (req, { auth }) 
     }
     const { termId } = parsed.data;
 
-    if (process.env.YAVIX_MOCK !== '0') {
+    if (isYavixMock()) {
       const result = acceptTerm(auth.userId, termId);
       if (!result.ok) {
         if (result.reason === 'UNKNOWN_TERM') {
@@ -34,15 +39,18 @@ export const POST = withRole('colaboradora', 'lideranca')(async (req, { auth }) 
         throw new ValidationError('Não foi possível registrar o aceite.');
       }
 
-      // INTENÇÃO de gravar o consentimento em `user_consents` (tipo
-      // 'nr1_psychosocial') com IP + timestamp + actor (LGPD / consent tracking).
-      // Comentado: a infra de consents (migration/repository) não está trivial
-      // neste scaffold. Wiring real fica para a onda de persistência.
-      //   await consentRepo.record({
-      //     userId: auth.userId,
-      //     type: 'nr1_psychosocial',
-      //     ip: req.headers.get('x-forwarded-for') ?? undefined,
-      //   });
+      // LGPD (art. 11): registra o consentimento de dado sensível de saúde em
+      // user_consents (tipo 'nr1_psychosocial') com IP + user-agent + timestamp —
+      // base legal auditável do tratamento. O aceite acima é clique da colaboradora
+      // (nunca automatizado). TODO(Onda 3): replicar esta gravação no caminho Yavix real.
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+      const userAgent = req.headers.get('user-agent') || '';
+      const wq = getWriteQueue();
+      await wq.enqueue((db) => {
+        db.prepare(
+          'INSERT INTO user_consents (id, user_id, consent_type, granted, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)',
+        ).run(nanoid(), auth.userId, 'nr1_psychosocial', 1, ip, userAgent);
+      });
 
       return new NextResponse(null, { status: 204 });
     }

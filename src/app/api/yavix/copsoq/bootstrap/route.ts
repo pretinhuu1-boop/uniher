@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { buildBootstrap } from '@/lib/yavix/copsoq.mock';
+import { isYavixMock } from '@/lib/yavix/config';
+import { checkReadRateLimit } from '@/lib/security/rate-limit';
 import type { CopsoqBootstrap, Locale } from '@/lib/yavix/copsoq.types';
 
 // GET /api/yavix/copsoq/bootstrap
@@ -9,6 +11,7 @@ import type { CopsoqBootstrap, Locale } from '@/lib/yavix/copsoq.types';
 // SPEC §4-B. Protegido por withRole (apenas colaboradora/lideranca).
 export const GET = withRole('colaboradora', 'lideranca')(async (req, { auth }) => {
   try {
+    await checkReadRateLimit(req);
     const url = new URL(req.url);
     const localeParam = url.searchParams.get('locale');
     const locale: Locale =
@@ -20,7 +23,7 @@ export const GET = withRole('colaboradora', 'lideranca')(async (req, { auth }) =
     const sessionId =
       url.searchParams.get('sessionId') ?? req.headers.get('x-copsoq-session') ?? undefined;
 
-    if (process.env.YAVIX_MOCK !== '0') {
+    if (isYavixMock()) {
       // TODO(Onda 3): repassar sessionId ao Yavix; o mock o ignora (chaveia por userId).
       const bootstrap: CopsoqBootstrap = buildBootstrap(auth.userId, locale, sessionId);
       return NextResponse.json(bootstrap);
