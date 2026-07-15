@@ -126,6 +126,9 @@ test.describe('RH — Painel da Empresa', () => {
     await expect(page.getByText('Visão geral · RH')).toBeVisible();
     await expect(page.getByRole('heading', { name: `Bom dia, ${rhName.split(' ')[0]}.` })).toBeVisible();
 
+    const dashboardContent = page.locator('#main-content');
+    await expect(dashboardContent).not.toContainText(/diagnóstico|paciente|individual/i);
+
     const summary = page.getByRole('region', { name: 'Resumo da empresa' });
     await expect(summary.getByText('Participação ativa')).toBeVisible();
     await expect(summary.getByText('Ações em andamento')).toBeVisible();

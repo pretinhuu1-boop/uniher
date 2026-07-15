@@ -21,7 +21,7 @@
 
 .surface {
   min-width: 0;
-  padding: 20px;
+  padding: 24px;
   border: 1px solid var(--platform-line);
   border-radius: var(--platform-radius-surface);
   background: var(--platform-surface);
@@ -171,7 +171,7 @@
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 16px;
   border: 1px solid var(--platform-line);
   border-radius: var(--platform-radius-control);
   color: var(--platform-ink);
@@ -217,7 +217,7 @@
 .roiRow {
   display: grid;
   min-width: 0;
-  padding: 16px 20px;
+  padding: 16px 24px;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   border-left: 4px solid var(--platform-positive);
