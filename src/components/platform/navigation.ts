@@ -251,7 +251,7 @@ const NAVIGATION: Record<UserRole, NavigationGroup[]> = {
 };
 
 export function getNavigationForRole(role: UserRole): NavigationGroup[] {
-  return NAVIGATION[role];
+  return NAVIGATION[role] ?? NAVIGATION.colaboradora;
 }
 
 export function getRoleHome(role: UserRole): string {

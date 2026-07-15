@@ -32,6 +32,10 @@ describe('platform navigation', () => {
     expect(getRoleHome('colaboradora')).toBe('/colaboradora');
   });
 
+  it('falls back to collaborator navigation for an unexpected runtime role', () => {
+    expect(getNavigationForRole('unexpected' as UserRole)).toEqual(getNavigationForRole('colaboradora'));
+  });
+
   it.each(roles)('does not define duplicate routes for %s', (role) => {
     const routes = getNavigationForRole(role).flatMap((group) => group.items.map((item) => item.href));
     expect(new Set(routes).size).toBe(routes.length);
