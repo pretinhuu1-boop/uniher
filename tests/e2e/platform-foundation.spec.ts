@@ -32,7 +32,12 @@ test.describe('UniHER platform foundation', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/admin');
 
+    const sidebar = page.locator('aside');
+    await expect(sidebar).toHaveCount(1);
+    await expect(sidebar).toHaveCSS('border-right-color', 'rgba(255, 247, 236, 0.12)');
+
     const navigation = page.getByRole('navigation', { name: 'Navegação principal' });
+    await expect(navigation).toHaveCount(1);
     await expect(navigation).toBeVisible();
     await expect(navigation).toHaveCSS('background-color', 'rgb(32, 24, 18)');
     await expect(page.locator('#main-content')).toBeVisible();
@@ -44,16 +49,38 @@ test.describe('UniHER platform foundation', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/admin');
 
+    const sidebar = page.locator('aside');
+    await expect(sidebar).toHaveCount(1);
+    await expect(sidebar).toHaveAttribute('inert', '');
+    await expect(sidebar).toHaveAttribute('aria-hidden', 'true');
+    await sidebar.evaluate((element) => element.setAttribute('data-sidebar-instance', 'original'));
+
     const menuButton = page.getByRole('button', { name: 'Abrir navegação' });
     await menuButton.click();
 
     const drawer = page.getByRole('dialog', { name: 'Navegação' });
+    await expect(page.locator('aside')).toHaveCount(1);
+    await expect(page.locator('aside[data-sidebar-instance="original"]')).toHaveCount(1);
+    await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toHaveCount(1);
+    await expect(drawer).toHaveAttribute('aria-modal', 'true');
+    await expect(drawer).not.toHaveAttribute('inert', '');
+    await expect(drawer).not.toHaveAttribute('aria-hidden', 'true');
     await expect(drawer).toBeVisible();
     await expect(drawer.getByRole('link').first()).toBeFocused();
+
+    const sidebarIds = await drawer.locator('[id]').evaluateAll((elements) =>
+      elements.map((element) => element.id),
+    );
+    expect(new Set(sidebarIds).size).toBe(sidebarIds.length);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
     await page.keyboard.press('Escape');
-    await expect(drawer).toBeHidden();
+    await expect(sidebar).toBeHidden();
+    await expect(sidebar).not.toHaveAttribute('role', 'dialog');
+    await expect(sidebar).not.toHaveAttribute('aria-modal', 'true');
+    await expect(sidebar).toHaveAttribute('inert', '');
+    await expect(sidebar).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('aside[data-sidebar-instance="original"]')).toHaveCount(1);
     await expect(menuButton).toBeFocused();
   });
 

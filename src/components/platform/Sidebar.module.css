@@ -3,25 +3,24 @@
   top: 0;
   left: 0;
   display: flex;
+  width: min(320px, calc(100vw - 32px));
   height: 100dvh;
   flex-direction: column;
   overflow: hidden;
   color: var(--platform-shell-text);
   background: var(--platform-shell);
-  border-right: 1px solid rgb(255 247 236 / 18%);
-  font-family: var(--ff-body);
-}
-
-.desktopSidebar {
-  display: none;
-  width: 240px;
-  z-index: var(--z-sticky);
-}
-
-.mobileSidebar {
-  width: min(320px, calc(100vw - 32px));
-  z-index: var(--z-drawer);
+  border-right: 1px solid rgb(255 247 236 / 12%);
   box-shadow: 12px 0 32px rgb(32 24 18 / 28%);
+  font-family: var(--ff-body);
+  z-index: var(--z-drawer);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 180ms ease;
+}
+
+.sidebarOpen {
+  transform: translateX(0);
+  visibility: visible;
 }
 
 .overlay {
@@ -349,11 +348,15 @@
 }
 
 @media (min-width: 769px) {
-  .desktopSidebar {
-    display: flex;
+  .sidebar {
+    width: 240px;
+    box-shadow: none;
+    z-index: var(--z-sticky);
+    transform: none;
+    visibility: visible;
+    transition: none;
   }
 
-  .mobileSidebar,
   .overlay {
     display: none;
   }

@@ -97,13 +97,23 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const mobileSidebarRef = useRef<HTMLElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const { user, logout } = useAuth();
+  const [isMobile, setIsMobile] = useState(false);
 
   const realRole = normalizeUserRole(user?.role);
   const alsoCollab = Boolean(user?.also_collaborator) || realRole === 'lideranca';
   const canSwitchView = alsoCollab && realRole !== 'colaboradora';
   const [activeView, setActiveView] = useState<UserRole>(realRole);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateViewport = () => setIsMobile(mediaQuery.matches);
+
+    updateViewport();
+    mediaQuery.addEventListener('change', updateViewport);
+    return () => mediaQuery.removeEventListener('change', updateViewport);
+  }, []);
 
   useEffect(() => {
     const savedView = typeof window === 'undefined'
@@ -112,13 +122,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setActiveView(resolveActiveView(realRole, canSwitchView, savedView));
   }, [realRole, canSwitchView]);
 
+  const isMobileDialogOpen = isMobile && isOpen;
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isMobileDialogOpen) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const frame = window.requestAnimationFrame(() => {
-      mobileSidebarRef.current
+      sidebarRef.current
         ?.querySelector<HTMLAnchorElement>('nav a[href]')
         ?.focus();
     });
@@ -136,7 +148,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [isOpen, onClose]);
+  }, [isMobileDialogOpen, onClose]);
 
   const role = activeView;
   const navigationGroups = getNavigationForRole(role);
@@ -178,6 +190,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const performLogout = () => {
     logout();
     window.location.href = '/auth';
+  };
+
+  const closeAfterMobileNavigation = () => {
+    if (isMobile) onClose();
   };
 
   const renderSidebarContent = (onNavigate: () => void, closeAfterSwitch: boolean) => (
@@ -300,24 +316,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      <aside className={`${styles.sidebar} ${styles.desktopSidebar}`} aria-label="Navegação principal">
-        {renderSidebarContent(() => undefined, false)}
-      </aside>
-
-      {isOpen ? (
-        <>
-          <div className={styles.overlay} aria-hidden="true" onClick={onClose} />
-          <aside
-            ref={mobileSidebarRef}
-            className={`${styles.sidebar} ${styles.mobileSidebar}`}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Navegação"
-          >
-            {renderSidebarContent(onClose, true)}
-          </aside>
-        </>
+      {isMobileDialogOpen ? (
+        <div className={styles.overlay} aria-hidden="true" onClick={onClose} />
       ) : null}
+      <aside
+        ref={sidebarRef}
+        className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}
+        role={isMobileDialogOpen ? 'dialog' : undefined}
+        aria-modal={isMobileDialogOpen ? true : undefined}
+        aria-label={isMobileDialogOpen ? 'Navegação' : 'Navegação principal'}
+        aria-hidden={isMobile && !isOpen ? true : undefined}
+        inert={isMobile && !isOpen ? true : undefined}
+      >
+        {renderSidebarContent(closeAfterMobileNavigation, isMobile)}
+      </aside>
     </>
   );
 }
