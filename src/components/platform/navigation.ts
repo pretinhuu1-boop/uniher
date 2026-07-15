@@ -1,37 +1,42 @@
 import type { UserRole } from '@/types/platform';
 
-export type NavigationIcon =
-  | 'dashboard'
-  | 'companies'
-  | 'analytics'
-  | 'colaboradoras'
-  | 'departamentos'
-  | 'semaforo'
-  | 'campanhas'
-  | 'objetivos'
-  | 'desafios'
-  | 'liga'
-  | 'agenda'
-  | 'historico'
-  | 'invite'
-  | 'profile'
-  | 'config'
-  | 'notifications'
-  | 'conquistas';
+export const USER_ROLES = ['admin', 'rh', 'lideranca', 'colaboradora'] as const satisfies readonly UserRole[];
+
+export const NAVIGATION_ICONS = [
+  'dashboard',
+  'companies',
+  'analytics',
+  'colaboradoras',
+  'departamentos',
+  'semaforo',
+  'campanhas',
+  'objetivos',
+  'desafios',
+  'liga',
+  'agenda',
+  'historico',
+  'invite',
+  'profile',
+  'config',
+  'notifications',
+  'conquistas',
+] as const;
+
+export type NavigationIcon = typeof NAVIGATION_ICONS[number];
 
 export interface NavigationItem {
-  href: string;
-  label: string;
-  icon: NavigationIcon;
-  description: string;
+  readonly href: string;
+  readonly label: string;
+  readonly icon: NavigationIcon;
+  readonly description: string;
 }
 
 export interface NavigationGroup {
-  label: string;
-  items: NavigationItem[];
+  readonly label: string;
+  readonly items: readonly NavigationItem[];
 }
 
-const NAVIGATION: Record<UserRole, NavigationGroup[]> = {
+const NAVIGATION = {
   admin: [
     {
       label: 'Operação',
@@ -248,14 +253,36 @@ const NAVIGATION: Record<UserRole, NavigationGroup[]> = {
       ],
     },
   ],
-};
+} as const satisfies Readonly<Record<UserRole, readonly NavigationGroup[]>>;
 
-export function getNavigationForRole(role: UserRole): NavigationGroup[] {
-  return NAVIGATION[role] ?? NAVIGATION.colaboradora;
+export function isUserRole(value: unknown): value is UserRole {
+  return typeof value === 'string' && USER_ROLES.some((role) => role === value);
+}
+
+export function normalizeUserRole(value: unknown): UserRole {
+  return isUserRole(value) ? value : 'colaboradora';
+}
+
+export function resolveActiveView(realRole: unknown, canSwitchView: boolean, savedView: unknown): UserRole {
+  const role = normalizeUserRole(realRole);
+
+  if (!canSwitchView || !isUserRole(savedView)) return role;
+  if (savedView === 'colaboradora' || savedView === role) return savedView;
+  return role;
+}
+
+export function getNavigationForRole(role: UserRole): readonly NavigationGroup[] {
+  return NAVIGATION[normalizeUserRole(role)];
 }
 
 export function getRoleHome(role: UserRole): string {
-  if (role === 'admin') return '/admin';
-  if (role === 'colaboradora') return '/colaboradora';
+  const normalizedRole = normalizeUserRole(role);
+
+  if (normalizedRole === 'admin') return '/admin';
+  if (normalizedRole === 'colaboradora') return '/colaboradora';
   return '/dashboard';
+}
+
+export function isNavigationItemActive(pathname: string, href: string): boolean {
+  return pathname === href || (href !== '/' && pathname.startsWith(`${href}/`));
 }

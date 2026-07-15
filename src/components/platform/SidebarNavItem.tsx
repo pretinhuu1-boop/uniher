@@ -1,9 +1,13 @@
 'use client';
 
+import { useId } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import type { NavigationIcon } from './navigation';
 
-const ICONS: Record<string, React.ReactNode> = {
+export type SidebarIcon = NavigationIcon | 'logout';
+
+const ICONS = {
   companies: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 21h18" /><path d="M5 21V7l8-4v18" /><path d="M19 21V11l-6-4" />
@@ -109,78 +113,60 @@ const ICONS: Record<string, React.ReactNode> = {
       <path d="M8 18h.01" /><path d="M12 18h.01" />
     </svg>
   ),
-};
+} satisfies Record<SidebarIcon, React.ReactNode>;
 
-export function NavIcon({ name }: { name: string }) {
+export function NavIcon({ name }: { name: SidebarIcon }) {
+  const icon = ICONS[name];
+  if (!icon) throw new Error(`Unsupported navigation icon: ${name}`);
+
   return (
-    <span className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity">
-      {ICONS[name] || ICONS.dashboard}
+    <span className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" aria-hidden="true">
+      {icon}
     </span>
   );
 }
 
-const TOOLTIPS: Record<string, string> = {
-  '/dashboard': 'Visão geral da empresa: KPIs, engajamento e resumo de atividades',
-  '/colaboradoras-gestao': 'Gerencie as colaboradoras: aprovação, perfis e status',
-  '/departamentos': 'Organize departamentos e vincule colaboradoras a cada setor',
-  '/semaforo': 'Indicadores de saúde por dimensão — identifique áreas de atenção',
-  '/campanhas': 'Crie e acompanhe campanhas de saúde e bem-estar',
-  '/objetivos': 'Defina metas e recompensas para engajar as colaboradoras',
-  '/desafios': 'Crie desafios gamificados com pontuação e prazos',
-  '/ligas': 'Competições entre departamentos para estimular engajamento',
-  '/gamificacao-config': 'Configure XP, streaks, vidas, ligas, temas e recompensas da gamificação',
-  '/convites': 'Envie convites por email para novas colaboradoras',
-  '/historico': 'Histórico de pontos, atividades e relatórios por período',
-  '/analytics-emails': 'Analytics de comunicação: convites, notificações e alertas',
-  '/company-profile': 'Dados e identidade visual da sua empresa',
-  '/notificacoes': 'Alertas e avisos do sistema para você',
-  '/configuracoes': 'Preferências pessoais, senha e notificações',
-  '/admin': 'Painel global: empresas, usuários, badges e sistema',
-  // Colaboradora
-  '/colaboradora': 'Sua página inicial com check-in e atividades do dia',
-  '/conquistas': 'Suas badges e conquistas desbloqueadas',
-  '/agenda': 'Agende exames, consultas e lembretes de saúde — com alertas automáticos',
-  '/ranking': 'Ranking geral e por departamento',
-};
-
 interface SidebarNavItemProps {
   href: string;
-  icon: string;
+  icon: NavigationIcon;
   label: string;
+  description: string;
   isActive: boolean;
   onClick?: () => void;
   children?: React.ReactNode;
 }
 
-export default function SidebarNavItem({ href, icon, label, isActive, onClick, children }: SidebarNavItemProps) {
-  const tooltip = TOOLTIPS[href];
+export default function SidebarNavItem({ href, icon, label, description, isActive, onClick, children }: SidebarNavItemProps) {
+  const descriptionId = useId();
 
   return (
-    <Link
-      href={href}
-      className={cn(
-        "group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 relative",
-        isActive
-          ? "bg-rose-50 text-rose-700 shadow-sm border border-rose-100"
-          : "text-uni-text-600 hover:bg-cream-100 hover:text-uni-text-900"
-      )}
-      aria-current={isActive ? 'page' : undefined}
-      onClick={onClick}
-    >
-      <NavIcon name={icon} />
-      <span className="flex-1">{label}</span>
-      {children}
-      {tooltip && (
-        <span className="relative flex-shrink-0" onClick={e => e.preventDefault()}>
+    <>
+      <Link
+        href={href}
+        className={cn(
+          "group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 relative",
+          isActive
+            ? "bg-rose-50 text-rose-700 shadow-sm border border-rose-100"
+            : "text-uni-text-600 hover:bg-cream-100 hover:text-uni-text-900"
+        )}
+        aria-current={isActive ? 'page' : undefined}
+        aria-describedby={descriptionId}
+        onClick={onClick}
+      >
+        <NavIcon name={icon} />
+        <span className="flex-1">{label}</span>
+        {children}
+        <span className="relative flex-shrink-0" aria-hidden="true">
           <span
             className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-60 transition-opacity cursor-help"
             style={{ background: '#e8dfd0', color: '#8B7355' }}
-            title={tooltip}
+            title={description}
           >
             ?
           </span>
         </span>
-      )}
-    </Link>
+      </Link>
+      <span id={descriptionId} className="sr-only">{description}</span>
+    </>
   );
 }

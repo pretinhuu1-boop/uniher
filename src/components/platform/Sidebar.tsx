@@ -1,13 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Avatar, Badge } from '@/components/ui/AvatarBadge';
 import Image from 'next/image';
 import SidebarNavItem, { NavIcon } from './SidebarNavItem';
-import { getNavigationForRole, getRoleHome } from './navigation';
+import {
+  getNavigationForRole,
+  getRoleHome,
+  isNavigationItemActive,
+  normalizeUserRole,
+  resolveActiveView,
+} from './navigation';
+import type { NavigationGroup, NavigationItem } from './navigation';
 import type { UserRole } from '@/types/platform';
 import useSWR from 'swr';
 
@@ -20,9 +27,69 @@ const ROLE_LABELS: Record<UserRole, string> = {
   colaboradora: 'Colaboradora',
 };
 
-const BOTTOM_ITEMS = [
-  { href: '/configuracoes', label: 'Configuracoes', icon: 'config' },
-];
+const PERSONAL_NAVIGATION_GROUPS = [
+  {
+    label: 'Pessoal',
+    items: [
+      {
+        href: '/notificacoes',
+        label: 'Notificacoes',
+        icon: 'notifications',
+        description: 'Alertas e avisos do sistema para você',
+      },
+      {
+        href: '/configuracoes',
+        label: 'Configuracoes',
+        icon: 'config',
+        description: 'Preferências pessoais, senha e notificações',
+      },
+    ],
+  },
+] as const satisfies readonly NavigationGroup[];
+
+interface SidebarNavigationGroupsProps {
+  groups: readonly NavigationGroup[];
+  pathname: string;
+  onNavigate: () => void;
+  idPrefix: string;
+  renderItemChildren?: (item: NavigationItem) => ReactNode;
+}
+
+export function SidebarNavigationGroups({
+  groups,
+  pathname,
+  onNavigate,
+  idPrefix,
+  renderItemChildren,
+}: SidebarNavigationGroupsProps) {
+  return groups.map((group, groupIndex) => {
+    const headingId = `${idPrefix}-${groupIndex}`;
+
+    return (
+      <section key={group.label} className="space-y-1" aria-labelledby={headingId}>
+        <h2 id={headingId} className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">
+          {group.label}
+        </h2>
+        <ul className="space-y-1">
+          {group.items.map(item => (
+            <li key={item.href}>
+              <SidebarNavItem
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                description={item.description}
+                isActive={isNavigationItemActive(pathname, item.href)}
+                onClick={onNavigate}
+              >
+                {renderItemChildren?.(item)}
+              </SidebarNavItem>
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  });
+}
 
 interface SidebarProps {
   isOpen: boolean;
@@ -34,21 +101,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  const realRole: UserRole = user?.role || 'colaboradora';
-  const alsoCollab = user?.also_collaborator || realRole === 'lideranca';
+  const realRole = normalizeUserRole(user?.role);
+  const alsoCollab = Boolean(user?.also_collaborator) || realRole === 'lideranca';
   const canSwitchView = alsoCollab && realRole !== 'colaboradora';
 
   const [activeView, setActiveView] = useState<UserRole>(realRole);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('uniher-view-mode');
-      if (saved && canSwitchView && (saved === 'colaboradora' || saved === realRole)) {
-        setActiveView(saved);
-        return;
-      }
-    }
-    setActiveView(realRole);
+    const savedView = typeof window === 'undefined'
+      ? null
+      : sessionStorage.getItem('uniher-view-mode');
+    setActiveView(resolveActiveView(realRole, canSwitchView, savedView));
   }, [realRole, canSwitchView]);
 
   const role = activeView;
@@ -159,47 +222,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
 
         <nav role="navigation" aria-label="Menu principal" className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-thin scrollbar-thumb-cream-200">
-          {navigationGroups.map(group => (
-            <div key={group.label} className="space-y-1">
-              <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">{group.label}</div>
-              {group.items.map(item => (
-                <SidebarNavItem
-                  key={item.href}
-                  href={item.href}
-                  icon={item.icon}
-                  label={item.label}
-                  isActive={pathname === item.href}
-                  onClick={onClose}
-                />
-              ))}
-            </div>
-          ))}
+          <SidebarNavigationGroups
+            groups={navigationGroups}
+            pathname={pathname}
+            onNavigate={onClose}
+            idPrefix={`platform-navigation-${role}`}
+          />
 
-          <div className="space-y-1">
-            <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">Pessoal</div>
-            <SidebarNavItem
-              href="/notificacoes"
-              icon="notifications"
-              label="Notificacoes"
-              isActive={pathname === '/notificacoes'}
-              onClick={onClose}
-            >
-              {unreadCount > 0 && (
-                <Badge variant="alert" size="sm" className="ml-auto w-5 h-5 p-0 flex items-center justify-center">{unreadCount}</Badge>
-              )}
-            </SidebarNavItem>
-
-            {BOTTOM_ITEMS.map(item => (
-              <SidebarNavItem
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                isActive={pathname === item.href}
-                onClick={onClose}
-              />
-            ))}
-          </div>
+          <SidebarNavigationGroups
+            groups={PERSONAL_NAVIGATION_GROUPS}
+            pathname={pathname}
+            onNavigate={onClose}
+            idPrefix="platform-navigation-personal"
+            renderItemChildren={(item) => item.href === '/notificacoes' && unreadCount > 0 ? (
+              <Badge variant="alert" size="sm" className="ml-auto w-5 h-5 p-0 flex items-center justify-center">{unreadCount}</Badge>
+            ) : null}
+          />
 
           <button
             className="w-full group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold text-rose-700 hover:bg-rose-50 transition-all duration-200 text-left"
