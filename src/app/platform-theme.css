@@ -1,0 +1,50 @@
+:root {
+  --platform-shell: #201812;
+  --platform-shell-soft: #33261d;
+  --platform-shell-text: #fff7ec;
+  --platform-canvas: #fff9f1;
+  --platform-surface: #ffffff;
+  --platform-group: #efe2d3;
+  --platform-action: #b98643;
+  --platform-action-strong: #8b622d;
+  --platform-positive: #536444;
+  --platform-critical: #913337;
+  --platform-warning: #8a641c;
+  --platform-ink: #211813;
+  --platform-muted: #695b50;
+  --platform-line: #e3d1bc;
+
+  --platform-radius-control: 8px;
+  --platform-radius-surface: 14px;
+  --platform-radius-pill: 999px;
+  --platform-shadow-raised: 0 4px 8px rgb(32 24 18 / 10%);
+
+  --platform-duration-fast: 150ms;
+  --platform-duration-normal: 220ms;
+  --platform-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --z-dropdown: 20;
+  --z-sticky: 30;
+  --z-drawer-backdrop: 40;
+  --z-drawer: 50;
+  --z-modal-backdrop: 60;
+  --z-modal: 70;
+  --z-toast: 80;
+  --z-tooltip: 90;
+}
+
+.platform-surface {
+  color: var(--platform-ink);
+  background: var(--platform-canvas);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-surface *,
+  .platform-surface *::before,
+  .platform-surface *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
