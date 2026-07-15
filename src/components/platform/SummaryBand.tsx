@@ -1,18 +1,17 @@
-import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export type SummaryBandState = 'neutral' | 'positive' | 'warning' | 'critical';
 
-export interface SummaryBandItem {
+export interface SummaryItem {
   label: string;
-  value: ReactNode;
+  value: string | number;
   detail?: string;
   state?: SummaryBandState;
 }
 
 export interface SummaryBandProps {
   label: string;
-  items: readonly SummaryBandItem[];
+  items: SummaryItem[];
 }
 
 const stateClasses: Record<SummaryBandState, string> = {

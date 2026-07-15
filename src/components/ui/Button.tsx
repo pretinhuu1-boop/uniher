@@ -1,9 +1,18 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'danger'
+  /** @deprecated Use `primary`. Retained as a visual alias for existing consumers. */
+  | 'gold';
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'gold' | 'danger';
+  variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
 }

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 export interface FeedbackStateProps {
   kind: 'loading' | 'empty' | 'error' | 'denied';
   title: string;
-  description?: string;
+  description: string;
   action?: ReactNode;
 }
 
@@ -30,7 +30,7 @@ export function FeedbackState({ kind, title, description, action }: FeedbackStat
     >
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">{title}</h2>
-        {description && <p className="text-sm text-[var(--platform-muted)]">{description}</p>}
+        <p className="text-sm text-[var(--platform-muted)]">{description}</p>
       </div>
       {action && <div className="pt-1">{action}</div>}
     </section>

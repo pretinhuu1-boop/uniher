@@ -48,3 +48,5 @@ export function PageHeader({
     </header>
   );
 }
+
+export default PageHeader;

@@ -2,12 +2,23 @@ import { createElement, Fragment, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { FeedbackState } from '@/components/ui/FeedbackState';
+import type { FeedbackStateProps } from '@/components/ui/FeedbackState';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/AvatarBadge';
 import { PageHeader } from '@/components/platform/PageHeader';
+import * as PageHeaderModule from '@/components/platform/PageHeader';
 import { SummaryBand } from '@/components/platform/SummaryBand';
+import type { SummaryBandProps, SummaryItem } from '@/components/platform/SummaryBand';
+
+type Equal<Left, Right> =
+  (<Value>() => Value extends Left ? 1 : 2) extends
+  (<Value>() => Value extends Right ? 1 : 2) ? true : false;
+type Expect<Value extends true> = Value;
+type _RequiredFeedbackDescription = Expect<Equal<FeedbackStateProps['description'], string>>;
+type _SummaryValueContract = Expect<Equal<SummaryItem['value'], string | number>>;
+type _SummaryItemsContract = Expect<Equal<SummaryBandProps['items'], SummaryItem[]>>;
 
 function render(element: ReactElement) {
   return renderToStaticMarkup(element);
@@ -68,19 +79,28 @@ describe('FeedbackState', () => {
     ['error', 'alert'],
     ['denied', 'alert'],
   ] as const)('uses the correct live-region role for %s', (kind, role) => {
+    const title = `Estado ${kind}`;
+    const description = 'Descrição orientadora.';
     const html = render(createElement(FeedbackState, {
       kind,
-      title: `Estado ${kind}`,
-      description: 'Descrição orientadora.',
+      title,
+      description,
       action: createElement('button', null, 'Continuar'),
     }));
 
     expect(html).toContain(`role="${role}"`);
     expect(html).not.toContain(`role="${role === 'alert' ? 'status' : 'alert'}"`);
+    expect(html).toContain(title);
+    expect(html).toContain(description);
+    expect(html).toContain('>Continuar</button>');
   });
 });
 
 describe('PageHeader', () => {
+  it('provides the canonical default and named exports', () => {
+    expect(PageHeaderModule.default).toBe(PageHeaderModule.PageHeader);
+  });
+
   it('renders one h1 and separates primary from secondary actions', () => {
     const html = render(createElement(PageHeader, {
       context: 'Pessoas',
@@ -94,10 +114,16 @@ describe('PageHeader', () => {
     }));
 
     expect(html.match(/<h1(?:\s|>)/g)).toHaveLength(1);
+    expect(html).toContain('Pessoas');
+    expect(html).toContain('>Colaboradoras</h1>');
+    expect(html).toContain('Acompanhe entradas e pendências.');
     expect(html).toContain('role="group" aria-label="Ação principal"');
     expect(html).toContain('data-action-region="primary"');
+    expect(html).toContain('>Convidar</button>');
     expect(html).toContain('role="group" aria-label="Ações secundárias"');
     expect(html).toContain('data-action-region="secondary"');
+    expect(html).toContain('>Exportar</button>');
+    expect(html).toContain('>Filtrar</button>');
   });
 });
 
@@ -115,6 +141,13 @@ describe('SummaryBand', () => {
 
     expect(html).toContain('<section aria-label="Resumo operacional"');
     expect(html).toContain('<dl');
+    expect(html).toContain('Total');
+    expect(html).toContain('>24</dd>');
+    expect(html).toContain('Ativas');
+    expect(html).toContain('>18<span');
+    expect(html).toContain('75%');
+    expect(html).toContain('Atenção');
+    expect(html).toContain('Críticas');
     for (const state of ['neutral', 'positive', 'warning', 'critical']) {
       expect(html).toContain(`data-state="${state}"`);
     }
