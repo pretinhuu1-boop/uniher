@@ -5,6 +5,7 @@
 - Decision: PASS
 - Commit under review: `bd28548`
 - Evidence commit: `89878f5`
+- Verification lifecycle fix: `0cb2ee3`
 - Reviewed routes: `/admin`, `/dashboard`, `/colaboradora`, `/configuracoes`
 
 ## Automated evidence
