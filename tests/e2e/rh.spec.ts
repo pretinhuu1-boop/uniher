@@ -98,6 +98,57 @@ test.describe('RH — Painel da Empresa', () => {
     expect(body).toHaveProperty('invites');
   });
 
+  test('Dashboard RH compõe resumo, ações e detalhes agregados sem overflow', async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      {
+        name: 'uniher-access-token',
+        value: rhToken,
+        url: baseURL!,
+      },
+    ]);
+    await page.route('**/api/auth/me', async (route) => {
+      const response = await route.fetch();
+      const body = await response.json();
+      await route.fulfill({
+        response,
+        json: {
+          ...body,
+          user: { ...body.user, firstAccessTourCompleted: true },
+        },
+      });
+    });
+    await page.route('**/api/rh/onboarding-status', (route) =>
+      route.fulfill({ json: { isNewRH: false, steps: {} } }),
+    );
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/dashboard');
+
+    await expect(page.getByText('Visão geral · RH')).toBeVisible();
+    await expect(page.getByRole('heading', { name: `Bom dia, ${rhName.split(' ')[0]}.` })).toBeVisible();
+
+    const summary = page.getByRole('region', { name: 'Resumo da empresa' });
+    await expect(summary.getByText('Participação ativa')).toBeVisible();
+    await expect(summary.getByText('Ações em andamento')).toBeVisible();
+    await expect(summary.getByText('Pontos de atenção')).toBeVisible();
+
+    const actions = page.getByRole('region', { name: 'Próximas ações' });
+    await expect(actions.getByRole('link', { name: /Campanhas/ })).toHaveAttribute('href', '/campanhas');
+    await expect(actions.getByRole('link', { name: /Convites/ })).toHaveAttribute('href', '/convites');
+    await expect(actions.getByRole('link', { name: /Histórico/ })).toHaveAttribute('href', '/historico');
+
+    const roi = page.getByTestId('dashboard-roi');
+    await expect(roi).toHaveCSS('background-image', 'none');
+    await expect(page.locator('[data-legacy-stat-card]')).toHaveCount(0);
+    await expect.poll(() => page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    )).toBe(true);
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Exportar CSV' }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/^uniher-dashboard-\d{4}-\d{2}-\d{2}\.csv$/);
+  });
+
   // ─── Convites ────────────────────────────────────────────────────────────────
 
   test('POST /api/invites — RH cria convite para colaboradora', async ({ request }) => {
