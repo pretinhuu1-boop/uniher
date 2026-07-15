@@ -5,15 +5,34 @@ export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   label?: string;
+  description?: string;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, label, id, ...props }, ref) => {
-    const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined);
+  ({
+    'aria-describedby': ariaDescribedBy,
+    'aria-invalid': ariaInvalid,
+    className,
+    description,
+    error,
+    label,
+    id,
+    ...props
+  }, ref) => {
+    const generatedId = React.useId().replace(/:/g, '');
+    const inputId = id || `input-${generatedId}`;
+    const descriptionId = `${inputId}-description`;
+    const errorId = `${inputId}-error`;
+    const describedBy = [
+      ariaDescribedBy,
+      description ? descriptionId : undefined,
+      error ? errorId : undefined,
+    ].filter(Boolean).join(' ') || undefined;
+
     return (
       <div className="w-full space-y-2">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-uni-text-600 block pl-1">
+          <label htmlFor={inputId} className="block pl-1 text-sm font-medium text-[var(--platform-muted)]">
             {label}
           </label>
         )}
@@ -21,14 +40,21 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            "flex h-11 w-full rounded-md border-2 border-border-1 bg-white px-4 py-2 text-base ring-offset-rose-50 placeholder:text-uni-text-300 focus-visible:outline-none focus-visible:border-rose-400 focus-visible:ring-1 focus-visible:ring-rose-300 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200",
-            error && "border-rose-700 focus-visible:border-rose-700 focus-visible:ring-rose-100",
+            "flex h-11 w-full rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] bg-[var(--platform-surface)] px-4 py-2 text-base text-[var(--platform-ink)] placeholder:text-[var(--platform-muted)] transition-colors duration-[var(--platform-duration-fast)] focus-visible:border-[var(--platform-action)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            error && "border-[var(--platform-critical)] focus-visible:border-[var(--platform-critical)] focus-visible:ring-[var(--platform-critical)]",
             className
           )}
           {...props}
+          aria-describedby={describedBy}
+          aria-invalid={error ? true : ariaInvalid}
         />
+        {description && (
+          <p id={descriptionId} className="pl-1 text-xs text-[var(--platform-muted)]">
+            {description}
+          </p>
+        )}
         {error && (
-          <p className="text-xs font-medium text-rose-700 pl-1 -mt-1">{error}</p>
+          <p id={errorId} className="pl-1 text-xs font-medium text-[var(--platform-critical)]">{error}</p>
         )}
       </div>
     );

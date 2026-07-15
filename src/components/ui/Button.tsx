@@ -3,18 +3,22 @@ import { cn } from "@/lib/utils";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'gold';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'gold' | 'danger';
   size?: 'sm' | 'md' | 'lg' | 'icon';
+  isLoading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', ...props }, ref) => {
+  ({ children, className, disabled, isLoading = false, variant = 'primary', size = 'md', ...props }, ref) => {
+    const primaryVariant = "bg-[var(--platform-action)] text-[var(--platform-shell)] hover:bg-[var(--platform-action-strong)]";
+    const secondaryVariant = "border border-[var(--platform-line)] bg-[var(--platform-surface)] text-[var(--platform-ink)] hover:bg-[var(--platform-group)]";
     const variants = {
-      primary: "bg-rose-500 text-white hover:bg-rose-700 shadow-sm",
-      secondary: "bg-uni-green text-white hover:opacity-90",
-      outline: "border-2 border-rose-500 text-rose-500 hover:bg-rose-50",
-      ghost: "text-uni-text-600 hover:bg-cream-100",
-      gold: "bg-gold-700 text-white hover:bg-gold-500 shadow-sm",
+      primary: primaryVariant,
+      secondary: secondaryVariant,
+      outline: secondaryVariant,
+      ghost: "bg-transparent text-[var(--platform-ink)] hover:bg-[var(--platform-group)]",
+      gold: primaryVariant,
+      danger: "bg-[var(--platform-critical)] text-[var(--platform-surface)] hover:opacity-90",
     };
 
     const sizes = {
@@ -28,13 +32,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center rounded-md transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none duration-200",
+          "inline-flex min-h-11 min-w-11 items-center justify-center rounded-[var(--platform-radius-control)] transition-colors duration-[var(--platform-duration-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--platform-surface)] disabled:pointer-events-none disabled:opacity-50",
           variants[variant],
           sizes[size],
           className
         )}
         {...props}
-      />
+        aria-busy={isLoading || undefined}
+        disabled={disabled || isLoading}
+      >
+        {isLoading ? 'Salvando…' : children}
+      </button>
     );
   }
 );

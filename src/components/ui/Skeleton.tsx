@@ -1,5 +1,12 @@
+import { cn } from '@/lib/utils';
+
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
+  return (
+    <div
+      aria-hidden="true"
+      className={cn('animate-pulse rounded bg-[var(--platform-group)]', className)}
+    />
+  );
 }
 
 export function SkeletonCard() {
