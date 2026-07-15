@@ -23,7 +23,11 @@ export function EngagementOverview({ data }: { data: EngagementDataPoint[] }) {
           description="Os pontos serão consolidados quando houver atividade suficiente no período."
         />
       ) : (
-        <div className={styles.chartFrame}>
+        <div
+          className={styles.chartFrame}
+          role="img"
+          aria-label="Gráfico de engajamento e retenção por mês"
+        >
           <Line
             data={{
               labels: data.map((point) => point.month),
@@ -54,6 +58,27 @@ export function EngagementOverview({ data }: { data: EngagementDataPoint[] }) {
             }}
           />
         </div>
+      )}
+      {data.length > 0 && (
+        <table className="sr-only">
+          <caption>Dados mensais de engajamento e retenção</caption>
+          <thead>
+            <tr>
+              <th scope="col">Mês</th>
+              <th scope="col">Engajamento</th>
+              <th scope="col">Retenção</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((point) => (
+              <tr key={point.month}>
+                <td>{point.month}</td>
+                <td>{point.engagement}%</td>
+                <td>{point.retention}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </section>
   );

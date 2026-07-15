@@ -2,11 +2,26 @@
  * rh.spec.ts — Testes do painel RH / Admin da Empresa
  * Cobre: criação de RH via admin, login RH, dashboard, convites, aprovações, objetivos, permissões
  */
-import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { test, expect, type Page } from '@playwright/test';
 import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
+
+async function completeAuthTourForDashboard(page: Page) {
+  await page.route('**/api/auth/me', async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({
+      response,
+      json: {
+        ...body,
+        user: { ...body.user, firstAccessTourCompleted: true },
+      },
+    });
+  });
+}
 
 test.describe('RH — Painel da Empresa', () => {
   test.describe.configure({ mode: 'serial' });
@@ -106,21 +121,40 @@ test.describe('RH — Painel da Empresa', () => {
         url: baseURL!,
       },
     ]);
-    await page.route('**/api/auth/me', async (route) => {
-      const response = await route.fetch();
-      const body = await response.json();
-      await route.fulfill({
-        response,
-        json: {
-          ...body,
-          user: { ...body.user, firstAccessTourCompleted: true },
-        },
-      });
-    });
+    await completeAuthTourForDashboard(page);
     await page.route('**/api/rh/onboarding-status', (route) =>
       route.fulfill({ json: { isNewRH: false, steps: {} } }),
     );
-    await page.setViewportSize({ width: 375, height: 812 });
+    await page.route('**/api/dashboard', (route) => route.fulfill({
+      json: {
+        kpis: [{ label: 'Engajaménto', value: '72%', icon: 'activity' }],
+        departments: [
+          {
+            id: 'd1', name: '=SUM(1,1)', collaborators: 20, points: 0, level: 1,
+            badges: 0, engagementPercent: 61, examsPercent: 0, trend: 'stable', color: '#536444',
+          },
+          {
+            id: 'd2', name: 'Produto', collaborators: 12, points: 0, level: 1,
+            badges: 0, engagementPercent: 84, examsPercent: 0, trend: 'up', color: '#b98643',
+          },
+        ],
+        campaigns: [{
+          name: '+Relatório', month: 'Jul', progress: 82, status: 'active',
+          statusLabel: 'Ativa', color: '#b98643',
+        }],
+        roi: { roiMultiplier: 2, savings: 'R$ 20 mil', absenteeismReduction: '8%' },
+        engagement: [
+          { month: 'Mai', engagement: 65, retention: 60 },
+          { month: 'Jun', engagement: 68, retention: 63 },
+          { month: 'Jul', engagement: 72, retention: 66 },
+        ],
+        ageDistribution: [{ label: '26-35', percent: 100, color: '#536444' }],
+        healthRisk: [],
+        invites: { total: 0, pending: 0, accepted: 0, expired: 0 },
+        reports: [],
+      },
+    }));
+    await page.setViewportSize({ width: 1024, height: 812 });
     await page.goto('/dashboard');
 
     await expect(page.getByText('Visão geral · RH')).toBeVisible();
@@ -142,6 +176,25 @@ test.describe('RH — Painel da Empresa', () => {
     const roi = page.getByTestId('dashboard-roi');
     await expect(roi).toHaveCSS('background-image', 'none');
     await expect(page.locator('[data-legacy-stat-card]')).toHaveCount(0);
+    await expect(page.getByRole('table', { name: 'Dados mensais de engajamento e retenção' })).toHaveCount(1);
+
+    const periodFilter = page.locator('[aria-label="Período"]');
+    const departmentFilter = page.getByRole('combobox', { name: 'Filtrar por departamento' });
+    const attentionFilter = page.getByRole('combobox', { name: 'Filtrar por faixa de engajamento' });
+    for (const filter of [periodFilter, departmentFilter, attentionFilter]) {
+      await expect(filter).toBeVisible();
+      expect(await filter.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return bounds.left >= 0 && bounds.right <= window.innerWidth;
+      })).toBe(true);
+    }
+    await periodFilter.getByRole('button', { name: '3m' }).click();
+    await expect(periodFilter.getByRole('button', { name: '3m' })).toHaveAttribute('aria-pressed', 'true');
+    await departmentFilter.selectOption('=SUM(1,1)');
+    await attentionFilter.selectOption('attention');
+    const departmentOverview = page.getByRole('region', { name: 'Engajamento por área' });
+    await expect(departmentOverview.getByText('=SUM(1,1)')).toBeVisible();
+    await expect(departmentOverview.getByText('Produto')).toHaveCount(0);
     await expect.poll(() => page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     )).toBe(true);
@@ -150,6 +203,42 @@ test.describe('RH — Painel da Empresa', () => {
     await page.getByRole('button', { name: 'Exportar CSV' }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/^uniher-dashboard-\d{4}-\d{2}-\d{2}\.csv$/);
+    const downloadPath = await download.path();
+    expect(downloadPath).not.toBeNull();
+    const csv = await readFile(downloadPath!, 'utf8');
+    expect(csv).toContain('"\'=SUM(1,1)"');
+    expect(csv).toContain('"\'+Relatório"');
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await expect.poll(() => page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    )).toBe(true);
+  });
+
+  test('Dashboard RH mostra erro da API e bloqueia exportação vazia', async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: 'uniher-access-token', value: rhToken, url: baseURL! }]);
+    await completeAuthTourForDashboard(page);
+    await page.route('**/api/rh/onboarding-status', (route) =>
+      route.fulfill({ json: { isNewRH: false, steps: {} } }),
+    );
+    await page.route('**/api/dashboard', (route) => route.fulfill({
+      status: 500,
+      json: { error: 'Falha controlada' },
+    }));
+
+    await page.goto('/dashboard');
+
+    await expect(page.getByRole('heading', { name: 'Não foi possível carregar o dashboard' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeDisabled();
+  });
+
+  test('Dashboard RH preserva o redirect real do onboarding', async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: 'uniher-access-token', value: rhToken, url: baseURL! }]);
+    await completeAuthTourForDashboard(page);
+
+    await page.goto('/dashboard');
+
+    await expect(page).toHaveURL(/\/onboarding-rh$/);
   });
 
   // ─── Convites ────────────────────────────────────────────────────────────────

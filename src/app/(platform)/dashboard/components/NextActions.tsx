@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { DashboardAction } from '../dashboard-view-model';
 import styles from '../dashboard.module.css';
 
-export function NextActions({ actions }: { actions: DashboardAction[] }) {
+export function NextActions({ actions }: { actions: readonly DashboardAction[] }) {
   return (
     <section className={styles.surface} aria-label="Próximas ações">
       <div className={styles.sectionHeader}>

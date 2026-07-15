@@ -22,7 +22,11 @@ export function AgeOverview({ data }: { data: AgeDistribution[] }) {
         />
       ) : (
         <div className={styles.ageLayout}>
-          <div className={styles.doughnutFrame}>
+          <div
+            className={styles.doughnutFrame}
+            role="img"
+            aria-label="Distribuição percentual por faixa etária"
+          >
             <Doughnut
               data={{
                 labels: data.map((item) => item.label),

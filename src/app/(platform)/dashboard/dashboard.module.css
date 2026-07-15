@@ -8,7 +8,6 @@
   padding: 24px 16px 40px;
   flex-direction: column;
   gap: 24px;
-  overflow-x: clip;
 }
 
 .primaryGrid,
@@ -386,12 +385,18 @@
 
   .detailsHeading {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: flex-end;
   }
 
+  .detailsHeading > div:first-child {
+    flex: 1 1 240px;
+  }
+
   .filters {
-    width: auto;
-    grid-template-columns: 240px 220px 220px;
+    width: 100%;
+    flex: 1 1 560px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .periodGroup {

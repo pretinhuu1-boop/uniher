@@ -155,4 +155,38 @@ describe('RH dashboard view model', () => {
 
     expect(model.summary.map(({ value }) => value)).toEqual(['0%', 0, 0]);
   });
+
+  it.each(['ENGAJAMENTO', ' Engajaménto ', 'engajamento'])(
+    'normalizes the engagement KPI label variant %j',
+    (label) => {
+      const model = createDashboardViewModel({
+        kpis: [{ label, value: '81%', icon: 'activity' }],
+        departments: [],
+        campaigns: [],
+        roi,
+        engagement,
+        ageDistribution,
+      });
+
+      expect(model.summary[0].value).toBe('81%');
+    },
+  );
+
+  it('returns fresh readonly actions for each view model', () => {
+    const source = {
+      kpis: [],
+      departments: [],
+      campaigns: [],
+      roi,
+      engagement,
+      ageDistribution,
+    };
+    const first = createDashboardViewModel(source);
+    const second = createDashboardViewModel(source);
+
+    expect(first.actions).not.toBe(second.actions);
+    expect(first.actions[0]).not.toBe(second.actions[0]);
+    expect(Object.isFrozen(first.actions)).toBe(true);
+    expect(Object.isFrozen(first.actions[0])).toBe(true);
+  });
 });

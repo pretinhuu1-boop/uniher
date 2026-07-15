@@ -24,9 +24,9 @@ export interface DashboardSummaryItem {
 }
 
 export interface DashboardAction {
-  label: 'Campanhas' | 'Convites' | 'Histórico';
-  description: string;
-  href: '/campanhas' | '/convites' | '/historico';
+  readonly label: 'Campanhas' | 'Convites' | 'Histórico';
+  readonly description: string;
+  readonly href: '/campanhas' | '/convites' | '/historico';
 }
 
 export interface DashboardDepartmentAggregate {
@@ -39,7 +39,7 @@ export interface DashboardDepartmentAggregate {
 
 export interface DashboardViewModel {
   summary: DashboardSummaryItem[];
-  actions: DashboardAction[];
+  actions: readonly DashboardAction[];
   departments: DashboardDepartmentAggregate[];
   campaigns: CampaignStatus[];
   roi: ROIProjection;
@@ -47,7 +47,7 @@ export interface DashboardViewModel {
   ageDistribution: AgeDistribution[];
 }
 
-const ACTIONS: DashboardAction[] = [
+const ACTION_BLUEPRINTS: readonly DashboardAction[] = [
   {
     label: 'Campanhas',
     description: 'Acompanhe as ações de saúde em andamento.',
@@ -65,9 +65,17 @@ const ACTIONS: DashboardAction[] = [
   },
 ];
 
+function normalizeDashboardLabel(label: string): string {
+  return label
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .trim()
+    .toLocaleLowerCase('pt-BR');
+}
+
 function getParticipation(kpis: DashboardKPI[]): string {
   const engagementKpi = kpis.find(
-    (kpi) => kpi.label.trim().toLocaleLowerCase('pt-BR') === 'engajamento',
+    (kpi) => normalizeDashboardLabel(kpi.label) === 'engajamento',
   );
 
   if (!engagementKpi) return '0%';
@@ -105,7 +113,9 @@ export function createDashboardViewModel(source: DashboardSource): DashboardView
         state: departmentsNeedingAttention > 0 ? 'warning' : 'positive',
       },
     ],
-    actions: ACTIONS,
+    actions: Object.freeze(
+      ACTION_BLUEPRINTS.map((action) => Object.freeze({ ...action })),
+    ),
     departments: source.departments.map((department) => ({
       id: department.id,
       name: department.name,

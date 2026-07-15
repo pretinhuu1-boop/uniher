@@ -29,4 +29,15 @@ describe('RH dashboard spacing contract', () => {
 
     expect(surfaceRule).toMatch(/padding:\s*24px;/);
   });
+
+  it('uses fluid desktop filters without hiding horizontal overflow', () => {
+    const pageRule = css.match(/\.page\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+    const desktopRules = css.match(/@media \(min-width: 960px\)\s*\{([\s\S]*?)@media/)?.[1]
+      ?? css.slice(css.indexOf('@media (min-width: 960px)'));
+
+    expect(pageRule).not.toMatch(/overflow-x:\s*(?:clip|hidden)/);
+    expect(desktopRules).toMatch(/\.detailsHeading\s*\{[\s\S]*?flex-wrap:\s*wrap;/);
+    expect(desktopRules).toMatch(/\.filters\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+    expect(desktopRules).not.toMatch(/grid-template-columns:\s*240px 220px 220px/);
+  });
 });

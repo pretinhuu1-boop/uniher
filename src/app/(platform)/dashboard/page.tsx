@@ -12,7 +12,7 @@ import { useDashboard } from '@/hooks/useDashboard';
 import { DashboardDetails, type DashboardFilters, type DashboardPeriod } from './components/DashboardDetails';
 import { EngagementOverview } from './components/EngagementOverview';
 import { NextActions } from './components/NextActions';
-import { downloadDashboardCsv } from './dashboard-export';
+import { downloadDashboardCsv, hasMeaningfulDashboardData } from './dashboard-export';
 import { createDashboardViewModel } from './dashboard-view-model';
 import styles from './dashboard.module.css';
 
@@ -50,6 +50,9 @@ export default function DashboardPage() {
     ageDistribution: dashboard.ageDistribution,
   }), [dashboard.ageDistribution, dashboard.campaigns, dashboard.departments, dashboard.engagement, dashboard.kpis, dashboard.roi]);
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'Gestora';
+  const canExport = !dashboard.isLoading
+    && !dashboard.error
+    && hasMeaningfulDashboardData(model);
   const filters: DashboardFilters = {
     period: activePeriod,
     department: filterDept,
@@ -70,7 +73,12 @@ export default function DashboardPage() {
         description="O que merece sua atenção hoje."
         primaryAction={<Button onClick={() => router.push('/convites')}>Convidar</Button>}
         secondaryActions={(
-          <Button variant="secondary" disabled={dashboard.isLoading} onClick={() => downloadDashboardCsv(model)}>
+          <Button
+            variant="secondary"
+            disabled={!canExport}
+            title={canExport ? undefined : 'A exportação estará disponível quando houver dados carregados.'}
+            onClick={() => downloadDashboardCsv(model)}
+          >
             Exportar CSV
           </Button>
         )}
