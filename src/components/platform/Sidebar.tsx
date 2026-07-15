@@ -7,55 +7,13 @@ import { cn } from '@/lib/utils';
 import { Avatar, Badge } from '@/components/ui/AvatarBadge';
 import Image from 'next/image';
 import SidebarNavItem, { NavIcon } from './SidebarNavItem';
+import { getNavigationForRole, getRoleHome } from './navigation';
+import type { UserRole } from '@/types/platform';
 import useSWR from 'swr';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-type NavItem = { href: string; label: string; icon: string };
-
-const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
-  admin: [
-    { href: '/admin', label: 'Painel Master', icon: 'companies' },
-    { href: '/analytics-emails', label: 'Analytics Global', icon: 'analytics' },
-  ],
-  rh: [
-    { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { href: '/colaboradoras-gestao', label: 'Colaboradoras', icon: 'colaboradoras' },
-    { href: '/departamentos', label: 'Departamentos', icon: 'departamentos' },
-    { href: '/semaforo', label: 'Semaforo de Saude', icon: 'semaforo' },
-    { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
-    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
-    { href: '/desafios/gerenciar', label: 'Gerenciar Desafios', icon: 'desafios' },
-    { href: '/liga/gerenciar', label: 'Gerenciar Ligas', icon: 'liga' },
-    { href: '/gamificacao-config', label: 'Config. Gamificacao', icon: 'config' },
-    { href: '/convites', label: 'Convites', icon: 'invite' },
-    { href: '/agenda', label: 'Agenda de Saude', icon: 'agenda' },
-    { href: '/historico', label: 'Historico', icon: 'historico' },
-    { href: '/analytics-emails', label: 'Comunicacao', icon: 'analytics' },
-    { href: '/company-profile', label: 'Perfil da Empresa', icon: 'profile' },
-  ],
-  lideranca: [
-    { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { href: '/semaforo', label: 'Semaforo da Equipe', icon: 'semaforo' },
-    { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
-    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
-    { href: '/desafios', label: 'Desafios', icon: 'desafios' },
-    { href: '/agenda', label: 'Agenda de Saude', icon: 'agenda' },
-    { href: '/historico', label: 'Historico', icon: 'historico' },
-  ],
-  colaboradora: [
-    { href: '/colaboradora', label: 'Meu Painel', icon: 'dashboard' },
-    { href: '/semaforo', label: 'Meu Semaforo', icon: 'semaforo' },
-    { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
-    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
-    { href: '/desafios', label: 'Desafios', icon: 'desafios' },
-    { href: '/conquistas', label: 'Conquistas', icon: 'conquistas' },
-    { href: '/liga', label: 'Liga Semanal', icon: 'liga' },
-    { href: '/agenda', label: 'Minha Agenda', icon: 'agenda' },
-  ],
-};
-
-const ROLE_LABELS: Record<string, string> = {
+const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Master',
   rh: 'Admin',
   lideranca: 'Lideranca',
@@ -76,11 +34,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  const realRole = user?.role || 'colaboradora';
+  const realRole: UserRole = user?.role || 'colaboradora';
   const alsoCollab = user?.also_collaborator || realRole === 'lideranca';
   const canSwitchView = alsoCollab && realRole !== 'colaboradora';
 
-  const [activeView, setActiveView] = useState<string>(realRole);
+  const [activeView, setActiveView] = useState<UserRole>(realRole);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -94,18 +52,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, [realRole, canSwitchView]);
 
   const role = activeView;
-  const navItems = NAV_ITEMS_BY_ROLE[role] || NAV_ITEMS_BY_ROLE.colaboradora;
-  const visibleNavItems = role === 'admin' ? navItems : navItems.filter(item => item.href !== '/admin');
-  const roleLabel = ROLE_LABELS[role] || 'Colaboradora';
+  const navigationGroups = getNavigationForRole(role);
+  const roleLabel = ROLE_LABELS[role];
 
-  const handleSwitchView = (view: string) => {
+  const handleSwitchView = (view: UserRole) => {
     setActiveView(view);
     if (typeof window !== 'undefined') {
       sessionStorage.setItem('uniher-view-mode', view);
     }
-    if (view === 'colaboradora') router.push('/colaboradora');
-    else if (view === 'admin') router.push('/admin');
-    else router.push('/dashboard');
+    router.push(getRoleHome(view));
     onClose();
   };
 
@@ -204,19 +159,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
 
         <nav role="navigation" aria-label="Menu principal" className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-thin scrollbar-thumb-cream-200">
-          <div className="space-y-1">
-            <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">Principal</div>
-            {visibleNavItems.map(item => (
-              <SidebarNavItem
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                isActive={pathname === item.href}
-                onClick={onClose}
-              />
-            ))}
-          </div>
+          {navigationGroups.map(group => (
+            <div key={group.label} className="space-y-1">
+              <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">{group.label}</div>
+              {group.items.map(item => (
+                <SidebarNavItem
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  isActive={pathname === item.href}
+                  onClick={onClose}
+                />
+              ))}
+            </div>
+          ))}
 
           <div className="space-y-1">
             <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">Pessoal</div>
