@@ -239,6 +239,8 @@ test.describe('RH — Painel da Empresa', () => {
     await page.goto('/dashboard');
 
     await expect(page).toHaveURL(/\/onboarding-rh$/);
+    await expect(page.getByRole('heading', { name: 'Bem-vinda ao UniHER!' })).toBeVisible();
+    await page.unrouteAll({ behavior: 'wait' });
   });
 
   // ─── Convites ────────────────────────────────────────────────────────────────
