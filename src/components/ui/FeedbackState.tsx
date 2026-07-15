@@ -20,19 +20,23 @@ export function FeedbackState({ kind, title, description, action }: FeedbackStat
 
   return (
     <section
-      aria-busy={kind === 'loading' || undefined}
       className={cn(
         'flex min-h-44 flex-col items-start justify-center gap-3 rounded-[var(--platform-radius-surface)] border p-6 text-[var(--platform-ink)]',
         stateClasses[kind],
       )}
       data-state={kind}
-      role={isAlert ? 'alert' : 'status'}
     >
-      <div className="space-y-1">
+      <div className="space-y-1" role={isAlert ? 'alert' : 'status'}>
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="text-sm text-[var(--platform-muted)]">{description}</p>
       </div>
-      {action && <div className="pt-1">{action}</div>}
+      <div
+        aria-busy={kind === 'loading' || undefined}
+        className={action ? 'pt-1' : undefined}
+        data-feedback-content=""
+      >
+        {action}
+      </div>
     </section>
   );
 }

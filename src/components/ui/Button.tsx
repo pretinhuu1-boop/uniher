@@ -18,8 +18,17 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ children, className, disabled, isLoading = false, variant = 'primary', size = 'md', ...props }, ref) => {
-    const primaryVariant = "bg-[var(--platform-action)] text-[var(--platform-shell)] hover:bg-[var(--platform-action-strong)]";
+  ({
+    'aria-busy': ariaBusy,
+    children,
+    className,
+    disabled,
+    isLoading = false,
+    variant = 'primary',
+    size = 'md',
+    ...props
+  }, ref) => {
+    const primaryVariant = "bg-[var(--platform-action)] text-[var(--platform-shell)] hover:bg-[var(--platform-action-strong)] hover:text-[var(--platform-shell-text)]";
     const secondaryVariant = "border border-[var(--platform-line)] bg-[var(--platform-surface)] text-[var(--platform-ink)] hover:bg-[var(--platform-group)]";
     const variants = {
       primary: primaryVariant,
@@ -47,7 +56,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           className
         )}
         {...props}
-        aria-busy={isLoading || undefined}
+        aria-busy={isLoading ? true : ariaBusy}
         disabled={disabled || isLoading}
       >
         {isLoading ? 'Salvando…' : children}

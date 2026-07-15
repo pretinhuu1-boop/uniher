@@ -48,8 +48,8 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
           sizes[size],
           className
         )}
-        data-variant={resolvedVariant}
         {...props}
+        data-variant={resolvedVariant}
       />
     );
   }

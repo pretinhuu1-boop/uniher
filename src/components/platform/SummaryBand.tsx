@@ -17,7 +17,7 @@ export interface SummaryBandProps {
 const stateClasses: Record<SummaryBandState, string> = {
   neutral: 'text-[var(--platform-ink)]',
   positive: 'text-[var(--platform-positive)]',
-  warning: 'text-[var(--platform-warning)]',
+  warning: 'text-[var(--platform-ink)]',
   critical: 'text-[var(--platform-critical)]',
 };
 
@@ -27,7 +27,7 @@ export function SummaryBand({ label, items }: SummaryBandProps) {
       aria-label={label}
       className="rounded-[var(--platform-radius-surface)] bg-[var(--platform-group)] px-4 py-3"
     >
-      <dl className="grid divide-y divide-[var(--platform-line)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
+      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item) => {
           const state = item.state || 'neutral';
 
