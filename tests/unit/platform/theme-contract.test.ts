@@ -21,7 +21,9 @@ function parseAppStylesheet(filename: string) {
 
 function getSingleRule(root: Root, selector: string) {
   const rules: Rule[] = [];
-  root.walkRules(selector, (rule) => rules.push(rule));
+  root.walkRules(selector, (rule) => {
+    rules.push(rule);
+  });
   expect(rules, `expected one ${selector} rule`).toHaveLength(1);
   return rules[0];
 }
