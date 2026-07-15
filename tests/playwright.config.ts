@@ -1,17 +1,15 @@
 import { defineConfig } from '@playwright/test';
 import os from 'os';
 import path from 'path';
+import playwrightDbSafety from './playwright-db-safety.cjs';
 
 // Detect available resources — use half the CPUs, min 1, max 3
 const defaultPort = process.env.PLAYWRIGHT_PORT || '3100';
 const baseURL = process.env.BASE_URL || `http://127.0.0.1:${defaultPort}`;
-const databasePath = process.env.DATABASE_PATH || path.resolve(__dirname, '..', 'data', 'uniher.db');
+const playwrightEnvironment = playwrightDbSafety.createPlaywrightTestEnvironment(process.env);
 const testServerEnv = {
-  PLAYWRIGHT_TEST: '1',
+  ...playwrightEnvironment,
   PLAYWRIGHT_PORT: defaultPort,
-  DATABASE_PATH: databasePath,
-  JWT_SECRET: process.env.JWT_SECRET || 'uniher-playwright-access-secret-at-least-32-characters',
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'uniher-playwright-refresh-secret-at-least-32-characters',
   ALLOW_INSECURE_HTTP_COOKIES: process.env.ALLOW_INSECURE_HTTP_COOKIES || 'true',
 };
 

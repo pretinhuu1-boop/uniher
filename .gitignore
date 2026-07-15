@@ -3,6 +3,7 @@
 # test results
 tests/results/
 tests/report/
+tests/.playwright-data/
 
 # dependencies
 /node_modules

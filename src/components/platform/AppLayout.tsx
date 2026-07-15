@@ -31,7 +31,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
       <Sidebar isOpen={sidebarOpen} onClose={closeNavigation} />
       <ReminderPopup />
 
-      <div className={styles.workspace}>
+      <div className={styles.workspace} inert={sidebarOpen ? true : undefined}>
         <MobileTopbar
           ref={menuButtonRef}
           title={title}

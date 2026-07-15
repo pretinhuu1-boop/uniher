@@ -116,6 +116,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, []);
 
   useEffect(() => {
+    if (!isMobile && isOpen) onClose();
+  }, [isMobile, isOpen, onClose]);
+
+  useEffect(() => {
     const savedView = typeof window === 'undefined'
       ? null
       : sessionStorage.getItem('uniher-view-mode');
@@ -127,24 +131,68 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   useEffect(() => {
     if (!isMobileDialogOpen) return;
 
+    const focusFirstLinkIfOutsideDialog = () => {
+      const sidebar = sidebarRef.current;
+      if (!sidebar || sidebar.contains(document.activeElement)) return;
+
+      sidebar
+        .querySelector<HTMLAnchorElement>('nav a[href]')
+        ?.focus({ preventScroll: true });
+    };
+
+    focusFirstLinkIfOutsideDialog();
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(focusFirstLinkIfOutsideDialog);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [isMobileDialogOpen]);
+
+  useEffect(() => {
+    if (!isMobileDialogOpen) return;
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const frame = window.requestAnimationFrame(() => {
-      sidebarRef.current
-        ?.querySelector<HTMLAnchorElement>('nav a[href]')
-        ?.focus();
-    });
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !sidebarRef.current) return;
+
+      const focusableElements = Array.from(
+        sidebarRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter(element => element.getClientRects().length > 0);
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstFocusable = focusableElements[0];
+      const lastFocusable = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && (activeElement === firstFocusable || !sidebarRef.current.contains(activeElement))) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.cancelAnimationFrame(frame);
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
@@ -187,9 +235,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     ? user.name.split(' ').map(word => word[0]).join('').slice(0, 2).toUpperCase()
     : 'UN';
 
-  const performLogout = () => {
-    logout();
-    window.location.href = '/auth';
+  const performLogout = async () => {
+    await logout();
   };
 
   const closeAfterMobileNavigation = () => {
@@ -328,6 +375,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         aria-hidden={isMobile && !isOpen ? true : undefined}
         inert={isMobile && !isOpen ? true : undefined}
       >
+        <button
+          type="button"
+          className={styles.closeButton}
+          aria-label="Fechar navegação"
+          onClick={onClose}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
         {renderSidebarContent(closeAfterMobileNavigation, isMobile)}
       </aside>
     </>

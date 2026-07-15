@@ -57,7 +57,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<MockUser | null>;
   register: (data: any) => Promise<boolean>;
   selectRole: (role: UserRole) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<MockUser | null>;
 }
 
@@ -287,7 +287,7 @@ export const AuthContext = createContext<AuthContextValue>({
   login: async () => null,
   register: async () => false,
   selectRole: () => {},
-  logout: () => {},
+  logout: async () => {},
   refreshUser: async () => null,
 });
 

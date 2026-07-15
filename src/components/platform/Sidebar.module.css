@@ -23,6 +23,29 @@
   visibility: visible;
 }
 
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--platform-shell-text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--platform-radius-control);
+  cursor: pointer;
+}
+
+.closeButton svg {
+  width: 22px;
+  height: 22px;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -47,11 +70,14 @@
 }
 
 .brandButton:hover,
-.brandButton:focus-visible {
+.brandButton:focus-visible,
+.closeButton:hover,
+.closeButton:focus-visible {
   background: rgb(255 247 236 / 9%);
 }
 
 .brandButton:focus-visible,
+.closeButton:focus-visible,
 .viewButton:focus-visible,
 .logoutNav:focus-visible,
 .footerLogout:focus-visible {
@@ -347,6 +373,12 @@
   cursor: pointer;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}
+
 @media (min-width: 769px) {
   .sidebar {
     width: 240px;
@@ -358,6 +390,10 @@
   }
 
   .overlay {
+    display: none;
+  }
+
+  .closeButton {
     display: none;
   }
 }

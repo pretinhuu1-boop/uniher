@@ -1,11 +1,11 @@
 /**
  * Playwright global teardown — clean test data after all tests
  */
-import Database from 'better-sqlite3';
-import path from 'path';
+import playwrightDbSafety from './playwright-db-safety.cjs';
 
 export default async function globalTeardown() {
-  const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '..', 'data', 'uniher.db');
+  const dbPath = playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env);
+  const { default: Database } = await import('better-sqlite3');
 
   try {
     const db = new Database(dbPath);
