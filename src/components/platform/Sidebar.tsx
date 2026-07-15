@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import useSWR from 'swr';
@@ -128,7 +128,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const isMobileDialogOpen = isMobile && isOpen;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isMobileDialogOpen) return;
 
     const focusFirstLinkIfOutsideDialog = () => {
@@ -141,12 +141,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     };
 
     focusFirstLinkIfOutsideDialog();
+    const focusTimeout = window.setTimeout(focusFirstLinkIfOutsideDialog, 0);
     let secondFrame = 0;
     const firstFrame = window.requestAnimationFrame(() => {
       secondFrame = window.requestAnimationFrame(focusFirstLinkIfOutsideDialog);
     });
 
     return () => {
+      window.clearTimeout(focusTimeout);
       window.cancelAnimationFrame(firstFrame);
       window.cancelAnimationFrame(secondFrame);
     };
