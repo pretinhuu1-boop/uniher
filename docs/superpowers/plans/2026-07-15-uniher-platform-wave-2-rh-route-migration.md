@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Migrate the remaining RH routes onto the approved UniHER platform language while preserving business behavior, aggregate-only privacy boundaries, API contracts, keyboard access, and responsive operation.
+**Goal:** Migrate the remaining RH routes onto the approved UniHER platform language while preserving business behavior, health/analytics privacy boundaries, API contracts, keyboard access, and responsive operation.
 
 **Architecture:** Keep `AppLayout`, `Sidebar`, `MobileTopbar`, platform tokens, and the Wave 1 primitives as the shared shell. Migrate one route lane at a time behind focused unit and Playwright contracts; keep data fetching and mutations in the existing route modules unless a tested view-model extraction materially simplifies rendering. Reuse `PageHeader`, `SummaryBand`, `FeedbackState`, and `Button` rather than introducing route-local substitutes. Validate each lane independently, then run the complete role suite before promotion.
 
@@ -14,19 +14,23 @@
 
 Wave 1 passed at reviewed product commit `bd28548`: 75 unit tests, TypeScript, production build, and 78 Playwright tests were green. This plan begins only from that verified state. It plans RH route work; it does not authorize an Admin Master redesign, collaborator redesign, API redesign, public release, or changes to health-data visibility.
 
-Every RH surface must remain aggregate-only. Do not add employee drill-downs, diagnosis labels, raw health answers, or per-person health risk. Preserve existing HTTP methods, request bodies, response shapes, role checks, onboarding redirects, filters, exports, and mutation semantics unless a separate contract-backed change is approved.
+Health, analytics, engagement, and reporting surfaces must remain aggregate-only. Collaborator Management may show the individual account and organization data required for administration, such as name, email, role, status, and department. It must never expose individual health answers, diagnoses, exam results, health-risk classifications or scores, or health-derived drill-downs. Preserve existing HTTP methods, request bodies, response shapes, role checks, onboarding redirects, filters, exports, and mutation semantics unless a separate contract-backed change is approved.
+
+## Green-branch execution contract
+
+RED is a local observation, never a commit state. The shared harness may commit reusable helpers, green smoke/contracts, and explicit `test.fixme` placeholders for unopened lanes. For each route lane, remove only that lane's `test.fixme` (or add its focused test), run it locally to capture the expected RED, implement the route, run the focused tests plus the relevant RH gates to GREEN, and only then stage and commit. Every task and every commit in this plan must leave the branch green; never publish or hand off a commit with an activated failing test.
 
 ## Route inventory and target files
 
-| Lane | Existing route files | Primary contracts to preserve |
-| --- | --- | --- |
-| Dashboard follow-up | `src/app/(platform)/dashboard/page.tsx`, `dashboard.module.css`, `dashboard-view-model.ts`, `dashboard-export.ts`, `components/*` | Aggregate KPIs, filters, export safety, onboarding redirect, empty/error/loading states |
-| Invitations | `src/app/(platform)/convites/page.tsx`, `convites.module.css`, `loading.tsx` | Create/revoke/batch invites, approve/reject, department assignment, copy link |
-| Campaigns | `src/app/(platform)/campanhas/page.tsx`, `campanhas.module.css`, `loading.tsx`, `error.tsx` | Campaign listing, participation/status actions, dates, edit/delete permissions |
-| Departments | `src/app/(platform)/departamentos/page.tsx`, `loading.tsx` | List/create/edit/delete through `/api/rh/departments` |
-| Collaborator Management | `src/app/(platform)/colaboradoras-gestao/page.tsx`, `loading.tsx` | Search/filter/page, department update, edit, password reset, soft delete |
-| Reports | `src/app/(platform)/historico/page.tsx`, `historico.module.css`, `loading.tsx` | Period/department filters and aggregate `/api/analytics/history` results |
-| RH Configuration | `src/app/(platform)/company-profile/*`, `src/app/(platform)/gamificacao-config/*` | Company update/logo upload; gamification, reward, redemption, lesson CRUD and validation |
+| Lane                    | Existing route files                                                                                                              | Primary contracts to preserve                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Dashboard follow-up     | `src/app/(platform)/dashboard/page.tsx`, `dashboard.module.css`, `dashboard-view-model.ts`, `dashboard-export.ts`, `components/*` | Aggregate KPIs, filters, export safety, onboarding redirect, empty/error/loading states  |
+| Invitations             | `src/app/(platform)/convites/page.tsx`, `convites.module.css`, `loading.tsx`                                                      | Create/revoke/batch invites, approve/reject, department assignment, copy link            |
+| Campaigns               | `src/app/(platform)/campanhas/page.tsx`, `campanhas.module.css`, `loading.tsx`, `error.tsx`                                       | Campaign listing, participation/status actions, dates, edit/delete permissions           |
+| Departments             | `src/app/(platform)/departamentos/page.tsx`, `loading.tsx`                                                                        | List/create/edit/delete through `/api/rh/departments`                                    |
+| Collaborator Management | `src/app/(platform)/colaboradoras-gestao/page.tsx`, `loading.tsx`                                                                 | Search/filter/page, department update, edit, password reset, soft delete                 |
+| Reports                 | `src/app/(platform)/historico/page.tsx`, `historico.module.css`, `loading.tsx`                                                    | Period/department filters and aggregate `/api/analytics/history` results                 |
+| RH Configuration        | `src/app/(platform)/company-profile/*`, `src/app/(platform)/gamificacao-config/*`                                                 | Company update/logo upload; gamification, reward, redemption, lesson CRUD and validation |
 
 Shared files may be changed only when at least two migrated routes need the same behavior: `src/components/platform/PageHeader.tsx`, `SummaryBand.tsx`, `src/components/ui/Button.tsx`, `Input.tsx`, `FeedbackState.tsx`, and platform token styles. Prefer route CSS Modules over broad global changes.
 
@@ -39,9 +43,9 @@ Shared files may be changed only when at least two migrated routes need the same
 - Create: `tests/unit/platform/rh-route-contracts.test.tsx`
 - Reference only: `tests/e2e/rh.spec.ts`, `tests/e2e/platform-foundation.spec.ts`
 
-- [ ] **Step 1: Write failing route-shell and privacy tests**
+- [ ] **Step 1: Create green shared route-shell and privacy helpers**
 
-Add authenticated RH cases for all eight route paths. Assert one main landmark and one `h1`, correct active navigation, role context, 44px primary controls, visible focus, 375px root-width containment, loading/error/empty feedback, and no individual-health vocabulary or person-level health payload rendering.
+Create reusable authenticated RH helpers for one main landmark and one `h1`, active navigation, role context, 44px primary controls, visible focus, 375px root-width containment, loading/error/empty feedback, and role-appropriate privacy. Keep unopened route cases as named `test.fixme` blocks with the lane and activation condition. The helpers may assert aggregate-only health/analytics/engagement reporting while allowing necessary account and organization identity fields on Collaborator Management.
 
 - [ ] **Step 2: Add mutation contract fixtures**
 
@@ -51,20 +55,21 @@ Capture the existing request method, URL, and essential body fields for invitati
 
 Add `rh-route-migration` with the same production web server, database seeding, teardown discipline, and configured worker policy as the existing projects.
 
-- [ ] **Step 4: Confirm the harness fails for legacy presentation gaps, not auth setup**
+- [ ] **Step 4: Confirm the registered harness is GREEN**
 
 Run:
 
 ```powershell
 cd tests
-npx playwright test --config=playwright.config.ts --project=rh-route-migration
+npx playwright test --config=playwright.config.ts --project=platform-foundation --project=rh-route-migration --project=rh
 cd ..
-npm run test:unit -- --run tests/unit/platform/rh-route-contracts.test.tsx
+npm run test:unit
+npx tsc --noEmit
 ```
 
-Expected: authenticated route setup succeeds; assertions identifying unmigrated route presentation fail.
+Expected: authenticated setup, shared contracts, existing platform foundation, and RH regression tests pass. Unopened lane cases appear only as explicitly named `fixme` skips and do not make the branch red.
 
-- [ ] **Step 5: Commit the contract harness**
+- [ ] **Step 5: Commit the green contract harness**
 
 ```powershell
 git add tests/e2e/rh-route-migration.spec.ts tests/playwright.config.ts tests/unit/platform/rh-route-contracts.test.tsx
@@ -81,15 +86,9 @@ git commit -m "test: freeze Wave 2 RH route contracts"
 - Modify: `tests/unit/platform/dashboard.test.tsx`
 - Modify: `tests/e2e/rh-route-migration.spec.ts`
 
-- [ ] **Step 1: Add failing cases for remaining dashboard drift**
+- [ ] **Step 1: Activate the Dashboard lane and capture RED locally**
 
-Cover filter keyboard labels, 44px export/action controls, chart text alternatives, responsive details, error retry, and aggregate-only labels.
-
-- [ ] **Step 2: Apply the shared platform primitives surgically**
-
-Keep the existing view model and CSV formula neutralization. Remove route-local visual duplication only where `PageHeader`, `SummaryBand`, `FeedbackState`, or current `Button` already supplies the required contract.
-
-- [ ] **Step 3: Verify dashboard behavior**
+Remove the Dashboard `test.fixme` and add focused cases for filter keyboard labels, 44px export/action controls, chart text alternatives, responsive details, error retry, and aggregate-only labels. Run the focused tests, record the expected failure, and do not stage or commit the RED state.
 
 ```powershell
 npm run test:unit -- --run tests/unit/platform/dashboard.test.tsx
@@ -98,7 +97,23 @@ npx playwright test --config=playwright.config.ts --project=rh-route-migration -
 cd ..
 ```
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 2: Apply the shared platform primitives surgically**
+
+Keep the existing view model and CSV formula neutralization. Remove route-local visual duplication only where `PageHeader`, `SummaryBand`, `FeedbackState`, or current `Button` already supplies the required contract.
+
+- [ ] **Step 3: Verify focused and relevant gates are GREEN**
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/dashboard.test.tsx
+npm run test:unit
+npx tsc --noEmit
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "dashboard"
+npx playwright test --config=playwright.config.ts --project=rh
+cd ..
+```
+
+- [ ] **Step 4: Commit only after Step 3 is GREEN**
 
 ```powershell
 git add 'src/app/(platform)/dashboard' tests/unit/platform/dashboard.test.tsx tests/e2e/rh-route-migration.spec.ts
@@ -115,26 +130,41 @@ git commit -m "refactor: finish RH dashboard migration"
 - Create: `tests/unit/platform/invitations-route.test.tsx`
 - Modify: `tests/e2e/rh-route-migration.spec.ts`
 
-- [ ] **Step 1: Write failing tests for invite workflows**
+- [ ] **Step 1: Activate the Invitations lane and capture RED locally**
 
-Cover single and batch creation, duplicate/error feedback, department creation/selection, revoke, approve/reject, copy-link status, modal focus containment/restoration, and mobile stacking.
-
-- [ ] **Step 2: Migrate presentation while preserving APIs**
-
-Keep `/api/invites`, `/api/invites/pending`, `/api/invites/batch`, `/api/invites/approve`, invite deletion, and existing department semantics unchanged. Replace ad hoc headers, buttons, fields, and feedback with shared primitives.
-
-- [ ] **Step 3: Verify and commit**
+Remove the Invitations `test.fixme` and cover single and batch creation, duplicate/error feedback, department creation/selection, revoke, approve/reject, copy-link status, modal focus containment/restoration, and mobile stacking. Run the focused unit and Playwright cases to capture RED, then leave the failure unstaged and uncommitted.
 
 ```powershell
 npm run test:unit -- --run tests/unit/platform/invitations-route.test.tsx
 cd tests
 npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "invitations"
 cd ..
+```
+
+- [ ] **Step 2: Migrate presentation while preserving APIs**
+
+Keep `/api/invites`, `/api/invites/pending`, `/api/invites/batch`, `/api/invites/approve`, invite deletion, and existing department semantics unchanged. Replace ad hoc headers, buttons, fields, and feedback with shared primitives.
+
+- [ ] **Step 3: Verify focused and relevant gates are GREEN**
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/invitations-route.test.tsx
+npm run test:unit
+npx tsc --noEmit
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "invitations"
+npx playwright test --config=playwright.config.ts --project=rh
+cd ..
+```
+
+- [ ] **Step 4: Commit only after Step 3 is GREEN**
+
+```powershell
 git add 'src/app/(platform)/convites' tests/unit/platform/invitations-route.test.tsx tests/e2e/rh-route-migration.spec.ts
 git commit -m "refactor: migrate RH invitations route"
 ```
 
-## Task 4: Migrate Campaigns and Departments
+## Task 4A: Migrate Campaigns
 
 **Files:**
 
@@ -142,36 +172,87 @@ git commit -m "refactor: migrate RH invitations route"
 - Modify: `src/app/(platform)/campanhas/campanhas.module.css`
 - Modify: `src/app/(platform)/campanhas/loading.tsx`
 - Modify: `src/app/(platform)/campanhas/error.tsx`
-- Modify: `src/app/(platform)/departamentos/page.tsx`
-- Modify: `src/app/(platform)/departamentos/loading.tsx`
 - Create: `tests/unit/platform/campaigns-route.test.tsx`
-- Create: `tests/unit/platform/departments-route.test.tsx`
 - Modify: `tests/e2e/rh-route-migration.spec.ts`
 
-- [ ] **Step 1: Add failing list, state, mutation, and permission tests**
+- [ ] **Step 1: Activate the Campaigns lane and capture RED locally**
 
-Campaigns must retain date/progress/status meaning and edit/delete authorization. Departments must retain create/edit/cancel/delete behavior and surface non-2xx responses without optimistic false success.
+Remove the Campaigns `test.fixme` and cover list states, date/progress/status meaning, mutations, error handling, and edit/delete authorization. Run the focused cases to capture RED; do not stage or commit that state.
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/campaigns-route.test.tsx
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "campaigns"
+cd ..
+```
 
 - [ ] **Step 2: Migrate Campaigns**
 
 Use a single page header, semantic status text in addition to color, shared feedback states, and responsive actions. Retain `outline` compatibility until all consuming routes are migrated; do not remove a Button alias while `rg` finds a consumer.
 
-- [ ] **Step 3: Migrate Departments**
-
-Use labelled fields, explicit destructive confirmation, focus restoration after form/modal close, and a table-to-stacked layout that does not create document overflow.
-
-- [ ] **Step 4: Verify and commit each lane**
+- [ ] **Step 3: Verify focused and relevant gates are GREEN**
 
 ```powershell
-npm run test:unit -- --run tests/unit/platform/campaigns-route.test.tsx tests/unit/platform/departments-route.test.tsx
+npm run test:unit -- --run tests/unit/platform/campaigns-route.test.tsx
+npm run test:unit
+npx tsc --noEmit
 cd tests
-npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "campaigns|departments"
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "campaigns"
+npx playwright test --config=playwright.config.ts --project=rh
 cd ..
-git add 'src/app/(platform)/campanhas' 'src/app/(platform)/departamentos' tests/unit/platform/campaigns-route.test.tsx tests/unit/platform/departments-route.test.tsx tests/e2e/rh-route-migration.spec.ts
-git commit -m "refactor: migrate RH campaigns and departments"
 ```
 
-## Task 5: Migrate Collaborator Management with strict privacy boundaries
+- [ ] **Step 4: Commit only after Step 3 is GREEN**
+
+```powershell
+git add 'src/app/(platform)/campanhas' tests/unit/platform/campaigns-route.test.tsx tests/e2e/rh-route-migration.spec.ts
+git commit -m "refactor: migrate RH campaigns route"
+```
+
+## Task 4B: Migrate Departments
+
+**Files:**
+
+- Modify: `src/app/(platform)/departamentos/page.tsx`
+- Modify: `src/app/(platform)/departamentos/loading.tsx`
+- Create: `tests/unit/platform/departments-route.test.tsx`
+- Modify: `tests/e2e/rh-route-migration.spec.ts`
+
+- [ ] **Step 1: Activate the Departments lane and capture RED locally**
+
+Remove the Departments `test.fixme` and cover list/create/edit/cancel/delete behavior, error feedback, explicit destructive confirmation, focus restoration, and mobile containment. Run the focused cases to capture RED; do not stage or commit that state.
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/departments-route.test.tsx
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "departments"
+cd ..
+```
+
+- [ ] **Step 2: Migrate Departments**
+
+Preserve `/api/rh/departments` methods and bodies. Use labelled fields, explicit destructive confirmation, focus restoration after form/modal close, and a table-to-stacked layout that does not create document overflow. Surface non-2xx responses without optimistic false success.
+
+- [ ] **Step 3: Verify focused and relevant gates are GREEN**
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/departments-route.test.tsx
+npm run test:unit
+npx tsc --noEmit
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "departments"
+npx playwright test --config=playwright.config.ts --project=rh
+cd ..
+```
+
+- [ ] **Step 4: Commit only after Step 3 is GREEN**
+
+```powershell
+git add 'src/app/(platform)/departamentos' tests/unit/platform/departments-route.test.tsx tests/e2e/rh-route-migration.spec.ts
+git commit -m "refactor: migrate RH departments route"
+```
+
+## Task 5: Migrate Collaborator Management with role-appropriate privacy boundaries
 
 **Files:**
 
@@ -181,9 +262,16 @@ git commit -m "refactor: migrate RH campaigns and departments"
 - Create: `tests/unit/platform/collaborator-management-route.test.tsx`
 - Modify: `tests/e2e/rh-route-migration.spec.ts`
 
-- [ ] **Step 1: Write failing workflow and privacy tests**
+- [ ] **Step 1: Activate the Collaborator Management lane and capture RED locally**
 
-Cover search, filters, pagination, department assignment, profile edit, password reset, soft delete, pending/error states, confirmation language, and keyboard modal behavior. Assert that the UI and intercepted payloads contain account/organization fields only, never health answers or individual risk.
+Remove the Collaborator Management `test.fixme` and cover search, filters, pagination, department assignment, profile edit, password reset, soft delete, pending/error states, confirmation language, and keyboard modal behavior. Necessary individual account and organization data is allowed; assert that the UI and intercepted payloads never contain individual health answers, diagnoses, exam results, health-risk classifications or scores, or health-derived fields. Run the focused cases to capture RED; do not stage or commit that state.
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/collaborator-management-route.test.tsx
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "collaborator management"
+cd ..
+```
 
 - [ ] **Step 2: Split rendering from mutations only where it reduces risk**
 
@@ -193,13 +281,21 @@ If `page.tsx` remains difficult to test, extract presentational sections or a ty
 
 Provide a stable summary/filter/action hierarchy, semantic results count, responsive list/table, 44px primary and destructive actions, focus management, and visible non-color status.
 
-- [ ] **Step 4: Verify and commit**
+- [ ] **Step 4: Verify focused and relevant gates are GREEN**
 
 ```powershell
 npm run test:unit -- --run tests/unit/platform/collaborator-management-route.test.tsx
+npm run test:unit
+npx tsc --noEmit
 cd tests
 npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "collaborator management"
+npx playwright test --config=playwright.config.ts --project=rh
 cd ..
+```
+
+- [ ] **Step 5: Commit only after Step 4 is GREEN**
+
+```powershell
 git add 'src/app/(platform)/colaboradoras-gestao' tests/unit/platform/collaborator-management-route.test.tsx tests/e2e/rh-route-migration.spec.ts
 git commit -m "refactor: migrate RH collaborator management"
 ```
@@ -214,21 +310,36 @@ git commit -m "refactor: migrate RH collaborator management"
 - Create: `tests/unit/platform/reports-route.test.tsx`
 - Modify: `tests/e2e/rh-route-migration.spec.ts`
 
-- [ ] **Step 1: Add failing report semantics and privacy tests**
+- [ ] **Step 1: Activate the Reports lane and capture RED locally**
 
-Cover period/department filters, loading/error/empty states, chart/table text alternatives, mobile containment, and aggregate-only response rendering. Fail if a row or tooltip identifies an employee alongside health data.
-
-- [ ] **Step 2: Migrate the report surface**
-
-Keep `/api/analytics/history?period=...&department=...` semantics. Use `PageHeader`, a semantic aggregate summary, labelled filters, readable chart fallbacks, and non-color trend indicators.
-
-- [ ] **Step 3: Verify and commit**
+Remove the Reports `test.fixme` and cover period/department filters, loading/error/empty states, chart/table text alternatives, mobile containment, and aggregate-only health/analytics/engagement response rendering. Fail if a row or tooltip identifies an employee alongside health data. Run the focused cases to capture RED; do not stage or commit that state.
 
 ```powershell
 npm run test:unit -- --run tests/unit/platform/reports-route.test.tsx
 cd tests
 npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "reports"
 cd ..
+```
+
+- [ ] **Step 2: Migrate the report surface**
+
+Keep `/api/analytics/history?period=...&department=...` semantics. Use `PageHeader`, a semantic aggregate summary, labelled filters, readable chart fallbacks, and non-color trend indicators.
+
+- [ ] **Step 3: Verify focused and relevant gates are GREEN**
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/reports-route.test.tsx
+npm run test:unit
+npx tsc --noEmit
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "reports"
+npx playwright test --config=playwright.config.ts --project=rh
+cd ..
+```
+
+- [ ] **Step 4: Commit only after Step 3 is GREEN**
+
+```powershell
 git add 'src/app/(platform)/historico' tests/unit/platform/reports-route.test.tsx tests/e2e/rh-route-migration.spec.ts
 git commit -m "refactor: migrate aggregate RH reports"
 ```
@@ -246,30 +357,43 @@ git commit -m "refactor: migrate aggregate RH reports"
 - Create: `tests/unit/platform/gamification-config-route.test.tsx`
 - Modify: `tests/e2e/rh-route-migration.spec.ts`
 
-- [ ] **Step 1: Test and migrate Company Profile**
+- [ ] **Step 1: Activate the Company Profile lane and capture RED locally**
 
-Preserve `/api/company` reads/updates and `/api/upload/logo`. Cover edit/cancel/save, upload success/failure, preview, form labels, unsaved changes, loading/error feedback, and 44px actions.
-
-- [ ] **Step 2: Commit the Company Profile slice**
+Remove the Company Profile `test.fixme` and cover edit/cancel/save, upload success/failure, preview, form labels, unsaved changes, loading/error feedback, and 44px actions. Run the focused cases to capture RED; do not stage or commit that state.
 
 ```powershell
 npm run test:unit -- --run tests/unit/platform/company-profile-route.test.tsx
 cd tests
 npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "company profile"
 cd ..
+```
+
+- [ ] **Step 2: Migrate Company Profile while preserving contracts**
+
+Preserve `/api/company` reads/updates and `/api/upload/logo`. Apply shared platform primitives, labelled fields, clear pending/error/success feedback, 44px primary actions, and focus restoration without changing request methods or bodies.
+
+- [ ] **Step 3: Verify focused and relevant gates are GREEN**
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/company-profile-route.test.tsx
+npm run test:unit
+npx tsc --noEmit
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "company profile"
+npx playwright test --config=playwright.config.ts --project=rh
+cd ..
+```
+
+- [ ] **Step 4: Commit only after Step 3 is GREEN**
+
+```powershell
 git add 'src/app/(platform)/company-profile' tests/unit/platform/company-profile-route.test.tsx tests/e2e/rh-route-migration.spec.ts
 git commit -m "refactor: migrate RH company profile"
 ```
 
-- [ ] **Step 3: Test Gamification Configuration by capability**
+- [ ] **Step 5: Activate Gamification Configuration and capture RED locally**
 
-Write cases for configuration fields/toggles, theme ordering, reward CRUD, redemption approval/rejection, lesson filters, lesson create/edit/delete/validation, schedule labels, editor-step validation, portals, and focus restoration. Preserve all existing `/api/gamification/*` and `/api/rh/lessons*` contracts.
-
-- [ ] **Step 4: Decompose the large module before visual migration**
-
-Extract focused local components and typed helpers under `src/app/(platform)/gamificacao-config/components/` only after characterization tests cover the behavior. Keep SWR mutation keys aligned with their original fetch keys.
-
-- [ ] **Step 5: Apply platform presentation and verify**
+Remove the Gamification Configuration `test.fixme` and add cases for configuration fields/toggles, theme ordering, reward CRUD, redemption approval/rejection, lesson filters, lesson create/edit/delete/validation, schedule labels, editor-step validation, portals, and focus restoration. Run the focused cases to capture RED; do not stage or commit that state.
 
 ```powershell
 npm run test:unit -- --run tests/unit/platform/gamification-config-route.test.tsx
@@ -278,7 +402,23 @@ npx playwright test --config=playwright.config.ts --project=rh-route-migration -
 cd ..
 ```
 
-- [ ] **Step 6: Commit the Gamification slice**
+- [ ] **Step 6: Decompose the large module before visual migration**
+
+Extract focused local components and typed helpers under `src/app/(platform)/gamificacao-config/components/` only after the local RED observation identifies the missing presentation contract. Preserve all existing `/api/gamification/*` and `/api/rh/lessons*` contracts and keep SWR mutation keys aligned with their original fetch keys.
+
+- [ ] **Step 7: Apply platform presentation and verify focused and relevant gates are GREEN**
+
+```powershell
+npm run test:unit -- --run tests/unit/platform/gamification-config-route.test.tsx
+npm run test:unit
+npx tsc --noEmit
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --grep "gamification configuration"
+npx playwright test --config=playwright.config.ts --project=rh
+cd ..
+```
+
+- [ ] **Step 8: Commit only after Step 7 is GREEN**
 
 ```powershell
 git add 'src/app/(platform)/gamificacao-config' tests/unit/platform/gamification-config-route.test.tsx tests/e2e/rh-route-migration.spec.ts
@@ -307,10 +447,17 @@ If Admin or Collaborator still consumes an alias, document the owner and retain 
 
 ```powershell
 npm run test:unit -- --run tests/unit/platform/primitives.test.tsx
+npm run test:unit
+npx tsc --noEmit
+cd tests
+npx playwright test --config=playwright.config.ts --project=rh-route-migration --project=rh
+cd ..
 git diff --check
 git add src/components/ui/Button.tsx tests/unit/platform/primitives.test.tsx
 git commit -m "refactor: retire migrated RH compatibility aliases"
 ```
+
+If search proves that compatibility must remain, record the consumers and finish this task without a commit; the branch must still be green.
 
 ## Task 9: Run the Wave 2 promotion gate and record evidence
 
@@ -340,7 +487,7 @@ Expected: every command exits `0`; no route-specific suite is skipped.
 
 - [ ] **Step 3: Perform the runtime matrix**
 
-At 1440x900, 1024x768, 768x1024, and 375x812, inspect every planned RH route for current location/role, keyboard order, drawer focus/restoration, modal focus, root overflow, 44px primary actions, AA text/placeholder/focus contrast, reduced motion, error/empty/loading behavior, and aggregate-only privacy. Use the standalone production runtime and record `/api/health` plus console/network failures.
+At 1440x900, 1024x768, 768x1024, and 375x812, inspect every planned RH route for current location/role, keyboard order, drawer focus/restoration, modal focus, root overflow, 44px primary actions, AA text/placeholder/focus contrast, reduced motion, error/empty/loading behavior, and role-appropriate privacy. Health, analytics, engagement, and reporting must remain aggregate-only. Collaborator Management may display necessary individual account/organization identity and administrative data but no individual health, diagnosis, exam, or health-risk data. Use the standalone production runtime and record `/api/health` plus console/network failures.
 
 - [ ] **Step 4: Write the scorecard with real evidence**
 

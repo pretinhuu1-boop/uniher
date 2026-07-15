@@ -4,6 +4,7 @@
 
 - Decision: PASS
 - Commit under review: `bd28548`
+- Evidence commit: `89878f5`
 - Reviewed routes: `/admin`, `/dashboard`, `/colaboradora`, `/configuracoes`
 
 ## Automated evidence
