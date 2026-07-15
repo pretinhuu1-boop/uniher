@@ -39,6 +39,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .platform-surface,
+  .platform-surface::before,
+  .platform-surface::after,
   .platform-surface *,
   .platform-surface *::before,
   .platform-surface *::after {
