@@ -5,7 +5,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 
 export default async function globalTeardown() {
-  const dbPath = path.join(__dirname, '..', 'data', 'uniher.db');
+  const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '..', 'data', 'uniher.db');
 
   try {
     const db = new Database(dbPath);

@@ -2,8 +2,8 @@
 
 import { useId } from 'react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
 import type { NavigationIcon } from './navigation';
+import styles from './Sidebar.module.css';
 
 export type SidebarIcon = NavigationIcon | 'logout';
 
@@ -120,7 +120,7 @@ export function NavIcon({ name }: { name: SidebarIcon }) {
   if (!icon) throw new Error(`Unsupported navigation icon: ${name}`);
 
   return (
-    <span className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" aria-hidden="true">
+    <span className={styles.navIcon} aria-hidden="true">
       {icon}
     </span>
   );
@@ -143,28 +143,14 @@ export default function SidebarNavItem({ href, icon, label, description, isActiv
     <>
       <Link
         href={href}
-        className={cn(
-          "group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 relative",
-          isActive
-            ? "bg-rose-50 text-rose-700 shadow-sm border border-rose-100"
-            : "text-uni-text-600 hover:bg-cream-100 hover:text-uni-text-900"
-        )}
+        className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
         aria-current={isActive ? 'page' : undefined}
         aria-describedby={descriptionId}
         onClick={onClick}
       >
         <NavIcon name={icon} />
-        <span className="flex-1">{label}</span>
+        <span className={styles.navItemLabel}>{label}</span>
         {children}
-        <span className="relative flex-shrink-0" aria-hidden="true">
-          <span
-            className="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-60 transition-opacity cursor-help"
-            style={{ background: '#e8dfd0', color: '#8B7355' }}
-            title={description}
-          >
-            ?
-          </span>
-        </span>
       </Link>
       <span id={descriptionId} className="sr-only">{description}</span>
     </>

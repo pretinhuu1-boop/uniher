@@ -5,11 +5,22 @@ import path from 'path';
 // Detect available resources — use half the CPUs, min 1, max 3
 const defaultPort = process.env.PLAYWRIGHT_PORT || '3100';
 const baseURL = process.env.BASE_URL || `http://127.0.0.1:${defaultPort}`;
+const databasePath = process.env.DATABASE_PATH || path.resolve(__dirname, '..', 'data', 'uniher.db');
+const testServerEnv = {
+  PLAYWRIGHT_TEST: '1',
+  PLAYWRIGHT_PORT: defaultPort,
+  DATABASE_PATH: databasePath,
+  JWT_SECRET: process.env.JWT_SECRET || 'uniher-playwright-access-secret-at-least-32-characters',
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'uniher-playwright-refresh-secret-at-least-32-characters',
+  ALLOW_INSECURE_HTTP_COOKIES: process.env.ALLOW_INSECURE_HTTP_COOKIES || 'true',
+};
+
+Object.assign(process.env, testServerEnv);
 
 const webServerCommand =
   process.platform === 'win32'
-    ? `powershell -NoProfile -Command "$env:PLAYWRIGHT_TEST='1'; $env:PLAYWRIGHT_PORT='${defaultPort}'; npm run build; node tests/start-playwright-server.cjs"`
-    : `PLAYWRIGHT_TEST=1 PLAYWRIGHT_PORT=${defaultPort} npm run build && PLAYWRIGHT_TEST=1 PLAYWRIGHT_PORT=${defaultPort} node tests/start-playwright-server.cjs`;
+    ? 'powershell -NoProfile -Command "npm run db:seed; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; npm run build; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; node tests/start-playwright-server.cjs"'
+    : 'npm run db:seed && npm run build && node tests/start-playwright-server.cjs';
 
 const cpus = os.cpus().length;
 const autoWorkers = Math.max(1, Math.min(3, Math.floor(cpus / 2)));
@@ -32,6 +43,7 @@ export default defineConfig({
         command: webServerCommand,
         url: `${baseURL}/api/health`,
         cwd: path.resolve(__dirname, '..'),
+        env: testServerEnv,
         reuseExistingServer: false,
         timeout: 180000,
       },
@@ -42,6 +54,11 @@ export default defineConfig({
     trace: 'off',
   },
   projects: [
+    {
+      name: 'platform-foundation',
+      testMatch: 'platform-foundation.spec.ts',
+      use: { headless: true, serviceWorkers: 'block' },
+    },
     { name: 'master', testMatch: 'master.spec.ts' },
     { name: 'rh', testMatch: 'rh.spec.ts' },
     { name: 'colaboradora', testMatch: 'colaboradora.spec.ts' },

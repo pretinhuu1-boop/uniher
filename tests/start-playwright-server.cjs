@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { prepareStandaloneStatic } = require('./prepare-playwright-static.cjs');
 
 const rootDir = path.resolve(__dirname, '..');
 const envFiles = ['.env.local', '.env.production', '.env'];
@@ -38,4 +39,5 @@ process.env.PLAYWRIGHT_TEST = process.env.PLAYWRIGHT_TEST || '1';
 process.env.PORT = process.env.PLAYWRIGHT_PORT || process.env.PORT || '3100';
 process.chdir(rootDir);
 
+prepareStandaloneStatic(rootDir);
 require(path.join(rootDir, '.next', 'standalone', 'server.js'));
