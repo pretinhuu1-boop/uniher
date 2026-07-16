@@ -12,7 +12,7 @@ export const ARCHETYPES: Record<ArchetypeKey, ArchetypeData> = {
   },
   protetora: {
     name: 'Protetora Silenciosa',
-    description: 'Você conhece seus pontos de melhoria mas adia as ações importantes. A consciência já está lá — o UniHER vai transformar intenção em hábito real, passo a passo.',
+    description: 'Você reconhece aspectos que quer melhorar, mas adia as ações importantes. A consciência já está lá — o UniHER vai transformar intenção em hábito real, passo a passo.',
     base: [2.0, 3.5, 2.5, 3.0, 2.0, 2.5],
     growth30: [2.0, 1.0, 1.5, 0.8, 1.8, 1.5],
     growth60: [3.8, 1.8, 2.8, 1.5, 3.3, 2.8],
@@ -21,7 +21,7 @@ export const ARCHETYPES: Record<ArchetypeKey, ArchetypeData> = {
   },
   guerreira: {
     name: 'Guerreira em Evolução',
-    description: 'Você já tem consciência sobre saúde e quer ir mais longe. O próximo nível de bem-estar está ao seu alcance — e o UniHER é o combustível para chegar lá.',
+    description: 'Você já tem consciência sobre saúde e quer ir mais longe. Uma nova etapa de bem-estar está ao seu alcance — e o UniHER é sua aliada para chegar lá.',
     base: [5.5, 5.0, 5.2, 4.8, 5.0, 5.5],
     growth30: [0.8, 1.0, 0.9, 1.2, 0.8, 0.9],
     growth60: [1.5, 1.8, 1.6, 2.0, 1.5, 1.6],

@@ -24,9 +24,10 @@ vi.mock('@/lib/db', () => ({
 }));
 
 import { POST as checkIn } from '@/app/api/gamification/check-in/route';
-import { POST as completeLesson } from '@/app/api/gamification/daily-lesson/route';
+import { GET as getLesson, POST as completeLesson } from '@/app/api/gamification/daily-lesson/route';
 import { POST as completeMission } from '@/app/api/gamification/daily-missions/[id]/complete/route';
 import { POST as joinCampaign } from '@/app/api/campaigns/join/route';
+import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
 import * as objectivesService from '@/services/objectives.service';
 import * as leagueService from '@/services/league.service';
 import * as activityLogRepository from '@/repositories/activity-log.repository';
@@ -50,7 +51,11 @@ function useWriteDatabase() {
     CREATE TABLE health_scores (id TEXT PRIMARY KEY, user_id TEXT, dimension TEXT, score REAL, status TEXT, recorded_at TEXT);
     CREATE TABLE daily_missions (id TEXT PRIMARY KEY, user_id TEXT, title TEXT, description TEXT, xp INTEGER, category TEXT, action TEXT, day TEXT, completed INTEGER DEFAULT 0, completed_at TEXT, created_at TEXT DEFAULT (datetime('now')));
     CREATE TABLE mission_logs (id TEXT PRIMARY KEY, user_id TEXT, mission_id TEXT, action TEXT, day TEXT, mood TEXT, glasses INTEGER, challenge_id TEXT, note TEXT, created_at TEXT DEFAULT (datetime('now')));
-    CREATE TABLE daily_lessons (id TEXT PRIMARY KEY, company_id TEXT, active INTEGER);
+    CREATE TABLE daily_lessons (
+      id TEXT PRIMARY KEY, company_id TEXT, title TEXT NOT NULL, description TEXT, type TEXT NOT NULL,
+      theme TEXT NOT NULL, content_json TEXT, xp_reward INTEGER, duration_seconds INTEGER,
+      week_number INTEGER, day_of_week INTEGER, order_index INTEGER, active INTEGER
+    );
     CREATE TABLE user_lesson_progress (id TEXT PRIMARY KEY, user_id TEXT, lesson_id TEXT, completed INTEGER, score INTEGER, xp_earned INTEGER, completed_at TEXT, UNIQUE(user_id, lesson_id));
     CREATE TABLE gamification_config (company_id TEXT PRIMARY KEY, hearts_enabled INTEGER, hearts_refill_hours INTEGER);
     CREATE TABLE user_hearts (user_id TEXT PRIMARY KEY, hearts INTEGER, max_hearts INTEGER);
@@ -60,8 +65,16 @@ function useWriteDatabase() {
     INSERT INTO custom_league_members VALUES ('custom-1', 'custom-league-1', 'user-1', 88);
     INSERT INTO user_badges VALUES ('user-1', 'badge-1', '2026-01-01');
     INSERT INTO health_scores VALUES ('health-1', 'user-1', 'Sono', 77, 'yellow', '2026-01-01');
-    INSERT INTO daily_lessons VALUES ('lesson-1', 'company-1', 1);
+    INSERT INTO daily_lessons VALUES (
+      'lesson-1', 'company-1', 'Cuidado diario', 'Conteudo privado', 'pilula', 'geral',
+      '{"text":"Cuide-se hoje"}', 20, 30, 1, 1, 0, 1
+    );
+    INSERT INTO daily_lessons VALUES (
+      'lesson-foreign', 'company-2', 'FOREIGN_LESSON_CANARY', 'Nao pode aparecer', 'pilula', 'geral',
+      '{"text":"FOREIGN_CONTENT_CANARY"}', 999, 30, 1, 1, 0, 1
+    );
     INSERT INTO user_lesson_progress VALUES ('progress-other', 'user-2', 'lesson-1', 0, 17, 7, NULL);
+    INSERT INTO user_lesson_progress VALUES ('progress-foreign', 'user-2', 'lesson-foreign', 1, 99, 999, '2026-01-01');
     INSERT INTO gamification_config VALUES ('company-1', 0, 24);
   `);
   return db;
@@ -81,8 +94,25 @@ function legacySnapshotBytes(db: Database.Database) {
   return JSON.stringify(legacySnapshot(db));
 }
 
+function findForbiddenResponseKeys(value: unknown, path = '$'): string[] {
+  const forbidden = new Set([
+    'point', 'points', 'level', 'xp', 'xpreward', 'xpearned', 'userxpearned', 'league',
+    'rank', 'ranking', 'badge', 'badges', 'weekpoints', 'healthscore', 'healthscores', 'dimension',
+  ]);
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => findForbiddenResponseKeys(item, `${path}[${index}]`));
+  }
+  if (!value || typeof value !== 'object') return [];
+
+  return Object.entries(value).flatMap(([key, child]) => {
+    const normalizedKey = key.replace(/[^a-z0-9]/gi, '').toLowerCase();
+    const own = forbidden.has(normalizedKey) ? [`${path}.${key}`] : [];
+    return [...own, ...findForbiddenResponseKeys(child, `${path}.${key}`)];
+  });
+}
+
 function expectPointFreeBoundary(payload: unknown) {
-  expect(JSON.stringify(payload)).not.toMatch(/"(?:points?|level|league|week_points|xp(?:_?reward|_?earned)?|badges?|health_?scores?)"/i);
+  expect(findForbiddenResponseKeys(payload)).toEqual([]);
 }
 
 function productionSources(directory = path.join(root, 'src')): string {
@@ -139,7 +169,12 @@ describe('legacy gamification write containment', () => {
     }) as any, { auth } as any);
     expect(lessonResponse.status).toBe(200);
     const lessonPayload = await lessonResponse.json();
-    expect(lessonPayload).toMatchObject({ success: true, progressRecorded: true, score: 90 });
+    expect(lessonPayload).toEqual({
+      success: true,
+      progressRecorded: true,
+      gamification: LEGACY_GAMIFICATION_STATE,
+      score: 90,
+    });
     expectPointFreeBoundary(lessonPayload);
     expect(db.prepare(
       'SELECT user_id, lesson_id, completed, score, xp_earned FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?'
@@ -151,7 +186,7 @@ describe('legacy gamification write containment', () => {
     ).get('user-2')).toEqual({
       id: 'progress-other', user_id: 'user-2', lesson_id: 'lesson-1', completed: 0, score: 17, xp_earned: 7, completed_at: null,
     });
-    expect(db.prepare('SELECT COUNT(*) AS total FROM user_lesson_progress').get()).toEqual({ total: 2 });
+    expect(db.prepare('SELECT COUNT(*) AS total FROM user_lesson_progress').get()).toEqual({ total: 3 });
 
     const mission = db.prepare("SELECT id FROM daily_missions WHERE user_id = ? AND action = 'read_content'").get('user-1') as { id: string };
     const missionResponse = await completeMission(new Request(`http://localhost/api/gamification/daily-missions/${mission.id}/complete`, {
@@ -187,7 +222,12 @@ describe('legacy gamification write containment', () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(payload).toMatchObject({ success: true, progressRecorded: true, score: 64 });
+    expect(payload).toEqual({
+      success: true,
+      progressRecorded: true,
+      gamification: LEGACY_GAMIFICATION_STATE,
+      score: 64,
+    });
     expectPointFreeBoundary(payload);
     expect(db.prepare(
       'SELECT id, user_id, lesson_id, completed, score, xp_earned FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?'
@@ -199,8 +239,39 @@ describe('legacy gamification write containment', () => {
     ).get('user-2')).toEqual({
       id: 'progress-other', user_id: 'user-2', lesson_id: 'lesson-1', completed: 0, score: 17, xp_earned: 7, completed_at: null,
     });
-    expect(db.prepare('SELECT COUNT(*) AS total FROM user_lesson_progress').get()).toEqual({ total: 2 });
+    expect(db.prepare('SELECT COUNT(*) AS total FROM user_lesson_progress').get()).toEqual({ total: 3 });
     expect(legacySnapshotBytes(db)).toBe(before);
+  });
+
+  it('returns private lesson progress with hearts and neutral quarantine state but no legacy fields or foreign canary', async () => {
+    const db = useWriteDatabase();
+    db.prepare('UPDATE gamification_config SET hearts_enabled = 1 WHERE company_id = ?').run('company-1');
+    db.prepare('INSERT INTO user_hearts VALUES (?, ?, ?)').run('user-1', 3, 5);
+    db.prepare('UPDATE daily_lessons SET content_json = ? WHERE id = ?').run(JSON.stringify({
+      text: 'Cuide-se hoje',
+      nestedLegacy: {
+        points: 731,
+        level: 8,
+        xp: 90,
+        league: 'ouro',
+        rank: 1,
+        badges: ['badge-1'],
+        week_points: 99,
+        health_scores: [{ dimension: 'Sono', health_score: 77 }],
+      },
+    }), 'lesson-1');
+    const auth = { userId: 'user-1', companyId: 'company-1', role: 'colaboradora', email: 'ana@example.test' };
+
+    const response = await getLesson(new Request('http://localhost/api/gamification/daily-lesson') as any, { auth } as any);
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.hearts).toEqual({ current: 3, max: 5 });
+    expect(payload.heartsEnabled).toBe(true);
+    expect(payload.gamification).toEqual(LEGACY_GAMIFICATION_STATE);
+    expect(findForbiddenResponseKeys(payload)).toEqual([]);
+    expect(JSON.stringify(payload)).not.toContain('FOREIGN_LESSON_CANARY');
+    expect(JSON.stringify(payload)).not.toContain('FOREIGN_CONTENT_CANARY');
   });
 
   it('fail-closes residual legacy services before any database access', async () => {

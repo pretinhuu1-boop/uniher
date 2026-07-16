@@ -37,6 +37,14 @@ function collectReachableSources(entry: string): Map<string, string> {
   return reachable;
 }
 
+function findLegacyCopy(reachable: Map<string, string>): string[] {
+  const forbidden = /Duolingo|Gamificação|gamificação|gamificada|Ranking|ranking|pontos?|Pontos?|nível|níveis|Nível|Níveis|\bXP\b|badges|Badges|streaks?|Streaks?|competição|competições|Competição|Competições|arena|Arena|conquistas?|Conquistas?|recompensas?|Recompensas?|prêmios?|rival|desafiar|dopamina|Dopamina/;
+
+  return [...reachable].flatMap(([file, source]) => source.split(/\r?\n/).flatMap((line, index) => (
+    forbidden.test(line) ? [`${file}:${index + 1}: ${line.trim()}`] : []
+  )));
+}
+
 describe('public home legacy gamification quarantine', () => {
   it('keeps the root HomeClient graph unable to reach legacy ranking, points, level, or XP promises', () => {
     const reachable = collectReachableSources('src/app/page.tsx');
@@ -45,6 +53,12 @@ describe('public home legacy gamification quarantine', () => {
     expect([...reachable.keys()]).toContain('src/components/HomeClient.tsx');
     expect([...reachable.keys()]).not.toContain('src/components/sections/Gamification.tsx');
     expect(publicHomeSource).not.toMatch(/Arena por Departamento|87\.840|pontos totais|Nv\.9|Level 5|2\.370 \/ 2\.500/);
+  });
+
+  it('keeps every reachable public home source free from legacy gamification copy', () => {
+    const reachable = collectReachableSources('src/app/page.tsx');
+
+    expect(findLegacyCopy(reachable)).toEqual([]);
   });
 
   it('does not expose a dead footer link to the quarantined gamification section', () => {
