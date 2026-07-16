@@ -7,6 +7,10 @@ const boundary = vi.hoisted(() => ({
   db: null as Database.Database | null,
   sql: [] as string[],
   events: [] as string[],
+  dedicatedReadOpenCount: 0,
+  dedicatedReadCloseCount: 0,
+  dedicatedPrepareCount: 0,
+  failDedicatedReadAfterPrepareCount: null as number | null,
 }));
 
 vi.mock('@/lib/auth/middleware', () => {
@@ -54,6 +58,30 @@ vi.mock('@/lib/db', () => ({
       },
     };
   },
+  openReadOnlyDb: () => {
+    boundary.events.push('openReadOnlyDb');
+    boundary.dedicatedReadOpenCount += 1;
+    let closed = false;
+    return {
+      prepare: (sql: string) => {
+        boundary.sql.push(sql);
+        boundary.dedicatedPrepareCount += 1;
+        if (
+          boundary.failDedicatedReadAfterPrepareCount !== null
+          && boundary.dedicatedPrepareCount > boundary.failDedicatedReadAfterPrepareCount
+        ) {
+          throw new Error('dedicated read failure');
+        }
+        if (!boundary.db) throw new Error('boundary database not configured');
+        return boundary.db.prepare(sql);
+      },
+      close: () => {
+        if (closed) return;
+        closed = true;
+        boundary.dedicatedReadCloseCount += 1;
+      },
+    };
+  },
 }));
 
 import { GET as getCollaboratorHome } from '@/app/api/collaborator/route';
@@ -87,6 +115,10 @@ afterEach(() => {
   boundary.db = null;
   boundary.sql = [];
   boundary.events = [];
+  boundary.dedicatedReadOpenCount = 0;
+  boundary.dedicatedReadCloseCount = 0;
+  boundary.dedicatedPrepareCount = 0;
+  boundary.failDedicatedReadAfterPrepareCount = null;
 });
 
 function useBoundaryDatabase() {
@@ -108,7 +140,10 @@ function useBoundaryDatabase() {
     CREATE TABLE dsar_export_cooldowns (
       user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       next_allowed_at INTEGER NOT NULL CHECK(next_allowed_at >= 0),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      reservation_token TEXT,
+      status TEXT NOT NULL DEFAULT 'completed'
+        CHECK(status IN ('in_progress', 'completed', 'failed', 'cancelled'))
     );
     CREATE TABLE departments (id TEXT PRIMARY KEY, company_id TEXT, name TEXT);
     CREATE TABLE companies (
@@ -369,7 +404,7 @@ describe('safe authenticated projections', () => {
   });
 
   it('exports legacy-derived evidence using the real activity and mission log schemas', async () => {
-    useBoundaryDatabase();
+    const db = useBoundaryDatabase();
     const response = await getDsarExport(new Request('http://localhost/api/users/me/export') as any, { auth } as any);
     expect(response.status).toBe(200);
     const payload = await response.json();
@@ -388,6 +423,10 @@ describe('safe authenticated projections', () => {
     expect(JSON.stringify(payload.notifications)).not.toContain('CANARY_LEGACY');
     expect(payload.legacyDerivedData.label).toBe('Derivado legado — em revisão');
     expect(collectForbiddenKeys(payload.user)).toEqual([]);
+    expect(boundary.dedicatedReadCloseCount).toBe(1);
+    expect(db.prepare(`
+      SELECT status FROM dsar_export_cooldowns WHERE user_id = 'user-1'
+    `).get()).toEqual({ status: 'completed' });
   });
 
   it('exports every legacy history row beyond the former DSAR query caps', async () => {
@@ -472,7 +511,12 @@ describe('safe authenticated projections', () => {
       { auth: historyAuth } as any,
     );
     expect(response.status).toBe(200);
-    expect(boundary.events.slice(-3)).toEqual(['initDb', 'getWriteQueue', 'getReadDb']);
+    expect(boundary.events.slice(-3)).toEqual(['initDb', 'getWriteQueue', 'openReadOnlyDb']);
+    expect(boundary.dedicatedReadOpenCount).toBe(1);
+    expect(boundary.dedicatedReadCloseCount).toBe(0);
+    expect(db.prepare(`
+      SELECT status FROM dsar_export_cooldowns WHERE user_id = ?
+    `).get(historyAuth.userId)).toEqual({ status: 'in_progress' });
 
     const eventsBeforeSecondExport = boundary.events.length;
     const secondResponse = await getDsarExport(
@@ -495,6 +539,10 @@ describe('safe authenticated projections', () => {
     }
     chunks.push(decoder.decode());
     expect(chunks.length).toBeGreaterThan(1203);
+    expect(boundary.dedicatedReadCloseCount).toBe(1);
+    expect(db.prepare(`
+      SELECT status FROM dsar_export_cooldowns WHERE user_id = ?
+    `).get(historyAuth.userId)).toEqual({ status: 'completed' });
 
     const payload = JSON.parse(chunks.join(''));
     const legacy = payload.legacyDerivedData;
@@ -525,6 +573,68 @@ describe('safe authenticated projections', () => {
     });
   });
 
+  it('closes the dedicated reader on cancellation without releasing the cooldown', async () => {
+    const db = useBoundaryDatabase();
+    const response = await getDsarExport(
+      new Request('http://localhost/api/users/me/export') as any,
+      { auth } as any,
+    );
+    expect(response.status).toBe(200);
+    const reader = response.body?.getReader();
+    expect(reader).toBeDefined();
+    if (!reader) return;
+
+    expect((await reader.read()).done).toBe(false);
+    await reader.cancel();
+    expect(boundary.dedicatedReadCloseCount).toBe(1);
+    expect(() => db.prepare('SELECT 1').get()).not.toThrow();
+    expect(db.prepare(`
+      SELECT status, next_allowed_at FROM dsar_export_cooldowns WHERE user_id = 'user-1'
+    `).get()).toMatchObject({ status: 'cancelled', next_allowed_at: expect.any(Number) });
+
+    const openCount = boundary.dedicatedReadOpenCount;
+    const retry = await getDsarExport(
+      new Request('http://localhost/api/users/me/export') as any,
+      { auth } as any,
+    );
+    expect(retry.status).toBe(429);
+    expect(boundary.dedicatedReadOpenCount).toBe(openCount);
+  });
+
+  it('marks a lazy stream failure as retryable and closes the dedicated reader', async () => {
+    const db = useBoundaryDatabase();
+    boundary.failDedicatedReadAfterPrepareCount = 1;
+    const response = await getDsarExport(
+      new Request('http://localhost/api/users/me/export') as any,
+      { auth } as any,
+    );
+    expect(response.status).toBe(200);
+    const reader = response.body?.getReader();
+    expect(reader).toBeDefined();
+    if (!reader) return;
+
+    try {
+      expect((await reader.read()).done).toBe(false);
+      await expect(reader.read()).rejects.toThrow('dedicated read failure');
+    } finally {
+      await reader.cancel().catch(() => undefined);
+    }
+    expect(boundary.dedicatedReadCloseCount).toBe(1);
+    expect(db.prepare(`
+      SELECT status, next_allowed_at FROM dsar_export_cooldowns WHERE user_id = 'user-1'
+    `).get()).toEqual({ status: 'failed', next_allowed_at: 0 });
+
+    boundary.failDedicatedReadAfterPrepareCount = null;
+    boundary.dedicatedPrepareCount = 0;
+    const retry = await getDsarExport(
+      new Request('http://localhost/api/users/me/export') as any,
+      { auth } as any,
+    );
+    expect(retry.status).toBe(200);
+    expect(boundary.dedicatedReadOpenCount).toBe(2);
+    await retry.body?.cancel();
+  });
+
   it('streams DSAR collections with pull and row iterators instead of aggregate serialization', () => {
     const routeSource = read('src/app/api/users/me/export/route.ts');
     const helperPath = path.join(root, 'src/lib/privacy/dsar-export.ts');
@@ -536,6 +646,10 @@ describe('safe authenticated projections', () => {
     expect(routeSource).not.toMatch(/start\s*\(controller\)/);
     expect(routeSource).toMatch(/cancel\s*\(\)/);
     expect(routeSource).toContain('iterator.return');
+    expect(routeSource).toContain('openReadOnlyDb');
+    expect(routeSource).not.toContain('getReadDb');
+    expect(routeSource).toContain("addEventListener('abort'");
+    expect(routeSource).toContain("removeEventListener('abort'");
     expect(source).toContain('.iterate(');
     expect(source).not.toContain('.all(');
     expect(source).not.toMatch(/\bexportData\b|JSON\.stringify\(\s*exportData/);

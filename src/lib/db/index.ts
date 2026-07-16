@@ -17,6 +17,21 @@ function createConnection(): Database.Database {
   return db;
 }
 
+/** Dedicated query-only connection for long-lived streaming reads. */
+export function openReadOnlyDb(databasePath = DB_PATH): Database.Database {
+  const db = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    db.pragma('busy_timeout = 5000');
+    db.pragma('foreign_keys = ON');
+    db.pragma('query_only = ON');
+    db.pragma('cache_size = -64000');
+    return db;
+  } catch (error) {
+    db.close();
+    throw error;
+  }
+}
+
 function getDb(): Database.Database {
   if (!_db) {
     _db = createConnection();

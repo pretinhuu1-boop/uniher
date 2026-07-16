@@ -1,8 +1,16 @@
 import type Database from 'better-sqlite3';
+import { randomUUID } from 'crypto';
 import { AppError, RateLimitError } from '@/lib/errors';
 import { LEGACY_GAMIFICATION_NOTIFICATION_TYPES } from '@/lib/gamification/containment';
 
 export const DSAR_EXPORT_WINDOW_MS = 60 * 60 * 1000;
+
+export type DsarExportReservation = {
+  token: string;
+  nextAllowedAt: number;
+};
+
+export type DsarExportOutcome = 'completed' | 'failed' | 'cancelled';
 
 type SqliteError = Error & { code?: string };
 
@@ -14,30 +22,9 @@ function isSqliteContention(error: unknown): boolean {
     || /database is (?:busy|locked)/i.test(message);
 }
 
-export function reserveDsarExportWindow(
-  db: Database.Database,
-  userId: string,
-  now = Date.now(),
-): number {
-  const nextAllowedAt = now + DSAR_EXPORT_WINDOW_MS;
-  const reserve = db.transaction(() => {
-    const result = db.prepare(`
-      INSERT INTO dsar_export_cooldowns (user_id, next_allowed_at, updated_at)
-      VALUES (?, ?, ?)
-      ON CONFLICT(user_id) DO UPDATE SET
-        next_allowed_at = excluded.next_allowed_at,
-        updated_at = excluded.updated_at
-      WHERE dsar_export_cooldowns.next_allowed_at <= ?
-    `).run(userId, nextAllowedAt, new Date(now).toISOString(), now);
-
-    if (result.changes !== 1) {
-      throw new RateLimitError('Você já exportou seus dados recentemente. Tente novamente em 1 hora.');
-    }
-    return nextAllowedAt;
-  });
-
+function runImmediate<T>(transaction: { immediate(): T }): T {
   try {
-    return reserve.immediate();
+    return transaction.immediate();
   } catch (error) {
     if (isSqliteContention(error)) {
       throw new AppError(
@@ -48,6 +35,59 @@ export function reserveDsarExportWindow(
     }
     throw error;
   }
+}
+
+export function reserveDsarExportWindow(
+  db: Database.Database,
+  userId: string,
+  now = Date.now(),
+): DsarExportReservation {
+  const token = randomUUID();
+  const nextAllowedAt = now + DSAR_EXPORT_WINDOW_MS;
+  const reserve = db.transaction(() => {
+    const result = db.prepare(`
+      INSERT INTO dsar_export_cooldowns (
+        user_id, next_allowed_at, updated_at, reservation_token, status
+      ) VALUES (?, ?, ?, ?, 'in_progress')
+      ON CONFLICT(user_id) DO UPDATE SET
+        next_allowed_at = excluded.next_allowed_at,
+        updated_at = excluded.updated_at,
+        reservation_token = excluded.reservation_token,
+        status = 'in_progress'
+      WHERE dsar_export_cooldowns.next_allowed_at <= ?
+         OR dsar_export_cooldowns.status = 'failed'
+    `).run(userId, nextAllowedAt, new Date(now).toISOString(), token, now);
+
+    if (result.changes !== 1) {
+      throw new RateLimitError('Você já exportou seus dados recentemente. Tente novamente em 1 hora.');
+    }
+    return { token, nextAllowedAt };
+  });
+
+  return runImmediate(reserve);
+}
+
+export function finishDsarExportReservation(
+  db: Database.Database,
+  userId: string,
+  token: string,
+  outcome: DsarExportOutcome,
+  now = Date.now(),
+): boolean {
+  const finish = db.transaction(() => {
+    const result = db.prepare(`
+      UPDATE dsar_export_cooldowns
+      SET status = ?,
+          next_allowed_at = CASE WHEN ? = 'failed' THEN 0 ELSE next_allowed_at END,
+          updated_at = ?
+      WHERE user_id = ?
+        AND reservation_token = ?
+        AND status = 'in_progress'
+    `).run(outcome, outcome, new Date(now).toISOString(), userId, token);
+    return result.changes === 1;
+  });
+
+  return runImmediate(finish);
 }
 
 function serializeJson(value: unknown): string {
