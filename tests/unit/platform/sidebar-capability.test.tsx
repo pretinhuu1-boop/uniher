@@ -7,8 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   clearProtectedReportCaches: vi.fn<() => Promise<void>>(),
+  swrKeys: [] as unknown[],
+  hasUser: true,
   user: {
     id: 'leadership-common',
+    companyId: 'company-a' as string | undefined,
     name: 'Liderança comum',
     email: 'leader@example.test',
     role: 'lideranca' as const,
@@ -29,9 +32,14 @@ vi.mock('next/image', () => ({
     <img {...props} />
   ),
 }));
-vi.mock('swr', () => ({ default: () => ({ data: undefined }) }));
+vi.mock('swr', () => ({
+  default: (key: unknown) => {
+    mocks.swrKeys.push(key);
+    return { data: undefined };
+  },
+}));
 vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({ user: mocks.user, logout: vi.fn() }),
+  useAuth: () => ({ user: mocks.hasUser ? mocks.user : null, logout: vi.fn() }),
   clearProtectedReportCaches: mocks.clearProtectedReportCaches,
 }));
 
@@ -43,7 +51,11 @@ describe('Sidebar persisted collaborator capability', () => {
     mocks.push.mockReset();
     mocks.clearProtectedReportCaches.mockReset();
     mocks.clearProtectedReportCaches.mockResolvedValue();
+    mocks.swrKeys.length = 0;
+    mocks.hasUser = true;
+    mocks.user.id = 'leadership-common';
     mocks.user.also_collaborator = 0;
+    mocks.user.companyId = 'company-a';
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
       value: vi.fn(() => ({
@@ -92,5 +104,87 @@ describe('Sidebar persisted collaborator capability', () => {
     releaseCacheClear?.();
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/colaboradora'));
     expect(sessionStorage.getItem('uniher-view-mode')).toBe('colaboradora');
+  });
+
+  it('does not purge caches or navigate when the selected view is already active', () => {
+    mocks.user.also_collaborator = 1;
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Lideran/i }));
+
+    expect(mocks.clearProtectedReportCaches).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it('scopes the company SWR key to the authenticated tenant and role', () => {
+    const { rerender } = render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const companyAKey = mocks.swrKeys.find(key => Array.isArray(key) && key[0] === '/api/company');
+    expect(companyAKey).toEqual(['/api/company', 'company-a', 'lideranca']);
+
+    mocks.swrKeys.length = 0;
+    mocks.user.companyId = 'company-b';
+    rerender(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const companyBKey = mocks.swrKeys.find(key => Array.isArray(key) && key[0] === '/api/company');
+    expect(companyBKey).toEqual(['/api/company', 'company-b', 'lideranca']);
+    expect(companyBKey).not.toEqual(companyAKey);
+  });
+
+  it('does not request company data before the authenticated tenant is known', () => {
+    mocks.user.companyId = undefined;
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    expect(mocks.swrKeys[0]).toBeNull();
+  });
+
+  it('scopes notification count by user, tenant and authenticated role', () => {
+    const { rerender } = render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const notificationAKey = mocks.swrKeys.find(
+      key => Array.isArray(key) && key[0] === '/api/notifications/count',
+    );
+    expect(notificationAKey).toEqual([
+      '/api/notifications/count',
+      'leadership-common',
+      'company-a',
+      'lideranca',
+    ]);
+
+    mocks.swrKeys.length = 0;
+    mocks.user.id = 'leadership-other';
+    mocks.user.companyId = 'company-b';
+    rerender(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const notificationBKey = mocks.swrKeys.find(
+      key => Array.isArray(key) && key[0] === '/api/notifications/count',
+    );
+    expect(notificationBKey).toEqual([
+      '/api/notifications/count',
+      'leadership-other',
+      'company-b',
+      'lideranca',
+    ]);
+    expect(notificationBKey).not.toEqual(notificationAKey);
+  });
+
+  it('does not request notification count without a user and uses null tenant in a user-scoped key', () => {
+    mocks.user.companyId = undefined;
+    const { unmount } = render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    expect(mocks.swrKeys).toContainEqual([
+      '/api/notifications/count',
+      'leadership-common',
+      null,
+      'lideranca',
+    ]);
+
+    unmount();
+    mocks.swrKeys.length = 0;
+    mocks.hasUser = false;
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    expect(mocks.swrKeys).toEqual([null, null]);
   });
 });

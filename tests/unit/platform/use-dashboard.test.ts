@@ -7,7 +7,9 @@ import {
 } from '@/hooks/useDashboard';
 import {
   clearProtectedReportCaches,
+  getAuthenticatedScope,
   isProtectedReportCacheKey,
+  shouldClearProtectedReportCaches,
 } from '@/hooks/useAuth';
 
 afterEach(() => {
@@ -49,6 +51,29 @@ describe('dashboardFetcher', () => {
 });
 
 describe('protected report SWR cache matcher', () => {
+  it('invalidates only when the authenticated privacy scope changes or ends', () => {
+    const companyARh = getAuthenticatedScope({
+      id: 'user-a',
+      companyId: 'company-a',
+      role: 'rh',
+    });
+
+    expect(shouldClearProtectedReportCaches(undefined, companyARh)).toBe(true);
+    expect(shouldClearProtectedReportCaches(companyARh, companyARh)).toBe(false);
+    expect(shouldClearProtectedReportCaches(companyARh, getAuthenticatedScope({
+      id: 'user-b',
+      companyId: 'company-b',
+      role: 'rh',
+    }))).toBe(true);
+    expect(shouldClearProtectedReportCaches(companyARh, getAuthenticatedScope({
+      id: 'user-a',
+      companyId: 'company-a',
+      role: 'colaboradora',
+    }))).toBe(true);
+    expect(shouldClearProtectedReportCaches(companyARh, null)).toBe(true);
+    expect(shouldClearProtectedReportCaches(null, null)).toBe(false);
+  });
+
   it('matches only exact protected endpoints in scoped array keys', () => {
     expect(isProtectedReportCacheKey([
       'protected-report',

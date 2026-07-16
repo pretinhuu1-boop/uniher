@@ -430,7 +430,7 @@ describe('protected route and cache boundaries', () => {
     expect(dashboardHook).toMatch(/companyId[\s\S]*role[\s\S]*period[\s\S]*departmentId/);
     expect(authHook).toContain('clearProtectedReportCaches');
     expect(authHook).toMatch(
-      /if \(!data\?\.user\) \{[\s\S]*await clearProtectedReportCaches\(\);[\s\S]*setUser\(null\);/,
+      /if \(!data\?\.user\) \{[\s\S]*await transitionAuthenticatedScope\(null\);[\s\S]*setUser\(null\);/,
     );
     expect(authHook).not.toMatch(/companyId[\s\S]{0,80}localStorage\.setItem/);
   });

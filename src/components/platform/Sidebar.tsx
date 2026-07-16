@@ -18,7 +18,11 @@ import type { NavigationGroup, NavigationItem } from './navigation';
 import type { UserRole } from '@/types/platform';
 import styles from './Sidebar.module.css';
 
-const fetcher = (url: string) => fetch(url).then(response => response.json());
+type ScopedApiKey = readonly [string, ...unknown[]];
+
+const scopedFetcher = (key: ScopedApiKey) => (
+  fetch(key[0]).then(response => response.json())
+);
 
 const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Master',
@@ -205,6 +209,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const roleLabel = ROLE_LABELS[role];
 
   const handleSwitchView = async (view: UserRole, closeAfterNavigation: boolean) => {
+    if (view === activeView) {
+      if (closeAfterNavigation) onClose();
+      return;
+    }
     await clearProtectedReportCaches();
     setActiveView(view);
     sessionStorage.setItem('uniher-view-mode', view);
@@ -213,6 +221,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const skipCompanyFetch = role === 'admin' || pathname === '/primeiro-acesso';
+  const companyCacheKey = !skipCompanyFetch && user?.companyId
+    ? ['/api/company', user.companyId, realRole] as const
+    : null;
   const { data: companyData } = useSWR<{
     company: {
       name: string;
@@ -221,15 +232,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       primary_color: string | null;
     };
   }>(
-    !skipCompanyFetch ? '/api/company' : null,
-    fetcher,
+    companyCacheKey,
+    scopedFetcher,
     { revalidateOnFocus: false },
   );
   const company = companyData?.company;
 
+  const notificationCacheKey = pathname !== '/primeiro-acesso' && user
+    ? ['/api/notifications/count', user.id, user.companyId ?? null, realRole] as const
+    : null;
   const { data: notificationData } = useSWR<{ unread: number }>(
-    pathname !== '/primeiro-acesso' ? '/api/notifications/count' : null,
-    fetcher,
+    notificationCacheKey,
+    scopedFetcher,
     { refreshInterval: 30000, dedupingInterval: 5000, revalidateOnFocus: true },
   );
   const unreadCount = notificationData?.unread ?? 0;
