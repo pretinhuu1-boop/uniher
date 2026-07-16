@@ -567,6 +567,19 @@ describe('aggregate privacy kernel', () => {
     expect(serializeProtectedMetricForCsv(protectMetric('+SUM', 10))).toBe("'+SUM");
     expect(serializeProtectedMetricForCsv(protectMetric('-1+2', 10))).toBe("'-1+2");
     expect(serializeProtectedMetricForCsv(protectMetric('@SUM', 10))).toBe("'@SUM");
+    expect(serializeProtectedMetricForCsv(protectMetric('\t=2+2', 10))).toBe(
+      "'\t=2+2",
+    );
+    expect(serializeProtectedMetricForCsv(protectMetric('\r=2+2', 10))).toBe(
+      '"\'\r=2+2"',
+    );
+    expect(serializeProtectedMetricForCsv(protectMetric('\n=2+2', 10))).toBe(
+      '"\'\n=2+2"',
+    );
+    expect(serializeProtectedMetricForCsv(protectMetric('＝2+2', 10))).toBe("'＝2+2");
+    expect(serializeProtectedMetricForCsv(protectMetric('＋SUM', 10))).toBe("'＋SUM");
+    expect(serializeProtectedMetricForCsv(protectMetric('－1+2', 10))).toBe("'－1+2");
+    expect(serializeProtectedMetricForCsv(protectMetric('＠SUM', 10))).toBe("'＠SUM");
     expect(serializeProtectedMetricForCsv(protectMetric('=SUM(1,2)', 10))).toBe(
       '"\'=SUM(1,2)"',
     );
