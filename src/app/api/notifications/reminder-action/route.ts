@@ -1,6 +1,12 @@
+import type Database from 'better-sqlite3';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/auth/middleware';
+import {
+  CollaboratorSelfWriteError,
+  enqueueCollaboratorSelfWrite,
+  hasCollaboratorSelfCapability,
+} from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 
@@ -11,9 +17,24 @@ const reminderActionSchema = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
 });
 
-function extractEventTitle(message: string): string {
-  const title = message.split(' - ')[0]?.trim();
-  return title || message.trim();
+type ReminderActionInput = z.infer<typeof reminderActionSchema>;
+
+interface ReminderNotification {
+  id: string;
+  type: string;
+  source: string | null;
+  resource_id: string | null;
+}
+
+interface ReminderEvent {
+  id: string;
+}
+
+export class AgendaReminderActionError extends Error {
+  constructor(message: string, readonly status: 400 | 404) {
+    super(message);
+    this.name = 'AgendaReminderActionError';
+  }
 }
 
 function formatLocalDate(date: Date): string {
@@ -29,92 +50,112 @@ function formatLocalTime(date: Date): string {
   return `${hours}:${minutes}`;
 }
 
-export const POST = withAuth(async (req, { auth }) => {
-  await initDb();
-  const body = await req.json().catch(() => null);
-  const parsed = reminderActionSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Dados invalidos', details: parsed.error.issues }, { status: 400 });
+/** Applies a reminder mutation using only persisted provenance and self ownership. */
+export function applyReminderAction(
+  database: Database.Database,
+  userId: string,
+  input: ReminderActionInput,
+) {
+  if (!hasCollaboratorSelfCapability(userId, database)) {
+    throw new CollaboratorSelfWriteError();
   }
 
-  const db = getReadDb();
-  const { notificationId, action, date, time } = parsed.data;
-  const notification = db.prepare(
-    'SELECT id, type, title, message FROM notifications WHERE id = ? AND user_id = ?'
-  ).get(notificationId, auth.userId) as { id: string; type: string; title: string; message: string } | undefined;
+  const notification = database.prepare(`
+    SELECT id, type, source, resource_id
+    FROM notifications
+    WHERE id = ? AND user_id = ?
+  `).get(input.notificationId, userId) as ReminderNotification | undefined;
 
   if (!notification) {
-    return NextResponse.json({ error: 'Notificacao nao encontrada' }, { status: 404 });
+    throw new AgendaReminderActionError('Notificação não encontrada', 404);
+  }
+  if (notification.type !== 'reminder' || notification.source !== 'agenda' || !notification.resource_id) {
+    throw new AgendaReminderActionError('Lembrete sem vínculo seguro com a Agenda', 404);
   }
 
-  const eventTitle = extractEventTitle(notification.message);
-  const event = db.prepare(`
-    SELECT id, title, date, time, status
+  const event = database.prepare(`
+    SELECT id
     FROM health_events
-    WHERE user_id = ?
-      AND deleted_at IS NULL
-      AND title = ?
-      AND status = 'pending'
-    ORDER BY date ASC, COALESCE(time, '23:59') ASC
-    LIMIT 1
-  `).get(auth.userId, eventTitle) as { id: string; title: string; date: string; time: string | null; status: string } | undefined;
+    WHERE id = ? AND user_id = ? AND deleted_at IS NULL AND status = 'pending'
+  `).get(notification.resource_id, userId) as ReminderEvent | undefined;
 
   if (!event) {
-    return NextResponse.json({ error: 'Evento relacionado ao lembrete nao foi encontrado' }, { status: 404 });
+    throw new AgendaReminderActionError('Evento relacionado ao lembrete não foi encontrado', 404);
   }
 
-  const writeQueue = getWriteQueue();
-
-  if (action === 'complete') {
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare(`
-        UPDATE health_events
-        SET status = 'completed', reminder_sent = 1, updated_at = datetime('now')
-        WHERE id = ? AND user_id = ?
-      `).run(event.id, auth.userId);
-
-      wdb.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?')
-        .run(notificationId, auth.userId);
-    });
-
-    return NextResponse.json({ success: true, status: 'completed', eventId: event.id });
+  if (input.action === 'complete') {
+    const updated = database.prepare(`
+      UPDATE health_events
+      SET status = 'completed', reminder_sent = 1, updated_at = datetime('now')
+      WHERE id = ? AND user_id = ? AND deleted_at IS NULL AND status = 'pending'
+    `).run(event.id, userId);
+    if (updated.changes !== 1) {
+      throw new AgendaReminderActionError('Evento relacionado ao lembrete não foi encontrado', 404);
+    }
+    database.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?')
+      .run(notification.id, userId);
+    return { success: true, status: 'completed', eventId: event.id } as const;
   }
 
-  let nextDate = date;
-  let nextTime = time;
-
-  if (action === 'snooze_15m') {
+  let nextDate = input.date;
+  let nextTime = input.time;
+  if (input.action === 'snooze_15m') {
     const snoozedAt = new Date(Date.now() + 15 * 60 * 1000);
     nextDate = formatLocalDate(snoozedAt);
     nextTime = formatLocalTime(snoozedAt);
   }
-
   if (!nextDate || !nextTime) {
-    return NextResponse.json({ error: 'Data e horario sao obrigatorios para reagendar' }, { status: 400 });
+    throw new AgendaReminderActionError('Data e horário são obrigatórios para reagendar', 400);
   }
-
   const scheduledAt = new Date(`${nextDate}T${nextTime}:00`);
   if (Number.isNaN(scheduledAt.getTime())) {
-    return NextResponse.json({ error: 'Data ou horario invalidos' }, { status: 400 });
+    throw new AgendaReminderActionError('Data ou horário inválidos', 400);
   }
 
-  await writeQueue.enqueue((wdb) => {
-    wdb.prepare(`
-      UPDATE health_events
-      SET date = ?, time = ?, reminder_sent = 0, updated_at = datetime('now')
-      WHERE id = ? AND user_id = ?
-    `).run(nextDate, nextTime, event.id, auth.userId);
+  const updated = database.prepare(`
+    UPDATE health_events
+    SET date = ?, time = ?, reminder_sent = 0, updated_at = datetime('now')
+    WHERE id = ? AND user_id = ? AND deleted_at IS NULL AND status = 'pending'
+  `).run(nextDate, nextTime, event.id, userId);
+  if (updated.changes !== 1) {
+    throw new AgendaReminderActionError('Evento relacionado ao lembrete não foi encontrado', 404);
+  }
+  database.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?')
+    .run(notification.id, userId);
 
-    wdb.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?')
-      .run(notificationId, auth.userId);
-  });
-
-  return NextResponse.json({
+  return {
     success: true,
-    status: action === 'snooze_15m' ? 'snoozed' : 'rescheduled',
+    status: input.action === 'snooze_15m' ? 'snoozed' : 'rescheduled',
     eventId: event.id,
     date: nextDate,
     time: nextTime,
-  });
+  } as const;
+}
+
+export const POST = withAuth(async (req, { auth }) => {
+  await initDb();
+  const db = getReadDb();
+  if (!hasCollaboratorSelfCapability(auth.userId, db)) {
+    return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const parsed = reminderActionSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Dados inválidos', details: parsed.error.issues }, { status: 400 });
+  }
+
+  try {
+    const result = await enqueueCollaboratorSelfWrite(
+      getWriteQueue(),
+      auth.userId,
+      (writeDb) => applyReminderAction(writeDb, auth.userId, parsed.data),
+    );
+    return NextResponse.json(result);
+  } catch (error) {
+    if (error instanceof CollaboratorSelfWriteError || error instanceof AgendaReminderActionError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
+  }
 });

@@ -95,12 +95,6 @@ const NAVIGATION = {
           icon: 'invite',
           description: 'Entrada de novas colaboradoras',
         },
-        {
-          href: '/agenda',
-          label: 'Agenda de saúde',
-          icon: 'agenda',
-          description: 'Ações e lembretes de cuidado',
-        },
       ],
     },
     {
@@ -183,12 +177,6 @@ const NAVIGATION = {
           label: 'Campanhas',
           icon: 'campanhas',
           description: 'Campanhas disponíveis',
-        },
-        {
-          href: '/agenda',
-          label: 'Agenda',
-          icon: 'agenda',
-          description: 'Próximas ações de saúde',
         },
       ],
     },

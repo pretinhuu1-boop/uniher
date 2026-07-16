@@ -71,12 +71,6 @@ const EXPECTED_NAVIGATION = {
           icon: 'invite',
           description: 'Entrada de novas colaboradoras',
         },
-        {
-          href: '/agenda',
-          label: 'Agenda de saúde',
-          icon: 'agenda',
-          description: 'Ações e lembretes de cuidado',
-        },
       ],
     },
     {
@@ -159,12 +153,6 @@ const EXPECTED_NAVIGATION = {
           label: 'Campanhas',
           icon: 'campanhas',
           description: 'Campanhas disponíveis',
-        },
-        {
-          href: '/agenda',
-          label: 'Agenda',
-          icon: 'agenda',
-          description: 'Próximas ações de saúde',
         },
       ],
     },
@@ -263,6 +251,11 @@ describe('platform navigation', () => {
   it('keeps admin navigation free from non-admin destinations', () => {
     const adminRoutes = getNavigationForRole('admin').flatMap((group) => group.items.map((item) => item.href));
     expect(adminRoutes.filter((route) => ADMIN_DENIED_ROUTES.includes(route as typeof ADMIN_DENIED_ROUTES[number]))).toEqual([]);
+  });
+
+  it.each(['rh', 'lideranca'] as const)('keeps %s navigation free from personal Agenda', (role) => {
+    const routes = getNavigationForRole(role).flatMap((group) => group.items.map((item) => item.href));
+    expect(routes).not.toContain('/agenda');
   });
 
   it('uses only registered, unique navigation icons', () => {

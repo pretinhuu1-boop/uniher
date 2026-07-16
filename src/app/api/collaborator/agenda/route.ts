@@ -4,6 +4,11 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
+import {
+  CollaboratorSelfWriteError,
+  enqueueCollaboratorSelfWrite,
+  hasCollaboratorSelfCapability,
+} from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { nanoid } from 'nanoid';
@@ -21,6 +26,10 @@ export const GET = withAuth(async (req: NextRequest, context: any) => {
   await initDb();
   const db = getReadDb();
   const userId = context.auth.userId;
+
+  if (!hasCollaboratorSelfCapability(userId, db)) {
+    return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+  }
 
   const url = new URL(req.url);
   const month = url.searchParams.get('month'); // YYYY-MM
@@ -59,6 +68,12 @@ export const GET = withAuth(async (req: NextRequest, context: any) => {
 export const POST = withAuth(async (req: NextRequest, context: any) => {
   await initDb();
   const userId = context.auth.userId;
+  const db = getReadDb();
+
+  if (!hasCollaboratorSelfCapability(userId, db)) {
+    return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+  }
+
   const body = await req.json();
 
   const parsed = createSchema.safeParse(body);
@@ -68,19 +83,25 @@ export const POST = withAuth(async (req: NextRequest, context: any) => {
 
   const { title, type, date, time, notes } = parsed.data;
 
-  // Get user's company_id
-  const db = getReadDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
-
   const writeQueue = getWriteQueue();
   const id = nanoid();
 
-  await writeQueue.enqueue((db) => {
-    db.prepare(`
-      INSERT INTO health_events (id, user_id, company_id, title, type, date, time, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, userId, user?.company_id || null, title, type, date, time || null, notes || null);
-  });
+  try {
+    await enqueueCollaboratorSelfWrite(writeQueue, userId, (writeDb) => {
+      const user = writeDb.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as
+        | { company_id: string | null }
+        | undefined;
+      writeDb.prepare(`
+        INSERT INTO health_events (id, user_id, company_id, title, type, date, time, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, userId, user?.company_id || null, title, type, date, time || null, notes || null);
+    });
+  } catch (error) {
+    if (error instanceof CollaboratorSelfWriteError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
+  }
 
   // Create notification for the user
   try {
@@ -93,29 +114,6 @@ export const POST = withAuth(async (req: NextRequest, context: any) => {
       `).run(nanoid(), userId, `${type === 'exame' ? 'Exame' : type === 'consulta' ? 'Consulta' : 'Lembrete'} agendado`, `${title} em ${whenLabel}`);
     });
   } catch { /* non-critical */ }
-
-  // Notify managers (RH/lideranca) of the same company
-  if (user?.company_id && type !== 'lembrete') {
-    try {
-      const managers = db.prepare(`
-        SELECT id FROM users
-        WHERE company_id = ? AND role IN ('rh', 'lideranca') AND deleted_at IS NULL AND blocked = 0 AND id != ?
-      `).all(user.company_id, userId) as { id: string }[];
-
-      const userName = (db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as any)?.name || 'Colaboradora';
-      const whenLabel = time ? `${date} às ${time}` : date;
-
-      const wq = getWriteQueue();
-      for (const mgr of managers) {
-        await wq.enqueue((db) => {
-          db.prepare(`
-            INSERT INTO notifications (id, user_id, type, title, message)
-            VALUES (?, ?, 'system', ?, ?)
-          `).run(nanoid(), mgr.id, `${type === 'exame' ? 'Exame' : 'Consulta'} agendada`, `${userName} agendou: ${title} em ${whenLabel}`);
-        });
-      }
-    } catch { /* non-critical */ }
-  }
 
   return NextResponse.json({ id, title, type, date, status: 'pending' });
 });

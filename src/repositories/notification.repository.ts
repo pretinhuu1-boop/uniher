@@ -11,6 +11,8 @@ export interface NotificationRow {
   message: string;
   read: number;
   created_at: string;
+  source: string | null;
+  resource_id: string | null;
 }
 
 export function getUserNotifications(userId: string, limit = 20): NotificationRow[] {
@@ -74,15 +76,25 @@ export async function createNotification(data: {
   type: string;
   title: string;
   message: string;
+  source?: string | null;
+  resourceId?: string | null;
 }): Promise<NotificationRow> {
   const writeQueue = getWriteQueue();
   const id = nanoid();
 
   return writeQueue.enqueue((db) => {
     db.prepare(`
-      INSERT INTO notifications (id, user_id, type, title, message)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, data.userId, data.type, data.title, data.message);
+      INSERT INTO notifications (id, user_id, type, title, message, source, resource_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      data.userId,
+      data.type,
+      data.title,
+      data.message,
+      data.source ?? null,
+      data.resourceId ?? null,
+    );
     return db.prepare('SELECT * FROM notifications WHERE id = ?').get(id) as NotificationRow;
   });
 }

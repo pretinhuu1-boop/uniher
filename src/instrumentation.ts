@@ -11,8 +11,10 @@ export async function register() {
     setInterval(async () => {
       try {
         const { sendUpcomingReminders } = await import('@/services/agenda-alerts.service');
-        const sent = await sendUpcomingReminders();
-        if (sent > 0) console.log(`[Agenda] ${sent} lembretes enviados`);
+        const { personalRemindersSent } = await sendUpcomingReminders();
+        if (personalRemindersSent > 0) {
+          console.log(`[Agenda] ${personalRemindersSent} lembretes enviados`);
+        }
       } catch { /* non-critical */ }
     }, 15 * 60 * 1000);
 

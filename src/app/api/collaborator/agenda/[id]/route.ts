@@ -4,17 +4,41 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
+import {
+  CollaboratorSelfWriteError,
+  enqueueCollaboratorSelfWrite,
+  hasCollaboratorSelfCapability,
+} from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
+
+class AgendaEventNotFoundError extends Error {
+  readonly status = 404;
+
+  constructor() {
+    super('Evento não encontrado');
+    this.name = 'AgendaEventNotFoundError';
+  }
+}
+
+function agendaWriteErrorResponse(error: unknown) {
+  if (error instanceof CollaboratorSelfWriteError || error instanceof AgendaEventNotFoundError) {
+    return NextResponse.json({ error: error.message }, { status: error.status });
+  }
+  throw error;
+}
 
 export const PATCH = withAuth(async (req: NextRequest, context: any) => {
   await initDb();
   const userId = context.auth.userId;
+  const db = getReadDb();
+  if (!hasCollaboratorSelfCapability(userId, db)) {
+    return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+  }
   const params = await context.params;
   const id = params.id;
   const body = await req.json();
 
-  const db = getReadDb();
   const event = db.prepare('SELECT * FROM health_events WHERE id = ? AND user_id = ? AND deleted_at IS NULL').get(id, userId) as any;
   if (!event) {
     return NextResponse.json({ error: 'Evento não encontrado' }, { status: 404 });
@@ -39,9 +63,18 @@ export const PATCH = withAuth(async (req: NextRequest, context: any) => {
   values.push(id, userId);
 
   const writeQueue = getWriteQueue();
-  await writeQueue.enqueue((db) => {
-    db.prepare(`UPDATE health_events SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`).run(...values);
-  });
+  try {
+    await enqueueCollaboratorSelfWrite(writeQueue, userId, (writeDb) => {
+      const updated = writeDb.prepare(`
+        UPDATE health_events
+        SET ${updates.join(', ')}
+        WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+      `).run(...values);
+      if (updated.changes !== 1) throw new AgendaEventNotFoundError();
+    });
+  } catch (error) {
+    return agendaWriteErrorResponse(error);
+  }
 
   return NextResponse.json({ success: true });
 });
@@ -49,19 +82,31 @@ export const PATCH = withAuth(async (req: NextRequest, context: any) => {
 export const DELETE = withAuth(async (_req: NextRequest, context: any) => {
   await initDb();
   const userId = context.auth.userId;
+  const db = getReadDb();
+  if (!hasCollaboratorSelfCapability(userId, db)) {
+    return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+  }
   const params = await context.params;
   const id = params.id;
 
-  const db = getReadDb();
   const event = db.prepare('SELECT * FROM health_events WHERE id = ? AND user_id = ? AND deleted_at IS NULL').get(id, userId) as any;
   if (!event) {
     return NextResponse.json({ error: 'Evento não encontrado' }, { status: 404 });
   }
 
   const writeQueue = getWriteQueue();
-  await writeQueue.enqueue((db) => {
-    db.prepare("UPDATE health_events SET deleted_at = datetime('now'), status = 'cancelled' WHERE id = ?").run(id);
-  });
+  try {
+    await enqueueCollaboratorSelfWrite(writeQueue, userId, (writeDb) => {
+      const deleted = writeDb.prepare(`
+        UPDATE health_events
+        SET deleted_at = datetime('now'), status = 'cancelled'
+        WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+      `).run(id, userId);
+      if (deleted.changes !== 1) throw new AgendaEventNotFoundError();
+    });
+  } catch (error) {
+    return agendaWriteErrorResponse(error);
+  }
 
   return NextResponse.json({ success: true });
 });

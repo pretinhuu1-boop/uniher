@@ -35,6 +35,9 @@ export default async function globalTeardown() {
       try { db.prepare(`DELETE FROM refresh_tokens WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM notifications WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM health_events WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM alert_preferences WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM notification_preferences WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM push_subscriptions WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM user_badges WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM user_preferences WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       db.prepare(`DELETE FROM users WHERE ${where}`).run();

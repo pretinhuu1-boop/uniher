@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/hooks/useAuth';
+import { FeedbackState } from '@/components/ui/FeedbackState';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -15,8 +16,8 @@ function getMonthStr(d: Date) { return d.toISOString().slice(0, 7); }
 function formatDate(s: string) { const d = new Date(s + 'T12:00:00'); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }); }
 
 export default function AgendaPage() {
-  const { user } = useAuth();
-  const isManager = user?.role === 'rh' || user?.role === 'lideranca' || user?.role === 'admin';
+  const { user, isLoading: authLoading } = useAuth();
+  const canUsePersonalAgenda = user?.role === 'colaboradora' || user?.also_collaborator === 1;
   const [month, setMonth] = useState(getMonthStr(new Date()));
   const [filterType, setFilterType] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -25,20 +26,15 @@ export default function AgendaPage() {
   const [msg, setMsg] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
 
-  // Collaborator: own events. Manager: team events.
-  const apiBase = isManager ? '/api/rh/agenda' : '/api/collaborator/agenda';
   const params = new URLSearchParams({ month });
   if (filterType) params.set('type', filterType);
 
-  const { data, mutate, isLoading } = useSWR(`${apiBase}?${params}`, fetcher, { revalidateOnFocus: false });
-  const events = data?.events ?? [];
-  const stats = data?.stats;
-
-  // Alert preferences (manager only)
-  const { data: alertData, mutate: mutateAlerts } = useSWR(
-    isManager ? '/api/rh/alert-preferences' : null, fetcher, { revalidateOnFocus: false }
+  const { data, mutate, isLoading } = useSWR(
+    canUsePersonalAgenda ? `/api/collaborator/agenda?${params}` : null,
+    fetcher,
+    { revalidateOnFocus: false },
   );
-  const alertPrefs = alertData?.preferences ?? [];
+  const events = data?.events ?? [];
 
   const handleSubmit = useCallback(async () => {
     if (!form.title || !form.date) { setMsg('Preencha título e data'); return; }
@@ -77,15 +73,6 @@ export default function AgendaPage() {
     mutate();
   }, [mutate]);
 
-  const updateAlertPref = useCallback(async (type: string, days: number) => {
-    await fetch('/api/rh/alert-preferences', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alert_type: type, days_before: days }),
-    });
-    mutateAlerts();
-  }, [mutateAlerts]);
-
   // Month navigation
   const prevMonth = () => { const d = new Date(month + '-15'); d.setMonth(d.getMonth() - 1); setMonth(getMonthStr(d)); };
   const nextMonth = () => { const d = new Date(month + '-15'); d.setMonth(d.getMonth() + 1); setMonth(getMonthStr(d)); };
@@ -95,64 +82,42 @@ export default function AgendaPage() {
   const grouped: Record<string, typeof events> = {};
   events.forEach((e: any) => { (grouped[e.date] ??= []).push(e); });
 
+  if (authLoading) {
+    return (
+      <FeedbackState
+        kind="loading"
+        title="Carregando sua agenda"
+        description="Estamos confirmando seu acesso aos lembretes pessoais."
+      />
+    );
+  }
+
+  if (!canUsePersonalAgenda) {
+    return (
+      <FeedbackState
+        kind="denied"
+        title="Agenda pessoal indisponível"
+        description="Este perfil não possui acesso persistido à experiência de colaboradora."
+      />
+    );
+  }
+
   return (
     <div style={{ padding: '24px', maxWidth: 900, margin: '0 auto', fontFamily: 'var(--ff-body, Montserrat, sans-serif)' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 24, fontFamily: 'var(--ff-display, Playfair Display, serif)', fontWeight: 700, color: '#1a2a4a', margin: 0 }}>
-            📅 {isManager ? 'Agenda do Time' : 'Minha Agenda de Saúde'}
+            📅 Minha Agenda de Saúde
           </h1>
           <p style={{ color: '#8a7a6a', fontSize: 14, marginTop: 4 }}>
-            {isManager ? 'Exames e consultas das colaboradoras' : 'Organize seus exames, consultas e lembretes'}
+            Organize seus exames, consultas e lembretes
           </p>
         </div>
-        {!isManager && (
-          <button onClick={() => setShowForm(!showForm)} style={{ padding: '10px 20px', background: '#C9A264', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
-            + Novo evento
-          </button>
-        )}
+        <button onClick={() => setShowForm(!showForm)} style={{ padding: '10px 20px', background: '#C9A264', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
+          + Novo evento
+        </button>
       </div>
-
-      {/* Stats (manager) */}
-      {isManager && stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
-          {[
-            { label: 'Total', value: stats.total, color: '#1a2a4a' },
-            { label: 'Pendentes', value: stats.pending, color: '#C9A264' },
-            { label: 'Realizados', value: stats.completed, color: '#16a34a' },
-            { label: 'Perdidos', value: stats.missed, color: '#dc2626' },
-          ].map(s => (
-            <div key={s.label} style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e8dfd0', textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: s.color, fontFamily: 'var(--ff-display)' }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: '#8a7a6a', textTransform: 'uppercase', letterSpacing: 1 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Alert preferences (manager) */}
-      {isManager && alertPrefs.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e8dfd0', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a2a4a', marginBottom: 12 }}>⚙️ Configurar Alertas</h3>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            {alertPrefs.map((p: any) => (
-              <div key={p.alert_type} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize' }}>{p.alert_type}:</span>
-                <select
-                  value={p.days_before}
-                  onChange={e => updateAlertPref(p.alert_type, +e.target.value)}
-                  style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #e8dfd0', fontSize: 13 }}
-                >
-                  {[1, 2, 3, 5, 7, 10, 14].map(d => (
-                    <option key={d} value={d}>{d} dia{d > 1 ? 's' : ''} antes</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* New event form */}
       {showForm && (
@@ -222,7 +187,7 @@ export default function AgendaPage() {
         <div style={{ textAlign: 'center', padding: 60, color: '#8a7a6a', background: '#fff', borderRadius: 12, border: '1px solid #e8dfd0' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
           <p style={{ fontWeight: 600, color: '#5a4a3a' }}>Nenhum evento neste mês</p>
-          <p style={{ fontSize: 13, marginTop: 4 }}>{isManager ? 'As colaboradoras ainda não agendaram eventos.' : 'Clique em "+ Novo evento" para agendar um exame ou consulta.'}</p>
+          <p style={{ fontSize: 13, marginTop: 4 }}>Clique em "+ Novo evento" para agendar um exame ou consulta.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -245,14 +210,11 @@ export default function AgendaPage() {
                           <span style={{ background: `${STATUS_COLORS[e.status]}15`, color: STATUS_COLORS[e.status], padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
                             {STATUS_LABELS[e.status] || e.status}
                           </span>
-                          {isManager && e.user_name && (
-                            <span style={{ marginLeft: 8 }}>— {e.user_name}</span>
-                          )}
                         </div>
                         {e.notes && <div style={{ fontSize: 12, color: '#8a7a6a', marginTop: 4, fontStyle: 'italic' }}>{e.notes}</div>}
                       </div>
                     </div>
-                    {!isManager && e.status === 'pending' && (
+                    {e.status === 'pending' && (
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => markCompleted(e.id)} style={{ padding: '6px 12px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                           ✓ Realizado
