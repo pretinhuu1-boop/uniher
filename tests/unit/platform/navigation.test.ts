@@ -127,7 +127,7 @@ const EXPECTED_NAVIGATION = {
           href: '/gamificacao-config',
           label: 'Gamificação',
           icon: 'config',
-          description: 'Regras de XP, vidas e recompensas',
+          description: 'Configuração em revisão de privacidade',
         },
       ],
     },

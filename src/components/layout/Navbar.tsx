@@ -3,13 +3,12 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import styles from './Navbar.module.css';
 
-const NAV_SECTIONS = ['profiles', 'gamification', 'roi', 'campanhas'] as const;
-const MOBILE_SECTIONS = ['profiles', 'howitworks', 'gamification', 'roi', 'campanhas', 'ciencia'] as const;
+const NAV_SECTIONS = ['profiles', 'roi', 'campanhas'] as const;
+const MOBILE_SECTIONS = ['profiles', 'howitworks', 'roi', 'campanhas', 'ciencia'] as const;
 
 const LABELS: Record<string, string> = {
   profiles: 'Perfis',
   howitworks: 'Como funciona',
-  gamification: 'Gamificação',
   roi: 'ROI',
   campanhas: 'Campanhas',
   ciencia: 'Ciência',

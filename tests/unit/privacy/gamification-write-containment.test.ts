@@ -61,6 +61,7 @@ function useWriteDatabase() {
     INSERT INTO user_badges VALUES ('user-1', 'badge-1', '2026-01-01');
     INSERT INTO health_scores VALUES ('health-1', 'user-1', 'Sono', 77, 'yellow', '2026-01-01');
     INSERT INTO daily_lessons VALUES ('lesson-1', 'company-1', 1);
+    INSERT INTO user_lesson_progress VALUES ('progress-other', 'user-2', 'lesson-1', 0, 17, 7, NULL);
     INSERT INTO gamification_config VALUES ('company-1', 0, 24);
   `);
   return db;
@@ -76,8 +77,12 @@ function legacySnapshot(db: Database.Database) {
   };
 }
 
+function legacySnapshotBytes(db: Database.Database) {
+  return JSON.stringify(legacySnapshot(db));
+}
+
 function expectPointFreeBoundary(payload: unknown) {
-  expect(JSON.stringify(payload)).not.toMatch(/"(?:points|level|league|week_points|xp|xp_reward|badges)"/i);
+  expect(JSON.stringify(payload)).not.toMatch(/"(?:points?|level|league|week_points|xp(?:_?reward|_?earned)?|badges?|health_?scores?)"/i);
 }
 
 function productionSources(directory = path.join(root, 'src')): string {
@@ -122,7 +127,7 @@ describe('legacy gamification write containment', () => {
 
   it('executes allowed boundaries without changing any quarantined legacy table', async () => {
     const db = useWriteDatabase();
-    const before = legacySnapshot(db);
+    const before = legacySnapshotBytes(db);
     const auth = { userId: 'user-1', companyId: 'company-1', role: 'colaboradora', email: 'ana@example.test' };
 
     const checkInResponse = await checkIn(new Request('http://localhost/api/gamification/check-in', { method: 'POST' }) as any, { auth } as any);
@@ -133,7 +138,20 @@ describe('legacy gamification write containment', () => {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lessonId: 'lesson-1', score: 90 }),
     }) as any, { auth } as any);
     expect(lessonResponse.status).toBe(200);
-    expect(await lessonResponse.json()).toMatchObject({ success: true, progressRecorded: true });
+    const lessonPayload = await lessonResponse.json();
+    expect(lessonPayload).toMatchObject({ success: true, progressRecorded: true, score: 90 });
+    expectPointFreeBoundary(lessonPayload);
+    expect(db.prepare(
+      'SELECT user_id, lesson_id, completed, score, xp_earned FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?'
+    ).get('user-1', 'lesson-1')).toEqual({
+      user_id: 'user-1', lesson_id: 'lesson-1', completed: 1, score: 90, xp_earned: 0,
+    });
+    expect(db.prepare(
+      'SELECT id, user_id, lesson_id, completed, score, xp_earned, completed_at FROM user_lesson_progress WHERE user_id = ?'
+    ).get('user-2')).toEqual({
+      id: 'progress-other', user_id: 'user-2', lesson_id: 'lesson-1', completed: 0, score: 17, xp_earned: 7, completed_at: null,
+    });
+    expect(db.prepare('SELECT COUNT(*) AS total FROM user_lesson_progress').get()).toEqual({ total: 2 });
 
     const mission = db.prepare("SELECT id FROM daily_missions WHERE user_id = ? AND action = 'read_content'").get('user-1') as { id: string };
     const missionResponse = await completeMission(new Request(`http://localhost/api/gamification/daily-missions/${mission.id}/complete`, {
@@ -148,11 +166,41 @@ describe('legacy gamification write containment', () => {
     expect(campaignResponse.status).toBe(200);
     expect(await campaignResponse.json()).toMatchObject({ success: true, progressRecorded: true });
 
-    expect(legacySnapshot(db)).toEqual(before);
+    expect(legacySnapshotBytes(db)).toBe(before);
     expect(db.prepare('SELECT * FROM user_campaigns WHERE user_id = ?').all('user-1')).toHaveLength(1);
     expect(db.prepare("SELECT action, note FROM mission_logs WHERE user_id = ?").get('user-1')).toEqual({
       action: 'read_content', note: 'Li o conteudo educativo completo hoje.',
     });
+  });
+
+  it('updates only the authenticated user lesson row with pedagogical score and zero XP', async () => {
+    const db = useWriteDatabase();
+    db.prepare(
+      'INSERT INTO user_lesson_progress VALUES (?, ?, ?, 0, 11, 23, NULL)'
+    ).run('progress-self', 'user-1', 'lesson-1');
+    const before = legacySnapshotBytes(db);
+    const auth = { userId: 'user-1', companyId: 'company-1', role: 'colaboradora', email: 'ana@example.test' };
+
+    const response = await completeLesson(new Request('http://localhost/api/gamification/daily-lesson', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lessonId: 'lesson-1', score: 64 }),
+    }) as any, { auth } as any);
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({ success: true, progressRecorded: true, score: 64 });
+    expectPointFreeBoundary(payload);
+    expect(db.prepare(
+      'SELECT id, user_id, lesson_id, completed, score, xp_earned FROM user_lesson_progress WHERE user_id = ? AND lesson_id = ?'
+    ).get('user-1', 'lesson-1')).toEqual({
+      id: 'progress-self', user_id: 'user-1', lesson_id: 'lesson-1', completed: 1, score: 64, xp_earned: 0,
+    });
+    expect(db.prepare(
+      'SELECT id, user_id, lesson_id, completed, score, xp_earned, completed_at FROM user_lesson_progress WHERE user_id = ?'
+    ).get('user-2')).toEqual({
+      id: 'progress-other', user_id: 'user-2', lesson_id: 'lesson-1', completed: 0, score: 17, xp_earned: 7, completed_at: null,
+    });
+    expect(db.prepare('SELECT COUNT(*) AS total FROM user_lesson_progress').get()).toEqual({ total: 2 });
+    expect(legacySnapshotBytes(db)).toBe(before);
   });
 
   it('fail-closes residual legacy services before any database access', async () => {

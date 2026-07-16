@@ -9,7 +9,6 @@ import Hero from '@/components/sections/Hero';
 import Profiles from '@/components/sections/Profiles';
 import HowItWorks from '@/components/sections/HowItWorks';
 
-const Gamification = dynamic(() => import('@/components/sections/Gamification'));
 const ROI = dynamic(() => import('@/components/sections/ROI'));
 const Campaigns = dynamic(() => import('@/components/sections/Campaigns'));
 const QuizPromo = dynamic(() => import('@/components/sections/QuizPromo'));
@@ -30,7 +29,6 @@ export default function HomeClient() {
         <Marquee />
         <Profiles />
         <HowItWorks />
-        <Gamification />
         <ROI onQuizOpen={openQuiz} />
         <Campaigns />
         <QuizPromo onQuizOpen={openQuiz} />
