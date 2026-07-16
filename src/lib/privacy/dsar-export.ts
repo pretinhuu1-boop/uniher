@@ -96,7 +96,7 @@ function serializeJson(value: unknown): string {
 }
 
 type DsarRow = Record<string, unknown>;
-type RowIdCursor = number | bigint;
+type StableIdCursor = string;
 type TimestampCursor = { timestamp: string; id: string };
 
 function stripInternalCursorFields(row: DsarRow): DsarRow {
@@ -105,10 +105,10 @@ function stripInternalCursorFields(row: DsarRow): DsarRow {
   );
 }
 
-function getRowIdCursor(row: DsarRow): RowIdCursor {
-  const cursor = row.__dsar_cursor_rowid;
-  if (typeof cursor !== 'number' && typeof cursor !== 'bigint') {
-    throw new Error('DSAR row is missing its rowid cursor');
+function getStableIdCursor(row: DsarRow): StableIdCursor {
+  const cursor = row.__dsar_cursor_id;
+  if (typeof cursor !== 'string') {
+    throw new Error('DSAR row is missing its stable id cursor');
   }
   return cursor;
 }
@@ -160,29 +160,29 @@ export function* createDsarExportJsonChunks(
   ).get(userId);
 
   yield `{"exportedAt":${serializeJson(exportedAt)},"user":${serializeJson(user)},"quizResults":`;
-  yield* streamPaginatedJsonArray<RowIdCursor>((cursor) => {
+  yield* streamPaginatedJsonArray<StableIdCursor>((cursor) => {
     const statement = cursor === null
       ? db.prepare<unknown[], DsarRow>(`
           SELECT id, archetype_id, answers_json, created_at,
-                 rowid AS __dsar_cursor_rowid
+                 id AS __dsar_cursor_id
           FROM quiz_results
           WHERE user_id = ?
-          ORDER BY rowid ASC
+          ORDER BY id ASC
           LIMIT ?
         `)
       : db.prepare<unknown[], DsarRow>(`
           SELECT id, archetype_id, answers_json, created_at,
-                 rowid AS __dsar_cursor_rowid
+                 id AS __dsar_cursor_id
           FROM quiz_results
-          WHERE user_id = ? AND rowid > ?
-          ORDER BY rowid ASC
+          WHERE user_id = ? AND id > ?
+          ORDER BY id ASC
           LIMIT ?
         `);
     const params = cursor === null
       ? [userId, DSAR_EXPORT_BATCH_SIZE]
       : [userId, cursor, DSAR_EXPORT_BATCH_SIZE];
     return materializePage(statement.iterate(...params));
-  }, getRowIdCursor);
+  }, getStableIdCursor);
 
   yield ',"notifications":';
   yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
@@ -216,31 +216,31 @@ export function* createDsarExportJsonChunks(
     'SELECT points, level, league FROM users WHERE id = ?',
   ).get(userId);
   yield `,"legacyDerivedData":{"label":${serializeJson('Derivado legado — em revisão')},"userGamification":${serializeJson(legacyUserGamification)},"badges":`;
-  yield* streamPaginatedJsonArray<RowIdCursor>((cursor) => {
+  yield* streamPaginatedJsonArray<StableIdCursor>((cursor) => {
     const statement = cursor === null
       ? db.prepare<unknown[], DsarRow>(`
           SELECT ub.badge_id, b.name, b.description, ub.unlocked_at,
-                 ub.rowid AS __dsar_cursor_rowid
+                 ub.badge_id AS __dsar_cursor_id
           FROM user_badges ub
           LEFT JOIN badges b ON b.id = ub.badge_id
           WHERE ub.user_id = ?
-          ORDER BY ub.rowid ASC
+          ORDER BY ub.badge_id ASC
           LIMIT ?
         `)
       : db.prepare<unknown[], DsarRow>(`
           SELECT ub.badge_id, b.name, b.description, ub.unlocked_at,
-                 ub.rowid AS __dsar_cursor_rowid
+                 ub.badge_id AS __dsar_cursor_id
           FROM user_badges ub
           LEFT JOIN badges b ON b.id = ub.badge_id
-          WHERE ub.user_id = ? AND ub.rowid > ?
-          ORDER BY ub.rowid ASC
+          WHERE ub.user_id = ? AND ub.badge_id > ?
+          ORDER BY ub.badge_id ASC
           LIMIT ?
         `);
     const params = cursor === null
       ? [userId, DSAR_EXPORT_BATCH_SIZE]
       : [userId, cursor, DSAR_EXPORT_BATCH_SIZE];
     return materializePage(statement.iterate(...params));
-  }, getRowIdCursor);
+  }, getStableIdCursor);
 
   yield ',"healthScores":';
   yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
@@ -271,31 +271,31 @@ export function* createDsarExportJsonChunks(
   }, getTimestampCursor);
 
   yield ',"challenges":';
-  yield* streamPaginatedJsonArray<RowIdCursor>((cursor) => {
+  yield* streamPaginatedJsonArray<StableIdCursor>((cursor) => {
     const statement = cursor === null
       ? db.prepare<unknown[], DsarRow>(`
           SELECT uc.challenge_id, c.title, uc.progress, uc.status, uc.started_at, uc.completed_at,
-                 uc.rowid AS __dsar_cursor_rowid
+                 uc.challenge_id AS __dsar_cursor_id
           FROM user_challenges uc
           LEFT JOIN challenges c ON c.id = uc.challenge_id
           WHERE uc.user_id = ?
-          ORDER BY uc.rowid ASC
+          ORDER BY uc.challenge_id ASC
           LIMIT ?
         `)
       : db.prepare<unknown[], DsarRow>(`
           SELECT uc.challenge_id, c.title, uc.progress, uc.status, uc.started_at, uc.completed_at,
-                 uc.rowid AS __dsar_cursor_rowid
+                 uc.challenge_id AS __dsar_cursor_id
           FROM user_challenges uc
           LEFT JOIN challenges c ON c.id = uc.challenge_id
-          WHERE uc.user_id = ? AND uc.rowid > ?
-          ORDER BY uc.rowid ASC
+          WHERE uc.user_id = ? AND uc.challenge_id > ?
+          ORDER BY uc.challenge_id ASC
           LIMIT ?
         `);
     const params = cursor === null
       ? [userId, DSAR_EXPORT_BATCH_SIZE]
       : [userId, cursor, DSAR_EXPORT_BATCH_SIZE];
     return materializePage(statement.iterate(...params));
-  }, getRowIdCursor);
+  }, getStableIdCursor);
 
   yield ',"activityLog":';
   yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
