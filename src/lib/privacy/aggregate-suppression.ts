@@ -302,7 +302,7 @@ export function serializeProtectedMetricForCsv<T>(
 
   const text = String(metric.value);
   const neutralized =
-    typeof metric.value === 'string' && /^[\t\r\n=+\-@＝＋－＠]/u.test(text)
+    typeof metric.value === 'string' && /^[=+\-@]/.test(text)
       ? `'${text}`
       : text;
   const escaped = neutralized.replace(/"/g, '""');
