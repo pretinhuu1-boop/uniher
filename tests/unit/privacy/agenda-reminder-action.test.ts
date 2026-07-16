@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as reminderAction from '@/app/api/notifications/reminder-action/route';
 
 const databases: Database.Database[] = [];
@@ -112,6 +112,92 @@ describe('Agenda reminder action provenance', () => {
       action: 'complete',
     })).toThrow('Evento relacionado ao lembrete não foi encontrado');
     expect(db.prepare("SELECT status FROM health_events WHERE id = 'event-bia'").get()).toEqual({ status: 'pending' });
+  });
+
+  it('rejects an impossible reschedule date instead of normalizing it', () => {
+    const db = createReminderDatabase();
+    db.exec(`
+      INSERT INTO health_events (id, user_id, title, date) VALUES
+        ('event-invalid-date', 'collaborator-ana', 'Consulta', '2026-07-16');
+      INSERT INTO notifications (id, user_id, type, title, message, source, resource_id)
+      VALUES ('reminder-invalid-date', 'collaborator-ana', 'reminder', 'Consulta', 'Consulta', 'agenda', 'event-invalid-date');
+    `);
+
+    expect(() => reminderAction.applyReminderAction(db, 'collaborator-ana', {
+      notificationId: 'reminder-invalid-date',
+      action: 'reschedule',
+      date: '2026-02-31',
+      time: '09:30',
+    })).toThrow('Data ou horário inválidos');
+    expect(db.prepare("SELECT date FROM health_events WHERE id = 'event-invalid-date'").get())
+      .toEqual({ date: '2026-07-16' });
+  });
+
+  it('accepts a valid leap-day reschedule date', () => {
+    const db = createReminderDatabase();
+    db.exec(`
+      INSERT INTO health_events (id, user_id, title, date) VALUES
+        ('event-leap-date', 'collaborator-ana', 'Consulta', '2026-07-16');
+      INSERT INTO notifications (id, user_id, type, title, message, source, resource_id)
+      VALUES ('reminder-leap-date', 'collaborator-ana', 'reminder', 'Consulta', 'Consulta', 'agenda', 'event-leap-date');
+    `);
+
+    expect(reminderAction.applyReminderAction(db, 'collaborator-ana', {
+      notificationId: 'reminder-leap-date',
+      action: 'reschedule',
+      date: '2028-02-29',
+      time: '09:30',
+    })).toMatchObject({ status: 'rescheduled', date: '2028-02-29', time: '09:30' });
+  });
+
+  it('snoozes at the Sao Paulo civil time regardless of the process timezone', () => {
+    const previousTimeZone = process.env.TZ;
+    process.env.TZ = 'UTC';
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-16T12:00:00.000Z'));
+    const db = createReminderDatabase();
+    db.exec(`
+      INSERT INTO health_events (id, user_id, title, date, time) VALUES
+        ('event-snooze-clock', 'collaborator-ana', 'Consulta', '2026-07-16', '09:00');
+      INSERT INTO notifications (id, user_id, type, title, message, source, resource_id)
+      VALUES ('reminder-snooze-clock', 'collaborator-ana', 'reminder', 'Consulta', 'Consulta', 'agenda', 'event-snooze-clock');
+    `);
+
+    try {
+      expect(reminderAction.applyReminderAction(db, 'collaborator-ana', {
+        notificationId: 'reminder-snooze-clock',
+        action: 'snooze_15m',
+      })).toMatchObject({ status: 'snoozed', date: '2026-07-16', time: '09:15' });
+    } finally {
+      vi.useRealTimers();
+      process.env.TZ = previousTimeZone;
+    }
+  });
+
+  it('treats a reminder notification as single-use', () => {
+    const db = createReminderDatabase();
+    db.exec(`
+      INSERT INTO health_events (id, user_id, title, date, time) VALUES
+        ('event-single-use', 'collaborator-ana', 'Consulta', '2026-07-16', '09:00');
+      INSERT INTO notifications (id, user_id, type, title, message, source, resource_id)
+      VALUES ('reminder-single-use', 'collaborator-ana', 'reminder', 'Consulta', 'Consulta', 'agenda', 'event-single-use');
+    `);
+
+    expect(reminderAction.applyReminderAction(db, 'collaborator-ana', {
+      notificationId: 'reminder-single-use',
+      action: 'reschedule',
+      date: '2026-07-17',
+      time: '10:00',
+    })).toMatchObject({ status: 'rescheduled' });
+
+    expect(() => reminderAction.applyReminderAction(db, 'collaborator-ana', {
+      notificationId: 'reminder-single-use',
+      action: 'reschedule',
+      date: '2026-07-18',
+      time: '11:00',
+    })).toThrow(expect.objectContaining({ status: 404 }));
+    expect(db.prepare("SELECT date, time FROM health_events WHERE id = 'event-single-use'").get())
+      .toEqual({ date: '2026-07-17', time: '10:00' });
   });
 
   it('routes every Agenda mutation through the queued collaborator-self guard', () => {

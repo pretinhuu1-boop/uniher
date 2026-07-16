@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import { hasCollaboratorSelfCapability } from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { isPushEnabled, sendPushNotification } from '@/lib/push';
+import { getAgendaReminderWindow } from '@/lib/time/agenda-clock';
 
 interface PendingEvent {
   id: string;
@@ -32,6 +33,7 @@ export interface AgendaReminderDependencies {
   database: Database.Database;
   queue: AgendaReminderQueue;
   push: AgendaPushDependencies;
+  now(): Date;
 }
 
 export interface AgendaReminderResult {
@@ -86,6 +88,7 @@ export async function sendUpcomingReminders(
   const database = overrides.database ?? getReadDb();
   const queue = overrides.queue ?? getWriteQueue();
   const push = overrides.push ?? { enabled: isPushEnabled, send: sendPushNotification };
+  const now = overrides.now ?? (() => new Date());
   let personalRemindersSent = 0;
 
   const userColumns = getTableColumns(database, 'users');
@@ -99,6 +102,7 @@ export async function sendUpcomingReminders(
     userColumns.has('approved') ? 'COALESCE(u.approved, 0) = 1' : null,
   ].filter((condition): condition is string => condition !== null);
 
+  const initialWindow = getAgendaReminderWindow(now());
   const events = database.prepare(`
     SELECT he.id, he.user_id, he.title, he.type, he.date, he.time
     FROM health_events he
@@ -108,9 +112,9 @@ export async function sendUpcomingReminders(
       AND he.reminder_sent = 0
       AND ${activeConditions.join('\n      AND ')}
       AND datetime(he.date || ' ' || COALESCE(NULLIF(he.time, ''), '09:00'))
-          BETWEEN datetime('now') AND datetime('now', '+30 minutes')
+          BETWEEN datetime(?) AND datetime(?)
     ORDER BY he.date ASC, he.time ASC
-  `).all() as PendingEvent[];
+  `).all(initialWindow.windowStart, initialWindow.windowEnd) as PendingEvent[];
 
   for (const event of events) {
     const typeLabel = event.type === 'exame' ? 'Exame' : event.type === 'consulta' ? 'Consulta' : 'Lembrete';
@@ -119,6 +123,30 @@ export async function sendUpcomingReminders(
     const persisted = await queue.enqueue((db) => {
       const persistReminder = db.transaction(() => {
         if (!hasCollaboratorSelfCapability(event.user_id, db)) {
+          return false;
+        }
+        const transactionWindow = getAgendaReminderWindow(now());
+        const updated = db.prepare(`
+          UPDATE health_events
+          SET reminder_sent = 1
+          WHERE id = ?
+            AND user_id = ?
+            AND status = 'pending'
+            AND deleted_at IS NULL
+            AND reminder_sent = 0
+            AND date = ?
+            AND COALESCE(time, '') = COALESCE(?, '')
+            AND datetime(date || ' ' || COALESCE(NULLIF(time, ''), '09:00'))
+                BETWEEN datetime(?) AND datetime(?)
+        `).run(
+          event.id,
+          event.user_id,
+          event.date,
+          event.time,
+          transactionWindow.windowStart,
+          transactionWindow.windowEnd,
+        );
+        if (updated.changes !== 1) {
           return false;
         }
         db.prepare(`
@@ -131,14 +159,6 @@ export async function sendUpcomingReminders(
           `${event.title} - ${whenLabel}`,
           event.id,
         );
-        const updated = db.prepare(`
-          UPDATE health_events
-          SET reminder_sent = 1
-          WHERE id = ? AND user_id = ? AND reminder_sent = 0
-        `).run(event.id, event.user_id);
-        if (updated.changes !== 1) {
-          throw new Error('Agenda reminder event changed before persistence');
-        }
         return true;
       });
       return persistReminder.immediate();
@@ -157,10 +177,11 @@ export async function sendUpcomingReminders(
   }
 
   await queue.enqueue((db) => {
+    const { today } = getAgendaReminderWindow(now());
     db.prepare(`
       UPDATE health_events SET status = 'missed'
-      WHERE status = 'pending' AND date < date('now') AND deleted_at IS NULL
-    `).run();
+      WHERE status = 'pending' AND date < ? AND deleted_at IS NULL
+    `).run(today);
   });
 
   return { personalRemindersSent };

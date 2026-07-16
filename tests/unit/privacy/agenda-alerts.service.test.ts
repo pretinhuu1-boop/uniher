@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { sendUpcomingReminders } from '@/services/agenda-alerts.service';
 
 const databases: Database.Database[] = [];
+const FIXED_NOW = new Date('2026-07-16T12:00:00.000Z');
+const fixedNow = () => FIXED_NOW;
 
 function createAgendaDatabase() {
   const queries: string[] = [];
@@ -74,11 +76,38 @@ afterEach(() => {
 });
 
 describe('sendUpcomingReminders privacy containment', () => {
+  it('uses the Sao Paulo civil window instead of firing three hours early', async () => {
+    const { db } = createAgendaDatabase();
+    db.exec(`
+      INSERT INTO users (id, role) VALUES ('collaborator-clock', 'colaboradora');
+      INSERT INTO health_events (id, user_id, title, type, date, time)
+      VALUES ('event-clock', 'collaborator-clock', 'Consulta pessoal', 'consulta', '2026-07-16', '09:15');
+    `);
+    let now = new Date('2026-07-16T09:00:00.000Z');
+    const dependencies = {
+      database: db,
+      queue: inlineQueue(db),
+      push: { enabled: () => false, send: vi.fn() },
+      now: () => now,
+    } as Parameters<typeof sendUpcomingReminders>[0] & { now: () => Date };
+
+    await expect(sendUpcomingReminders(dependencies))
+      .resolves.toEqual({ personalRemindersSent: 0 });
+    expect(db.prepare("SELECT reminder_sent FROM health_events WHERE id = 'event-clock'").get())
+      .toEqual({ reminder_sent: 0 });
+
+    now = new Date('2026-07-16T12:00:00.000Z');
+    await expect(sendUpcomingReminders(dependencies))
+      .resolves.toEqual({ personalRemindersSent: 1 });
+    expect(db.prepare("SELECT reminder_sent FROM health_events WHERE id = 'event-clock'").get())
+      .toEqual({ reminder_sent: 1 });
+  });
+
   it('sends one provenance-linked personal reminder without manager data or queries', async () => {
     const { db, queries } = createAgendaDatabase();
     db.exec(`
       INSERT INTO health_events (id, user_id, company_id, title, type, date, time)
-      VALUES ('event-1', 'collaborator-ana', 'company-1', 'Mamografia', 'exame', date('now'), strftime('%H:%M', 'now', '+15 minutes'));
+      VALUES ('event-1', 'collaborator-ana', 'company-1', 'Mamografia', 'exame', '2026-07-16', '09:15');
       INSERT INTO users (id, company_id, role, also_collaborator) VALUES
         ('collaborator-ana', 'company-1', 'colaboradora', 0),
         ('manager-rh-canary', 'company-1', 'rh', 0),
@@ -104,6 +133,7 @@ describe('sendUpcomingReminders privacy containment', () => {
       database: db,
       queue: inlineQueue(db),
       push: { enabled: () => true, send: push },
+      now: fixedNow,
     });
 
     const personalNotification = db.prepare(`
@@ -139,7 +169,7 @@ describe('sendUpcomingReminders privacy containment', () => {
     const { db } = createAgendaDatabase();
     db.exec(`
       INSERT INTO health_events (id, user_id, title, type, date, time)
-      VALUES ('event-2', 'collaborator-bia', 'Consulta', 'consulta', date('now'), strftime('%H:%M', 'now', '+15 minutes'));
+      VALUES ('event-2', 'collaborator-bia', 'Consulta', 'consulta', '2026-07-16', '09:15');
       INSERT INTO users (id, role) VALUES ('collaborator-bia', 'colaboradora');
       INSERT INTO notification_preferences (user_id, browser_enabled)
       VALUES ('collaborator-bia', 0);
@@ -155,6 +185,7 @@ describe('sendUpcomingReminders privacy containment', () => {
       database: db,
       queue: inlineQueue(db),
       push: { enabled: () => true, send: push },
+      now: fixedNow,
     });
 
     expect(result).toEqual({ personalRemindersSent: 1 });
@@ -166,12 +197,13 @@ describe('sendUpcomingReminders privacy containment', () => {
     const { db } = createAgendaDatabase();
     db.exec(`
       INSERT INTO health_events (id, user_id, title, type, date, time)
-      VALUES ('overdue-1', 'collaborator-ana', 'Retorno', 'consulta', date('now', '-1 day'), '09:00');
+      VALUES ('overdue-1', 'collaborator-ana', 'Retorno', 'consulta', '2026-07-15', '09:00');
     `);
 
     const result = await sendUpcomingReminders({
       database: db,
       queue: inlineQueue(db),
+      now: fixedNow,
       push: {
         enabled: () => true,
         send: vi.fn(async (
@@ -195,11 +227,11 @@ describe('sendUpcomingReminders privacy containment', () => {
         ('deleted-dual-rh', 'rh', 1, 1, datetime('now'), 0),
         ('blocked-dual-rh', 'rh', 1, 1, NULL, 1);
       INSERT INTO health_events (id, user_id, title, type, date, time) VALUES
-        ('event-eligible', 'eligible-collaborator', 'Consulta pessoal', 'consulta', date('now'), strftime('%H:%M', 'now', '+15 minutes')),
-        ('event-ordinary-rh', 'ordinary-rh', 'RH comum', 'consulta', date('now'), strftime('%H:%M', 'now', '+15 minutes')),
-        ('event-revoked', 'revoked-dual-rh', 'Acesso revogado', 'consulta', date('now'), strftime('%H:%M', 'now', '+15 minutes')),
-        ('event-deleted', 'deleted-dual-rh', 'Usuário removido', 'consulta', date('now'), strftime('%H:%M', 'now', '+15 minutes')),
-        ('event-blocked', 'blocked-dual-rh', 'Usuário bloqueado', 'consulta', date('now'), strftime('%H:%M', 'now', '+15 minutes'));
+        ('event-eligible', 'eligible-collaborator', 'Consulta pessoal', 'consulta', '2026-07-16', '09:15'),
+        ('event-ordinary-rh', 'ordinary-rh', 'RH comum', 'consulta', '2026-07-16', '09:15'),
+        ('event-revoked', 'revoked-dual-rh', 'Acesso revogado', 'consulta', '2026-07-16', '09:15'),
+        ('event-deleted', 'deleted-dual-rh', 'Usuário removido', 'consulta', '2026-07-16', '09:15'),
+        ('event-blocked', 'blocked-dual-rh', 'Usuário bloqueado', 'consulta', '2026-07-16', '09:15');
       INSERT INTO notification_preferences (user_id, browser_enabled)
       SELECT id, 1 FROM users;
       INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth)
@@ -214,6 +246,7 @@ describe('sendUpcomingReminders privacy containment', () => {
       database: db,
       queue: inlineQueue(db),
       push: { enabled: () => true, send: push },
+      now: fixedNow,
     });
 
     expect(result).toEqual({ personalRemindersSent: 1 });
@@ -230,7 +263,7 @@ describe('sendUpcomingReminders privacy containment', () => {
     db.exec(`
       INSERT INTO users (id, role) VALUES ('eligible-collaborator', 'colaboradora');
       INSERT INTO health_events (id, user_id, title, type, date, time)
-      VALUES ('event-atomic', 'eligible-collaborator', 'Consulta pessoal', 'consulta', date('now'), strftime('%H:%M', 'now', '+15 minutes'));
+      VALUES ('event-atomic', 'eligible-collaborator', 'Consulta pessoal', 'consulta', '2026-07-16', '09:15');
       CREATE TRIGGER fail_reminder_update
       BEFORE UPDATE OF reminder_sent ON health_events
       BEGIN
@@ -242,6 +275,7 @@ describe('sendUpcomingReminders privacy containment', () => {
       database: db,
       queue: inlineQueue(db),
       push: { enabled: () => false, send: vi.fn() },
+      now: fixedNow,
     })).rejects.toThrow('forced reminder update failure');
 
     expect(db.prepare('SELECT COUNT(*) AS count FROM notifications').get()).toEqual({ count: 0 });
@@ -254,7 +288,7 @@ describe('sendUpcomingReminders privacy containment', () => {
     db.exec(`
       INSERT INTO users (id, role, approved) VALUES ('revoked-in-queue', 'colaboradora', 1);
       INSERT INTO health_events (id, user_id, title, type, date, time)
-      VALUES ('event-revoked-in-queue', 'revoked-in-queue', 'Consulta pessoal', 'consulta', date('now'), strftime('%H:%M', 'now', '+15 minutes'));
+      VALUES ('event-revoked-in-queue', 'revoked-in-queue', 'Consulta pessoal', 'consulta', '2026-07-16', '09:15');
       INSERT INTO notification_preferences (user_id, browser_enabled) VALUES ('revoked-in-queue', 1);
       INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth)
       VALUES ('push-revoked-in-queue', 'revoked-in-queue', 'https://push.test/revoked-in-queue', 'key', 'secret');
@@ -278,12 +312,64 @@ describe('sendUpcomingReminders privacy containment', () => {
       database: db,
       queue: revokingQueue,
       push: { enabled: () => true, send: push },
+      now: fixedNow,
     });
 
     expect(result).toEqual({ personalRemindersSent: 0 });
     expect(db.prepare('SELECT COUNT(*) AS count FROM notifications').get()).toEqual({ count: 0 });
     expect(db.prepare("SELECT reminder_sent FROM health_events WHERE id = 'event-revoked-in-queue'").get())
       .toEqual({ reminder_sent: 0 });
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      transition: 'cancelled',
+      mutate: (db: Database.Database) => db.prepare(`
+        UPDATE health_events
+        SET status = 'cancelled', deleted_at = datetime('now')
+        WHERE id = 'event-changed-in-queue'
+      `).run(),
+    },
+    {
+      transition: 'rescheduled',
+      mutate: (db: Database.Database) => db.prepare(`
+        UPDATE health_events
+        SET date = '2026-07-17', time = '09:00'
+        WHERE id = 'event-changed-in-queue'
+      `).run(),
+    },
+  ])('skips persistence and push when the event is $transition after selection', async ({ mutate }) => {
+    const { db } = createAgendaDatabase();
+    db.exec(`
+      INSERT INTO users (id, role) VALUES ('collaborator-in-queue', 'colaboradora');
+      INSERT INTO health_events (id, user_id, title, type, date, time)
+      VALUES ('event-changed-in-queue', 'collaborator-in-queue', 'Consulta pessoal', 'consulta', '2026-07-16', '09:15');
+      INSERT INTO notification_preferences (user_id, browser_enabled) VALUES ('collaborator-in-queue', 1);
+      INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth)
+      VALUES ('push-changed-in-queue', 'collaborator-in-queue', 'https://push.test/changed-in-queue', 'key', 'secret');
+    `);
+    const push = vi.fn(async () => true);
+    let mutateBeforeNextCallback = true;
+    const changingQueue = {
+      enqueue: async <T>(operation: (writeDb: Database.Database) => T) => {
+        if (mutateBeforeNextCallback) {
+          mutateBeforeNextCallback = false;
+          mutate(db);
+        }
+        return operation(db);
+      },
+    };
+
+    const result = await sendUpcomingReminders({
+      database: db,
+      queue: changingQueue,
+      push: { enabled: () => true, send: push },
+      now: fixedNow,
+    });
+
+    expect(result).toEqual({ personalRemindersSent: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM notifications').get()).toEqual({ count: 0 });
     expect(push).not.toHaveBeenCalled();
   });
 });

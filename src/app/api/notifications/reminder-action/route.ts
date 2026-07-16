@@ -9,6 +9,7 @@ import {
 } from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
+import { getAgendaSnoozeTime } from '@/lib/time/agenda-clock';
 
 const reminderActionSchema = z.object({
   notificationId: z.string().min(1),
@@ -37,17 +38,25 @@ export class AgendaReminderActionError extends Error {
   }
 }
 
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+function hasValidDateTimeComponents(date: string, time: string): boolean {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const timeMatch = /^(\d{2}):(\d{2})$/.exec(time);
+  if (!dateMatch || !timeMatch) return false;
 
-function formatLocalTime(date: Date): string {
-  const hours = `${date.getHours()}`.padStart(2, '0');
-  const minutes = `${date.getMinutes()}`.padStart(2, '0');
-  return `${hours}:${minutes}`;
+  const [, yearText, monthText, dayText] = dateMatch;
+  const [, hourText, minuteText] = timeMatch;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const scheduledAt = new Date(Date.UTC(year, month - 1, day, hour, minute));
+
+  return scheduledAt.getUTCFullYear() === year
+    && scheduledAt.getUTCMonth() === month - 1
+    && scheduledAt.getUTCDate() === day
+    && scheduledAt.getUTCHours() === hour
+    && scheduledAt.getUTCMinutes() === minute;
 }
 
 /** Applies a reminder mutation using only persisted provenance and self ownership. */
@@ -63,7 +72,7 @@ export function applyReminderAction(
   const notification = database.prepare(`
     SELECT id, type, source, resource_id
     FROM notifications
-    WHERE id = ? AND user_id = ?
+    WHERE id = ? AND user_id = ? AND read = 0
   `).get(input.notificationId, userId) as ReminderNotification | undefined;
 
   if (!notification) {
@@ -92,23 +101,27 @@ export function applyReminderAction(
     if (updated.changes !== 1) {
       throw new AgendaReminderActionError('Evento relacionado ao lembrete não foi encontrado', 404);
     }
-    database.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?')
-      .run(notification.id, userId);
+    const notificationUpdated = database.prepare(`
+      UPDATE notifications SET read = 1
+      WHERE id = ? AND user_id = ? AND read = 0
+    `).run(notification.id, userId);
+    if (notificationUpdated.changes !== 1) {
+      throw new AgendaReminderActionError('Notificação não encontrada', 404);
+    }
     return { success: true, status: 'completed', eventId: event.id } as const;
   }
 
   let nextDate = input.date;
   let nextTime = input.time;
   if (input.action === 'snooze_15m') {
-    const snoozedAt = new Date(Date.now() + 15 * 60 * 1000);
-    nextDate = formatLocalDate(snoozedAt);
-    nextTime = formatLocalTime(snoozedAt);
+    const snoozedAt = getAgendaSnoozeTime(new Date());
+    nextDate = snoozedAt.date;
+    nextTime = snoozedAt.time;
   }
   if (!nextDate || !nextTime) {
     throw new AgendaReminderActionError('Data e horário são obrigatórios para reagendar', 400);
   }
-  const scheduledAt = new Date(`${nextDate}T${nextTime}:00`);
-  if (Number.isNaN(scheduledAt.getTime())) {
+  if (!hasValidDateTimeComponents(nextDate, nextTime)) {
     throw new AgendaReminderActionError('Data ou horário inválidos', 400);
   }
 
@@ -120,8 +133,13 @@ export function applyReminderAction(
   if (updated.changes !== 1) {
     throw new AgendaReminderActionError('Evento relacionado ao lembrete não foi encontrado', 404);
   }
-  database.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?')
-    .run(notification.id, userId);
+  const notificationUpdated = database.prepare(`
+    UPDATE notifications SET read = 1
+    WHERE id = ? AND user_id = ? AND read = 0
+  `).run(notification.id, userId);
+  if (notificationUpdated.changes !== 1) {
+    throw new AgendaReminderActionError('Notificação não encontrada', 404);
+  }
 
   return {
     success: true,

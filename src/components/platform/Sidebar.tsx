@@ -102,7 +102,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [isMobile, setIsMobile] = useState(false);
 
   const realRole = normalizeUserRole(user?.role);
-  const alsoCollab = Boolean(user?.also_collaborator) || realRole === 'lideranca';
+  const alsoCollab = Boolean(user?.also_collaborator);
   const canSwitchView = alsoCollab && realRole !== 'colaboradora';
   const [activeView, setActiveView] = useState<UserRole>(realRole);
 
