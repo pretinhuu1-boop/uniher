@@ -87,6 +87,14 @@ function normalizeConstraints(
   constraints: readonly SuppressionConstraint[],
   knownCellIds: ReadonlySet<string>,
 ) {
+  const constraintIds = new Set<string>();
+  for (const constraint of constraints) {
+    if (constraintIds.has(constraint.id)) {
+      throw new Error(`Duplicate privacy constraint: ${constraint.id}`);
+    }
+    constraintIds.add(constraint.id);
+  }
+
   return constraints
     .map((constraint) => {
       const uniqueCellIds = [...new Set(constraint.cellIds)].sort(compareText);
@@ -129,56 +137,105 @@ export function applyComplementarySuppression<T>(
     constraints,
     new Set(protectedById.keys()),
   );
+  const connectedCellIds = new Map<string, Set<string>>(
+    [...protectedById.keys()].map((cellId) => [cellId, new Set<string>()]),
+  );
 
-  let changed = true;
-  while (changed) {
-    changed = false;
+  for (const constraint of normalizedConstraints) {
+    const [anchorId, ...relatedIds] = constraint.cellIds;
+    if (!anchorId) {
+      continue;
+    }
 
-    for (const constraint of normalizedConstraints) {
-      const unknownCellIds = constraint.cellIds.filter(
-        (cellId) => protectedById.get(cellId)?.status === 'suppressed',
-      );
+    for (const relatedId of relatedIds) {
+      connectedCellIds.get(anchorId)?.add(relatedId);
+      connectedCellIds.get(relatedId)?.add(anchorId);
+    }
+  }
 
-      if (unknownCellIds.length !== 1) {
-        continue;
+  const protectedComponentIds = new Set<string>();
+  const pendingCellIds = [...protectedById.values()]
+    .filter(
+      (cell) =>
+        cell.status === 'suppressed' && cell.reason === 'minimum_cohort',
+    )
+    .map((cell) => cell.id)
+    .sort(compareText);
+
+  for (let index = 0; index < pendingCellIds.length; index += 1) {
+    const cellId = pendingCellIds[index];
+    if (protectedComponentIds.has(cellId)) {
+      continue;
+    }
+
+    protectedComponentIds.add(cellId);
+    const neighbors = [...(connectedCellIds.get(cellId) ?? [])].sort(compareText);
+    for (const neighborId of neighbors) {
+      if (!protectedComponentIds.has(neighborId)) {
+        pendingCellIds.push(neighborId);
       }
-
-      const complementaryId = constraint.cellIds.find(
-        (cellId) => protectedById.get(cellId)?.status === 'visible',
-      );
-
-      if (!complementaryId) {
-        throw new Error(
-          `Privacy constraint cannot retain two unknowns: ${constraint.id}`,
-        );
-      }
-
-      protectedById.set(complementaryId, {
-        id: complementaryId,
-        ...suppressedMetric('complementary'),
-      });
-      changed = true;
     }
   }
 
   return [...protectedById.values()]
-    .sort((left, right) => compareText(left.id, right.id))
-    .map(cloneCell);
+    .map((cell) => {
+      if (
+        protectedComponentIds.has(cell.id) &&
+        cell.status === 'visible'
+      ) {
+        return {
+          id: cell.id,
+          ...suppressedMetric<T>('complementary'),
+        };
+      }
+
+      return cloneCell(cell);
+    })
+    .sort((left, right) => compareText(left.id, right.id));
 }
 
-function isParticipantSet(value: unknown): value is ReadonlySet<string> {
+function materializeParticipantIds(value: unknown): Set<string> | null {
   if (!value || typeof value !== 'object') {
-    return false;
+    return null;
   }
 
-  const candidate = value as Partial<ReadonlySet<string>>;
-  return (
-    typeof candidate.size === 'number' &&
-    Number.isInteger(candidate.size) &&
-    candidate.size >= 0 &&
-    typeof candidate.has === 'function' &&
-    typeof candidate[Symbol.iterator] === 'function'
-  );
+  try {
+    const candidate = value as Partial<ReadonlySet<unknown>>;
+    const declaredSize = candidate.size;
+    if (
+      typeof declaredSize !== 'number' ||
+      !Number.isInteger(declaredSize) ||
+      declaredSize < 0 ||
+      typeof candidate.has !== 'function' ||
+      typeof candidate[Symbol.iterator] !== 'function'
+    ) {
+      return null;
+    }
+
+    const participantIds = new Set<string>();
+    let iteratedEntries = 0;
+    for (const participantId of value as Iterable<unknown>) {
+      iteratedEntries += 1;
+      if (
+        typeof participantId !== 'string' ||
+        participantId.trim().length === 0
+      ) {
+        return null;
+      }
+      participantIds.add(participantId);
+    }
+
+    if (
+      iteratedEntries !== declaredSize ||
+      participantIds.size !== declaredSize
+    ) {
+      return null;
+    }
+
+    return participantIds;
+  } catch {
+    return null;
+  }
 }
 
 function stableIntersectionSize(
@@ -204,12 +261,11 @@ export function protectTemporalPair<T>(
   previous: TemporalMetricInput<T>,
   current: TemporalMetricInput<T>,
 ): ProtectedTemporalPair<T> {
-  const previousIds = previous?.participantIds;
-  const currentIds = current?.participantIds;
-  const validParticipantSets =
-    isParticipantSet(previousIds) && isParticipantSet(currentIds);
+  const previousIds = materializeParticipantIds(previous?.participantIds);
+  const currentIds = materializeParticipantIds(current?.participantIds);
   const stableCohortIsProtected =
-    validParticipantSets &&
+    previousIds !== null &&
+    currentIds !== null &&
     previousIds.size >= MINIMUM_PROTECTED_COHORT &&
     currentIds.size >= MINIMUM_PROTECTED_COHORT &&
     stableIntersectionSize(previousIds, currentIds) >=
@@ -233,5 +289,16 @@ export function protectTemporalPair<T>(
 export function serializeProtectedMetricForCsv<T>(
   metric: ProtectedMetric<T>,
 ): string {
-  return metric.status === 'visible' ? String(metric.value) : metric.message;
+  if (metric.status === 'suppressed') {
+    return metric.message;
+  }
+
+  const text = String(metric.value);
+  const neutralized =
+    typeof metric.value === 'string' && /^[=+\-@]/.test(text)
+      ? `'${text}`
+      : text;
+  const escaped = neutralized.replace(/"/g, '""');
+
+  return /[",\r\n]/.test(neutralized) ? `"${escaped}"` : escaped;
 }

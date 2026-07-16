@@ -122,7 +122,77 @@ describe('aggregate privacy kernel', () => {
     }
   });
 
-  it('does not add suppression when a row already has multiple primary-small cells', () => {
+  it('suppresses every value and total in a triangularly reconstructable component', () => {
+    const cells = [
+      numericCell('x', 8, 8),
+      numericCell('y', 13, 13),
+      numericCell('z', 17, 17),
+      numericCell('txy', 21, 21),
+      numericCell('txz', 25, 25),
+      numericCell('tyz', 30, 30),
+    ];
+    const constraints: SuppressionConstraint[] = [
+      { id: 'xy', kind: 'row', cellIds: ['x', 'y', 'txy'] },
+      { id: 'xz', kind: 'column', cellIds: ['x', 'z', 'txz'] },
+      { id: 'yz', kind: 'total', cellIds: ['y', 'z', 'tyz'] },
+    ];
+
+    const result = applyComplementarySuppression(cells, constraints);
+    const resultById = cellMap(result);
+
+    expect(result.every((cell) => cell.status === 'suppressed')).toBe(true);
+    expect(resultById.get('x')).toEqual({ id: 'x', ...suppressedMinimum });
+    for (const cellId of ['y', 'z', 'txy', 'txz', 'tyz']) {
+      expect(resultById.get(cellId)).toEqual({
+        id: cellId,
+        status: 'suppressed',
+        reason: 'complementary',
+        message: SUPPRESSION_MESSAGE,
+      });
+    }
+    expect(JSON.stringify(result)).not.toContain('"value"');
+  });
+
+  it('keeps a disconnected component visible when it has no primary suppression', () => {
+    const cells = [
+      numericCell('protected-small', 8, 8),
+      numericCell('protected-peer', 12, 12),
+      numericCell('protected-total', 20, 20),
+      numericCell('safe-a', 11, 11),
+      numericCell('safe-b', 14, 14),
+      numericCell('safe-total', 25, 25),
+    ];
+    const constraints: SuppressionConstraint[] = [
+      {
+        id: 'protected-component',
+        kind: 'row',
+        cellIds: ['protected-small', 'protected-peer', 'protected-total'],
+      },
+      {
+        id: 'safe-component',
+        kind: 'row',
+        cellIds: ['safe-a', 'safe-b', 'safe-total'],
+      },
+    ];
+
+    const result = applyComplementarySuppression(cells, constraints);
+    const resultById = cellMap(result);
+
+    expect(resultById.get('protected-peer')?.status).toBe('suppressed');
+    expect(resultById.get('protected-total')?.status).toBe('suppressed');
+    expect(resultById.get('safe-a')).toEqual({ id: 'safe-a', status: 'visible', value: 11 });
+    expect(resultById.get('safe-b')).toEqual({ id: 'safe-b', status: 'visible', value: 14 });
+    expect(resultById.get('safe-total')).toEqual({
+      id: 'safe-total',
+      status: 'visible',
+      value: 25,
+    });
+    for (const resultCell of result) {
+      expect(resultCell).not.toBe(cells.find((cell) => cell.id === resultCell.id));
+    }
+  });
+
+  it('suppresses the full row when it contains multiple primary-small cells', () => {
     const cells = [
       numericCell('small-a', 8, 8),
       numericCell('small-b', 9, 9),
@@ -138,11 +208,12 @@ describe('aggregate privacy kernel', () => {
 
     const result = applyComplementarySuppression(cells, constraints);
 
-    expect(result.filter((cell) => cell.status === 'suppressed')).toHaveLength(2);
+    expect(result.filter((cell) => cell.status === 'suppressed')).toHaveLength(3);
     expect(cellMap(result).get('row-total')).toEqual({
       id: 'row-total',
-      status: 'visible',
-      value: 17,
+      status: 'suppressed',
+      reason: 'complementary',
+      message: SUPPRESSION_MESSAGE,
     });
     expectConstraintPrivacy(result, constraints);
   });
@@ -210,6 +281,119 @@ describe('aggregate privacy kernel', () => {
     expect(cellMap(forward).get('alpha-only')?.status).toBe('suppressed');
     expect(cellMap(forward).get('beta-only')?.status).toBe('suppressed');
     expectConstraintPrivacy(forward, constraints);
+  });
+
+  it('rejects duplicate constraint IDs even when their kinds differ', () => {
+    const cells = [
+      numericCell('a', 10, 10),
+      numericCell('b', 11, 11),
+      numericCell('total', 21, 21),
+    ];
+    const constraints: SuppressionConstraint[] = [
+      { id: 'duplicate', kind: 'row', cellIds: ['a', 'b', 'total'] },
+      { id: 'duplicate', kind: 'column', cellIds: ['a', 'b', 'total'] },
+    ];
+
+    expect(() => applyComplementarySuppression(cells, constraints)).toThrow(
+      'Duplicate privacy constraint: duplicate',
+    );
+  });
+
+  it('returns the same protected component for every valid input permutation', () => {
+    const cells = [
+      numericCell('x', 8, 8),
+      numericCell('y', 13, 13),
+      numericCell('z', 17, 17),
+      numericCell('txy', 21, 21),
+      numericCell('txz', 25, 25),
+      numericCell('tyz', 30, 30),
+    ];
+    const constraints: SuppressionConstraint[] = [
+      { id: 'xy', kind: 'row', cellIds: ['x', 'y', 'txy'] },
+      { id: 'xz', kind: 'column', cellIds: ['x', 'z', 'txz'] },
+      { id: 'yz', kind: 'total', cellIds: ['y', 'z', 'tyz'] },
+    ];
+
+    const canonical = applyComplementarySuppression(cells, constraints);
+    const permuted = applyComplementarySuppression(
+      [...cells].reverse(),
+      [...constraints]
+        .reverse()
+        .map((constraint) => ({ ...constraint, cellIds: [...constraint.cellIds].reverse() })),
+    );
+
+    expect(permuted).toEqual(canonical);
+  });
+
+  it('materializes participant IDs instead of trusting repeated set-like entries', () => {
+    const repeatedIds = {
+      size: 10,
+      has: (participantId: string) => participantId === 'same-person',
+      *[Symbol.iterator]() {
+        for (let index = 0; index < 10; index += 1) {
+          yield 'same-person';
+        }
+      },
+    } as unknown as ReadonlySet<string>;
+
+    const result = protectTemporalPair(
+      { value: 86421, participantIds: repeatedIds },
+      { value: 73125, participantIds: repeatedIds },
+    );
+
+    expect(result.previous).toEqual(suppressedMinimum);
+    expect(result.current).toEqual(suppressedMinimum);
+    expect(JSON.stringify(result)).not.toMatch(/86421|73125|same-person/);
+  });
+
+  it('suppresses malformed participant elements without throwing', () => {
+    const invalidIds = {
+      size: 10,
+      has: () => true,
+      *[Symbol.iterator]() {
+        for (let index = 0; index < 9; index += 1) {
+          yield `p${index}`;
+        }
+        yield 123;
+      },
+    } as unknown as ReadonlySet<string>;
+
+    expect(() =>
+      protectTemporalPair(
+        { value: 86421, participantIds: invalidIds },
+        { value: 73125, participantIds: invalidIds },
+      ),
+    ).not.toThrow();
+    expect(
+      protectTemporalPair(
+        { value: 86421, participantIds: invalidIds },
+        { value: 73125, participantIds: invalidIds },
+      ).previous,
+    ).toEqual(suppressedMinimum);
+  });
+
+  it('suppresses participant iterables that throw during materialization', () => {
+    const throwingIds = {
+      size: 10,
+      has: () => true,
+      *[Symbol.iterator](): Generator<string> {
+        yield 'p1';
+        throw new Error('malformed participant iterator');
+      },
+    } as unknown as ReadonlySet<string>;
+
+    expect(() =>
+      protectTemporalPair(
+        { value: 86421, participantIds: throwingIds },
+        { value: 73125, participantIds: throwingIds },
+      ),
+    ).not.toThrow();
+    expect(
+      protectTemporalPair(
+        { value: 86421, participantIds: throwingIds },
+        { value: 73125, participantIds: throwingIds },
+      ).current,
+    ).toEqual(suppressedMinimum);
   });
 
   it('suppresses a second filtered view that drops from 10 participants to 9', () => {
@@ -289,6 +473,30 @@ describe('aggregate privacy kernel', () => {
 
     expect(csv).toBe('Dados insuficientes para proteger a privacidade');
     expect(csv).not.toContain('86421');
+  });
+
+  it('escapes visible CSV text and neutralizes formula-leading strings', () => {
+    expect(serializeProtectedMetricForCsv(protectMetric('alpha,beta', 10))).toBe(
+      '"alpha,beta"',
+    );
+    expect(serializeProtectedMetricForCsv(protectMetric('alpha"beta', 10))).toBe(
+      '"alpha""beta"',
+    );
+    expect(serializeProtectedMetricForCsv(protectMetric('line 1\nline 2', 10))).toBe(
+      '"line 1\nline 2"',
+    );
+    expect(serializeProtectedMetricForCsv(protectMetric('line 1\rline 2', 10))).toBe(
+      '"line 1\rline 2"',
+    );
+    expect(serializeProtectedMetricForCsv(protectMetric('=2+2', 10))).toBe("'=2+2");
+    expect(serializeProtectedMetricForCsv(protectMetric('+SUM', 10))).toBe("'+SUM");
+    expect(serializeProtectedMetricForCsv(protectMetric('-1+2', 10))).toBe("'-1+2");
+    expect(serializeProtectedMetricForCsv(protectMetric('@SUM', 10))).toBe("'@SUM");
+    expect(serializeProtectedMetricForCsv(protectMetric('=SUM(1,2)', 10))).toBe(
+      '"\'=SUM(1,2)"',
+    );
+    expect(serializeProtectedMetricForCsv(protectMetric(42, 10))).toBe('42');
+    expect(serializeProtectedMetricForCsv(protectMetric(-5, 10))).toBe('-5');
   });
 });
 
