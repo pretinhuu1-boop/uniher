@@ -1,6 +1,6 @@
 # UniHER Platform — Editorial Operational Redesign
 
-**Status:** approved design
+**Status:** visual foundation implemented locally at `606ede3`; not deployed; product navigation superseded by the approved alignment
 
 **Date:** 2026-07-15
 
@@ -8,11 +8,13 @@
 
 **Brand-system source:** `C:\Users\user\Documents\uniher-landing-release\DESIGN.md`
 
+**Product-architecture source:** `docs/superpowers/specs/2026-07-15-uniher-product-ia-roles-entitlements-privacy-design.md`
+
 ## 1. Objective
 
 Update the complete authenticated UniHER platform with the same visual system used by the new landing page while improving navigation, hierarchy, consistency, responsiveness, and task efficiency.
 
-The approved direction is **Editorial Operational**: the UniHER identity is prominent in the shell, page framing, and meaningful care moments; working surfaces remain clear, compact, predictable, and accessible. This phase may reorganize navigation, information hierarchy, and component composition but must not change business rules, API contracts, or validated functional behavior.
+The approved direction is **Editorial Operational**: the UniHER identity is prominent in the shell, page framing, and meaningful care moments; working surfaces remain clear, compact, predictable, and accessible. This specification governs visual language and shared product structure. Navigation, entitlements, role capabilities and sensitive-data scope are governed by the product-architecture source above.
 
 ## 2. Current-state diagnosis
 
@@ -32,7 +34,7 @@ The redesign will consolidate what works instead of replacing the platform with 
 
 1. **Brand as structure, not decoration.** Espresso shell, bronze actions, porcelain content, and editorial headings create recognition without turning product screens into landing pages.
 2. **Task before metric.** Home surfaces lead with what deserves attention and what the user can do next; metrics support decisions rather than fill a dashboard.
-3. **One system, three experiences.** RH, Collaborator, and Admin Master share foundations but receive different home composition, density, and contextual navigation.
+3. **One system, role-aware experiences.** RH, Collaborator and Admin Master share foundations but receive different home composition, density and contextual navigation. Leadership uses a constrained team/self context; future specialist operations require scoped product contracts.
 4. **Progressive disclosure.** Advanced controls, secondary filters, and destructive actions remain available without dominating primary work.
 5. **Privacy made visible.** Copy, permissions, empty states, and information grouping explain what each profile can and cannot see.
 6. **Mobile by recomposition.** Mobile prioritizes the next action, not a compressed desktop dashboard.
@@ -104,6 +106,8 @@ No purple or blue SaaS gradients, glassmorphism, glow decoration, cold gray shad
 
 The shell exposes a small shared vocabulary while profile configuration controls labels and destinations. Navigation groups are based on user intent, not the underlying database or module structure. Secondary and administrative tools move into contextual navigation or disclosure instead of expanding the top-level menu indefinitely.
 
+The typed navigation infrastructure implemented in Wave 1 remains valid. Its initial route taxonomy does not: the product architecture approved after the meeting with Dra. Paola replaces the profile maps and prohibits links to absent modules.
+
 ## 6. Profile adaptations
 
 ### 6.1 RH / Company
@@ -120,7 +124,8 @@ The shell exposes a small shared vocabulary while profile configuration controls
 **Primary sequence:** daily focus → care → evolution.
 
 - Home prioritizes one meaningful next step rather than a dense metric dashboard.
-- Journey, content, check-ups, objectives, and activities form a coherent care path.
+- The visible product vocabulary is `Saúde Primária`, `Educação` and `Conquistas`, using real destinations only.
+- `Saúde Primária` contains personal care; `Educação` contains campaigns/content; `Conquistas` contains voluntary, non-sensitive progress.
 - Progress emphasizes continuity and meaning; gamification supports care without pressure, shame, or manipulative urgency.
 - Personal health and emergency information is explicitly private in layout and copy.
 
@@ -146,7 +151,7 @@ Every interactive component must define default, hover, focus, active, disabled,
 
 ## 8. Data and state behavior
 
-This redesign does not change API payloads or business rules. Existing route data is mapped into the new patterns at the page boundary.
+The visual migration does not independently authorize API or business-rule changes. When existing behavior violates the product privacy contract, a separate containment plan and negative tests must correct the behavior before that route is promoted visually.
 
 The required state sequence for data-driven surfaces is:
 
@@ -157,7 +162,7 @@ The required state sequence for data-driven surfaces is:
 5. show a permission explanation without leaking protected data when access is denied;
 6. confirm mutations near the initiating control and prevent duplicate submission.
 
-Privacy boundaries are enforced by the existing authorization layer and reflected in the UI. The redesign must never infer or display individual health data in an RH aggregation surface.
+Existing authorization is not assumed safe. Verified gaps in Agenda, ranking, Semáforo and small-cohort reporting are blocking until Wave 1.1 passes. The interface must reflect the server-enforced boundary and must never infer or display individual health data in an RH aggregation surface.
 
 ## 9. Accessibility and content requirements
 
@@ -173,17 +178,29 @@ Privacy boundaries are enforced by the existing authorization layer and reflecte
 
 ## 10. Implementation waves and promotion gates
 
-### Wave 1 — Foundation
+### Wave 1 — Foundation, completed locally
 
-Semantic tokens, shared shell, responsive navigation, primitives, patterns, and a representative reference page.
+Semantic tokens, shared shell, responsive navigation infrastructure, primitives, patterns, a representative RH page and test harness are implemented locally. The navigation configuration and scorecard are reopened by the later product/privacy review.
 
-### Wave 2 — RH / Company
+### Wave 1.1 — Privacy containment
 
-Dashboard, invitations, campaigns, departments, collaborator management, reports, and related configuration.
+Contain Agenda exposure, identified manager notifications, cross-tenant ranking, sensitive-action points, Semáforo/gamification coupling and small-cohort reporting.
+
+### Wave 1.2 — Product navigation alignment
+
+Reuse the typed navigation infrastructure with the approved profile maps and real routes only. Re-run desktop/mobile QA and replace the Wave 1 scorecard.
+
+### Wave 2A — RH Core
+
+Dashboard follow-up, invitations, departments, collaborator management and company profile. Reports require the aggregation gate. Campaigns and gamification configuration move to their own lanes.
+
+### Wave 2B and 2C — Education and Conquistas administration
+
+Separate educational content/campaigns from objectives, rewards, challenges, eligible XP, achievements and classification.
 
 ### Wave 3 — Collaborator
 
-Home, journey, content, check-ups, objectives, history, achievements, league, notifications, and collaborator configuration.
+Create and migrate the real Saúde Primária, Educação and Conquistas experiences. Daily wellbeing and Concierge require independent specifications.
 
 ### Wave 4 — Admin Master
 
@@ -207,7 +224,7 @@ Failed validation triggers localized repair of the affected component or route. 
 
 The redesign is successful when:
 
-- all three profiles are visibly part of one product system;
+- the current RH, Collaborator and Admin Master experiences are visibly part of one product system, while Leadership remains a constrained role-aware context;
 - users can identify the current context and primary next action without scanning a grid of unrelated cards;
 - the landing-page brand is recognizable without compromising product clarity;
 - mobile layouts are purposefully recomposed and fully usable;
@@ -218,8 +235,9 @@ The redesign is successful when:
 
 ## 12. Explicit non-goals
 
-- Changing business rules, authorization models, or API contracts.
+- Changing business rules, authorization models, or API contracts through visual migration alone; approved containment and product plans remain separate authorities.
 - Adding new product modules during the visual-system migration.
+- Using this visual specification to preserve an existing behavior that fails the approved privacy contract.
 - Rewriting the platform from scratch.
 - Converting every region into a card or every interaction into a modal.
 - Copying landing-page composition, animation, or display typography directly into dense operational screens.
@@ -234,4 +252,5 @@ The redesign is successful when:
 - Shell: espresso navigation, porcelain work surface, restrained editorial hierarchy, action-oriented mobile composition.
 - Component language: controlled radii, minimal elevation, fewer cards, complete states, lists/tables where comparison matters.
 - Profile model: RH attention/action/impact; Collaborator focus/care/evolution; Admin exception/administration/audit.
-- Delivery: four validated waves with explicit promotion gates.
+- Product IA: collaborator navigation is organized around Saúde Primária, Educação and Conquistas.
+- Delivery: preserve Wave 1 foundation, then run Wave 1.1, Wave 1.2, Wave 2A/2B/2C, Wave 3 and Wave 4 with explicit promotion gates.

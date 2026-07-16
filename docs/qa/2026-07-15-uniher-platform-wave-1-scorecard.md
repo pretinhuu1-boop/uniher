@@ -1,8 +1,11 @@
 # UniHER Platform Wave 1 Scorecard
 
+> **Status — HISTORICAL PASS REOPENED:** The evidence below remains valid for the visual foundation at the reviewed commits. A later product/privacy review found blocking Agenda, ranking, Semáforo and small-cohort gaps outside the original gate. Wave 1.2 navigation alignment may begin only after Wave 1.1 privacy containment passes. Do not promote or begin Wave 2A, Wave 2B or Wave 2C until both waves pass and this scorecard is replaced by fresh evidence.
+
 ## Result
 
-- Decision: PASS
+- Historical decision: PASS — visual foundation gate only
+- Current promotion status: **BLOCKED** pending Wave 1.1 and Wave 1.2
 - Commit under review: `bd28548`
 - Evidence commit: `89878f5`
 - Verification lifecycle fix: `0cb2ee3`
@@ -32,10 +35,11 @@
 - `/admin` remains the legacy Admin Master route. Its local tab strip uses 36px contextual controls and intentional horizontal scrolling on narrow screens; Admin redesign is outside Wave 1.
 - `/colaboradora` remains the legacy collaborator experience. Secondary mission `Registrar` controls measure 28px; collaborator route migration is outside Wave 1.
 - `/configuracoes` retains legacy secondary inline export/delete controls and toggles. The primary save action is fixed at 44px; the remaining controls belong to a later route-specific accessibility pass.
-- Wave 2 must migrate the RH route family: dashboard follow-up, `/convites`, `/campanhas`, `/departamentos`, `/colaboradoras-gestao`, reports at `/historico`, and RH configuration at `/company-profile` and `/gamificacao-config`.
+- The former monolithic Wave 2 is superseded. After Wave 1.1 and Wave 1.2 pass, remaining RH work is replanned as Wave 2A RH Core, Wave 2B Education administration and Wave 2C Conquistas administration; their exact route write sets require separate executable plans.
 - The production build still reports the known Next/Turbopack NFT warning that `next.config.ts` caused a whole-project trace through `src/app/api/admin/system/ops/route.ts`; it did not fail build or runtime health but should be isolated in a later operations hardening task.
 
 ## Promotion
 
-- Wave 2 RH plan may begin: YES
-- Blocking issue when NO: None
+- Historical decision at the original review: Wave 2 RH plan could begin.
+- Current decision after product/privacy alignment: **NO**.
+- Current blockers: Agenda exposure and identified manager notifications; cross-tenant/sensitive-action ranking; Semáforo/gamification coupling; small-cohort dashboard/reporting; superseded navigation taxonomy.

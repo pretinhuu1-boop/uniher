@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status — BLOCKED/SUPERSEDED:** Do not execute this plan as a single wave. The product alignment approved after the meeting with Dra. Paola inserts Wave 1.1 privacy containment and Wave 1.2 navigation alignment first. After those gates pass, extract only the safe RH Core lanes into Wave 2A; move Campaigns/Education to Wave 2B and Gamification/Conquistas to Wave 2C. The canonical contract is `../specs/2026-07-15-uniher-product-ia-roles-entitlements-privacy-design.md`.
+
 **Goal:** Migrate the remaining RH routes onto the approved UniHER platform language while preserving business behavior, health/analytics privacy boundaries, API contracts, keyboard access, and responsive operation.
 
 **Architecture:** Keep `AppLayout`, `Sidebar`, `MobileTopbar`, platform tokens, and the Wave 1 primitives as the shared shell. Migrate one route lane at a time behind focused unit and Playwright contracts; keep data fetching and mutations in the existing route modules unless a tested view-model extraction materially simplifies rendering. Reuse `PageHeader`, `SummaryBand`, `FeedbackState`, and `Button` rather than introducing route-local substitutes. Validate each lane independently, then run the complete role suite before promotion.

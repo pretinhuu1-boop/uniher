@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Execution record — 2026-07-15:** This historical plan was implemented locally on `codex/uniher-platform-wave1` through code baseline `606ede3`. Preserve its theme, shell, primitives, dashboard reference surface and test harness. Do not rerun it. Task 2's typed navigation infrastructure remains valid, but its route taxonomy and the original PASS scorecard are superseded by `../specs/2026-07-15-uniher-product-ia-roles-entitlements-privacy-design.md`. Wave 1.1 and Wave 1.2 must pass before promotion.
+
 **Goal:** Build the shared Editorial Operational foundation, responsive application shell, typed navigation, state-complete primitives, and one RH dashboard reference surface without changing business rules or API contracts.
 
 **Architecture:** Add semantic product tokens on top of the existing Tailwind v4 setup, move role navigation into typed configuration, and keep the authenticated layout as the sole owner of shell state. Shared UI primitives remain business-agnostic. The existing RH dashboard hook continues to supply data, while the page is decomposed into a view model and focused presentation sections.
