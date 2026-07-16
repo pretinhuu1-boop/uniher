@@ -372,6 +372,133 @@ describe('safe authenticated projections', () => {
     expect(collectForbiddenKeys(payload.user)).toEqual([]);
   });
 
+  it('exports every legacy history row beyond the former DSAR query caps', async () => {
+    const db = useBoundaryDatabase();
+    const historyAuth = {
+      ...auth,
+      userId: 'history-user',
+      email: 'history@example.test',
+    };
+    db.prepare(`
+      INSERT INTO users (id, company_id, department_id, name, nickname, email, password_hash, role)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      historyAuth.userId,
+      historyAuth.companyId,
+      'department-1',
+      'Historico Completo',
+      'Historico',
+      historyAuth.email,
+      'hashed:Password1!',
+      historyAuth.role,
+    );
+
+    const insertNotification = db.prepare(`
+      INSERT INTO notifications (id, user_id, type, title, message, read, created_at, source, resource_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const insertActivity = db.prepare(`
+      INSERT INTO activity_log (id, user_id, action, target_type, target_id, points_earned, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    const insertMission = db.prepare(`
+      INSERT INTO mission_logs (id, user_id, mission_id, action, day, mood, glasses, challenge_id, note, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    db.transaction(() => {
+      for (let index = 0; index < 201; index += 1) {
+        const suffix = String(index).padStart(3, '0');
+        insertNotification.run(
+          index === 0 ? 'legacy-notification-oldest-canary' : `legacy-notification-${suffix}`,
+          historyAuth.userId,
+          'badge',
+          'Legacy notification',
+          index === 0 ? 'CANARY_OLDEST_LEGACY_NOTIFICATION' : `Legacy notification ${suffix}`,
+          0,
+          new Date(Date.UTC(2026, 0, 1, 0, 0, index)).toISOString(),
+          null,
+          null,
+        );
+      }
+
+      for (let index = 0; index < 501; index += 1) {
+        const suffix = String(index).padStart(3, '0');
+        const createdAt = new Date(Date.UTC(2026, 0, 1, 0, 0, index)).toISOString();
+        insertActivity.run(
+          index === 0 ? 'legacy-activity-oldest-canary' : `legacy-activity-${suffix}`,
+          historyAuth.userId,
+          index === 0 ? 'CANARY_OLDEST_LEGACY_ACTIVITY' : 'legacy',
+          'lesson',
+          `lesson-${suffix}`,
+          index,
+          createdAt,
+        );
+        insertMission.run(
+          index === 0 ? 'legacy-mission-oldest-canary' : `legacy-mission-${suffix}`,
+          historyAuth.userId,
+          `mission-${suffix}`,
+          'read_content',
+          createdAt,
+          null,
+          null,
+          null,
+          index === 0 ? 'CANARY_OLDEST_LEGACY_MISSION' : `Legacy mission ${suffix}`,
+          createdAt,
+        );
+      }
+    })();
+
+    const response = await getDsarExport(
+      new Request('http://localhost/api/users/me/export') as any,
+      { auth: historyAuth } as any,
+    );
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    const legacy = payload.legacyDerivedData;
+
+    expect({
+      notificationCount: legacy.notifications.length,
+      oldestNotification: legacy.notifications[legacy.notifications.length - 1],
+      activityCount: legacy.activityLog.length,
+      oldestActivity: legacy.activityLog[legacy.activityLog.length - 1],
+      missionCount: legacy.missionLogs.length,
+      oldestMission: legacy.missionLogs[legacy.missionLogs.length - 1],
+    }).toMatchObject({
+      notificationCount: 201,
+      oldestNotification: {
+        id: 'legacy-notification-oldest-canary',
+        message: 'CANARY_OLDEST_LEGACY_NOTIFICATION',
+      },
+      activityCount: 501,
+      oldestActivity: {
+        id: 'legacy-activity-oldest-canary',
+        action: 'CANARY_OLDEST_LEGACY_ACTIVITY',
+      },
+      missionCount: 501,
+      oldestMission: {
+        id: 'legacy-mission-oldest-canary',
+        note: 'CANARY_OLDEST_LEGACY_MISSION',
+      },
+    });
+  });
+
+  it('keeps reachable collaborator role descriptions free of gamified reward promises', () => {
+    const roleDescriptionSources = [
+      'src/app/(platform)/admin/page.tsx',
+      'src/app/(platform)/convites/page.tsx',
+    ];
+
+    for (const page of roleDescriptionSources) {
+      const roleDescriptions = read(page)
+        .split('\n')
+        .filter((line) => line.includes('Usuária padrão'))
+        .join('\n');
+      expect(roleDescriptions, page).not.toMatch(/\b(?:pontos?|xp|ranking)\b/i);
+      expect(roleDescriptions, page).toContain('Usuária padrão — acessa conteúdos e recursos de bem-estar');
+    }
+  });
+
   it('removes numeric gamification promises and totals from platform source', () => {
     const neutralDeepLinks = [
       'src/app/(platform)/conquistas/page.tsx',

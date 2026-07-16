@@ -46,18 +46,18 @@ export const GET = withAuth(async (_req, { auth }) => {
     ).all(userId);
 
     const allNotifications = db.prepare(
-      'SELECT id, type, title, message, read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 200'
+      'SELECT id, type, title, message, read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC'
     ).all(userId) as Array<{ type: string }>;
     const legacyNotificationTypes = new Set<string>(LEGACY_GAMIFICATION_NOTIFICATION_TYPES);
     const notifications = allNotifications.filter(({ type }) => !legacyNotificationTypes.has(type));
     const legacyNotifications = allNotifications.filter(({ type }) => legacyNotificationTypes.has(type));
 
     const activityLog = db.prepare(
-      'SELECT id, action, target_type, target_id, points_earned, created_at FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT 500'
+      'SELECT id, action, target_type, target_id, points_earned, created_at FROM activity_log WHERE user_id = ? ORDER BY created_at DESC'
     ).all(userId);
 
     const missionLogs = db.prepare(
-      'SELECT id, mission_id, action, day, mood, glasses, challenge_id, note, created_at FROM mission_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 500'
+      'SELECT id, mission_id, action, day, mood, glasses, challenge_id, note, created_at FROM mission_logs WHERE user_id = ? ORDER BY created_at DESC'
     ).all(userId);
 
     const exportData = {

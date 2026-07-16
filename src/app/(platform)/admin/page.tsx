@@ -1044,7 +1044,7 @@ function UsersTab() {
               <div>
                 <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">
                   Papel
-                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usuária padrão — check-ins, campanhas e pontos'}>?</span>
+                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usuária padrão — acessa conteúdos e recursos de bem-estar'}>?</span>
                 </label>
                 <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
                   className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400">
