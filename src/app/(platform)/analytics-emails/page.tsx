@@ -12,7 +12,7 @@ import type {
   ProtectedCommunicationsProjection,
 } from '@/types/platform';
 import type { ProtectedMetric } from '@/types/privacy';
-import styles from './analytics-emails.module.css';
+import styles from './analytics.module.css';
 
 function assertNever(value: never): never {
   throw new Error(`Estado protegido desconhecido: ${JSON.stringify(value)}`);
