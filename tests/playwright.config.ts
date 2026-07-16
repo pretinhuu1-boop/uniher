@@ -57,6 +57,11 @@ export default defineConfig({
       testMatch: 'platform-foundation.spec.ts',
       use: { headless: true, serviceWorkers: 'block' },
     },
+    {
+      name: 'privacy-wave-1-1',
+      testMatch: 'wave-1-1-privacy.spec.ts',
+      use: { headless: true, serviceWorkers: 'block' },
+    },
     { name: 'master', testMatch: 'master.spec.ts' },
     { name: 'rh', testMatch: 'rh.spec.ts' },
     { name: 'colaboradora', testMatch: 'colaboradora.spec.ts' },

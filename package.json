@@ -14,6 +14,7 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:wave1": "npm run test:unit && cd tests && npx playwright test --config=playwright.config.ts --project=platform-foundation",
+    "test:wave1.1": "npm run test:unit && cd tests && npx playwright test --config=playwright.config.ts --project=privacy-wave-1-1",
     "test:master": "cd tests && npx playwright test --config=playwright.config.ts --project=master",
     "test:rh": "cd tests && npx playwright test --config=playwright.config.ts --project=rh",
     "test:colaboradora": "cd tests && npx playwright test --config=playwright.config.ts --project=colaboradora",
