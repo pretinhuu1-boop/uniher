@@ -573,6 +573,21 @@ describe('aggregate privacy kernel', () => {
     expect(serializeProtectedMetricForCsv(protectMetric(42, 10))).toBe('42');
     expect(serializeProtectedMetricForCsv(protectMetric(-5, 10))).toBe('-5');
   });
+
+  it.each([
+    ['TAB', '\t=2+2', "'\t=2+2"],
+    ['CR', '\r=2+2', '"\'\r=2+2"'],
+    ['LF', '\n=2+2', '"\'\n=2+2"'],
+    ['fullwidth equals', '＝2+2', "'＝2+2"],
+    ['fullwidth plus', '＋SUM', "'＋SUM"],
+    ['fullwidth minus', '－1+2', "'－1+2"],
+    ['fullwidth at', '＠SUM', "'＠SUM"],
+  ] as const)(
+    'neutralizes visible CSV text beginning with %s before escaping',
+    (_label, input, expected) => {
+      expect(serializeProtectedMetricForCsv(protectMetric(input, 10))).toBe(expected);
+    },
+  );
 });
 
 describe('privacy review response', () => {
