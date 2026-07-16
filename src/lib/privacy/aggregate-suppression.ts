@@ -39,6 +39,9 @@ const CONSTRAINT_KIND_ORDER: Record<SuppressionConstraintKind, number> = {
   series: 3,
 };
 
+// Operational cap for materializing untrusted temporal participant iterables.
+const MAX_TEMPORAL_PARTICIPANT_IDS = 100_000;
+
 function suppressedMetric<T>(reason: SuppressionReason): ProtectedMetric<T> {
   return {
     status: 'suppressed',
@@ -221,8 +224,13 @@ function materializeParticipantIds(value: unknown): Set<string> | null {
     const declaredSize = candidate.size;
     if (
       typeof declaredSize !== 'number' ||
-      !Number.isInteger(declaredSize) ||
+      !Number.isSafeInteger(declaredSize) ||
       declaredSize < 0 ||
+      declaredSize > MAX_TEMPORAL_PARTICIPANT_IDS
+    ) {
+      return null;
+    }
+    if (
       typeof candidate.has !== 'function' ||
       typeof candidate[Symbol.iterator] !== 'function'
     ) {
@@ -233,6 +241,9 @@ function materializeParticipantIds(value: unknown): Set<string> | null {
     let iteratedEntries = 0;
     for (const participantId of value as Iterable<unknown>) {
       iteratedEntries += 1;
+      if (iteratedEntries > declaredSize) {
+        return null;
+      }
       if (
         typeof participantId !== 'string' ||
         participantId.trim().length === 0
@@ -310,9 +321,14 @@ export function serializeProtectedMetricForCsv<T>(
     return metric.message;
   }
 
-  const text = String(metric.value);
+  let text: string;
+  try {
+    text = String(metric.value);
+  } catch {
+    return SUPPRESSION_MESSAGE;
+  }
   const neutralized =
-    typeof metric.value === 'string' && /^[\t\r\n=+\-@＝＋－＠]/.test(text)
+    typeof metric.value !== 'number' && /^[\t\r\n=+\-@＝＋－＠]/.test(text)
       ? `'${text}`
       : text;
   const escaped = neutralized.replace(/"/g, '""');

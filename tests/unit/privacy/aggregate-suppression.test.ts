@@ -476,6 +476,81 @@ describe('aggregate privacy kernel', () => {
     expect(JSON.stringify(result)).not.toMatch(/86421|73125|same-person/);
   });
 
+  it('stops materializing immediately after a set-like iterable exceeds its declared size', () => {
+    let iteratorPulls = 0;
+    const excessiveIds = {
+      size: 10,
+      has: () => true,
+      *[Symbol.iterator]() {
+        for (let index = 0; index < 1_000; index += 1) {
+          iteratorPulls += 1;
+          yield `p${index}`;
+        }
+      },
+    } as unknown as ReadonlySet<string>;
+
+    const result = protectTemporalPair(
+      { value: 86421, participantIds: excessiveIds },
+      {
+        value: 73125,
+        participantIds: participants(
+          'p1',
+          'p2',
+          'p3',
+          'p4',
+          'p5',
+          'p6',
+          'p7',
+          'p8',
+          'p9',
+          'p10',
+        ),
+      },
+    );
+
+    expect(result.previous).toEqual(suppressedMinimum);
+    expect(result.current).toEqual(suppressedMinimum);
+    expect(iteratorPulls).toBe(11);
+  });
+
+  it.each([
+    ['an unsafe integer size', Number.MAX_SAFE_INTEGER + 1],
+    ['a size above the operational limit', 100_001],
+  ] as const)('rejects %s before pulling its iterator', (_label, declaredSize) => {
+    let iteratorPulls = 0;
+    const oversizedIds = {
+      size: declaredSize,
+      has: () => true,
+      *[Symbol.iterator]() {
+        iteratorPulls += 1;
+        yield 'p1';
+      },
+    } as unknown as ReadonlySet<string>;
+
+    const result = protectTemporalPair(
+      { value: 86421, participantIds: oversizedIds },
+      {
+        value: 73125,
+        participantIds: participants(
+          'p1',
+          'p2',
+          'p3',
+          'p4',
+          'p5',
+          'p6',
+          'p7',
+          'p8',
+          'p9',
+          'p10',
+        ),
+      },
+    );
+
+    expect(result.previous).toEqual(suppressedMinimum);
+    expect(result.current).toEqual(suppressedMinimum);
+    expect(iteratorPulls).toBe(0);
+  });
+
   it('suppresses malformed participant elements without throwing', () => {
     const invalidIds = {
       size: 10,
@@ -627,6 +702,25 @@ describe('aggregate privacy kernel', () => {
     );
     expect(serializeProtectedMetricForCsv(protectMetric(42, 10))).toBe('42');
     expect(serializeProtectedMetricForCsv(protectMetric(-5, 10))).toBe('-5');
+  });
+
+  it.each([
+    ['a boxed string', new String('=2+2'), "'=2+2"],
+    ['an object with custom text', { toString: (): string => '+SUM' }, "'+SUM"],
+  ] as const)('neutralizes formula-leading CSV text from %s', (_label, input, expected) => {
+    expect(serializeProtectedMetricForCsv(protectMetric(input, 10))).toBe(expected);
+  });
+
+  it('fails closed when a visible CSV value cannot be converted to text', () => {
+    const unstringifiableValue = {
+      toString(): never {
+        throw new Error('cannot stringify private value');
+      },
+    };
+
+    expect(
+      serializeProtectedMetricForCsv(protectMetric(unstringifiableValue, 10)),
+    ).toBe(SUPPRESSION_MESSAGE);
   });
 
   it.each([
