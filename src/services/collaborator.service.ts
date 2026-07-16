@@ -1,6 +1,6 @@
 import { getReadDb } from '@/lib/db';
+import { SEMAFORO_REVIEW_STATE } from '@/lib/semaforo/containment';
 import * as campaignRepo from '@/repositories/campaign.repository';
-import * as healthRepo from '@/repositories/health-score.repository';
 import * as notifRepo from '@/repositories/notification.repository';
 
 function getCurrentGreeting(): string {
@@ -54,51 +54,8 @@ export function getCollaboratorHome(userId: string, companyId: string) {
   };
 }
 
-export function getCollaboratorSemaforo(userId: string) {
-  const scores = healthRepo.getLatestHealthScores(userId);
-
-  const RECOMMENDATIONS: Record<string, string[]> = {
-    'Prevenção': [
-      'Agende sua mamografia anual',
-      'Faça o Papanicolau em dia',
-      'Consulte seu ginecologista',
-    ],
-    'Sono': [
-      'Mantenha horários regulares de sono',
-      'Evite telas 1h antes de dormir',
-      'Pratique respiração profunda',
-    ],
-    'Energia': [
-      'Hidrate-se: 8 copos de água/dia',
-      'Faça pausas ativas de 5 min',
-      'Inclua proteínas no café da manhã',
-    ],
-    'Saúde Mental': [
-      'Pratique mindfulness por 10 min',
-      'Converse com alguém de confiança',
-      'Limite o tempo nas redes sociais',
-    ],
-    'Hábitos': [
-      'Inclua vegetais em todas as refeições',
-      'Faça 30 min de atividade física',
-      'Reduza o açúcar processado',
-    ],
-    'Engajamento': [
-      'Complete um desafio hoje',
-      'Participe da campanha ativa',
-      'Compartilhe uma conquista',
-    ],
-  };
-
-  return scores.map(s => ({
-    dimension: s.dimension,
-    status: s.status,
-    score: s.score,
-    recommendation: (RECOMMENDATIONS[s.dimension] || ['Mantenha seus hábitos saudáveis'])[0],
-    icon: s.icon,
-    history: healthRepo.getHealthScoreHistory(userId, s.dimension, 30).map(h => h.score),
-    tips: RECOMMENDATIONS[s.dimension] || [],
-  }));
+export function getCollaboratorSemaforo() {
+  return SEMAFORO_REVIEW_STATE;
 }
 
 export function getCollaboratorCampaigns(userId: string, companyId: string) {

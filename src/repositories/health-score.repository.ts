@@ -1,5 +1,5 @@
-import { getReadDb, getWriteQueue } from '@/lib/db';
-import { nanoid } from 'nanoid';
+import { getReadDb } from '@/lib/db';
+import { SemaforoContainmentError } from '@/lib/semaforo/containment';
 
 export interface HealthScoreRow {
   id: string;
@@ -90,20 +90,9 @@ export function getCompanyHealthOverview(companyId: string): { dimension: string
 }
 
 export async function recordHealthScore(
-  userId: string,
-  dimension: string,
-  score: number
+  _userId: string,
+  _dimension: string,
+  _score: number
 ): Promise<HealthScoreRow> {
-  const writeQueue = getWriteQueue();
-  const id = nanoid();
-  const status = scoreToStatus(score);
-
-  return writeQueue.enqueue((db) => {
-    db.prepare(`
-      INSERT INTO health_scores (id, user_id, dimension, score, status)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, userId, dimension, score, status);
-
-    return db.prepare('SELECT * FROM health_scores WHERE id = ?').get(id) as HealthScoreRow;
-  });
+  throw new SemaforoContainmentError();
 }
