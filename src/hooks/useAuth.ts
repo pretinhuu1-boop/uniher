@@ -2,6 +2,7 @@
 import { useState, useCallback, createContext, useContext, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { MockUser, UserRole } from '@/types/platform';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 const STORAGE_KEY_USER = 'uniher-user';
 
@@ -31,13 +32,14 @@ function getStoredUser(): StoredUserData | null {
 /** Only persist minimal non-sensitive data for UI routing */
 function persistUser(user: MockUser) {
   try {
+    const safeUser = toSafeUserProjection(user);
     const minimal: StoredUserData = {
-      id: user.id,
-      name: user.name,
-      role: user.role,
-      isMasterAdmin: user.isMasterAdmin,
-      firstAccessTourCompleted: user.firstAccessTourCompleted,
-      mustChangePassword: user.mustChangePassword,
+      id: safeUser.id,
+      name: safeUser.name,
+      role: safeUser.role,
+      isMasterAdmin: safeUser.isMasterAdmin,
+      firstAccessTourCompleted: safeUser.firstAccessTourCompleted,
+      mustChangePassword: safeUser.mustChangePassword,
     };
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(minimal));
   } catch {}
@@ -93,9 +95,6 @@ export function useAuthState(): AuthContextValue {
             email: u.email,
             role: u.role as UserRole,
             isMasterAdmin: u.isMasterAdmin === true,
-            level: u.level,
-            points: u.points,
-            streak: u.streak,
             joinedAt: u.created_at,
             also_collaborator: u.also_collaborator,
             nickname: u.nickname,
@@ -126,9 +125,6 @@ export function useAuthState(): AuthContextValue {
             email: '',
             role: stored.role,
             isMasterAdmin: stored.isMasterAdmin === true,
-            level: 0,
-            points: 0,
-            streak: 0,
             joinedAt: '',
             mustChangePassword: stored.mustChangePassword === true,
             firstAccessTourCompleted: stored.firstAccessTourCompleted !== false,
@@ -158,9 +154,6 @@ export function useAuthState(): AuthContextValue {
         email: u.email,
         role: u.role as UserRole,
         isMasterAdmin: u.isMasterAdmin === true,
-        level: u.level,
-        points: u.points,
-        streak: u.streak,
         joinedAt: u.created_at,
         also_collaborator: u.also_collaborator,
         mustChangePassword: u.mustChangePassword === true,
@@ -195,9 +188,6 @@ export function useAuthState(): AuthContextValue {
         email: u.email,
         role: u.role as UserRole,
         isMasterAdmin: u.isMasterAdmin === true,
-        level: u.level,
-        points: u.points,
-        streak: u.streak,
         joinedAt: u.created_at,
         mustChangePassword: u.mustChangePassword === true,
         firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
@@ -248,9 +238,6 @@ export function useAuthState(): AuthContextValue {
         email: u.email,
         role: u.role as UserRole,
         isMasterAdmin: u.isMasterAdmin === true,
-        level: u.level,
-        points: u.points,
-        streak: u.streak,
         joinedAt: u.created_at,
         also_collaborator: u.also_collaborator,
         nickname: u.nickname,

@@ -6,6 +6,7 @@ import { withRole } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { nanoid } from 'nanoid';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 export const GET = withRole('lideranca')(async (_req: NextRequest, context: any) => {
   await initDb();
@@ -20,7 +21,7 @@ export const GET = withRole('lideranca')(async (_req: NextRequest, context: any)
   }
 
   const team = db.prepare(`
-    SELECT u.id, u.name, u.email, u.nickname, u.role, u.level, u.points, u.streak,
+    SELECT u.id, u.name, u.email, u.nickname, u.role,
            u.blocked, u.approved, u.last_active, u.created_at,
            d.name as department_name
     FROM users u
@@ -38,7 +39,7 @@ export const GET = withRole('lideranca')(async (_req: NextRequest, context: any)
     canApprove: Boolean(leader.can_approve),
   };
 
-  return NextResponse.json({ team, stats });
+  return NextResponse.json(toSafeUserProjection({ team, stats }));
 });
 
 /**

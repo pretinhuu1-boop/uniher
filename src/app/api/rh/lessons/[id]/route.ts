@@ -4,6 +4,7 @@ import { initDb } from '@/lib/db/init';
 import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import { privacyReviewResponse } from '@/lib/privacy/api-response';
 
 const LESSON_TYPES = [
   'pilula',
@@ -81,7 +82,6 @@ const patchLessonSchema = z.object({
   week_number: z.number().int().min(1).max(52).optional(),
   day_of_week: z.number().int().min(1).max(7).optional(),
   order_index: z.number().int().min(0).optional(),
-  xp_reward: z.number().int().min(10).max(100).optional(),
   duration_seconds: z.number().int().min(30).max(3600).optional(),
   active: z.number().int().min(0).max(1).optional(),
   campaign_context: z.string().optional(),
@@ -90,8 +90,9 @@ const patchLessonSchema = z.object({
 });
 
 function parseLessonRow(row: Record<string, unknown>, masterAdmin: boolean) {
+  const { xp_reward: _xpReward, ...safeRow } = row;
   return {
-    ...row,
+    ...safeRow,
     content_json: row.content_json ? JSON.parse(row.content_json as string) : null,
     isGlobal: row.company_id === null,
     isValidated: Boolean(row.validated_at),
@@ -147,6 +148,9 @@ export const PATCH = withRole('rh', 'admin')(async (req, { auth, params }) => {
     }
 
     const body = await req.json();
+    if (Object.prototype.hasOwnProperty.call(body, 'xp_reward')) {
+      return privacyReviewResponse();
+    }
     const parsed = patchLessonSchema.safeParse(body);
 
     if (!parsed.success) {

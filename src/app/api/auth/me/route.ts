@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getCompanyById } from '@/repositories/company.repository';
 import { getReadDb } from '@/lib/db';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 export const GET = withAuth(async (_req, { auth }) => {
   try {
@@ -23,12 +24,12 @@ export const GET = withAuth(async (_req, { auth }) => {
       prefRow?.pref_value === '1' || (!prefRow && auth.mustChangePassword !== true);
 
     return NextResponse.json({
-      user: {
+      user: toSafeUserProjection({
         ...user,
         isMasterAdmin: user.is_master_admin === 1 || auth.isMasterAdmin === true,
         mustChangePassword: auth.mustChangePassword === true,
         firstAccessTourCompleted,
-      },
+      }),
       company: company ? {
         id: company.id,
         name: company.name,

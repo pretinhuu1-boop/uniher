@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
+import { privacyReviewResponse } from '@/lib/privacy/api-response';
 
 const VALID_KEYS = [
   'notif_badges',
@@ -31,6 +32,7 @@ export const GET = withAuth(async (_req: NextRequest, context) => {
 
   const prefs: Record<string, string> = {};
   for (const row of rows) {
+    if (row.pref_key === 'privacy_ranking') continue;
     prefs[row.pref_key] = row.pref_value;
   }
 
@@ -46,6 +48,9 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
   }
 
   const { preferences } = parsed.data;
+  if (Object.prototype.hasOwnProperty.call(preferences, 'privacy_ranking')) {
+    return privacyReviewResponse();
+  }
   const userId = context.auth.userId;
   const entries = Object.entries(preferences);
 

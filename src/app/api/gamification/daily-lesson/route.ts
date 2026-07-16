@@ -5,7 +5,7 @@ import { withAuth } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
-import { addPoints } from '@/services/gamification.service';
+import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
 
 function extractTopicTitle(title: unknown): string {
   if (typeof title !== 'string') return 'tema da licao';
@@ -306,19 +306,22 @@ export const GET = withAuth(async (_req, { auth }) => {
       ).all(userId, companyId) as Record<string, unknown>[];
     }
 
-    const normalizedPath = (path || []).map((row) => ({
-      ...row,
-      user_completed: !!row.user_completed,
-      content_json: normalizeLessonContent(row.type, row.content_json, row.title),
-    }));
+    const normalizedPath = (path || []).map((row) => {
+      const { xp_reward: _xpReward, user_xp_earned: _userXpEarned, ...safeRow } = row;
+      return {
+        ...safeRow,
+        user_completed: !!row.user_completed,
+        content_json: normalizeLessonContent(row.type, row.content_json, row.title),
+      };
+    });
     const nextLesson = normalizedPath.find((l) => !l.user_completed) || null;
     const pathCompleted = normalizedPath.filter((l) => l.user_completed).length;
     const pathTotal = normalizedPath.length;
 
     // Get gamification config for hearts info
     const config = db.prepare(
-      'SELECT hearts_enabled, xp_lesson FROM gamification_config WHERE company_id = ?'
-    ).get(companyId) as { hearts_enabled: number; xp_lesson: number } | undefined;
+      'SELECT hearts_enabled FROM gamification_config WHERE company_id = ?'
+    ).get(companyId) as { hearts_enabled: number } | undefined;
 
     // Get hearts if enabled
     let hearts = null;
@@ -347,7 +350,7 @@ export const GET = withAuth(async (_req, { auth }) => {
       },
       hearts: hearts ? { current: hearts.hearts, max: hearts.max_hearts } : null,
       heartsEnabled: !!config?.hearts_enabled,
-      xpReward: config?.xp_lesson ?? 20,
+      gamification: LEGACY_GAMIFICATION_STATE,
     });
   } catch (error) {
     return handleApiError(error);
@@ -378,8 +381,8 @@ export const POST = withAuth(async (req, { auth }) => {
 
     // Verify lesson exists
     const lesson = db.prepare(
-      'SELECT * FROM daily_lessons WHERE id = ? AND active = 1'
-    ).get(lessonId) as { id: string; company_id: string | null; xp_reward: number } | undefined;
+      'SELECT id, company_id FROM daily_lessons WHERE id = ? AND active = 1'
+    ).get(lessonId) as { id: string; company_id: string | null } | undefined;
 
     if (!lesson) {
       return NextResponse.json({ error: 'Licao nao encontrada' }, { status: 404 });
@@ -402,7 +405,7 @@ export const POST = withAuth(async (req, { auth }) => {
     // Check hearts (if enabled and wrong answers)
     const config = db.prepare(
       'SELECT * FROM gamification_config WHERE company_id = ?'
-    ).get(companyId) as { hearts_enabled: number; xp_lesson: number; hearts_refill_hours: number } | undefined;
+    ).get(companyId) as { hearts_enabled: number; hearts_refill_hours: number } | undefined;
 
     if (config?.hearts_enabled && wrongAnswers > 0) {
       const userHearts = db.prepare('SELECT * FROM user_hearts WHERE user_id = ?').get(userId) as { hearts: number } | undefined;
@@ -419,30 +422,24 @@ export const POST = withAuth(async (req, { auth }) => {
     }
 
     // Record completion
-    const xpReward = config?.xp_lesson ?? lesson.xp_reward;
     const writeQueue = getWriteQueue();
     await writeQueue.enqueue((wdb) => {
       if (existing) {
         wdb.prepare(
-          `UPDATE user_lesson_progress SET completed = 1, score = ?, xp_earned = ?, completed_at = datetime('now') WHERE user_id = ? AND lesson_id = ?`
-        ).run(score, xpReward, userId, lessonId);
+          `UPDATE user_lesson_progress SET completed = 1, score = ?, xp_earned = 0, completed_at = datetime('now') WHERE user_id = ? AND lesson_id = ?`
+        ).run(score, userId, lessonId);
       } else {
         wdb.prepare(
           `INSERT INTO user_lesson_progress (id, user_id, lesson_id, completed, score, xp_earned, completed_at)
-           VALUES (?, ?, ?, 1, ?, ?, datetime('now'))`
-        ).run(nanoid(), userId, lessonId, score, xpReward);
+           VALUES (?, ?, ?, 1, ?, 0, datetime('now'))`
+        ).run(nanoid(), userId, lessonId, score);
       }
     });
 
-    // Award XP
-    const result = await addPoints(userId, xpReward, 'lesson', lessonId);
-
     return NextResponse.json({
       success: true,
-      xpEarned: xpReward,
-      newPoints: result.newPoints,
-      leveledUp: result.leveledUp,
-      newLevel: result.newLevel,
+      progressRecorded: true,
+      gamification: LEGACY_GAMIFICATION_STATE,
       score,
     });
   } catch (error) {

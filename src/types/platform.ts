@@ -14,9 +14,6 @@ export interface MockUser {
   isMasterAdmin?: boolean;
   avatar?: string;
   department?: string;
-  level: number;
-  points: number;
-  streak: number;
   joinedAt: string;
   nickname?: string | null;
   also_collaborator?: number;

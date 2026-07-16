@@ -6,6 +6,7 @@ import { checkAuthRateLimit, recordFailedAuth } from '@/lib/security/rate-limit'
 import { handleApiError, UnauthorizedError } from '@/lib/errors';
 import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 import { getReadDb } from '@/lib/db';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 export async function POST(req: Request) {
   try {
@@ -23,12 +24,12 @@ export async function POST(req: Request) {
       const firstAccessTourCompleted =
         prefRow?.pref_value === '1' || (!prefRow && result.user.must_change_password !== 1);
       const response = NextResponse.json({
-        user: {
+        user: toSafeUserProjection({
           ...result.user,
           isMasterAdmin: result.user.is_master_admin === 1,
           mustChangePassword: result.user.must_change_password === 1,
           firstAccessTourCompleted,
-        },
+        }),
       });
       return setAuthCookiesOnResponse(response, result.accessToken, result.refreshToken);
     } catch (authError) {

@@ -1,151 +1,124 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { initDb } from '@/lib/db/init';
 import { withAuth, withRole } from '@/lib/auth/middleware';
-import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import { initDb } from '@/lib/db/init';
+import { privacyReviewResponse } from '@/lib/privacy/api-response';
+import { SAFE_GAMIFICATION_CONFIG_FIELDS } from '@/lib/gamification/containment';
 
 const DEFAULTS = {
-  xp_checkin: 50,
-  xp_lesson: 20,
-  xp_quiz: 30,
-  xp_challenge: 40,
-  xp_exam: 100,
-  streak_notifications: 1,
-  streak_min_days: 3,
+  active_themes: ['hidratacao', 'sono', 'prevencao', 'nutricao', 'mental', 'ciclo'],
+  theme_order: ['hidratacao', 'sono', 'prevencao', 'nutricao', 'mental', 'ciclo'],
   hearts_enabled: 0,
   hearts_per_day: 5,
   hearts_refill_hours: 24,
-  league_enabled: 1,
-  league_anonymous: 0,
-  daily_xp_goal: 50,
-  active_themes: '["hidratacao","sono","prevencao","nutricao","mental","ciclo"]',
-  theme_order: '["hidratacao","sono","prevencao","nutricao","mental","ciclo"]',
-};
+} as const;
 
-// GET /api/gamification/config - Returns gamification config for user's company
-export const GET = withAuth(async (_req, { auth }) => {
-  try {
-    await initDb();
-    const db = getReadDb();
-    const companyId = auth.companyId;
-
-    const config = db.prepare(
-      'SELECT * FROM gamification_config WHERE company_id = ?'
-    ).get(companyId) as Record<string, unknown> | undefined;
-
-    if (!config) {
-      return NextResponse.json({
-        company_id: companyId,
-        ...DEFAULTS,
-        active_themes: JSON.parse(DEFAULTS.active_themes),
-        theme_order: JSON.parse(DEFAULTS.theme_order),
-        isDefault: true,
-      });
-    }
-
-    return NextResponse.json({
-      ...config,
-      active_themes: config.active_themes ? JSON.parse(config.active_themes as string) : JSON.parse(DEFAULTS.active_themes),
-      theme_order: config.theme_order ? JSON.parse(config.theme_order as string) : JSON.parse(DEFAULTS.theme_order),
-      isDefault: false,
-    });
-  } catch (error) {
-    return handleApiError(error);
-  }
-});
+const configFieldSchemas = {
+  active_themes: z.array(z.string()),
+  theme_order: z.array(z.string()),
+  hearts_enabled: z.number().int().min(0).max(1),
+  hearts_per_day: z.number().int().min(1).max(20),
+  hearts_refill_hours: z.number().int().min(1).max(168),
+} as const;
 
 const patchConfigSchema = z.object({
-  xp_checkin: z.number().min(0).max(1000).optional(),
-  xp_lesson: z.number().min(0).max(1000).optional(),
-  xp_quiz: z.number().min(0).max(1000).optional(),
-  xp_challenge: z.number().min(0).max(1000).optional(),
-  xp_exam: z.number().min(0).max(1000).optional(),
-  streak_notifications: z.number().min(0).max(1).optional(),
-  streak_min_days: z.number().min(1).max(365).optional(),
-  hearts_enabled: z.number().min(0).max(1).optional(),
-  hearts_per_day: z.number().min(1).max(20).optional(),
-  hearts_refill_hours: z.number().min(1).max(168).optional(),
-  league_enabled: z.number().min(0).max(1).optional(),
-  league_anonymous: z.number().min(0).max(1).optional(),
-  daily_xp_goal: z.number().min(10).max(500).optional(),
-  active_themes: z.array(z.string()).optional(),
-  theme_order: z.array(z.string()).optional(),
+  active_themes: configFieldSchemas.active_themes.optional(),
+  theme_order: configFieldSchemas.theme_order.optional(),
+  hearts_enabled: configFieldSchemas.hearts_enabled.optional(),
+  hearts_per_day: configFieldSchemas.hearts_per_day.optional(),
+  hearts_refill_hours: configFieldSchemas.hearts_refill_hours.optional(),
+}).strict();
+
+function parseStoredArray(value: unknown, fallback: readonly string[]): readonly string[] {
+  if (typeof value !== 'string') return [...fallback];
+  try {
+    const parsed = configFieldSchemas.active_themes.safeParse(JSON.parse(value));
+    return parsed.success ? parsed.data : [...fallback];
+  } catch {
+    return [...fallback];
+  }
+}
+
+function parseStoredNumber(value: unknown, fallback: number, schema: z.ZodType<number>): number {
+  const candidate = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim() !== ''
+      ? Number(value)
+      : Number.NaN;
+  const parsed = schema.safeParse(candidate);
+  return parsed.success ? parsed.data : fallback;
+}
+
+function parseConfig(config: Record<string, unknown> | undefined) {
+  if (!config) return { ...DEFAULTS };
+  return {
+    active_themes: parseStoredArray(config.active_themes, DEFAULTS.active_themes),
+    theme_order: parseStoredArray(config.theme_order, DEFAULTS.theme_order),
+    hearts_enabled: parseStoredNumber(config.hearts_enabled, DEFAULTS.hearts_enabled, configFieldSchemas.hearts_enabled),
+    hearts_per_day: parseStoredNumber(config.hearts_per_day, DEFAULTS.hearts_per_day, configFieldSchemas.hearts_per_day),
+    hearts_refill_hours: parseStoredNumber(config.hearts_refill_hours, DEFAULTS.hearts_refill_hours, configFieldSchemas.hearts_refill_hours),
+  };
+}
+
+export const GET = withAuth(async (_req, { auth }) => {
+  await initDb();
+  const columns = SAFE_GAMIFICATION_CONFIG_FIELDS.join(', ');
+  const config = getReadDb().prepare(
+    `SELECT ${columns} FROM gamification_config WHERE company_id = ?`,
+  ).get(auth.companyId) as Record<string, unknown> | undefined;
+  return NextResponse.json(parseConfig(config));
 });
 
-// PATCH /api/gamification/config - Admin updates gamification config
 export const PATCH = withRole('admin', 'rh')(async (req, { auth }) => {
-  try {
-    await initDb();
-    const body = await req.json();
-    const parsed = patchConfigSchema.safeParse(body);
+  await initDb();
+  const parsed = patchConfigSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return privacyReviewResponse();
 
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
-    }
-
-    const companyId = auth.companyId;
-    const db = getReadDb();
-    const existing = db.prepare('SELECT company_id FROM gamification_config WHERE company_id = ?').get(companyId);
-
-    const writeQueue = getWriteQueue();
-
-    if (!existing) {
-      // Create new config with defaults + overrides
-      const data = { ...DEFAULTS, ...parsed.data };
-      const activeThemes = Array.isArray(data.active_themes) ? JSON.stringify(data.active_themes) : data.active_themes;
-      const themeOrder = Array.isArray(data.theme_order) ? JSON.stringify(data.theme_order) : data.theme_order;
-
-      await writeQueue.enqueue((wdb) => {
-        wdb.prepare(
-          `INSERT INTO gamification_config (company_id, xp_checkin, xp_lesson, xp_quiz, xp_challenge, xp_exam,
-           streak_notifications, streak_min_days, hearts_enabled, hearts_per_day, hearts_refill_hours,
-           league_enabled, league_anonymous, daily_xp_goal, active_themes, theme_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).run(
-          companyId, data.xp_checkin, data.xp_lesson, data.xp_quiz, data.xp_challenge, data.xp_exam,
-          data.streak_notifications, data.streak_min_days, data.hearts_enabled, data.hearts_per_day,
-          data.hearts_refill_hours, data.league_enabled, data.league_anonymous, data.daily_xp_goal,
-          activeThemes, themeOrder
-        );
-      });
-    } else {
-      // Dynamic update
-      const fields: string[] = [];
-      const values: unknown[] = [];
-
-      for (const [key, val] of Object.entries(parsed.data)) {
-        if (val === undefined) continue;
-        if (key === 'active_themes' || key === 'theme_order') {
-          fields.push(`${key} = ?`);
-          values.push(JSON.stringify(val));
-        } else {
-          fields.push(`${key} = ?`);
-          values.push(val);
-        }
-      }
-
-      if (fields.length === 0) {
-        return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
-      }
-
-      fields.push("updated_at = datetime('now')");
-      values.push(companyId);
-
-      await writeQueue.enqueue((wdb) => {
-        wdb.prepare(`UPDATE gamification_config SET ${fields.join(', ')} WHERE company_id = ?`).run(...values);
-      });
-    }
-
-    // Return updated config
-    const updated = db.prepare('SELECT * FROM gamification_config WHERE company_id = ?').get(companyId) as Record<string, unknown>;
-
-    return NextResponse.json({
-      ...updated,
-      active_themes: updated.active_themes ? JSON.parse(updated.active_themes as string) : [],
-      theme_order: updated.theme_order ? JSON.parse(updated.theme_order as string) : [],
-    });
-  } catch (error) {
-    return handleApiError(error);
+  const entries = Object.entries(parsed.data).filter((entry) => entry[1] !== undefined);
+  if (entries.length === 0) {
+    return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
   }
+
+  await getWriteQueue().enqueue((db) => {
+    const exists = db.prepare('SELECT 1 FROM gamification_config WHERE company_id = ?').get(auth.companyId);
+    const values = Object.fromEntries(entries) as Record<string, unknown>;
+    const serialized = {
+      ...DEFAULTS,
+      ...values,
+      active_themes: JSON.stringify(values.active_themes ?? DEFAULTS.active_themes),
+      theme_order: JSON.stringify(values.theme_order ?? DEFAULTS.theme_order),
+    };
+
+    if (!exists) {
+      db.prepare(`
+        INSERT INTO gamification_config (
+          company_id, active_themes, theme_order, hearts_enabled, hearts_per_day, hearts_refill_hours
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `).run(
+        auth.companyId,
+        serialized.active_themes,
+        serialized.theme_order,
+        serialized.hearts_enabled,
+        serialized.hearts_per_day,
+        serialized.hearts_refill_hours,
+      );
+      return;
+    }
+
+    const fields = entries.map(([key]) => `${key} = ?`);
+    const parameters = entries.map(([key, value]) =>
+      key === 'active_themes' || key === 'theme_order' ? JSON.stringify(value) : value,
+    );
+    db.prepare(`
+      UPDATE gamification_config SET ${fields.join(', ')}, updated_at = datetime('now')
+      WHERE company_id = ?
+    `).run(...parameters, auth.companyId);
+  });
+
+  const columns = SAFE_GAMIFICATION_CONFIG_FIELDS.join(', ');
+  const updated = getReadDb().prepare(
+    `SELECT ${columns} FROM gamification_config WHERE company_id = ?`,
+  ).get(auth.companyId) as Record<string, unknown>;
+  return NextResponse.json(parseConfig(updated));
 });

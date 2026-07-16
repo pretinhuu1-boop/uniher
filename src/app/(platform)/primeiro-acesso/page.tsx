@@ -84,7 +84,7 @@ const TOUR_BY_ROLE: Record<UserRole, TourSlide[]> = {
       description: 'A experiencia final combina conteudo, interacao e recorrencia de uso no celular.',
       bullets: [
         'painel com missoes, licoes e notificacoes',
-        'gamificacao com pontos, streak e recompensas',
+        'conteúdo educativo e presença pessoal',
         'uso recorrente e instalacao como PWA',
       ],
       note: 'Ao concluir, voce confirma seus dados e entra na plataforma.',
@@ -127,7 +127,7 @@ const TOUR_BY_ROLE: Record<UserRole, TourSlide[]> = {
       title: 'Engajamento continuo',
       description: 'A plataforma usa elementos de progresso para estimular constancia sem perder simplicidade.',
       bullets: [
-        'pontos, streak e feedback visual',
+        'progresso educativo e feedback visual',
         'tarefas objetivas e navegacao simples',
         'experiencia pensada para celular',
       ],

@@ -5,6 +5,7 @@ import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
+import { privacyReviewResponse } from '@/lib/privacy/api-response';
 
 const LESSON_TYPES = [
   'pilula',
@@ -101,7 +102,7 @@ async function ensureWeeklyReflections(companyId: string, weekNumber: number) {
         `INSERT INTO daily_lessons
           (id, company_id, title, description, type, theme, week_number, day_of_week,
            order_index, xp_reward, duration_seconds, active, campaign_context, content_json)
-         VALUES (?, ?, ?, ?, 'reflexao', 'mental', ?, ?, 900, 20, 90, 1, ?, ?)`
+         VALUES (?, ?, ?, ?, 'reflexao', 'mental', ?, ?, 900, 0, 90, 1, ?, ?)`
       ).run(
         nanoid(),
         companyId,
@@ -189,7 +190,6 @@ export const GET = withRole('rh', 'admin')(async (req, { auth }) => {
         dl.week_number,
         dl.day_of_week,
         dl.order_index,
-        dl.xp_reward,
        dl.duration_seconds,
        dl.active,
        dl.campaign_context,
@@ -238,7 +238,6 @@ const createLessonSchema = z.object({
   week_number: z.number().int().min(1).max(52).optional(),
   day_of_week: z.number().int().min(1).max(7).optional(),
   order_index: z.number().int().min(0).optional().default(0),
-  xp_reward: z.number().int().min(10).max(100).optional().default(20),
   duration_seconds: z.number().int().min(30).max(3600).optional().default(120),
   campaign_context: z.string().optional(),
 });
@@ -248,6 +247,9 @@ export const POST = withRole('rh', 'admin')(async (req, { auth }) => {
   try {
     await initDb();
     const body = await req.json();
+    if (Object.prototype.hasOwnProperty.call(body, 'xp_reward')) {
+      return privacyReviewResponse();
+    }
     const parsed = createLessonSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -292,7 +294,7 @@ export const POST = withRole('rh', 'admin')(async (req, { auth }) => {
         weekNumber,
         dayOfWeek,
         data.order_index,
-        data.xp_reward,
+        0,
         data.duration_seconds,
         data.campaign_context ?? null,
         JSON.stringify(contentToSave)
@@ -302,9 +304,10 @@ export const POST = withRole('rh', 'admin')(async (req, { auth }) => {
     const db = getReadDb();
     const created = db.prepare('SELECT * FROM daily_lessons WHERE id = ?').get(id) as Record<string, unknown>;
 
+    const { xp_reward: _xpReward, ...safeCreated } = created;
     return NextResponse.json(
       {
-        ...created,
+        ...safeCreated,
         content_json: created.content_json ? JSON.parse(created.content_json as string) : null,
         isGlobal: false,
       },

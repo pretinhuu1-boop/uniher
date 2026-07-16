@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { RateLimitError } from '@/lib/errors';
 import { getReadDb } from '@/lib/db';
+import { LEGACY_GAMIFICATION_NOTIFICATION_TYPES } from '@/lib/gamification/containment';
 
 // Simple in-memory rate limit: 1 export per hour per user
 const exportTimestamps = new Map<string, number>();
@@ -21,7 +22,11 @@ export const GET = withAuth(async (_req, { auth }) => {
 
     // Collect all user data
     const user = db.prepare(
-      'SELECT id, name, email, role, department_id, company_id, points, level, league, avatar_url, created_at, updated_at FROM users WHERE id = ?'
+      'SELECT id, name, email, role, department_id, company_id, avatar_url, created_at, updated_at FROM users WHERE id = ?'
+    ).get(userId);
+
+    const legacyUserGamification = db.prepare(
+      'SELECT points, level, league FROM users WHERE id = ?'
     ).get(userId);
 
     const healthScores = db.prepare(
@@ -40,28 +45,36 @@ export const GET = withAuth(async (_req, { auth }) => {
       'SELECT uc.challenge_id, c.title, uc.progress, uc.status, uc.started_at, uc.completed_at FROM user_challenges uc LEFT JOIN challenges c ON c.id = uc.challenge_id WHERE uc.user_id = ?'
     ).all(userId);
 
-    const notifications = db.prepare(
+    const allNotifications = db.prepare(
       'SELECT id, type, title, message, read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 200'
-    ).all(userId);
+    ).all(userId) as Array<{ type: string }>;
+    const legacyNotificationTypes = new Set<string>(LEGACY_GAMIFICATION_NOTIFICATION_TYPES);
+    const notifications = allNotifications.filter(({ type }) => !legacyNotificationTypes.has(type));
+    const legacyNotifications = allNotifications.filter(({ type }) => legacyNotificationTypes.has(type));
 
     const activityLog = db.prepare(
-      'SELECT action, details, created_at FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT 500'
+      'SELECT id, action, target_type, target_id, points_earned, created_at FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT 500'
     ).all(userId);
 
     const missionLogs = db.prepare(
-      'SELECT mission_key, payload, xp_earned, completed_at FROM mission_logs WHERE user_id = ? ORDER BY completed_at DESC LIMIT 500'
+      'SELECT id, mission_id, action, day, mood, glasses, challenge_id, note, created_at FROM mission_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 500'
     ).all(userId);
 
     const exportData = {
       exportedAt: new Date().toISOString(),
       user,
-      healthScores,
       quizResults,
-      badges,
-      challenges,
       notifications,
-      activityLog,
-      missionLogs,
+      legacyDerivedData: {
+        label: 'Derivado legado — em revisão',
+        userGamification: legacyUserGamification,
+        badges,
+        healthScores,
+        challenges,
+        activityLog,
+        missionLogs,
+        notifications: legacyNotifications,
+      },
     };
 
     exportTimestamps.set(auth.userId, now);

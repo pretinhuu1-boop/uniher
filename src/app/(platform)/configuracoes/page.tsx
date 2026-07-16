@@ -4,12 +4,7 @@ import { useState, useEffect } from 'react';
 import styles from './config.module.css';
 
 const MISSION_LABELS: Record<string, string> = {
-  check_in: 'Check-in Diário',
-  drink_water: 'Hidratação',
-  complete_challenge: 'Desafios',
-  update_semaforo: 'Semáforo de Saúde',
   read_content: 'Leitura de Conteúdo',
-  share_badge: 'Compartilhar Badge',
 };
 
 interface TogglePref {
@@ -20,25 +15,19 @@ interface TogglePref {
 }
 
 const NOTIFICATION_PREFS: TogglePref[] = [
-  { id: 'badges', label: 'Novos badges', description: 'Notificar quando desbloquear um badge', defaultOn: true },
   { id: 'campaigns', label: 'Campanhas', description: 'Notificar sobre novas campanhas e atualizacoes', defaultOn: true },
-  { id: 'challenges', label: 'Desafios', description: 'Lembrar sobre desafios ativos e prazos', defaultOn: true },
   { id: 'email', label: 'Resumo por e-mail', description: 'Receber resumo semanal por e-mail', defaultOn: false },
 ];
 
 const PRIVACY_PREFS: TogglePref[] = [
-  { id: 'ranking', label: 'Exibir no ranking', description: 'Seu departamento aparece no ranking geral', defaultOn: true },
   { id: 'profile', label: 'Perfil visivel', description: 'Outros colaboradoras podem ver seu perfil', defaultOn: true },
   { id: 'analytics', label: 'Dados anonimizados', description: 'Permitir uso de dados anonimizados para melhoria', defaultOn: true },
 ];
 
 /** Maps toggle id -> API pref_key */
 const TOGGLE_KEY_MAP: Record<string, string> = {
-  badges: 'notif_badges',
   campaigns: 'notif_campaigns',
-  challenges: 'notif_challenges',
   email: 'notif_email',
-  ranking: 'privacy_ranking',
   profile: 'privacy_profile',
   analytics: 'privacy_analytics',
 };
@@ -86,7 +75,7 @@ export default function ConfiguracoesPage() {
   // Reminder preferences
   const [reminderTimes, setReminderTimes] = useState<string[]>(['08:00', '18:00']);
   const [missionReminders, setMissionReminders] = useState<Record<string, boolean>>({
-    check_in: true, drink_water: true, complete_challenge: true, update_semaforo: true,
+    read_content: true,
   });
   const [browserEnabled, setBrowserEnabled] = useState(false);
   const [browserSupported, setBrowserSupported] = useState(false);

@@ -3,7 +3,7 @@ import { initDb } from '@/lib/db/init';
 import { withAuth } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import * as campaignRepo from '@/repositories/campaign.repository';
-import * as activityService from '@/services/activity.service';
+import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
 
 // POST /api/campaigns/join - Aderir a uma campanha ativa
 export const POST = withAuth(async (req, { auth }) => {
@@ -20,19 +20,10 @@ export const POST = withAuth(async (req, { auth }) => {
     // 1. Persistir adesao
     await campaignRepo.joinCampaign(auth.userId, campaignId);
     
-    // 2. Registrar atividade e dar pontos (100 pts por aderir)
-    const result = await activityService.recordActivity(auth.userId, {
-      action: 'join_campaign',
-      targetType: 'campaign',
-      targetId: campaignId,
-      points: 100
-    });
-
     return NextResponse.json({
       success: true,
-      pointsEarned: result.pointsEarned,
-      newStreak: result.newStreak,
-      badgeUnlocked: result.badgeUnlocked
+      progressRecorded: true,
+      gamification: LEGACY_GAMIFICATION_STATE,
     });
   } catch (error) {
     return handleApiError(error);

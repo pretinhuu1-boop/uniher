@@ -1,5 +1,6 @@
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 export interface UserRow {
   id: string;
@@ -27,7 +28,7 @@ export interface UserRow {
   department_name?: string | null;
 }
 
-export type PublicUser = Omit<UserRow, 'password_hash'>;
+export type PublicUser = Omit<UserRow, 'password_hash' | 'points' | 'level' | 'streak'>;
 
 export function getUserById(id: string): UserRow | undefined {
   const db = getReadDb();
@@ -106,8 +107,6 @@ export async function createUser(data: {
 const ALLOWED_USER_UPDATE_FIELDS: Record<string, string> = {
   name: 'name',
   avatarUrl: 'avatar_url',
-  level: 'level',
-  points: 'points',
   streak: 'streak',
   lastActive: 'last_active',
 };
@@ -115,8 +114,6 @@ const ALLOWED_USER_UPDATE_FIELDS: Record<string, string> = {
 export async function updateUser(id: string, data: Partial<{
   name: string;
   avatarUrl: string;
-  level: number;
-  points: number;
   streak: number;
   lastActive: string;
 }>): Promise<UserRow> {
@@ -168,6 +165,7 @@ export function countUsersByRole(companyId: string, role: string): number {
 
 /** Remove password_hash do retorno */
 export function toPublicUser(user: UserRow): PublicUser {
-  const { password_hash: _, ...publicUser } = user;
-  return publicUser;
+  return toSafeUserProjection(user) as PublicUser;
 }
+
+export { toSafeUserProjection };

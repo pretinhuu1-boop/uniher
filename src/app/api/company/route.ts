@@ -5,6 +5,7 @@ import { getUserById } from '@/repositories/user.repository';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 export const GET = withAuth(async (_req: NextRequest, context) => {
   await initDb();
@@ -23,12 +24,10 @@ export const GET = withAuth(async (_req: NextRequest, context) => {
     SELECT
       (SELECT COUNT(*) FROM users WHERE company_id = ?) AS user_count,
       (SELECT COUNT(*) FROM departments WHERE company_id = ?) AS department_count,
-      (SELECT COALESCE(SUM(points), 0) FROM users WHERE company_id = ?) AS total_points,
       (SELECT COUNT(*) FROM campaigns WHERE company_id = ? AND status = 'active') AS missions_active
-  `).get(user.company_id, user.company_id, user.company_id, user.company_id) as {
+  `).get(user.company_id, user.company_id, user.company_id) as {
     user_count: number;
     department_count: number;
-    total_points: number;
     missions_active: number;
   };
 
@@ -37,16 +36,15 @@ export const GET = withAuth(async (_req: NextRequest, context) => {
   ).get(user.company_id, 'feed_company_enabled') as { setting_value?: string } | undefined;
   const feedCompanyEnabled = companyFeedSetting ? companyFeedSetting.setting_value === '1' : true;
 
-  return NextResponse.json({
+  return NextResponse.json(toSafeUserProjection({
     company: {
       ...company,
       user_count: statsRow.user_count,
       department_count: statsRow.department_count,
-      total_points: statsRow.total_points,
       missions_active: statsRow.missions_active,
       feed_company_enabled: feedCompanyEnabled,
     },
-  });
+  }));
 });
 
 const UpdateSchema = z.object({
@@ -101,5 +99,5 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
     `).run(user.company_id, parsed.data.feedCompanyEnabled ? '1' : '0');
   }
 
-  return NextResponse.json({ company: updated });
+  return NextResponse.json({ company: toSafeUserProjection(updated) });
 });

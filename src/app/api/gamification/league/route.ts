@@ -1,10 +1,4 @@
-import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
-import { getUserLeagueStatus, getLeagueRanking } from '@/services/league.service';
+import { privacyReviewResponse } from '@/lib/privacy/api-response';
 
-export const GET = withAuth(async (_req, context) => {
-  const userId = context.auth.userId;
-  const status = getUserLeagueStatus(userId);
-  const ranking = getLeagueRanking(status.currentLeague, status.weekStart);
-  return NextResponse.json({ status, ranking });
-});
+export const GET = withAuth(async () => privacyReviewResponse());

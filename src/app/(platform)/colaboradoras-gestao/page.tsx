@@ -16,8 +16,6 @@ interface User {
   role: string;
   department_id: string | null;
   department_name: string | null;
-  level: number;
-  points: number;
   blocked: number;
   approved: number;
   created_at: string;
@@ -328,8 +326,6 @@ export default function ColaboradorasGestaoPage() {
                         {ROLE_LABELS[u.role] ?? u.role}
                       </span>
                       {u.department_name && <span>{u.department_name}</span>}
-                      <span>Nv {u.level}</span>
-                      <span>{u.points.toLocaleString('pt-BR')} pts</span>
                     </div>
                     <div className="flex gap-2">
                       {u.role !== 'rh' && (
@@ -385,8 +381,6 @@ export default function ColaboradorasGestaoPage() {
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Colaboradora</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Departamento</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Nível</th>
-                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Pts</th>
                     <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
                     <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
                   </tr>
@@ -442,8 +436,6 @@ export default function ColaboradorasGestaoPage() {
                             {ROLE_LABELS[u.role] ?? u.role}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center text-uni-text-600">{u.level}</td>
-                        <td className="px-4 py-3 text-center text-uni-text-600">{u.points.toLocaleString('pt-BR')}</td>
                         <td className="px-4 py-3 text-center">
                           <span className={cn(
                             'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full',
@@ -555,7 +547,6 @@ export default function ColaboradorasGestaoPage() {
 
             {/* Info */}
             <div className="bg-cream-50 rounded-lg p-3 text-xs text-uni-text-500 space-y-1">
-              <div>Nível: <strong>{editUser.level}</strong> · Pontos: <strong>{editUser.points}</strong></div>
               <div>Criada em: {new Date(editUser.created_at).toLocaleDateString('pt-BR')}</div>
             </div>
 
