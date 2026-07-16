@@ -80,6 +80,88 @@ const FORBIDDEN_PROJECTION_KEYS = new Set([
   'totalinleague',
 ].map(normalizeProjectionKey));
 
+const FORBIDDEN_LESSON_PROJECTION_KEYS = new Set([
+  'point',
+  'points',
+  'points_spent',
+  'week_points',
+  'level',
+  'xp',
+  'xp_reward',
+  'xp_earned',
+  'user_xp_earned',
+  'current_xp',
+  'next_level_xp',
+  'league',
+  'rank',
+  'ranking',
+  'badge',
+  'badges',
+  'streak',
+  'current_streak',
+  'longest_streak',
+  'streak_count',
+  'streak_days',
+  'reward',
+  'rewards',
+  'point_cost',
+  'points_cost',
+  'reward_point',
+  'reward_points',
+  'health_score',
+  'health_scores',
+  'dimension',
+].map(normalizeProjectionKey));
+
+const FORBIDDEN_LESSON_PROJECTION_PREFIXES = Object.freeze([
+  'dailyxp',
+] as const);
+const MAX_LESSON_PROJECTION_DEPTH = 32;
+const OMIT_LESSON_PROJECTION_VALUE = Symbol('omit-lesson-projection-value');
+
+function isForbiddenLessonProjectionKey(key: string): boolean {
+  const normalizedKey = normalizeProjectionKey(key);
+  return FORBIDDEN_LESSON_PROJECTION_KEYS.has(normalizedKey) ||
+    FORBIDDEN_LESSON_PROJECTION_PREFIXES.some((prefix) => normalizedKey.startsWith(prefix));
+}
+
+function projectLessonValue(
+  value: unknown,
+  depth: number,
+  ancestors: WeakSet<object>,
+): unknown | typeof OMIT_LESSON_PROJECTION_VALUE {
+  if (depth > MAX_LESSON_PROJECTION_DEPTH) return OMIT_LESSON_PROJECTION_VALUE;
+  if (!value || typeof value !== 'object') return value;
+  if (ancestors.has(value)) return OMIT_LESSON_PROJECTION_VALUE;
+
+  ancestors.add(value);
+  try {
+    if (Array.isArray(value)) {
+      const projected: unknown[] = [];
+      for (const child of value) {
+        const safeChild = projectLessonValue(child, depth + 1, ancestors);
+        if (safeChild !== OMIT_LESSON_PROJECTION_VALUE) projected.push(safeChild);
+      }
+      return projected;
+    }
+
+    const projected: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) {
+      if (isForbiddenLessonProjectionKey(key)) continue;
+      const safeChild = projectLessonValue(child, depth + 1, ancestors);
+      if (safeChild !== OMIT_LESSON_PROJECTION_VALUE) projected[key] = safeChild;
+    }
+    return projected;
+  } finally {
+    ancestors.delete(value);
+  }
+}
+
+/** Immutable, fail-closed copy for educational lesson API projections. */
+export function toSafeLessonProjection<T>(value: T): T {
+  return projectLessonValue(value, 0, new WeakSet()) as T;
+}
+
 /** Fail-closed projection for authenticated/session responses. */
 export function toSafeUserProjection<T>(value: T): T {
   if (Array.isArray(value)) {

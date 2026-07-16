@@ -5,27 +5,10 @@ import { withAuth } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
-import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
-
-const FORBIDDEN_DAILY_LESSON_KEYS = new Set([
-  'point', 'points', 'level', 'xp', 'xpreward', 'xpearned', 'userxpearned', 'league',
-  'rank', 'ranking', 'badge', 'badges', 'weekpoints', 'healthscore', 'healthscores', 'dimension',
-]);
-
-function stripLegacyLessonFields<T>(value: T): T {
-  if (Array.isArray(value)) {
-    return value.map((item) => stripLegacyLessonFields(item)) as T;
-  }
-  if (!value || typeof value !== 'object') return value;
-
-  const projected: Record<string, unknown> = {};
-  for (const [key, child] of Object.entries(value)) {
-    const normalizedKey = key.replace(/[^a-z0-9]/gi, '').toLowerCase();
-    if (FORBIDDEN_DAILY_LESSON_KEYS.has(normalizedKey)) continue;
-    projected[key] = stripLegacyLessonFields(child);
-  }
-  return projected as T;
-}
+import {
+  LEGACY_GAMIFICATION_STATE,
+  toSafeLessonProjection,
+} from '@/lib/gamification/containment';
 
 function extractTopicTitle(title: unknown): string {
   if (typeof title !== 'string') return 'tema da licao';
@@ -327,7 +310,7 @@ export const GET = withAuth(async (_req, { auth }) => {
     }
 
     const normalizedPath = (path || []).map((row) => {
-      return stripLegacyLessonFields({
+      return toSafeLessonProjection({
         ...row,
         user_completed: !!row.user_completed,
         content_json: normalizeLessonContent(row.type, row.content_json, row.title),
