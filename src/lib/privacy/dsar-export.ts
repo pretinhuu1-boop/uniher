@@ -4,6 +4,7 @@ import { AppError, RateLimitError } from '@/lib/errors';
 import { LEGACY_GAMIFICATION_NOTIFICATION_TYPES } from '@/lib/gamification/containment';
 
 export const DSAR_EXPORT_WINDOW_MS = 60 * 60 * 1000;
+export const DSAR_EXPORT_BATCH_SIZE = 64;
 
 export type DsarExportReservation = {
   token: string;
@@ -94,24 +95,57 @@ function serializeJson(value: unknown): string {
   return JSON.stringify(value) ?? 'null';
 }
 
-function* streamJsonArray(rows: IterableIterator<unknown>): Generator<string, void, unknown> {
+type DsarRow = Record<string, unknown>;
+type RowIdCursor = number | bigint;
+type TimestampCursor = { timestamp: string; id: string };
+
+function stripInternalCursorFields(row: DsarRow): DsarRow {
+  return Object.fromEntries(
+    Object.entries(row).filter(([key]) => !key.startsWith('__dsar_cursor_')),
+  );
+}
+
+function getRowIdCursor(row: DsarRow): RowIdCursor {
+  const cursor = row.__dsar_cursor_rowid;
+  if (typeof cursor !== 'number' && typeof cursor !== 'bigint') {
+    throw new Error('DSAR row is missing its rowid cursor');
+  }
+  return cursor;
+}
+
+function getTimestampCursor(row: DsarRow): TimestampCursor {
+  const timestamp = row.__dsar_cursor_timestamp;
+  const id = row.__dsar_cursor_id;
+  if (typeof timestamp !== 'string' || typeof id !== 'string') {
+    throw new Error('DSAR row is missing its timestamp cursor');
+  }
+  return { timestamp, id };
+}
+
+function materializePage(rows: IterableIterator<DsarRow>): DsarRow[] {
+  return Array.from(rows);
+}
+
+function* streamPaginatedJsonArray<Cursor>(
+  loadPage: (cursor: Cursor | null) => DsarRow[],
+  readCursor: (row: DsarRow) => Cursor,
+): Generator<string, void, unknown> {
   let first = true;
-  let exhausted = false;
-  try {
-    yield '[';
-    while (true) {
-      const result = rows.next();
-      if (result.done) {
-        exhausted = true;
-        break;
-      }
-      yield `${first ? '' : ','}${serializeJson(result.value)}`;
+  let cursor: Cursor | null = null;
+  let page = loadPage(cursor);
+
+  yield '[';
+  while (true) {
+    for (const row of page) {
+      yield `${first ? '' : ','}${serializeJson(stripInternalCursorFields(row))}`;
       first = false;
     }
-    yield ']';
-  } finally {
-    if (!exhausted) rows.return?.();
+
+    if (page.length < DSAR_EXPORT_BATCH_SIZE) break;
+    cursor = readCursor(page[page.length - 1]);
+    page = loadPage(cursor);
   }
+  yield ']';
 }
 
 export function* createDsarExportJsonChunks(
@@ -126,64 +160,225 @@ export function* createDsarExportJsonChunks(
   ).get(userId);
 
   yield `{"exportedAt":${serializeJson(exportedAt)},"user":${serializeJson(user)},"quizResults":`;
-  yield* streamJsonArray(db.prepare(
-    'SELECT id, archetype_id, answers_json, created_at FROM quiz_results WHERE user_id = ?',
-  ).iterate(userId));
+  yield* streamPaginatedJsonArray<RowIdCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT id, archetype_id, answers_json, created_at,
+                 rowid AS __dsar_cursor_rowid
+          FROM quiz_results
+          WHERE user_id = ?
+          ORDER BY rowid ASC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT id, archetype_id, answers_json, created_at,
+                 rowid AS __dsar_cursor_rowid
+          FROM quiz_results
+          WHERE user_id = ? AND rowid > ?
+          ORDER BY rowid ASC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, cursor, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getRowIdCursor);
 
   yield ',"notifications":';
-  yield* streamJsonArray(db.prepare(`
-    SELECT id, type, title, message, read, created_at
-    FROM notifications
-    WHERE user_id = ? AND type NOT IN (${legacyTypePlaceholders})
-    ORDER BY created_at DESC
-  `).iterate(userId, ...legacyTypes));
+  yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT id, type, title, message, read, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(created_at, '') AS __dsar_cursor_timestamp
+          FROM notifications
+          WHERE user_id = ? AND type NOT IN (${legacyTypePlaceholders})
+          ORDER BY COALESCE(created_at, '') DESC, id DESC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT id, type, title, message, read, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(created_at, '') AS __dsar_cursor_timestamp
+          FROM notifications
+          WHERE user_id = ? AND type NOT IN (${legacyTypePlaceholders})
+            AND (COALESCE(created_at, ''), id) < (?, ?)
+          ORDER BY COALESCE(created_at, '') DESC, id DESC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, ...legacyTypes, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, ...legacyTypes, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getTimestampCursor);
 
   const legacyUserGamification = db.prepare(
     'SELECT points, level, league FROM users WHERE id = ?',
   ).get(userId);
   yield `,"legacyDerivedData":{"label":${serializeJson('Derivado legado — em revisão')},"userGamification":${serializeJson(legacyUserGamification)},"badges":`;
-  yield* streamJsonArray(db.prepare(`
-    SELECT ub.badge_id, b.name, b.description, ub.unlocked_at
-    FROM user_badges ub
-    LEFT JOIN badges b ON b.id = ub.badge_id
-    WHERE ub.user_id = ?
-  `).iterate(userId));
+  yield* streamPaginatedJsonArray<RowIdCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT ub.badge_id, b.name, b.description, ub.unlocked_at,
+                 ub.rowid AS __dsar_cursor_rowid
+          FROM user_badges ub
+          LEFT JOIN badges b ON b.id = ub.badge_id
+          WHERE ub.user_id = ?
+          ORDER BY ub.rowid ASC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT ub.badge_id, b.name, b.description, ub.unlocked_at,
+                 ub.rowid AS __dsar_cursor_rowid
+          FROM user_badges ub
+          LEFT JOIN badges b ON b.id = ub.badge_id
+          WHERE ub.user_id = ? AND ub.rowid > ?
+          ORDER BY ub.rowid ASC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, cursor, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getRowIdCursor);
 
   yield ',"healthScores":';
-  yield* streamJsonArray(db.prepare(
-    'SELECT dimension, score, recorded_at FROM health_scores WHERE user_id = ? ORDER BY recorded_at DESC',
-  ).iterate(userId));
+  yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT dimension, score, recorded_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(recorded_at, '') AS __dsar_cursor_timestamp
+          FROM health_scores
+          WHERE user_id = ?
+          ORDER BY COALESCE(recorded_at, '') DESC, id DESC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT dimension, score, recorded_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(recorded_at, '') AS __dsar_cursor_timestamp
+          FROM health_scores
+          WHERE user_id = ?
+            AND (COALESCE(recorded_at, ''), id) < (?, ?)
+          ORDER BY COALESCE(recorded_at, '') DESC, id DESC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getTimestampCursor);
 
   yield ',"challenges":';
-  yield* streamJsonArray(db.prepare(`
-    SELECT uc.challenge_id, c.title, uc.progress, uc.status, uc.started_at, uc.completed_at
-    FROM user_challenges uc
-    LEFT JOIN challenges c ON c.id = uc.challenge_id
-    WHERE uc.user_id = ?
-  `).iterate(userId));
+  yield* streamPaginatedJsonArray<RowIdCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT uc.challenge_id, c.title, uc.progress, uc.status, uc.started_at, uc.completed_at,
+                 uc.rowid AS __dsar_cursor_rowid
+          FROM user_challenges uc
+          LEFT JOIN challenges c ON c.id = uc.challenge_id
+          WHERE uc.user_id = ?
+          ORDER BY uc.rowid ASC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT uc.challenge_id, c.title, uc.progress, uc.status, uc.started_at, uc.completed_at,
+                 uc.rowid AS __dsar_cursor_rowid
+          FROM user_challenges uc
+          LEFT JOIN challenges c ON c.id = uc.challenge_id
+          WHERE uc.user_id = ? AND uc.rowid > ?
+          ORDER BY uc.rowid ASC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, cursor, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getRowIdCursor);
 
   yield ',"activityLog":';
-  yield* streamJsonArray(db.prepare(`
-    SELECT id, action, target_type, target_id, points_earned, created_at
-    FROM activity_log
-    WHERE user_id = ?
-    ORDER BY created_at DESC
-  `).iterate(userId));
+  yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT id, action, target_type, target_id, points_earned, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(created_at, '') AS __dsar_cursor_timestamp
+          FROM activity_log
+          WHERE user_id = ?
+          ORDER BY COALESCE(created_at, '') DESC, id DESC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT id, action, target_type, target_id, points_earned, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(created_at, '') AS __dsar_cursor_timestamp
+          FROM activity_log
+          WHERE user_id = ?
+            AND (COALESCE(created_at, ''), id) < (?, ?)
+          ORDER BY COALESCE(created_at, '') DESC, id DESC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getTimestampCursor);
 
   yield ',"missionLogs":';
-  yield* streamJsonArray(db.prepare(`
-    SELECT id, mission_id, action, day, mood, glasses, challenge_id, note, created_at
-    FROM mission_logs
-    WHERE user_id = ?
-    ORDER BY created_at DESC
-  `).iterate(userId));
+  yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT id, mission_id, action, day, mood, glasses, challenge_id, note, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(created_at, '') AS __dsar_cursor_timestamp
+          FROM mission_logs
+          WHERE user_id = ?
+          ORDER BY COALESCE(created_at, '') DESC, id DESC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT id, mission_id, action, day, mood, glasses, challenge_id, note, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(created_at, '') AS __dsar_cursor_timestamp
+          FROM mission_logs
+          WHERE user_id = ?
+            AND (COALESCE(created_at, ''), id) < (?, ?)
+          ORDER BY COALESCE(created_at, '') DESC, id DESC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getTimestampCursor);
 
   yield ',"notifications":';
-  yield* streamJsonArray(db.prepare(`
-    SELECT id, type, title, message, read, created_at
-    FROM notifications
-    WHERE user_id = ? AND type IN (${legacyTypePlaceholders})
-    ORDER BY created_at DESC
-  `).iterate(userId, ...legacyTypes));
+  yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT id, type, title, message, read, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(created_at, '') AS __dsar_cursor_timestamp
+          FROM notifications
+          WHERE user_id = ? AND type IN (${legacyTypePlaceholders})
+          ORDER BY COALESCE(created_at, '') DESC, id DESC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT id, type, title, message, read, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(created_at, '') AS __dsar_cursor_timestamp
+          FROM notifications
+          WHERE user_id = ? AND type IN (${legacyTypePlaceholders})
+            AND (COALESCE(created_at, ''), id) < (?, ?)
+          ORDER BY COALESCE(created_at, '') DESC, id DESC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, ...legacyTypes, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, ...legacyTypes, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getTimestampCursor);
   yield '}}';
 }
