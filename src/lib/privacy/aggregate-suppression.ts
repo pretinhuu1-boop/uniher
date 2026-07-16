@@ -83,12 +83,19 @@ function compareText(left: string, right: string) {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
+function isValidIdentifier(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 function normalizeConstraints(
   constraints: readonly SuppressionConstraint[],
   knownCellIds: ReadonlySet<string>,
 ) {
   const constraintIds = new Set<string>();
   for (const constraint of constraints) {
+    if (!isValidIdentifier(constraint.id)) {
+      throw new Error(`Invalid privacy constraint id: ${JSON.stringify(constraint.id)}`);
+    }
     if (constraintIds.has(constraint.id)) {
       throw new Error(`Duplicate privacy constraint: ${constraint.id}`);
     }
@@ -133,6 +140,9 @@ export function applyComplementarySuppression<T>(
   const protectedById = new Map<string, AggregateCell<T>>();
 
   for (const cell of cells) {
+    if (!isValidIdentifier(cell.id)) {
+      throw new Error(`Invalid aggregate cell id: ${JSON.stringify(cell.id)}`);
+    }
     if (protectedById.has(cell.id)) {
       throw new Error(`Duplicate aggregate cell: ${cell.id}`);
     }
@@ -149,8 +159,8 @@ export function applyComplementarySuppression<T>(
 
   for (const constraint of normalizedConstraints) {
     const [anchorId, ...relatedIds] = constraint.cellIds;
-    if (!anchorId) {
-      continue;
+    if (anchorId === undefined) {
+      throw new Error(`Privacy constraint has no anchor: ${constraint.id}`);
     }
 
     for (const relatedId of relatedIds) {

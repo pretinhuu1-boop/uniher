@@ -374,6 +374,61 @@ describe('aggregate privacy kernel', () => {
     );
   });
 
+  it.each([
+    ['empty', ''],
+    ['whitespace-only', ' \t '],
+  ] as const)(
+    'rejects a protected aggregate cell with a %s ID before graph construction',
+    (_label, invalidCellId) => {
+      const cells: AggregateCell<number>[] = [
+        {
+          id: invalidCellId,
+          status: 'suppressed',
+          reason: 'minimum_cohort',
+          message: SUPPRESSION_MESSAGE,
+        },
+        numericCell('visible-peer', 12, 12),
+        numericCell('visible-total', 20, 20),
+      ];
+      const constraints: SuppressionConstraint[] = [
+        {
+          id: 'invalid-cell-component',
+          kind: 'row',
+          cellIds: [invalidCellId, 'visible-peer', 'visible-total'],
+        },
+      ];
+
+      expect(() => applyComplementarySuppression(cells, constraints)).toThrow(
+        'Invalid aggregate cell id',
+      );
+    },
+  );
+
+  it.each([
+    ['empty', ''],
+    ['whitespace-only', ' \t '],
+  ] as const)(
+    'rejects a %s privacy constraint ID before sorting',
+    (_label, invalidConstraintId) => {
+      const cells = [
+        numericCell('small', 8, 8),
+        numericCell('peer', 12, 12),
+        numericCell('total', 20, 20),
+      ];
+      const constraints: SuppressionConstraint[] = [
+        {
+          id: invalidConstraintId,
+          kind: 'row',
+          cellIds: ['small', 'peer', 'total'],
+        },
+      ];
+
+      expect(() => applyComplementarySuppression(cells, constraints)).toThrow(
+        'Invalid privacy constraint id',
+      );
+    },
+  );
+
   it('returns the same protected component for every valid input permutation', () => {
     const cells = [
       numericCell('x', 8, 8),
