@@ -4,6 +4,8 @@
 
 export type UserRole = 'admin' | 'rh' | 'lideranca' | 'colaboradora';
 
+import type { ProtectedMetric } from '@/types/privacy';
+
 export type ArchetypeKey = 'guardia' | 'protetora' | 'guerreira' | 'equilibrista';
 
 export interface MockUser {
@@ -11,6 +13,7 @@ export interface MockUser {
   name: string;
   email: string;
   role: UserRole;
+  companyId?: string;
   isMasterAdmin?: boolean;
   avatar?: string;
   department?: string;
@@ -22,33 +25,71 @@ export interface MockUser {
   firstAccessTourCompleted?: boolean;
 }
 
-export interface Department {
+export const DASHBOARD_PERIODS = ['1m', '3m', '6m', '1a'] as const;
+export type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number];
+
+export const HISTORY_PERIODS = ['3', '6', '12'] as const;
+export type HistoryPeriod = (typeof HISTORY_PERIODS)[number];
+
+export const COMMUNICATION_PERIODS = ['7', '30', '90'] as const;
+export type CommunicationPeriod = (typeof COMMUNICATION_PERIODS)[number];
+
+export interface ProtectedDashboardMetrics {
+  examActivity: ProtectedMetric<number>;
+  engagement: ProtectedMetric<never>;
+  healthRisk: ProtectedMetric<never>;
+  campaignParticipation: ProtectedMetric<never>;
+  roi: ProtectedMetric<never>;
+}
+
+export interface ProtectedDepartmentMetric {
   id: string;
   name: string;
-  collaborators: number;
-  points: number;
-  level: number;
-  badges: number;
-  engagementPercent: number;
-  examsPercent: number;
-  trend: 'up' | 'down' | 'stable';
   color: string;
+  metric: ProtectedMetric<number>;
 }
 
-export interface DashboardKPI {
+export interface ProtectedAgeMetric {
   label: string;
-  value: string | number;
-  subtitle?: string;
-  icon: string;
-  trend?: string;
-  trendDirection?: 'up' | 'down' | 'stable';
-  color?: string;
+  color: string;
+  metric: ProtectedMetric<number>;
 }
 
-export interface ROIProjection {
-  roiMultiplier: number;
-  savings: string;
-  absenteeismReduction: string;
+export interface ProtectedSeriesMetric {
+  period: string;
+  metric: ProtectedMetric<number>;
+}
+
+export interface ProtectedDashboardProjection {
+  filters: {
+    period: DashboardPeriod;
+    departmentId?: string;
+  };
+  metrics: ProtectedDashboardMetrics;
+  departments: ProtectedDepartmentMetric[];
+  ageDistribution: ProtectedAgeMetric[];
+  examActivitySeries: ProtectedSeriesMetric[];
+}
+
+export type SafeCommunicationAction =
+  | 'campaign_delivery'
+  | 'lesson_delivery';
+
+export interface ProtectedCommunicationMetric {
+  action: SafeCommunicationAction;
+  label: string;
+  metric: ProtectedMetric<number>;
+}
+
+export interface ProtectedCommunicationsProjection {
+  filters: { period: CommunicationPeriod };
+  actions: ProtectedCommunicationMetric[];
+}
+
+export interface UnavailableHistoryProjection {
+  status: 'unavailable';
+  reason: 'eligible_ledger_required';
+  message: 'Hist\u00f3rico indispon\u00edvel at\u00e9 existir um registro eleg\u00edvel e protegido.';
 }
 
 export interface CampaignStatus {
@@ -58,25 +99,6 @@ export interface CampaignStatus {
   status: 'done' | 'active' | 'next';
   statusLabel: string;
   color: string;
-}
-
-export interface EngagementDataPoint {
-  month: string;
-  engagement: number;
-  retention: number;
-}
-
-export interface AgeDistribution {
-  label: string;
-  percent: number;
-  color: string;
-}
-
-export interface HealthRisk {
-  month: string;
-  low: number;
-  medium: number;
-  high: number;
 }
 
 export interface Badge {
@@ -125,22 +147,6 @@ export interface CompanyProfile {
     email: string;
     phone: string;
   };
-}
-
-export interface ConviteStatus {
-  total: number;
-  pending: number;
-  accepted: number;
-  expired: number;
-}
-
-export interface ReportConfig {
-  type: 'weekly' | 'monthly';
-  label: string;
-  description: string;
-  schedule: string;
-  enabled: boolean;
-  recipientEmail: string;
 }
 
 export interface CollaboratorHome {

@@ -1,56 +1,38 @@
 import type {
-  AgeDistribution,
-  CampaignStatus,
-  DashboardKPI,
-  Department,
-  EngagementDataPoint,
-  ROIProjection,
+  ProtectedAgeMetric,
+  ProtectedDashboardMetrics,
+  ProtectedDashboardProjection,
+  ProtectedDepartmentMetric,
+  ProtectedSeriesMetric,
 } from '@/types/platform';
-
-export interface DashboardSource {
-  kpis: DashboardKPI[];
-  departments: Department[];
-  campaigns: CampaignStatus[];
-  roi: ROIProjection;
-  engagement: EngagementDataPoint[];
-  ageDistribution: AgeDistribution[];
-}
+import type { ProtectedMetric } from '@/types/privacy';
 
 export interface DashboardSummaryItem {
-  label: 'Participação ativa' | 'Ações em andamento' | 'Pontos de atenção';
-  value: string | number;
+  label: 'Atividade de exames' | 'Engajamento' | 'Participa\u00e7\u00e3o em campanha';
+  metric: ProtectedMetric<number>;
   detail: string;
-  state: 'neutral' | 'positive' | 'warning';
+  state: 'neutral';
 }
 
 export interface DashboardAction {
-  readonly label: 'Campanhas' | 'Convites' | 'Histórico';
+  readonly label: 'Campanhas' | 'Convites' | 'Hist\u00f3rico';
   readonly description: string;
   readonly href: '/campanhas' | '/convites' | '/historico';
-}
-
-export interface DashboardDepartmentAggregate {
-  id: string;
-  name: string;
-  engagementPercent: number;
-  trend: Department['trend'];
-  color: string;
 }
 
 export interface DashboardViewModel {
   summary: DashboardSummaryItem[];
   actions: readonly DashboardAction[];
-  departments: DashboardDepartmentAggregate[];
-  campaigns: CampaignStatus[];
-  roi: ROIProjection;
-  engagement: EngagementDataPoint[];
-  ageDistribution: AgeDistribution[];
+  metrics: ProtectedDashboardMetrics;
+  departments: ProtectedDepartmentMetric[];
+  ageDistribution: ProtectedAgeMetric[];
+  examActivitySeries: ProtectedSeriesMetric[];
 }
 
 const ACTION_BLUEPRINTS: readonly DashboardAction[] = [
   {
     label: 'Campanhas',
-    description: 'Acompanhe as ações de saúde em andamento.',
+    description: 'Gerencie as campanhas sem expor participa\u00e7\u00e3o individual.',
     href: '/campanhas',
   },
   {
@@ -59,80 +41,42 @@ const ACTION_BLUEPRINTS: readonly DashboardAction[] = [
     href: '/convites',
   },
   {
-    label: 'Histórico',
-    description: 'Consulte a evolução dos indicadores agregados.',
+    label: 'Hist\u00f3rico',
+    description: 'Consulte a disponibilidade do registro protegido.',
     href: '/historico',
   },
 ];
 
-function normalizeDashboardLabel(label: string): string {
-  return label
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .trim()
-    .toLocaleLowerCase('pt-BR');
-}
-
-function getParticipation(kpis: DashboardKPI[]): string {
-  const engagementKpi = kpis.find(
-    (kpi) => normalizeDashboardLabel(kpi.label) === 'engajamento',
-  );
-
-  if (!engagementKpi) return '0%';
-  if (typeof engagementKpi.value === 'number') return `${engagementKpi.value}%`;
-
-  const value = engagementKpi.value.trim();
-  if (!value) return '0%';
-  return /^\d+(?:[.,]\d+)?$/.test(value) ? `${value}%` : value;
-}
-
-export function createDashboardViewModel(source: DashboardSource): DashboardViewModel {
-  const activeCampaigns = source.campaigns.filter((campaign) => campaign.status === 'active').length;
-  const departmentsNeedingAttention = source.departments.filter(
-    (department) => department.engagementPercent < 70,
-  ).length;
-
+export function createDashboardViewModel(
+  source: ProtectedDashboardProjection,
+): DashboardViewModel {
   return {
     summary: [
       {
-        label: 'Participação ativa',
-        value: getParticipation(source.kpis),
-        detail: 'últimos 30 dias',
-        state: 'positive',
-      },
-      {
-        label: 'Ações em andamento',
-        value: activeCampaigns,
-        detail: 'campanhas ativas',
+        label: 'Atividade de exames',
+        metric: source.metrics.examActivity,
+        detail: 'contribuintes distintos no per\u00edodo',
         state: 'neutral',
       },
       {
-        label: 'Pontos de atenção',
-        value: departmentsNeedingAttention,
-        detail: 'departamentos abaixo de 70%',
-        state: departmentsNeedingAttention > 0 ? 'warning' : 'positive',
+        label: 'Engajamento',
+        metric: source.metrics.engagement,
+        detail: 'fonte legada n\u00e3o comput\u00e1vel',
+        state: 'neutral',
+      },
+      {
+        label: 'Participa\u00e7\u00e3o em campanha',
+        metric: source.metrics.campaignParticipation,
+        detail: 'aguardando classifica\u00e7\u00e3o de sensibilidade',
+        state: 'neutral',
       },
     ],
     actions: Object.freeze(
       ACTION_BLUEPRINTS.map((action) => Object.freeze({ ...action })),
     ),
-    departments: source.departments.map((department) => ({
-      id: department.id,
-      name: department.name,
-      engagementPercent: department.engagementPercent,
-      trend: department.trend,
-      color: department.color,
-    })),
-    campaigns: source.campaigns.map((campaign) => ({
-      name: campaign.name,
-      month: campaign.month,
-      progress: campaign.progress,
-      status: campaign.status,
-      statusLabel: campaign.statusLabel,
-      color: campaign.color,
-    })),
-    roi: source.roi,
-    engagement: source.engagement,
-    ageDistribution: source.ageDistribution,
+    metrics: source.metrics,
+    departments: source.departments.map((department) => ({ ...department })),
+    ageDistribution: source.ageDistribution.map((bucket) => ({ ...bucket })),
+    examActivitySeries: source.examActivitySeries.map((point) => ({ ...point })),
   };
 }

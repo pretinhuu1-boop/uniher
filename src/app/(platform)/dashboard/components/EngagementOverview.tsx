@@ -1,85 +1,31 @@
-import { Line } from 'react-chartjs-2';
-
-import { FeedbackState } from '@/components/ui/FeedbackState';
-import type { EngagementDataPoint } from '@/types/platform';
+import type { ProtectedMetric } from '@/types/privacy';
 import styles from '../dashboard.module.css';
-import './dashboard-chart-setup';
 
-export function EngagementOverview({ data }: { data: EngagementDataPoint[] }) {
+function assertNever(value: never): never {
+  throw new Error(`Estado protegido desconhecido: ${JSON.stringify(value)}`);
+}
+
+function renderMetric(metric: ProtectedMetric<never>): string {
+  switch (metric.status) {
+    case 'visible':
+      return String(metric.value);
+    case 'suppressed':
+      return metric.message;
+    default:
+      return assertNever(metric);
+  }
+}
+
+export function EngagementOverview({ metric }: { metric: ProtectedMetric<never> }) {
   return (
     <section className={styles.surface} aria-labelledby="engagement-title">
       <div className={styles.sectionHeader}>
         <div>
-          <p className={styles.eyebrow}>Participação</p>
-          <h2 id="engagement-title" className={styles.sectionTitle}>Engajamento ao longo do tempo</h2>
-          <p className={styles.sectionDescription}>Atividade e retenção consolidadas por período.</p>
+          <p className={styles.eyebrow}>Participa\u00e7\u00e3o</p>
+          <h2 id="engagement-title" className={styles.sectionTitle}>Engajamento</h2>
         </div>
-        <span className={styles.stateLabel}>Indicador agregado</span>
       </div>
-      {data.length === 0 ? (
-        <FeedbackState
-          kind="empty"
-          title="A evolução aparecerá aqui"
-          description="Os pontos serão consolidados quando houver atividade suficiente no período."
-        />
-      ) : (
-        <div
-          className={styles.chartFrame}
-          role="img"
-          aria-label="Gráfico de engajamento e retenção por mês"
-        >
-          <Line
-            data={{
-              labels: data.map((point) => point.month),
-              datasets: [
-                {
-                  label: 'Engajamento %',
-                  data: data.map((point) => point.engagement),
-                  borderColor: '#8b622d',
-                  backgroundColor: 'rgba(185, 134, 67, 0.12)',
-                  fill: true,
-                  tension: 0.35,
-                },
-                {
-                  label: 'Retenção %',
-                  data: data.map((point) => point.retention),
-                  borderColor: '#536444',
-                  backgroundColor: 'rgba(83, 100, 68, 0.08)',
-                  fill: false,
-                  tension: 0.35,
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: 'bottom' } },
-              scales: { y: { min: 0, max: 100 } },
-            }}
-          />
-        </div>
-      )}
-      {data.length > 0 && (
-        <table className="sr-only">
-          <caption>Dados mensais de engajamento e retenção</caption>
-          <thead>
-            <tr>
-              <th scope="col">Mês</th>
-              <th scope="col">Engajamento</th>
-              <th scope="col">Retenção</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((point) => (
-              <tr key={point.month}>
-                <td>{point.month}</td>
-                <td>{point.engagement}%</td>
-                <td>{point.retention}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <p role="status">{renderMetric(metric)}</p>
     </section>
   );
 }

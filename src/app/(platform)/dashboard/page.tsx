@@ -9,27 +9,36 @@ import { Button } from '@/components/ui/Button';
 import { FeedbackState } from '@/components/ui/FeedbackState';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboard } from '@/hooks/useDashboard';
-import { DashboardDetails, type DashboardFilters, type DashboardPeriod } from './components/DashboardDetails';
+import type { DashboardPeriod } from '@/types/platform';
+import type { ProtectedMetric } from '@/types/privacy';
+import { DashboardDetails, type DashboardFilters } from './components/DashboardDetails';
 import { EngagementOverview } from './components/EngagementOverview';
 import { NextActions } from './components/NextActions';
 import { downloadDashboardCsv, hasMeaningfulDashboardData } from './dashboard-export';
 import { createDashboardViewModel } from './dashboard-view-model';
 import styles from './dashboard.module.css';
 
-const PERIOD_POINTS: Record<DashboardPeriod, number> = {
-  '1m': 1,
-  '3m': 3,
-  '6m': 6,
-  '1a': 12,
-};
+function assertNever(value: never): never {
+  throw new Error(`Estado protegido desconhecido: ${JSON.stringify(value)}`);
+}
+
+function renderMetric(metric: ProtectedMetric<number>): string | number {
+  switch (metric.status) {
+    case 'visible':
+      return metric.value;
+    case 'suppressed':
+      return metric.message;
+    default:
+      return assertNever(metric);
+  }
+}
 
 export default function DashboardPage() {
-  const dashboard = useDashboard();
   const { user } = useAuth();
   const router = useRouter();
   const [activePeriod, setActivePeriod] = useState<DashboardPeriod>('1m');
-  const [filterDept, setFilterDept] = useState('');
-  const [filterHealth, setFilterHealth] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
+  const dashboard = useDashboard(activePeriod, departmentId || undefined);
 
   useEffect(() => {
     if (user?.role !== 'rh') return;
@@ -41,43 +50,37 @@ export default function DashboardPage() {
       .catch(() => undefined);
   }, [user?.role, router]);
 
-  const model = useMemo(() => createDashboardViewModel({
-    kpis: dashboard.kpis,
-    departments: dashboard.departments,
-    roi: dashboard.roi,
-    campaigns: dashboard.campaigns,
-    engagement: dashboard.engagement,
-    ageDistribution: dashboard.ageDistribution,
-  }), [dashboard.ageDistribution, dashboard.campaigns, dashboard.departments, dashboard.engagement, dashboard.kpis, dashboard.roi]);
+  const model = useMemo(
+    () => dashboard.data ? createDashboardViewModel(dashboard.data) : null,
+    [dashboard.data],
+  );
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'Gestora';
-  const canExport = !dashboard.isLoading
+  const canExport = Boolean(
+    model
+    && !dashboard.isLoading
     && !dashboard.error
-    && hasMeaningfulDashboardData(model);
-  const filters: DashboardFilters = {
-    period: activePeriod,
-    department: filterDept,
-    attention: filterHealth,
-  };
+    && hasMeaningfulDashboardData(model),
+  );
+  const filters: DashboardFilters = { period: activePeriod, departmentId };
 
   function updateFilters(nextFilters: DashboardFilters) {
     setActivePeriod(nextFilters.period);
-    setFilterDept(nextFilters.department);
-    setFilterHealth(nextFilters.attention);
+    setDepartmentId(nextFilters.departmentId);
   }
 
   return (
     <div className={styles.page}>
       <PageHeader
-        context="Visão geral · RH"
+        context="Vis\u00e3o geral \u00b7 RH"
         title={`Bom dia, ${firstName}.`}
-        description="O que merece sua atenção hoje."
+        description="Indicadores agregados com prote\u00e7\u00e3o de coorte."
         primaryAction={<Button onClick={() => router.push('/convites')}>Convidar</Button>}
         secondaryActions={(
           <Button
             variant="secondary"
             disabled={!canExport}
-            title={canExport ? undefined : 'A exportação estará disponível quando houver dados carregados.'}
-            onClick={() => downloadDashboardCsv(model)}
+            title={canExport ? undefined : 'Aguarde o carregamento da proje\u00e7\u00e3o protegida.'}
+            onClick={() => model && downloadDashboardCsv(model)}
           >
             Exportar CSV
           </Button>
@@ -86,20 +89,28 @@ export default function DashboardPage() {
       {dashboard.isLoading ? (
         <FeedbackState
           kind="loading"
-          title="Preparando sua visão geral"
-          description="Organizando indicadores agregados e próximas ações."
+          title="Preparando sua vis\u00e3o protegida"
+          description="Aplicando os controles de privacidade ao filtro selecionado."
         />
-      ) : dashboard.error ? (
+      ) : dashboard.error || !model ? (
         <FeedbackState
           kind="error"
-          title="Não foi possível carregar o dashboard"
-          description="Atualize a página para tentar buscar os indicadores novamente."
+          title="N\u00e3o foi poss\u00edvel carregar o dashboard"
+          description="Atualize a p\u00e1gina para tentar novamente."
         />
       ) : (
         <>
-          <SummaryBand label="Resumo da empresa" items={model.summary} />
+          <SummaryBand
+            label="Resumo protegido da empresa"
+            items={model.summary.map((item) => ({
+              label: item.label,
+              value: renderMetric(item.metric),
+              detail: item.detail,
+              state: item.state,
+            }))}
+          />
           <section className={styles.primaryGrid}>
-            <EngagementOverview data={model.engagement.slice(-PERIOD_POINTS[activePeriod])} />
+            <EngagementOverview metric={model.metrics.engagement} />
             <NextActions actions={model.actions} />
           </section>
           <DashboardDetails model={model} filters={filters} onFiltersChange={updateFilters} />

@@ -1,40 +1,44 @@
 import { FeedbackState } from '@/components/ui/FeedbackState';
-import type { DashboardDepartmentAggregate } from '../dashboard-view-model';
+import type { ProtectedDepartmentMetric } from '@/types/platform';
+import type { ProtectedMetric } from '@/types/privacy';
 import styles from '../dashboard.module.css';
 
-function clampPercent(value: number): number {
-  return Math.max(0, Math.min(100, value));
+function assertNever(value: never): never {
+  throw new Error(`Estado protegido desconhecido: ${JSON.stringify(value)}`);
 }
 
-export function DepartmentOverview({ departments }: { departments: DashboardDepartmentAggregate[] }) {
+function renderMetric(metric: ProtectedMetric<number>): string {
+  switch (metric.status) {
+    case 'visible':
+      return String(metric.value);
+    case 'suppressed':
+      return metric.message;
+    default:
+      return assertNever(metric);
+  }
+}
+
+export function DepartmentOverview({ departments }: { departments: ProtectedDepartmentMetric[] }) {
   return (
     <section className={`${styles.surface} ${styles.wide}`} aria-labelledby="departments-title">
       <div className={styles.sectionHeader}>
         <div>
           <p className={styles.eyebrow}>Departamentos</p>
-          <h3 id="departments-title" className={styles.sectionTitle}>Engajamento por área</h3>
+          <h3 id="departments-title" className={styles.sectionTitle}>Contribuintes ativos por \u00e1rea</h3>
         </div>
       </div>
       {departments.length === 0 ? (
         <FeedbackState
           kind="empty"
           title="Nenhum departamento neste recorte"
-          description="Ajuste os filtros ou cadastre departamentos para comparar o engajamento."
+          description="Ajuste o filtro para consultar outro escopo."
         />
       ) : (
         <ul className={styles.dataList}>
-          {departments.slice(0, 5).map((department) => (
+          {departments.map((department) => (
             <li key={department.id} className={styles.departmentRow}>
-              <div className={styles.rowHeading}>
-                <strong>{department.name}</strong>
-                <span>{department.engagementPercent}%</span>
-              </div>
-              <div className={styles.progressTrack} aria-hidden="true">
-                <span
-                  className={styles.progressFill}
-                  style={{ width: `${clampPercent(department.engagementPercent)}%` }}
-                />
-              </div>
+              <strong>{department.name}</strong>
+              <span>{renderMetric(department.metric)}</span>
             </li>
           ))}
         </ul>

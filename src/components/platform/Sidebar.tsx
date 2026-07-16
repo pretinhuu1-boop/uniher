@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { useAuth } from '@/hooks/useAuth';
+import { clearProtectedReportCaches, useAuth } from '@/hooks/useAuth';
 import { Avatar, Badge } from '@/components/ui/AvatarBadge';
 import SidebarNavItem, { NavIcon } from './SidebarNavItem';
 import {
@@ -204,7 +204,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigationGroups = getNavigationForRole(role);
   const roleLabel = ROLE_LABELS[role];
 
-  const handleSwitchView = (view: UserRole, closeAfterNavigation: boolean) => {
+  const handleSwitchView = async (view: UserRole, closeAfterNavigation: boolean) => {
+    await clearProtectedReportCaches();
     setActiveView(view);
     sessionStorage.setItem('uniher-view-mode', view);
     router.push(getRoleHome(view));

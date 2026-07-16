@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mutate, unstable_serialize } from 'swr';
+import { cache } from 'swr/_internal';
 import {
   DashboardHttpError,
   dashboardFetcher,
 } from '@/hooks/useDashboard';
+import {
+  clearProtectedReportCaches,
+  isProtectedReportCacheKey,
+} from '@/hooks/useAuth';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -18,7 +24,7 @@ describe('dashboardFetcher', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(dashboardFetcher('/api/dashboard')).resolves.toEqual(body);
-    expect(fetchMock).toHaveBeenCalledWith('/api/dashboard');
+    expect(fetchMock).toHaveBeenCalledWith('/api/dashboard', { cache: 'no-store' });
   });
 
   it('throws a useful typed error for an unauthorized response', async () => {
@@ -39,5 +45,56 @@ describe('dashboardFetcher', () => {
       status: 500,
       message: 'Falha ao carregar dashboard (500).',
     });
+  });
+});
+
+describe('protected report SWR cache matcher', () => {
+  it('matches only exact protected endpoints in scoped array keys', () => {
+    expect(isProtectedReportCacheKey([
+      'protected-report',
+      '/api/dashboard?period=1m',
+      'company-a',
+      'rh',
+      '1m',
+      'all',
+    ])).toBe(true);
+    expect(isProtectedReportCacheKey([
+      'protected-report',
+      '/api/analytics/history?period=6',
+      'company-a',
+      'rh',
+    ])).toBe(true);
+    expect(isProtectedReportCacheKey([
+      'protected-report',
+      '/api/dashboard-legacy?period=1m',
+      'company-a',
+      'rh',
+    ])).toBe(false);
+    expect(isProtectedReportCacheKey(['other-cache', '/api/dashboard'])).toBe(false);
+    expect(isProtectedReportCacheKey('/api/dashboard')).toBe(false);
+  });
+
+  it('removes protected data from the real SWR cache without revalidation', async () => {
+    const key = [
+      'protected-report',
+      '/api/dashboard?period=1m',
+      'company-a',
+      'rh',
+      '1m',
+      'all',
+    ] as const;
+    const serializedKey = unstable_serialize(key);
+    await mutate(key, { secret: 86421 }, { revalidate: false });
+    const cacheEntry = {
+      ...cache.get(serializedKey),
+      _k: key,
+      data: { secret: 86421 },
+    };
+    cache.set(serializedKey, cacheEntry);
+    expect(cache.get(serializedKey)?.data).toEqual({ secret: 86421 });
+
+    await clearProtectedReportCaches();
+
+    expect(cache.get(serializedKey)?.data).toBeUndefined();
   });
 });

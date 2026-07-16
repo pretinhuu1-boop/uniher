@@ -1,188 +1,75 @@
 import { describe, expect, it } from 'vitest';
+
 import { createDashboardViewModel } from '@/app/(platform)/dashboard/dashboard-view-model';
-import type {
-  AgeDistribution,
-  CampaignStatus,
-  DashboardKPI,
-  Department,
-  EngagementDataPoint,
-  ROIProjection,
-} from '@/types/platform';
+import type { ProtectedDashboardProjection } from '@/types/platform';
+import { SUPPRESSION_MESSAGE } from '@/types/privacy';
 
-const engagement: EngagementDataPoint[] = [
-  { month: 'Jun', engagement: 68, retention: 61 },
-  { month: 'Jul', engagement: 72, retention: 66 },
-];
-
-const ageDistribution: AgeDistribution[] = [
-  { label: '26-35', percent: 100, color: '#536444' },
-];
-
-const roi: ROIProjection = {
-  roiMultiplier: 2,
-  savings: 'R$ 20 mil',
-  absenteeismReduction: '8%',
+const projection: ProtectedDashboardProjection = {
+  filters: { period: '1m' },
+  metrics: {
+    examActivity: { status: 'visible', value: 12 },
+    engagement: { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE },
+    healthRisk: { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE },
+    campaignParticipation: { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE },
+    roi: { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE },
+  },
+  departments: [
+    { id: 'd1', name: 'Opera\u00e7\u00f5es', color: '#536444', metric: { status: 'visible', value: 12 } },
+  ],
+  ageDistribution: [
+    { label: '26-35', color: '#536444', metric: { status: 'visible', value: 12 } },
+  ],
+  examActivitySeries: [
+    { period: '2026-07', metric: { status: 'visible', value: 12 } },
+  ],
 };
 
-const departments: Department[] = [
-  {
-    id: 'd1',
-    name: 'Operações',
-    collaborators: 20,
-    points: 0,
-    level: 1,
-    badges: 0,
-    engagementPercent: 61,
-    examsPercent: 0,
-    trend: 'stable',
-    color: '#536444',
-  },
-  {
-    id: 'd2',
-    name: 'Produto',
-    collaborators: 12,
-    points: 0,
-    level: 1,
-    badges: 0,
-    engagementPercent: 70,
-    examsPercent: 0,
-    trend: 'up',
-    color: '#b98643',
-  },
-];
+describe('RH protected dashboard view model', () => {
+  it('maps explicit protected summary metrics without converting suppression to zero', () => {
+    const model = createDashboardViewModel(projection);
 
-const campaigns: CampaignStatus[] = [
-  {
-    name: 'Julho',
-    month: 'Jul',
-    progress: 82,
-    status: 'active',
-    statusLabel: 'Ativa',
-    color: '#b98643',
-  },
-  {
-    name: 'Junho',
-    month: 'Jun',
-    progress: 100,
-    status: 'done',
-    statusLabel: 'Concluída',
-    color: '#536444',
-  },
-];
-
-describe('RH dashboard view model', () => {
-  it('maps the exact summary and action destinations from aggregate source data', () => {
-    const kpis: DashboardKPI[] = [
-      { label: 'Colaboradoras Ativas', value: 84, icon: 'users' },
-      { label: 'Engajamento', value: '72%', icon: 'activity' },
-    ];
-
-    const model = createDashboardViewModel({
-      kpis,
-      departments,
-      campaigns,
-      roi,
-      engagement,
-      ageDistribution,
-    });
-
-    expect(model.summary).toEqual([
-      expect.objectContaining({ label: 'Participação ativa', value: '72%' }),
-      expect.objectContaining({ label: 'Ações em andamento', value: 1 }),
-      expect.objectContaining({ label: 'Pontos de atenção', value: 1 }),
-    ]);
-    expect(model.actions.map(({ label, href }) => ({ label, href }))).toEqual([
-      { label: 'Campanhas', href: '/campanhas' },
-      { label: 'Convites', href: '/convites' },
-      { label: 'Histórico', href: '/historico' },
-    ]);
-  });
-
-  it('exposes only aggregate department and campaign fields', () => {
-    const model = createDashboardViewModel({
-      kpis: [],
-      departments,
-      campaigns,
-      roi,
-      engagement,
-      ageDistribution,
-    });
-
-    expect(model.departments).toEqual([
+    expect(model.summary.map(({ label, metric }) => ({ label, metric }))).toEqual([
+      { label: 'Atividade de exames', metric: { status: 'visible', value: 12 } },
       {
-        id: 'd1',
-        name: 'Operações',
-        engagementPercent: 61,
-        trend: 'stable',
-        color: '#536444',
+        label: 'Engajamento',
+        metric: { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE },
       },
       {
-        id: 'd2',
-        name: 'Produto',
-        engagementPercent: 70,
-        trend: 'up',
-        color: '#b98643',
+        label: 'Participa\u00e7\u00e3o em campanha',
+        metric: { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE },
       },
     ]);
-    expect(model.campaigns).toEqual(campaigns);
-    expect(JSON.stringify(model)).not.toMatch(/diagnóstico|paciente|individual|collaborators|examsPercent/i);
   });
 
-  it('passes ROI and chart aggregates through unchanged', () => {
-    const model = createDashboardViewModel({
-      kpis: [],
-      departments: [],
-      campaigns: [],
-      roi,
-      engagement,
-      ageDistribution,
-    });
+  it('exposes only protected department, age and exam-series fields', () => {
+    const model = createDashboardViewModel(projection);
 
-    expect(model.roi).toBe(roi);
-    expect(model.engagement).toBe(engagement);
-    expect(model.ageDistribution).toBe(ageDistribution);
+    expect(model.departments).toEqual(projection.departments);
+    expect(model.ageDistribution).toEqual(projection.ageDistribution);
+    expect(model.examActivitySeries).toEqual(projection.examActivitySeries);
+    expect(model.metrics.healthRisk).toEqual(
+      { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE },
+    );
+    expect(JSON.stringify(model)).not.toMatch(/points|ranking|badges|streak|roiMultiplier|progress/i);
   });
 
-  it('falls back to zero participation and excludes the 70 percent boundary from attention', () => {
-    const model = createDashboardViewModel({
-      kpis: [{ label: 'Colaboradoras Ativas', value: 0, icon: 'users' }],
-      departments: [departments[1]],
-      campaigns: [campaigns[1]],
-      roi,
-      engagement: [],
-      ageDistribution: [],
-    });
+  it('preserves a minimum-cohort suppression marker exactly', () => {
+    const suppressed: ProtectedDashboardProjection = {
+      ...projection,
+      metrics: {
+        ...projection.metrics,
+        examActivity: { status: 'suppressed', reason: 'minimum_cohort', message: SUPPRESSION_MESSAGE },
+      },
+    };
 
-    expect(model.summary.map(({ value }) => value)).toEqual(['0%', 0, 0]);
+    expect(createDashboardViewModel(suppressed).summary[0].metric).toEqual(
+      { status: 'suppressed', reason: 'minimum_cohort', message: SUPPRESSION_MESSAGE },
+    );
   });
-
-  it.each(['ENGAJAMENTO', ' Engajaménto ', 'engajamento'])(
-    'normalizes the engagement KPI label variant %j',
-    (label) => {
-      const model = createDashboardViewModel({
-        kpis: [{ label, value: '81%', icon: 'activity' }],
-        departments: [],
-        campaigns: [],
-        roi,
-        engagement,
-        ageDistribution,
-      });
-
-      expect(model.summary[0].value).toBe('81%');
-    },
-  );
 
   it('returns fresh readonly actions for each view model', () => {
-    const source = {
-      kpis: [],
-      departments: [],
-      campaigns: [],
-      roi,
-      engagement,
-      ageDistribution,
-    };
-    const first = createDashboardViewModel(source);
-    const second = createDashboardViewModel(source);
+    const first = createDashboardViewModel(projection);
+    const second = createDashboardViewModel(projection);
 
     expect(first.actions).not.toBe(second.actions);
     expect(first.actions[0]).not.toBe(second.actions[0]);

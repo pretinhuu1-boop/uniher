@@ -1,9 +1,15 @@
+import { serializeProtectedMetricForCsv } from '@/lib/privacy/aggregate-suppression';
+import type { ProtectedMetric } from '@/types/privacy';
 import type { DashboardViewModel } from './dashboard-view-model';
 
 const DASHBOARD_TIME_ZONE = 'America/Sao_Paulo';
 
+function assertNever(value: never): never {
+  throw new Error(`Estado de m\u00e9trica protegida n\u00e3o suportado: ${JSON.stringify(value)}`);
+}
+
 export function neutralizeCsvFormula(value: string): string {
-  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return /^[=+\-@\t\r\uFF1D\uFF0B\uFF0D\uFF20]/.test(value) ? `'${value}` : value;
 }
 
 function csvCell(value: string | number): string {
@@ -11,33 +17,48 @@ function csvCell(value: string | number): string {
   return `"${safeValue.replaceAll('"', '""')}"`;
 }
 
+function protectedCsvCell(metric: ProtectedMetric<unknown>): string {
+  switch (metric.status) {
+    case 'visible':
+    case 'suppressed':
+      return serializeProtectedMetricForCsv(metric);
+    default:
+      return assertNever(metric);
+  }
+}
+
 export function buildDashboardCsv(model: DashboardViewModel): string {
-  const rows: Array<Array<string | number>> = [
-    ['Resumo', 'Valor', 'Detalhe'],
-    ...model.summary.map((item) => [item.label, item.value, item.detail]),
-    [],
-    ['Departamentos', 'Engajamento', 'Tendência'],
+  const rows: string[] = [
+    [csvCell('Resumo protegido'), csvCell('Valor'), csvCell('Detalhe')].join(','),
+    ...model.summary.map((item) => [
+      csvCell(item.label),
+      protectedCsvCell(item.metric),
+      csvCell(item.detail),
+    ].join(',')),
+    '',
+    [csvCell('Departamentos'), csvCell('Contribuintes ativos protegidos')].join(','),
     ...model.departments.map((department) => [
-      department.name,
-      `${department.engagementPercent}%`,
-      department.trend,
-    ]),
-    [],
-    ['Campanhas', 'Mês', 'Progresso', 'Status'],
-    ...model.campaigns.map((campaign) => [
-      campaign.name,
-      campaign.month,
-      `${campaign.progress}%`,
-      campaign.statusLabel,
-    ]),
-    [],
-    ['Impacto estimado', 'Valor'],
-    ['ROI', `${model.roi.roiMultiplier}x`],
-    ['Economia anual', model.roi.savings],
-    ['Redução de absenteísmo', model.roi.absenteeismReduction],
+      csvCell(department.name),
+      protectedCsvCell(department.metric),
+    ].join(',')),
+    '',
+    [csvCell('Faixas et\u00e1rias'), csvCell('Contribuintes ativos protegidos')].join(','),
+    ...model.ageDistribution.map((bucket) => [
+      csvCell(bucket.label),
+      protectedCsvCell(bucket.metric),
+    ].join(',')),
+    '',
+    [csvCell('Atividade de exames por m\u00eas'), csvCell('Contribuintes distintos')].join(','),
+    ...model.examActivitySeries.map((point) => [
+      csvCell(point.period),
+      protectedCsvCell(point.metric),
+    ].join(',')),
+    '',
+    [csvCell('ROI e absente\u00edsmo'), protectedCsvCell(model.metrics.roi)].join(','),
+    [csvCell('Risco de sa\u00fade'), protectedCsvCell(model.metrics.healthRisk)].join(','),
   ];
 
-  return rows.map((row) => row.map(csvCell).join(',')).join('\n');
+  return rows.join('\n');
 }
 
 export function formatDashboardDate(date: Date): string {
@@ -48,29 +69,11 @@ export function formatDashboardDate(date: Date): string {
     day: '2-digit',
   }).formatToParts(date);
   const values = new Map(parts.map((part) => [part.type, part.value]));
-
   return `${values.get('year')}-${values.get('month')}-${values.get('day')}`;
 }
 
-function hasNonZeroValue(value: string | number): boolean {
-  if (typeof value === 'number') return Number.isFinite(value) && value !== 0;
-
-  const digits = value.replace(/[^\d]/g, '');
-  return digits !== '' && Number(digits) > 0;
-}
-
-export function hasMeaningfulDashboardData(model: DashboardViewModel): boolean {
-  const absenteeism = model.roi.absenteeismReduction.trim();
-  const hasAbsenteeismImpact = absenteeism !== '' && absenteeism !== '—' && absenteeism !== '0%';
-
-  return model.summary.some((item) => hasNonZeroValue(item.value))
-    || model.departments.length > 0
-    || model.campaigns.length > 0
-    || model.engagement.length > 0
-    || model.ageDistribution.length > 0
-    || model.roi.roiMultiplier > 0
-    || hasNonZeroValue(model.roi.savings)
-    || hasAbsenteeismImpact;
+export function hasMeaningfulDashboardData(_model: DashboardViewModel): boolean {
+  return true;
 }
 
 export function downloadDashboardCsv(model: DashboardViewModel, date = new Date()) {

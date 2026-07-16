@@ -1,10 +1,30 @@
 'use client';
 import { useState, useCallback, createContext, useContext, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { mutate as mutateSWR } from 'swr';
 import { MockUser, UserRole } from '@/types/platform';
 import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 const STORAGE_KEY_USER = 'uniher-user';
+const PROTECTED_REPORT_ENDPOINTS = [
+  '/api/dashboard',
+  '/api/analytics/history',
+  '/api/analytics/communications',
+] as const;
+
+export function isProtectedReportCacheKey(key: unknown): boolean {
+  if (!Array.isArray(key) || key[0] !== 'protected-report' || typeof key[1] !== 'string') {
+    return false;
+  }
+  const endpoint = key[1].split('?')[0];
+  return PROTECTED_REPORT_ENDPOINTS.some((candidate) => candidate === endpoint);
+}
+
+export async function clearProtectedReportCaches(): Promise<void> {
+  await mutateSWR(isProtectedReportCacheKey, undefined, {
+    revalidate: false,
+  });
+}
 
 /**
  * Minimal user data stored in localStorage for UI routing only (not for security).
@@ -58,7 +78,7 @@ interface AuthContextValue {
   approved: boolean;
   login: (email: string, password: string) => Promise<MockUser | null>;
   register: (data: any) => Promise<boolean>;
-  selectRole: (role: UserRole) => void;
+  selectRole: (role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<MockUser | null>;
 }
@@ -86,7 +106,7 @@ export function useAuthState(): AuthContextValue {
 
     fetch('/api/auth/me')
       .then(r => r.ok ? r.json() : null)
-      .then(data => {
+      .then(async data => {
         if (data?.user) {
           const u = data.user;
           const updated: MockUser = {
@@ -94,6 +114,7 @@ export function useAuthState(): AuthContextValue {
             name: u.name,
             email: u.email,
             role: u.role as UserRole,
+            companyId: u.companyId ?? u.company_id,
             isMasterAdmin: u.isMasterAdmin === true,
             joinedAt: u.created_at,
             also_collaborator: u.also_collaborator,
@@ -102,6 +123,7 @@ export function useAuthState(): AuthContextValue {
             mustChangePassword: u.mustChangePassword === true,
             firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
           };
+          await clearProtectedReportCaches();
           setUser(updated);
           setApproved(u.approved !== 0);
           persistUser(updated);
@@ -111,14 +133,16 @@ export function useAuthState(): AuthContextValue {
             router.push('/primeiro-acesso');
           }
         } else {
+          await clearProtectedReportCaches();
           setUser(null);
           setApproved(true);
           clearStoredUser();
         }
       })
-      .catch(() => {
+      .catch(async () => {
         // API unavailable — fall back to localStorage for offline support
         if (stored) {
+          await clearProtectedReportCaches();
           setUser({
             id: stored.id,
             name: stored.name,
@@ -153,6 +177,7 @@ export function useAuthState(): AuthContextValue {
         name: u.name,
         email: u.email,
         role: u.role as UserRole,
+        companyId: u.companyId ?? u.company_id,
         isMasterAdmin: u.isMasterAdmin === true,
         joinedAt: u.created_at,
         also_collaborator: u.also_collaborator,
@@ -160,6 +185,7 @@ export function useAuthState(): AuthContextValue {
         firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
       };
 
+      await clearProtectedReportCaches();
       setUser(loggedUser);
       persistUser(loggedUser);
       // Mark session as active so fetch interceptor doesn't show reauth modal on fresh login
@@ -187,12 +213,14 @@ export function useAuthState(): AuthContextValue {
         name: u.name,
         email: u.email,
         role: u.role as UserRole,
+        companyId: u.companyId ?? u.company_id,
         isMasterAdmin: u.isMasterAdmin === true,
         joinedAt: u.created_at,
         mustChangePassword: u.mustChangePassword === true,
         firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
       };
 
+      await clearProtectedReportCaches();
       setUser(registered);
       persistUser(registered);
       // Mark session as active so fetch interceptor doesn't show reauth modal on fresh registration
@@ -203,9 +231,10 @@ export function useAuthState(): AuthContextValue {
     }
   }, []);
 
-  const selectRole = useCallback((role: UserRole) => {
+  const selectRole = useCallback(async (role: UserRole) => {
     if (!user) return;
     const updated = { ...user, role };
+    await clearProtectedReportCaches();
     setUser(updated);
     persistUser(updated);
   }, [user]);
@@ -214,6 +243,7 @@ export function useAuthState(): AuthContextValue {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch {}
+    await clearProtectedReportCaches();
     setUser(null);
     clearStoredUser();
     // Clear session flags so next login starts fresh
@@ -228,6 +258,10 @@ export function useAuthState(): AuthContextValue {
       const data = await response.json().catch(() => null);
 
       if (!data?.user) {
+        await clearProtectedReportCaches();
+        setUser(null);
+        setApproved(true);
+        clearStoredUser();
         return null;
       }
 
@@ -237,6 +271,7 @@ export function useAuthState(): AuthContextValue {
         name: u.name,
         email: u.email,
         role: u.role as UserRole,
+        companyId: u.companyId ?? u.company_id,
         isMasterAdmin: u.isMasterAdmin === true,
         joinedAt: u.created_at,
         also_collaborator: u.also_collaborator,
@@ -245,6 +280,7 @@ export function useAuthState(): AuthContextValue {
         mustChangePassword: u.mustChangePassword === true,
         firstAccessTourCompleted: u.firstAccessTourCompleted !== false,
       };
+      await clearProtectedReportCaches();
       setUser(updated);
       persistUser(updated);
       return updated;
@@ -273,7 +309,7 @@ export const AuthContext = createContext<AuthContextValue>({
   approved: true,
   login: async () => null,
   register: async () => false,
-  selectRole: () => {},
+  selectRole: async () => {},
   logout: async () => {},
   refreshUser: async () => null,
 });

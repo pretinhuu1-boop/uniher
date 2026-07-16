@@ -1,28 +1,14 @@
 'use client';
 
 import useSWR from 'swr';
+
+import { useAuth } from '@/hooks/useAuth';
 import type {
-  AgeDistribution,
-  CampaignStatus,
-  ConviteStatus,
-  DashboardKPI,
-  Department,
-  EngagementDataPoint,
-  HealthRisk,
-  ROIProjection,
+  DashboardPeriod,
+  ProtectedDashboardProjection,
 } from '@/types/platform';
 
-export interface DashboardApiResponse {
-  kpis?: DashboardKPI[];
-  departments?: Department[];
-  roi?: ROIProjection;
-  campaigns?: CampaignStatus[];
-  engagement?: EngagementDataPoint[];
-  ageDistribution?: AgeDistribution[];
-  healthRisk?: HealthRisk[];
-  invites?: ConviteStatus;
-  reports?: unknown[];
-}
+export type DashboardApiResponse = ProtectedDashboardProjection;
 
 export class DashboardHttpError extends Error {
   constructor(public readonly status: number, message: string) {
@@ -45,42 +31,37 @@ async function getErrorMessage(response: Response): Promise<string | null> {
   } catch {
     return null;
   }
-
   return null;
 }
 
 export async function dashboardFetcher(url: string): Promise<DashboardApiResponse> {
-  const response = await fetch(url);
+  const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) {
     const message = await getErrorMessage(response)
       ?? `Falha ao carregar dashboard (${response.status}).`;
     throw new DashboardHttpError(response.status, message);
   }
-
   return response.json() as Promise<DashboardApiResponse>;
 }
 
-export function useDashboard() {
+export function useDashboard(period: DashboardPeriod, departmentId?: string) {
+  const { user } = useAuth();
+  const params = new URLSearchParams({ period });
+  if (departmentId) params.set('departmentId', departmentId);
+  const endpoint = `/api/dashboard?${params.toString()}`;
+  const key = user?.companyId && user.role
+    ? ['protected-report', endpoint, user.companyId, user.role, period, departmentId ?? 'all'] as const
+    : null;
+
   const { data, error, isLoading } = useSWR<DashboardApiResponse, DashboardHttpError>(
-    '/api/dashboard',
-    dashboardFetcher,
+    key,
+    () => dashboardFetcher(endpoint),
     {
-      revalidateOnFocus: false,
-      dedupingInterval: 30_000,
+      revalidateOnFocus: true,
+      dedupingInterval: 0,
+      keepPreviousData: false,
     },
   );
 
-  return {
-    kpis: data?.kpis ?? [],
-    departments: data?.departments ?? [],
-    roi: data?.roi ?? { roiMultiplier: 0, savings: 'R$ 0', absenteeismReduction: '—' },
-    campaigns: data?.campaigns ?? [],
-    engagement: data?.engagement ?? [],
-    ageDistribution: data?.ageDistribution ?? [],
-    healthRisk: data?.healthRisk ?? [],
-    invites: data?.invites ?? { total: 0, pending: 0, accepted: 0, expired: 0 },
-    reports: data?.reports ?? [],
-    isLoading,
-    error,
-  };
+  return { data, isLoading, error };
 }

@@ -1,40 +1,30 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('react-chartjs-2', async () => {
-  const React = await import('react');
-  return {
-    Doughnut: () => React.createElement('canvas', { 'data-chart': 'doughnut' }),
-    Line: () => React.createElement('canvas', { 'data-chart': 'line' }),
-  };
-});
+import { describe, expect, it } from 'vitest';
 
 import { AgeOverview } from '@/app/(platform)/dashboard/components/AgeOverview';
 import { EngagementOverview } from '@/app/(platform)/dashboard/components/EngagementOverview';
+import { SUPPRESSION_MESSAGE } from '@/types/privacy';
 
-describe('RH dashboard chart accessibility', () => {
-  it('labels the engagement visualization and exposes the same data in a semantic table', () => {
+describe('RH protected dashboard accessibility', () => {
+  it('removes the legacy engagement chart and renders only the protected message', () => {
     const html = renderToStaticMarkup(createElement(EngagementOverview, {
-      data: [{ month: 'Jul', engagement: 72, retention: 66 }],
+      metric: { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE },
     }));
 
-    expect(html).toContain('role="img"');
-    expect(html).toContain('aria-label="Gráfico de engajamento e retenção por mês"');
-    expect(html).toContain('<table');
-    expect(html).toContain('<caption>Dados mensais de engajamento e retenção</caption>');
-    expect(html).toContain('<th scope="col">Mês</th>');
-    expect(html).toContain('<td>Jul</td>');
-    expect(html).toContain('<td>72%</td>');
-    expect(html).toContain('<td>66%</td>');
+    expect(html).toContain(`role="status">${SUPPRESSION_MESSAGE}`);
+    expect(html).not.toContain('<canvas');
+    expect(html).not.toMatch(/72%|reten\u00e7\u00e3o/i);
   });
 
-  it('gives the age distribution visualization a clear accessible name', () => {
+  it('renders a protected visible age count without a percentage denominator', () => {
     const html = renderToStaticMarkup(createElement(AgeOverview, {
-      data: [{ label: '26-35', percent: 100, color: '#536444' }],
+      data: [{ label: '26-35', color: '#536444', metric: { status: 'visible', value: 12 } }],
     }));
 
-    expect(html).toContain('role="img"');
-    expect(html).toContain('aria-label="Distribuição percentual por faixa etária"');
+    expect(html).toContain('26-35');
+    expect(html).toContain('<strong>12</strong>');
+    expect(html).not.toContain('%');
+    expect(html).not.toContain('<canvas');
   });
 });

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   buildDashboardCsv,
   downloadDashboardCsv,
@@ -7,46 +8,41 @@ import {
   neutralizeCsvFormula,
 } from '@/app/(platform)/dashboard/dashboard-export';
 import type { DashboardViewModel } from '@/app/(platform)/dashboard/dashboard-view-model';
+import { SUPPRESSION_MESSAGE } from '@/types/privacy';
+
+const suppressed = { status: 'suppressed', reason: 'minimum_cohort', message: SUPPRESSION_MESSAGE } as const;
+const notComputable = { status: 'suppressed', reason: 'not_computable', message: SUPPRESSION_MESSAGE } as const;
 
 const model: DashboardViewModel = {
   summary: [
-    {
-      label: 'Participação ativa',
-      value: '72%',
-      detail: 'últimos 30 dias',
-      state: 'positive',
-    },
+    { label: 'Atividade de exames', metric: suppressed, detail: 'per\u00edodo', state: 'neutral' },
+    { label: 'Engajamento', metric: notComputable, detail: 'indispon\u00edvel', state: 'neutral' },
+    { label: 'Participa\u00e7\u00e3o em campanha', metric: notComputable, detail: 'indispon\u00edvel', state: 'neutral' },
   ],
   actions: [],
+  metrics: {
+    examActivity: suppressed,
+    engagement: notComputable,
+    healthRisk: notComputable,
+    campaignParticipation: notComputable,
+    roi: notComputable,
+  },
   departments: [
-    {
-      id: 'd1',
-      name: '=SUM(1,1)',
-      engagementPercent: 61,
-      trend: 'stable',
-      color: '#536444',
-    },
+    { id: 'd1', name: '=SUM(1,1)', color: '#536444', metric: suppressed },
   ],
-  campaigns: [
-    {
-      name: '+cmd\n"quoted"',
-      month: 'Jul',
-      progress: 82,
-      status: 'active',
-      statusLabel: 'Ativa',
-      color: '#b98643',
-    },
+  ageDistribution: [
+    { label: '26-35', color: '#536444', metric: { status: 'visible', value: 12 } },
   ],
-  roi: { roiMultiplier: 2, savings: 'R$ 20 mil', absenteeismReduction: '8%' },
-  engagement: [],
-  ageDistribution: [],
+  examActivitySeries: [
+    { period: '2026-07', metric: suppressed },
+  ],
 };
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('RH dashboard CSV export', () => {
+describe('RH protected dashboard CSV export', () => {
   it.each(['=2+2', '+SUM(1,1)', '-10+20', '@SUM(1,1)', '\t=cmd', '\r=cmd'])(
     'neutralizes formula-leading cell %j',
     (value) => {
@@ -54,53 +50,22 @@ describe('RH dashboard CSV export', () => {
     },
   );
 
-  it('builds exact safe CSV while preserving commas, quotes, and newlines', () => {
-    expect(buildDashboardCsv(model)).toBe([
-      '"Resumo","Valor","Detalhe"',
-      '"Participação ativa","72%","últimos 30 dias"',
-      '',
-      '"Departamentos","Engajamento","Tendência"',
-      '"\'=SUM(1,1)","61%","stable"',
-      '',
-      '"Campanhas","Mês","Progresso","Status"',
-      '"\'+cmd',
-      '""quoted""","Jul","82%","Ativa"',
-      '',
-      '"Impacto estimado","Valor"',
-      '"ROI","2x"',
-      '"Economia anual","R$ 20 mil"',
-      '"Redução de absenteísmo","8%"',
-    ].join('\n'));
+  it('serializes the protected union and never substitutes a suppressed value', () => {
+    const csv = buildDashboardCsv(model);
+
+    expect(csv).toContain(SUPPRESSION_MESSAGE);
+    expect(csv).toContain('"\'=SUM(1,1)"');
+    expect(csv).toContain('"26-35",12');
+    expect(csv).not.toMatch(/86421|rawValue|contributorCount|numerator|denominator/);
   });
 
-  it('formats the filename date in the São Paulo calendar day', () => {
+  it('formats the filename date in the S\u00e3o Paulo calendar day', () => {
     const nearUtcMidnight = new Date('2026-07-16T02:30:00.000Z');
-
     expect(formatDashboardDate(nearUtcMidnight)).toBe('2026-07-15');
   });
 
-  it('does not consider an all-zero dashboard meaningful for export', () => {
-    const emptyModel: DashboardViewModel = {
-      ...model,
-      summary: model.summary.map((item) => ({ ...item, value: '0%' })),
-      departments: [],
-      campaigns: [],
-      roi: { roiMultiplier: 0, savings: 'R$ 0', absenteeismReduction: '—' },
-    };
-
-    expect(hasMeaningfulDashboardData(emptyModel)).toBe(false);
+  it('keeps export enabled when every sensitive cell is suppressed', () => {
     expect(hasMeaningfulDashboardData(model)).toBe(true);
-  });
-
-  it('considers a non-zero summary meaningful without detailed series', () => {
-    const summaryOnlyModel: DashboardViewModel = {
-      ...model,
-      departments: [],
-      campaigns: [],
-      roi: { roiMultiplier: 0, savings: 'R$ 0', absenteeismReduction: '0%' },
-    };
-
-    expect(hasMeaningfulDashboardData(summaryOnlyModel)).toBe(true);
   });
 
   it('defers object URL cleanup until after starting the download', () => {

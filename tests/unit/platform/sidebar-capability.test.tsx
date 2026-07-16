@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ImgHTMLAttributes } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
+  clearProtectedReportCaches: vi.fn<() => Promise<void>>(),
   user: {
     id: 'leadership-common',
     name: 'Liderança comum',
@@ -31,6 +32,7 @@ vi.mock('next/image', () => ({
 vi.mock('swr', () => ({ default: () => ({ data: undefined }) }));
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: mocks.user, logout: vi.fn() }),
+  clearProtectedReportCaches: mocks.clearProtectedReportCaches,
 }));
 
 import Sidebar from '@/components/platform/Sidebar';
@@ -38,6 +40,9 @@ import Sidebar from '@/components/platform/Sidebar';
 describe('Sidebar persisted collaborator capability', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    mocks.push.mockReset();
+    mocks.clearProtectedReportCaches.mockReset();
+    mocks.clearProtectedReportCaches.mockResolvedValue();
     mocks.user.also_collaborator = 0;
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
@@ -68,5 +73,24 @@ describe('Sidebar persisted collaborator capability', () => {
 
     await waitFor(() => expect(screen.queryByRole('link', { name: /Minha agenda/i })).not.toBeNull());
     expect(screen.queryByRole('link', { name: /Visão geral/i })).toBeNull();
+  });
+
+  it('clears protected report caches before switching the persisted view', async () => {
+    mocks.user.also_collaborator = 1;
+    let releaseCacheClear: (() => void) | undefined;
+    mocks.clearProtectedReportCaches.mockReturnValue(new Promise<void>((resolve) => {
+      releaseCacheClear = resolve;
+    }));
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Colaboradora' }));
+
+    expect(mocks.clearProtectedReportCaches).toHaveBeenCalledOnce();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('uniher-view-mode')).toBeNull();
+
+    releaseCacheClear?.();
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/colaboradora'));
+    expect(sessionStorage.getItem('uniher-view-mode')).toBe('colaboradora');
   });
 });
