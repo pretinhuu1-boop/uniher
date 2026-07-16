@@ -1,6 +1,6 @@
 # UniHER Product IA, Roles, Entitlements and Privacy Design
 
-**Status:** approved implementation direction; product contract pending final review
+**Status:** approved product contract; implementation gated by Wave 1.1 and Wave 1.2
 
 **Date:** 2026-07-15
 
@@ -71,7 +71,7 @@ The first navigation alignment reuses only existing routes:
 | Conquistas | Objetivos e recompensas | `/objetivos` | Voluntary, non-sensitive participation only |
 | Conquistas | Desafios | `/desafios` | Voluntary, non-sensitive participation only |
 | Conquistas | Minhas conquistas | `/conquistas` | Existing route |
-| Conquistas | Classificação geral | `/liga` | Hidden until tenant isolation and eligible-points rules pass Wave 1.1 |
+| Conquistas | Classificação geral | `/liga` | Hidden through Wave 1.2; Wave 2C may re-enable it only after tenant isolation and an eligible-action points ledger pass their gate |
 | Pessoal | Notificações | `/notificacoes` | Existing route |
 | Pessoal | Configurações | `/configuracoes` | Existing route |
 
