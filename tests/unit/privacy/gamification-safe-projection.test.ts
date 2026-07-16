@@ -6,13 +6,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const boundary = vi.hoisted(() => ({
   db: null as Database.Database | null,
   sql: [] as string[],
+  events: [] as string[],
 }));
 
 vi.mock('@/lib/auth/middleware', () => {
   const expose = (handler: (...args: any[]) => unknown) => handler;
   return { withAuth: expose, withRole: () => expose, withMasterAdmin: expose };
 });
-vi.mock('@/lib/db/init', () => ({ initDb: async () => undefined }));
+vi.mock('@/lib/db/init', () => ({
+  initDb: async () => { boundary.events.push('initDb'); },
+}));
 vi.mock('@/lib/security/rate-limit', () => ({
   checkAuthRateLimit: async () => undefined,
   checkReadRateLimit: async () => undefined,
@@ -32,19 +35,25 @@ vi.mock('@/lib/auth/cookies', () => ({
 }));
 vi.mock('@/lib/audit', () => ({ logAudit: async () => undefined }));
 vi.mock('@/lib/db', () => ({
-  getReadDb: () => ({
-    prepare: (sql: string) => {
-      boundary.sql.push(sql);
-      if (!boundary.db) throw new Error('boundary database not configured');
-      return boundary.db.prepare(sql);
-    },
-  }),
-  getWriteQueue: () => ({
-    enqueue: async (operation: (db: Database.Database) => unknown) => {
-      if (!boundary.db) throw new Error('boundary database not configured');
-      return operation(boundary.db);
-    },
-  }),
+  getReadDb: () => {
+    boundary.events.push('getReadDb');
+    return {
+      prepare: (sql: string) => {
+        boundary.sql.push(sql);
+        if (!boundary.db) throw new Error('boundary database not configured');
+        return boundary.db.prepare(sql);
+      },
+    };
+  },
+  getWriteQueue: () => {
+    boundary.events.push('getWriteQueue');
+    return {
+      enqueue: async (operation: (db: Database.Database) => unknown) => {
+        if (!boundary.db) throw new Error('boundary database not configured');
+        return operation(boundary.db);
+      },
+    };
+  },
 }));
 
 import { GET as getCollaboratorHome } from '@/app/api/collaborator/route';
@@ -77,6 +86,7 @@ afterEach(() => {
   boundary.db?.close();
   boundary.db = null;
   boundary.sql = [];
+  boundary.events = [];
 });
 
 function useBoundaryDatabase() {
@@ -94,6 +104,11 @@ function useBoundaryDatabase() {
       badges TEXT DEFAULT 'CANARY_BADGES', daily_xp_goal INTEGER DEFAULT 50,
       daily_xp_earned INTEGER DEFAULT 44, daily_xp_date TEXT,
       created_at TEXT DEFAULT '2026-01-01', updated_at TEXT DEFAULT '2026-01-02', deleted_at TEXT
+    );
+    CREATE TABLE dsar_export_cooldowns (
+      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      next_allowed_at INTEGER NOT NULL CHECK(next_allowed_at >= 0),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE TABLE departments (id TEXT PRIMARY KEY, company_id TEXT, name TEXT);
     CREATE TABLE companies (
@@ -344,7 +359,10 @@ describe('safe authenticated projections', () => {
   });
 
   it('labels preserved DSAR evidence as legacy derived data instead of current health or ranking', () => {
-    const source = read('src/app/api/users/me/export/route.ts');
+    const source = [
+      read('src/app/api/users/me/export/route.ts'),
+      read('src/lib/privacy/dsar-export.ts'),
+    ].join('\n');
     expect(source).toContain('legacyDerivedData');
     expect(source).toContain('Derivado legado');
     expect(source).toMatch(/health_scores|healthScores/);
@@ -454,7 +472,31 @@ describe('safe authenticated projections', () => {
       { auth: historyAuth } as any,
     );
     expect(response.status).toBe(200);
-    const payload = await response.json();
+    expect(boundary.events.slice(-3)).toEqual(['initDb', 'getWriteQueue', 'getReadDb']);
+
+    const eventsBeforeSecondExport = boundary.events.length;
+    const secondResponse = await getDsarExport(
+      new Request('http://localhost/api/users/me/export') as any,
+      { auth: historyAuth } as any,
+    );
+    expect(secondResponse.status).toBe(429);
+    expect(await secondResponse.json()).toMatchObject({ status: 429, code: 'RATE_LIMIT' });
+    expect(boundary.events.slice(eventsBeforeSecondExport)).toEqual(['initDb', 'getWriteQueue']);
+
+    const reader = response.body?.getReader();
+    expect(reader).toBeDefined();
+    if (!reader) return;
+    const chunks: string[] = [];
+    const decoder = new TextDecoder();
+    while (true) {
+      const result = await reader.read();
+      if (result.done) break;
+      chunks.push(decoder.decode(result.value, { stream: true }));
+    }
+    chunks.push(decoder.decode());
+    expect(chunks.length).toBeGreaterThan(1203);
+
+    const payload = JSON.parse(chunks.join(''));
     const legacy = payload.legacyDerivedData;
 
     expect({
@@ -483,19 +525,40 @@ describe('safe authenticated projections', () => {
     });
   });
 
-  it('keeps reachable collaborator role descriptions free of gamified reward promises', () => {
-    const roleDescriptionSources = [
-      'src/app/(platform)/admin/page.tsx',
-      'src/app/(platform)/convites/page.tsx',
-    ];
+  it('streams DSAR collections with pull and row iterators instead of aggregate serialization', () => {
+    const routeSource = read('src/app/api/users/me/export/route.ts');
+    const helperPath = path.join(root, 'src/lib/privacy/dsar-export.ts');
+    const helperSource = fs.existsSync(helperPath) ? fs.readFileSync(helperPath, 'utf8') : '';
+    const source = `${routeSource}\n${helperSource}`;
 
-    for (const page of roleDescriptionSources) {
-      const roleDescriptions = read(page)
-        .split('\n')
-        .filter((line) => line.includes('Usuária padrão'))
-        .join('\n');
-      expect(roleDescriptions, page).not.toMatch(/\b(?:pontos?|xp|ranking)\b/i);
-      expect(roleDescriptions, page).toContain('Usuária padrão — acessa conteúdos e recursos de bem-estar');
+    expect(routeSource).toContain('new ReadableStream');
+    expect(routeSource).toMatch(/pull\s*\(controller\)/);
+    expect(routeSource).not.toMatch(/start\s*\(controller\)/);
+    expect(routeSource).toMatch(/cancel\s*\(\)/);
+    expect(routeSource).toContain('iterator.return');
+    expect(source).toContain('.iterate(');
+    expect(source).not.toContain('.all(');
+    expect(source).not.toMatch(/\bexportData\b|JSON\.stringify\(\s*exportData/);
+    expect(source).toMatch(/type\s+NOT\s+IN\s*\(/i);
+    expect(source).toMatch(/type\s+IN\s*\(/i);
+    expect(routeSource).toContain("'Cache-Control': 'private, no-store'");
+    expect(routeSource).toContain("'Vary': 'Cookie'");
+  });
+
+  it('keeps reachable collaborator role descriptions free of gamified reward promises', () => {
+    const adminSource = read('src/app/(platform)/admin/page.tsx');
+    const invitesSource = read('src/app/(platform)/convites/page.tsx');
+    const adminTitleExpression = adminSource.match(/title=\{editForm\.role === 'rh'[\s\S]*?\}>/)?.[0] ?? '';
+    const inviteRoleOptions = invitesSource.match(/const ROLE_OPTIONS = \[[\s\S]*?\n\];/)?.[0] ?? '';
+
+    expect(adminTitleExpression).not.toBe('');
+    expect(inviteRoleOptions).not.toBe('');
+    for (const [surface, roleDescriptions] of [
+      ['src/app/(platform)/admin/page.tsx', adminTitleExpression],
+      ['src/app/(platform)/convites/page.tsx', inviteRoleOptions],
+    ] as const) {
+      expect(roleDescriptions, surface).not.toMatch(/\b(?:pontos?|xp|ranking)\b/i);
+      expect(roleDescriptions, surface).toContain('Usuária padrão — acessa conteúdos e recursos de bem-estar');
     }
   });
 
