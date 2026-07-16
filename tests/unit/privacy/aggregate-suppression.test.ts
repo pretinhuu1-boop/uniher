@@ -192,6 +192,66 @@ describe('aggregate privacy kernel', () => {
     }
   });
 
+  it('propagates a preexisting complementary suppression across overlapping constraints', () => {
+    const cells: AggregateCell<number>[] = [
+      {
+        id: 'already-protected',
+        status: 'suppressed',
+        reason: 'complementary',
+        message: SUPPRESSION_MESSAGE,
+      },
+      numericCell('visible-peer', 12, 12),
+      numericCell('visible-total', 20, 20),
+      numericCell('overlap-peer', 14, 14),
+      numericCell('overlap-total', 34, 34),
+    ];
+    const constraints: SuppressionConstraint[] = [
+      {
+        id: 'preexisting-complementary-row',
+        kind: 'row',
+        cellIds: ['already-protected', 'visible-peer', 'visible-total'],
+      },
+      {
+        id: 'overlapping-complementary-column',
+        kind: 'column',
+        cellIds: ['visible-total', 'overlap-peer', 'overlap-total'],
+      },
+    ];
+
+    const result = applyComplementarySuppression(cells, constraints);
+    const permuted = applyComplementarySuppression(
+      [...cells].reverse(),
+      [...constraints]
+        .reverse()
+        .map((constraint) => ({ ...constraint, cellIds: [...constraint.cellIds].reverse() })),
+    );
+    const resultById = cellMap(result);
+
+    expect(permuted).toEqual(result);
+    expect(result.every((cell) => cell.status === 'suppressed')).toBe(true);
+    expect(resultById.get('already-protected')).toEqual({
+      id: 'already-protected',
+      status: 'suppressed',
+      reason: 'complementary',
+      message: SUPPRESSION_MESSAGE,
+    });
+    for (const cellId of [
+      'visible-peer',
+      'visible-total',
+      'overlap-peer',
+      'overlap-total',
+    ]) {
+      expect(resultById.get(cellId)).toEqual({
+        id: cellId,
+        status: 'suppressed',
+        reason: 'complementary',
+        message: SUPPRESSION_MESSAGE,
+      });
+    }
+    expect(JSON.stringify(result)).not.toContain('"value"');
+    expectConstraintPrivacy(result, constraints);
+  });
+
   it('suppresses the full row when it contains multiple primary-small cells', () => {
     const cells = [
       numericCell('small-a', 8, 8),
@@ -296,6 +356,21 @@ describe('aggregate privacy kernel', () => {
 
     expect(() => applyComplementarySuppression(cells, constraints)).toThrow(
       'Duplicate privacy constraint: duplicate',
+    );
+  });
+
+  it('rejects a singleton constraint that cannot retain two unknowns', () => {
+    const cells = [numericCell('only-cell', 8, 8)];
+    const constraints: SuppressionConstraint[] = [
+      {
+        id: 'impossible-singleton',
+        kind: 'row',
+        cellIds: ['only-cell'],
+      },
+    ];
+
+    expect(() => applyComplementarySuppression(cells, constraints)).toThrow(
+      'Privacy constraint requires at least two unique cells: impossible-singleton',
     );
   });
 

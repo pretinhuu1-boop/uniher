@@ -103,6 +103,12 @@ function normalizeConstraints(
         throw new Error(`Duplicate cell in privacy constraint: ${constraint.id}`);
       }
 
+      if (uniqueCellIds.length < 2) {
+        throw new Error(
+          `Privacy constraint requires at least two unique cells: ${constraint.id}`,
+        );
+      }
+
       for (const cellId of uniqueCellIds) {
         if (!knownCellIds.has(cellId)) {
           throw new Error(
@@ -157,7 +163,8 @@ export function applyComplementarySuppression<T>(
   const pendingCellIds = [...protectedById.values()]
     .filter(
       (cell) =>
-        cell.status === 'suppressed' && cell.reason === 'minimum_cohort',
+        cell.status === 'suppressed' &&
+        (cell.reason === 'minimum_cohort' || cell.reason === 'complementary'),
     )
     .map((cell) => cell.id)
     .sort(compareText);
