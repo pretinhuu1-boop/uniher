@@ -17,7 +17,7 @@ const VALID_KEYS = [
 ] as const;
 
 const PatchSchema = z.object({
-  preferences: z.record(
+  preferences: z.partialRecord(
     z.enum(VALID_KEYS),
     z.string()
   ),

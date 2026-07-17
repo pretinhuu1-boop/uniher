@@ -501,6 +501,94 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
 
   test.afterAll(() => cleanupPrivacyFixtures());
 
+  test('Pular tour persists completion and refreshes the authenticated projection', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    const db = openPlaywrightDatabase();
+    let previous: { pref_value: string } | undefined;
+    try {
+      previous = db.prepare(`
+        SELECT pref_value
+        FROM user_preferences
+        WHERE user_id = ? AND pref_key = 'first_access_tour_completed'
+      `).get(ids.collaboratorA) as { pref_value: string } | undefined;
+      db.prepare(`
+        INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+        VALUES (?, 'first_access_tour_completed', '0', datetime('now'))
+        ON CONFLICT(user_id, pref_key) DO UPDATE SET
+          pref_value = excluded.pref_value,
+          updated_at = excluded.updated_at
+      `).run(ids.collaboratorA);
+    } finally {
+      db.close();
+    }
+
+    try {
+      await setBrowserToken(context, baseURL!, tokens.collaboratorA);
+      await page.goto('/primeiro-acesso');
+      await expect(page.getByRole('button', { name: 'Pular tour', exact: true })).toBeVisible();
+
+      const preferencesResponsePromise = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/users/me/preferences'
+          && response.request().method() === 'PATCH',
+      );
+      const authResponsePromise = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/auth/me',
+      );
+
+      await page.getByRole('button', { name: 'Pular tour', exact: true }).click();
+      const preferencesResponse = await preferencesResponsePromise;
+      expect(preferencesResponse.status(), await preferencesResponse.text()).toBe(200);
+      expect(await preferencesResponse.json()).toEqual({ success: true });
+
+      const authResponse = await authResponsePromise;
+      expect(authResponse.status(), await authResponse.text()).toBe(200);
+      expect(await authResponse.json()).toMatchObject({
+        user: {
+          id: ids.collaboratorA,
+          firstAccessTourCompleted: true,
+        },
+      });
+
+      const verificationDb = openPlaywrightDatabase();
+      try {
+        const persisted = verificationDb.prepare(`
+          SELECT pref_value
+          FROM user_preferences
+          WHERE user_id = ? AND pref_key = 'first_access_tour_completed'
+        `).get(ids.collaboratorA) as { pref_value: string } | undefined;
+        expect(persisted?.pref_value).toBe('1');
+      } finally {
+        verificationDb.close();
+      }
+
+      await expect(page.getByRole('heading', { name: 'Confirmacao final', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Entrar na plataforma', exact: true })).toBeVisible();
+    } finally {
+      const restoreDb = openPlaywrightDatabase();
+      try {
+        if (previous) {
+          restoreDb.prepare(`
+            INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+            VALUES (?, 'first_access_tour_completed', ?, datetime('now'))
+            ON CONFLICT(user_id, pref_key) DO UPDATE SET
+              pref_value = excluded.pref_value,
+              updated_at = excluded.updated_at
+          `).run(ids.collaboratorA, previous.pref_value);
+        } else {
+          restoreDb.prepare(`
+            DELETE FROM user_preferences
+            WHERE user_id = ? AND pref_key = 'first_access_tour_completed'
+          `).run(ids.collaboratorA);
+        }
+      } finally {
+        restoreDb.close();
+      }
+    }
+  });
+
   test('collaborators can CRUD only their own Agenda events', async ({ request }) => {
     const createdA = await request.post('/api/collaborator/agenda', {
       headers: authHeaders(tokens.collaboratorA),
