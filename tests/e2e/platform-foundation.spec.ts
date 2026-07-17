@@ -222,6 +222,13 @@ test.describe('UniHER platform foundation', () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await openStableAdminShell(page);
+    const badgesAdminControl = page
+      .getByRole('tab', { name: /^Badges(?:\b|$)/ })
+      .or(page.getByRole('button', { name: /^Badges(?:\b|$)/ }));
+    await expect(badgesAdminControl).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Sistema', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Alertas', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Auditoria', exact: true })).toBeVisible();
     await expect(page).toHaveScreenshot('platform-shell-desktop.png', {
       animations: 'disabled',
       caret: 'hide',
