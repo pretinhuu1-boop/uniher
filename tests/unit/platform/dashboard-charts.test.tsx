@@ -13,7 +13,9 @@ describe('RH protected dashboard accessibility', () => {
     }));
 
     expect(html).toContain(`role="status">${SUPPRESSION_MESSAGE}`);
+    expect(html).toContain('Participação');
     expect(html).not.toContain('<canvas');
+    expect(html).not.toMatch(/\\u[0-9a-f]{4}/i);
     expect(html).not.toMatch(/72%|reten\u00e7\u00e3o/i);
   });
 
@@ -23,8 +25,11 @@ describe('RH protected dashboard accessibility', () => {
     }));
 
     expect(html).toContain('26-35');
+    expect(html).toContain('Distribuição');
+    expect(html).toContain('Faixas etárias protegidas');
     expect(html).toContain('<strong>12</strong>');
     expect(html).not.toContain('%');
     expect(html).not.toContain('<canvas');
+    expect(html).not.toMatch(/\\u[0-9a-f]{4}/i);
   });
 });

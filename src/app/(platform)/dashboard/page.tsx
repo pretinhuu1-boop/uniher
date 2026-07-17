@@ -71,9 +71,9 @@ export default function DashboardPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        context="Vis\u00e3o geral \u00b7 RH"
+        context="Visão geral · RH"
         title={`Bom dia, ${firstName}.`}
-        description="Indicadores agregados com prote\u00e7\u00e3o de coorte."
+        description="Indicadores agregados com proteção de coorte."
         primaryAction={<Button onClick={() => router.push('/convites')}>Convidar</Button>}
         secondaryActions={(
           <Button
@@ -89,14 +89,14 @@ export default function DashboardPage() {
       {dashboard.isLoading ? (
         <FeedbackState
           kind="loading"
-          title="Preparando sua vis\u00e3o protegida"
+          title="Preparando sua visão protegida"
           description="Aplicando os controles de privacidade ao filtro selecionado."
         />
       ) : dashboard.error || !model ? (
         <FeedbackState
           kind="error"
-          title="N\u00e3o foi poss\u00edvel carregar o dashboard"
-          description="Atualize a p\u00e1gina para tentar novamente."
+          title="Não foi possível carregar o dashboard"
+          description="Atualize a página para tentar novamente."
         />
       ) : (
         <>

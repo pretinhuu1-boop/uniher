@@ -220,6 +220,7 @@ test.describe('RH — Painel da Empresa', () => {
 
     const dashboardContent = page.locator('#main-content');
     await expect(dashboardContent).not.toContainText(/diagnóstico|paciente|dados? individuais?/i);
+    await expect(dashboardContent).not.toContainText(/\\u[0-9a-f]{4}/i);
 
     const summary = page.getByRole('region', { name: 'Resumo protegido da empresa' });
     await expect(summary.getByText('Atividade de exames')).toBeVisible();
@@ -233,9 +234,9 @@ test.describe('RH — Painel da Empresa', () => {
     await expect(actions.getByRole('link', { name: /Histórico/ })).toHaveAttribute('href', '/historico');
 
     await expect(page.getByRole('heading', { name: 'Indicadores protegidos' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Contribuintes ativos/ })).toBeVisible();
-    const ageOverview = page.getByRole('region', { name: /Faixas et/ });
-    await expect(ageOverview.getByRole('heading', { name: /Faixas et/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Contribuintes ativos por área' })).toBeVisible();
+    const ageOverview = page.getByRole('region', { name: 'Faixas etárias protegidas' });
+    await expect(ageOverview.getByRole('heading', { name: 'Faixas etárias protegidas' })).toBeVisible();
     await expect(ageOverview.getByText(SUPPRESSION_MESSAGE, { exact: true })).toHaveCount(1);
     await expect(page.getByRole('region', { name: 'Engajamento' }).getByRole('status')).toHaveText(SUPPRESSION_MESSAGE);
     await expect(page.getByTestId('dashboard-roi')).toHaveCount(0);
@@ -266,6 +267,19 @@ test.describe('RH — Painel da Empresa', () => {
     await expect.poll(() => page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     )).toBe(true);
+  });
+
+  test('Histórico e Comunicações renderizam copy portuguesa íntegra', async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: 'uniher-access-token', value: rhToken, url: baseURL! }]);
+    await completeAuthTourForDashboard(page);
+
+    await page.goto('/historico');
+    await expect(page.getByRole('heading', { name: 'Histórico protegido' })).toBeVisible();
+    await expect(page.locator('#main-content')).not.toContainText(/\\u[0-9a-f]{4}/i);
+
+    await page.goto('/analytics-emails');
+    await expect(page.getByRole('heading', { name: 'Entregas de comunicação' })).toBeVisible();
+    await expect(page.locator('#main-content')).not.toContainText(/\\u[0-9a-f]{4}/i);
   });
 
   test('Dashboard RH mostra erro da API e bloqueia exportação vazia', async ({ page, context, baseURL }) => {

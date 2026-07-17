@@ -25,7 +25,7 @@ export function DashboardDetails({ model, filters, onFiltersChange }: DashboardD
           <h2 id="details-title" className={styles.sectionTitle}>Indicadores protegidos</h2>
         </div>
         <div className={styles.filters} aria-label="Filtros do dashboard">
-          <div className={styles.periodGroup} aria-label="Per\u00edodo">
+          <div className={styles.periodGroup} aria-label="Período">
             {DASHBOARD_PERIODS.map((period) => (
               <button
                 key={period}
