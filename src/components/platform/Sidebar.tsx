@@ -137,11 +137,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     const focusFirstLinkIfOutsideDialog = () => {
       const sidebar = sidebarRef.current;
-      if (!sidebar || sidebar.contains(document.activeElement)) return;
+      if (!sidebar) return;
 
-      sidebar
-        .querySelector<HTMLAnchorElement>('nav a[href]')
-        ?.focus({ preventScroll: true });
+      const firstNavigationLink = sidebar.querySelector<HTMLAnchorElement>('nav a[href]');
+      if (!firstNavigationLink || document.activeElement === firstNavigationLink) return;
+
+      firstNavigationLink.focus({ preventScroll: true });
     };
 
     focusFirstLinkIfOutsideDialog();
