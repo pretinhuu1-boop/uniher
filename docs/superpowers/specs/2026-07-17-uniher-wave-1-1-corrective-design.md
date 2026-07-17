@@ -4,6 +4,8 @@
 
 **Baseline code commit:** `f398d535c5c30bf79f6bb1d2cee26a55217a9731`
 
+> **Scope amendment — 2026-07-17:** The user verified that the correct public landing is already online and narrowed this corrective mission to the authenticated internal platform. This amendment overrides every earlier public-metadata, JSON-LD, account-email, and public-home-reachability requirement below. `src/app/layout.tsx`, `src/lib/mail/templates.ts`, and `tests/unit/privacy/home-gamification-reachability.test.ts` are explicitly outside the write set and must remain unchanged. Final review and gates cover only the internal authenticated surfaces, preference API, and Admin visual baseline.
+
 **Branch:** `codex/uniher-wave1-1-corrective`
 
 **Worktree:** `C:\Users\user\Documents\uniher-app-audit\.worktrees\uniher-wave1-1-corrective`
@@ -12,12 +14,11 @@
 
 Close the confirmed defects that prevent an honest Wave 1.1 privacy-containment gate without starting Wave 1.2 navigation alignment or any later route redesign.
 
-The mission fixes four bounded problem domains:
+The amended mission fixes three bounded problem domains:
 
 1. sparse user-preference updates fail under Zod 4 and block first access plus settings;
 2. JavaScript Unicode escapes were placed in JSX text and quoted attributes, so authenticated pages render literal `\u...` sequences;
-3. reachable public metadata and account email copy still promise quarantined legacy gamification behavior;
-4. the Admin desktop screenshot baseline still contains the intentionally removed `Badges` tab.
+3. the Admin desktop screenshot baseline still contains the intentionally removed `Badges` tab.
 
 After the code and test corrections, the mission runs the complete Wave 1.1 promotion gate on one frozen code commit and replaces the partial scorecard with exact evidence.
 
@@ -77,19 +78,17 @@ Those JSX literals are replaced with native UTF-8 Portuguese copy. An AST-based 
 
 Behavioral browser coverage must use exact accessible Portuguese names rather than prefix regexes such as `/Faixas et/`. Dashboard, History, and Communications must render without any literal `\u[0-9a-f]{4}` text.
 
-### 4.3 Reachable public and email copy
+### 4.3 Reachable public and email copy — removed by scope amendment
 
-Legacy ranking, points, XP, badges, streaks, arena, dopamine, and reward promises remain unavailable under the Wave 1.1 containment contract. Public or transactional copy must not promise those behaviors.
+This section is superseded. Public metadata, JSON-LD, the public-home reachability contract, and account email templates are not part of this corrective mission and must not be edited.
 
 The existing public-home reachability test starts at `src/app/page.tsx` and misses the Next.js root layout. The corrected contract explicitly includes `src/app/layout.tsx` and rendered email templates.
 
 Required changes:
 
-- replace legacy gamification claims in root metadata and JSON-LD with implemented language limited to educational journeys, campaigns, personal self-service, and privacy-protected aggregate management;
-- replace the live invitation template promise with access to campaigns, educational content, and the collaborator's private journey;
-- replace the dormant welcome template's badge promise with the same implemented content-and-private-journey boundary so future reuse cannot reactivate stale copy;
-- preserve password-reset copy and other unrelated email behavior;
-- keep unreachable quarantine components stored but unreachable; this mission does not delete historical components or data.
+- no public or email file may appear in the candidate diff;
+- public landing correctness is accepted as user-verified external state, not as evidence produced by this mission;
+- internal authenticated containment remains fully gated.
 
 ### 4.4 Admin visual baseline
 
@@ -121,7 +120,6 @@ Create `tests/unit/platform/authenticated-jsx-copy.test.ts` using the TypeScript
 
 - `tests/unit/platform/dashboard-charts.test.tsx` for exact rendered Portuguese labels;
 - `tests/e2e/rh.spec.ts` for exact Dashboard, History, and Communications UI assertions;
-- `tests/unit/privacy/home-gamification-reachability.test.ts` for root layout and rendered mail templates.
 
 ### Visual coverage
 
@@ -133,8 +131,6 @@ Production files:
 
 - `src/app/api/users/me/preferences/route.ts`;
 - the seven authenticated JSX files in section 4.2;
-- `src/app/layout.tsx`;
-- `src/lib/mail/templates.ts`.
 
 Test and visual files:
 
@@ -142,7 +138,6 @@ Test and visual files:
 - `tests/unit/platform/authenticated-jsx-copy.test.ts`;
 - `tests/unit/platform/dashboard-charts.test.tsx`;
 - `tests/e2e/rh.spec.ts`;
-- `tests/unit/privacy/home-gamification-reachability.test.ts`;
 - `tests/e2e/platform-foundation.spec.ts`;
 - the desktop foundation snapshot;
 - the mobile snapshot only under the condition in section 4.4.
@@ -179,7 +174,7 @@ Local commits are scoped and ordered:
 1. design specification;
 2. executable implementation plan;
 3. sparse preferences and first-access regression;
-4. authenticated/public/email copy integrity;
+4. authenticated internal copy integrity;
 5. intentional visual baseline alignment;
 6. final Wave 1.1 scorecard and historical forward link.
 
@@ -253,7 +248,7 @@ The corrective mission is complete only when:
 - first-access and settings sparse preference updates work through the real API;
 - invalid and quarantined preference payloads remain atomic and fail closed;
 - none of the authenticated route surfaces renders literal Unicode escapes;
-- public metadata and reachable email output make no quarantined gamification promise;
+- public metadata, public reachability tests, and account email templates are absent from the corrective diff;
 - the Admin desktop baseline contains no `Badges` tab and no unrelated visual delta;
 - desktop and mobile foundation checks pass;
 - every Wave 1.1 static, unit, TypeScript, build, privacy, role, security, integrated, and foundation gate passes on candidate `C`;

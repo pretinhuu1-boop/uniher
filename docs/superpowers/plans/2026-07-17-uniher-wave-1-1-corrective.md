@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Correct sparse user preferences, literal Unicode copy, reachable legacy product promises, and the stale Admin visual baseline, then close the Wave 1.1 gate on one independently reviewed integrated candidate.
+**Goal:** Correct sparse user preferences, literal Unicode copy on authenticated internal routes, and the stale Admin visual baseline, then close the Wave 1.1 internal-platform gate on one independently reviewed integrated candidate.
+
+> **Scope amendment — 2026-07-17:** The user verified the correct public landing online and removed all public landing, root metadata/JSON-LD, account-email, and public-home-reachability work from this mission. This amendment overrides the obsolete public/email steps retained later in this historical plan text. Do not edit, stage, review as candidate work, or integrate `src/app/layout.tsx`, `src/lib/mail/templates.ts`, or `tests/unit/privacy/home-gamification-reachability.test.ts`. Task 2 is limited to the seven authenticated JSX files plus the AST, dashboard-unit, and RH browser tests named below.
 
 **Architecture:** Three isolated worktrees prepare disjoint lanes from the same plan commit: Preferences, Copy/Unicode, and Visual Baseline. Their sessions may be created together, but implementation and browser gates are activated strictly in the order Preferences -> Copy -> Visual so the approved sequential-orchestration contract and shared server ports remain safe. The coordinator cherry-picks only reviewed lane commits, reruns focused evidence after each integration, runs the complete promotion gate sequentially, and writes the final scorecard against the frozen non-documentation commit.
 
@@ -249,7 +251,7 @@ Then run a fresh independent spec review of the exact `$laneSha`, followed by a 
 
 Expected: one scoped commit and a clean lane worktree.
 
-## Task 2: Restore authenticated and reachable product copy
+## Task 2: Restore authenticated internal product copy
 
 **Lane:** Copy
 
@@ -257,7 +259,6 @@ Expected: one scoped commit and a clean lane worktree.
 
 - Create: `tests/unit/platform/authenticated-jsx-copy.test.ts`
 - Modify: `tests/unit/platform/dashboard-charts.test.tsx`
-- Modify: `tests/unit/privacy/home-gamification-reachability.test.ts`
 - Modify: `tests/e2e/rh.spec.ts`
 - Modify: `src/app/(platform)/dashboard/page.tsx`
 - Modify: `src/app/(platform)/dashboard/components/EngagementOverview.tsx`
@@ -266,8 +267,6 @@ Expected: one scoped commit and a clean lane worktree.
 - Modify: `src/app/(platform)/dashboard/components/AgeOverview.tsx`
 - Modify: `src/app/(platform)/historico/page.tsx`
 - Modify: `src/app/(platform)/analytics-emails/page.tsx`
-- Modify: `src/app/layout.tsx`
-- Modify: `src/lib/mail/templates.ts`
 
 - [ ] **Step 1: Add the failing JSX AST contract**
 
@@ -331,7 +330,9 @@ describe('authenticated JSX copy', () => {
 });
 ```
 
-- [ ] **Step 2: Strengthen rendered and reachable-copy tests**
+- [ ] **Step 2: Strengthen authenticated rendered-copy tests**
+
+> Amended scope: ignore the obsolete public/email example below. Do not edit or run candidate checks against `tests/unit/privacy/home-gamification-reachability.test.ts`, `src/app/layout.tsx`, or `src/lib/mail/templates.ts`.
 
 In `tests/unit/platform/dashboard-charts.test.tsx`, add exact-label assertions and a raw-escape negative assertion:
 
@@ -435,7 +436,9 @@ Métricas operacionais protegidas
 
 Do not change escapes inside JavaScript expression strings, view models, APIs, CSV code, regexes, tests, or emoji literals.
 
-- [ ] **Step 5: Neutralize reachable public and email promises**
+- [ ] **Step 5: Enforce the amended public-surface exclusion**
+
+> This heading and paragraph replace the obsolete instructions below: require the candidate and working-tree diffs to exclude `src/app/layout.tsx`, `src/lib/mail/templates.ts`, and `tests/unit/privacy/home-gamification-reachability.test.ts`. Do not apply the superseded public/email changes described below.
 
 In `src/app/layout.tsx`, remove every public promise matched by the existing forbidden vocabulary. Use these canonical claims consistently in metadata, OpenGraph, Twitter, application JSON-LD, and FAQ answers:
 
