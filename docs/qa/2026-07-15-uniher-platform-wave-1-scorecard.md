@@ -1,5 +1,7 @@
 # UniHER Platform Wave 1 Scorecard
 
+> **Forward link - 2026-07-17:** Wave 1.1 privacy containment now has a fresh PASS scorecard at `docs/qa/2026-07-15-uniher-platform-wave-1-1-scorecard.md`, reviewed code commit `227c8f765e83cd44676301b5083da6b48126577b`.
+
 > **Status — HISTORICAL PASS REOPENED:** The evidence below remains valid for the visual foundation at the reviewed commits. A later product/privacy review found blocking Agenda, ranking, Semáforo and small-cohort gaps outside the original gate. Wave 1.2 navigation alignment may begin only after Wave 1.1 privacy containment passes. Do not promote or begin Wave 2A, Wave 2B or Wave 2C until both waves pass and this scorecard is replaced by fresh evidence.
 
 ## Result
