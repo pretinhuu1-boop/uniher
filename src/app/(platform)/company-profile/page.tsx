@@ -17,7 +17,6 @@ interface CompanyData {
   created_at: string;
   user_count: number;
   department_count: number;
-  total_points: number;
   missions_active: number;
   feed_company_enabled?: boolean;
 }
@@ -188,7 +187,6 @@ export default function CompanyProfilePage() {
   const stats = [
     { label: 'Colaboradoras', value: company.user_count.toLocaleString('pt-BR'), icon: '👥', color: 'bg-rose-50 text-rose-500' },
     { label: 'Missoes Ativas', value: String(company.missions_active), icon: '🎯', color: 'bg-violet-50 text-violet-500' },
-    { label: 'Pontos Totais', value: company.total_points.toLocaleString('pt-BR'), icon: '⭐', color: 'bg-amber-50 text-amber-500' },
     { label: 'Plano Atual', value: company.plan, icon: '📈', color: 'bg-emerald-50 text-emerald-500', isBadge: true },
   ];
 

@@ -3,6 +3,11 @@
  * Cobre: registro via convite, login, dashboard, gamificação, missões, leaderboard, preferências
  */
 import { test, expect } from '@playwright/test';
+import {
+  expectNoRecursiveKeys,
+  expectPrivacyReviewResponse,
+  expectPrivateResponse,
+} from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
@@ -177,15 +182,18 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
     });
 
     expect(res.status()).toBe(200);
+    expectPrivateResponse(res);
     const body = await res.json();
 
-    expect(body).toHaveProperty('streak');
-    expect(body).toHaveProperty('checkedInToday');
-    expect(body).toHaveProperty('levelInfo');
-    expect(body.levelInfo).toHaveProperty('level');
-    expect(body.levelInfo).toHaveProperty('currentXP');
-    expect(body.levelInfo).toHaveProperty('nextLevelXP');
+    expect(Object.keys(body).sort()).toEqual(['checkedInToday', 'streak']);
     expect(typeof body.streak).toBe('number');
+    expect(body.streak).toBeGreaterThanOrEqual(1);
+    expect(body.checkedInToday).toBe(true);
+    expectNoRecursiveKeys(
+      body,
+      /ranking|points?|xp|level|league|badges?/i,
+      [companyName, companyId, rhEmail, colabEmail, colabName],
+    );
   });
 
   // ─── Gamificação — Missões Diárias ───────────────────────────────────────────
@@ -225,40 +233,39 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   // ─── Gamificação — Leaderboard ───────────────────────────────────────────────
 
-  test('GET /api/gamification/leaderboard — ranking por departamento', async ({ request }) => {
+  test('GET /api/gamification/leaderboard — permanece indisponível durante privacy review', async ({ request }) => {
     const res = await request.get('/api/gamification/leaderboard', {
       headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
-    expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty('type');
-    // Pode ter rankings ou ranking
-    expect(body.rankings || body.ranking).toBeTruthy();
+    await expectPrivacyReviewResponse(
+      res,
+      [companyName, companyId, rhEmail, colabEmail, colabName],
+    );
   });
 
-  test('GET /api/gamification/leaderboard?type=league — ranking por liga', async ({ request }) => {
+  test('GET /api/gamification/leaderboard?type=league — não reabre ranking legado', async ({ request }) => {
     const res = await request.get('/api/gamification/leaderboard?type=league', {
       headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
-    expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body.type).toBe('league');
-    expect(body).toHaveProperty('ranking');
+    await expectPrivacyReviewResponse(
+      res,
+      [companyName, companyId, rhEmail, colabEmail, colabName],
+    );
   });
 
   // ─── Desafios ────────────────────────────────────────────────────────────────
 
-  test('GET /api/collaborator/challenges — lista desafios', async ({ request }) => {
+  test('GET /api/collaborator/challenges — permanece indisponível durante privacy review', async ({ request }) => {
     const res = await request.get('/api/collaborator/challenges', {
       headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
-    expect(res.status()).toBe(200);
-    const body = await res.json();
-    // Retorna array ou objeto com challenges
-    expect(body).toBeTruthy();
+    await expectPrivacyReviewResponse(
+      res,
+      [companyName, companyId, rhEmail, colabEmail, colabName],
+    );
   });
 
   test('GET /api/collaborator/challenges — rejeita sem autenticação', async ({ request }) => {

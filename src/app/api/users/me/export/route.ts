@@ -1,76 +1,114 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
-import { RateLimitError } from '@/lib/errors';
-import { getReadDb } from '@/lib/db';
-
-// Simple in-memory rate limit: 1 export per hour per user
-const exportTimestamps = new Map<string, number>();
+import { getWriteQueue, openReadOnlyDb } from '@/lib/db';
+import { initDb } from '@/lib/db/init';
+import {
+  createDsarExportJsonChunks,
+  finishDsarExportReservation,
+  reserveDsarExportWindow,
+  type DsarExportOutcome,
+} from '@/lib/privacy/dsar-export';
 
 // GET /api/users/me/export - exportar todos os dados da usuária (LGPD)
-export const GET = withAuth(async (_req, { auth }) => {
+export const GET = withAuth(async (req, { auth }) => {
   try {
-    const now = Date.now();
-    const lastExport = exportTimestamps.get(auth.userId);
-    if (lastExport && now - lastExport < 3600_000) {
-      throw new RateLimitError('Você já exportou seus dados recentemente. Tente novamente em 1 hora.');
-    }
-
-    const db = getReadDb();
+    await initDb();
     const userId = auth.userId;
+    const writeQueue = getWriteQueue();
+    const reservation = await writeQueue.enqueue(
+      (db) => reserveDsarExportWindow(db, userId),
+      'reserve DSAR export window',
+    );
 
-    // Collect all user data
-    const user = db.prepare(
-      'SELECT id, name, email, role, department_id, company_id, points, level, league, avatar_url, created_at, updated_at FROM users WHERE id = ?'
-    ).get(userId);
+    const exportedAt = new Date().toISOString();
+    let readDb;
+    try {
+      readDb = openReadOnlyDb();
+    } catch (error) {
+      await writeQueue.enqueue(
+        (db) => finishDsarExportReservation(db, userId, reservation.token, 'failed'),
+        'fail DSAR export reservation',
+      );
+      throw error;
+    }
+    const iterator = createDsarExportJsonChunks(readDb, userId, exportedAt);
+    const encoder = new TextEncoder();
+    let resourcesClosed = false;
+    let aborted = false;
+    let abortHandler: (() => void) | null = null;
+    let cleanupPromise: Promise<void> | null = null;
 
-    const healthScores = db.prepare(
-      'SELECT dimension, score, recorded_at FROM health_scores WHERE user_id = ? ORDER BY recorded_at DESC'
-    ).all(userId);
-
-    const quizResults = db.prepare(
-      'SELECT id, archetype_id, answers_json, created_at FROM quiz_results WHERE user_id = ?'
-    ).all(userId);
-
-    const badges = db.prepare(
-      'SELECT ub.badge_id, b.name, b.description, ub.unlocked_at FROM user_badges ub LEFT JOIN badges b ON b.id = ub.badge_id WHERE ub.user_id = ?'
-    ).all(userId);
-
-    const challenges = db.prepare(
-      'SELECT uc.challenge_id, c.title, uc.progress, uc.status, uc.started_at, uc.completed_at FROM user_challenges uc LEFT JOIN challenges c ON c.id = uc.challenge_id WHERE uc.user_id = ?'
-    ).all(userId);
-
-    const notifications = db.prepare(
-      'SELECT id, type, title, message, read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 200'
-    ).all(userId);
-
-    const activityLog = db.prepare(
-      'SELECT action, details, created_at FROM activity_log WHERE user_id = ? ORDER BY created_at DESC LIMIT 500'
-    ).all(userId);
-
-    const missionLogs = db.prepare(
-      'SELECT mission_key, payload, xp_earned, completed_at FROM mission_logs WHERE user_id = ? ORDER BY completed_at DESC LIMIT 500'
-    ).all(userId);
-
-    const exportData = {
-      exportedAt: new Date().toISOString(),
-      user,
-      healthScores,
-      quizResults,
-      badges,
-      challenges,
-      notifications,
-      activityLog,
-      missionLogs,
+    const closeResources = () => {
+      if (resourcesClosed) return;
+      resourcesClosed = true;
+      if (abortHandler) {
+        req.signal.removeEventListener('abort', abortHandler);
+        abortHandler = null;
+      }
+      try {
+        iterator.return(undefined);
+      } finally {
+        readDb.close();
+      }
+    };
+    const cleanup = (outcome: DsarExportOutcome): Promise<void> => {
+      if (cleanupPromise) return cleanupPromise;
+      closeResources();
+      cleanupPromise = writeQueue.enqueue(
+        (db) => finishDsarExportReservation(db, userId, reservation.token, outcome),
+        `finish DSAR export reservation: ${outcome}`,
+      ).then(() => undefined);
+      return cleanupPromise;
     };
 
-    exportTimestamps.set(auth.userId, now);
+    const stream = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        if (aborted) {
+          try { await cleanup('cancelled'); } catch { /* cooldown remains reserved */ }
+          controller.error(new DOMException('The request was aborted.', 'AbortError'));
+          return;
+        }
+        try {
+          const result = iterator.next();
+          if (result.done) {
+            await cleanup('completed');
+            controller.close();
+            return;
+          }
+          controller.enqueue(encoder.encode(result.value));
+        } catch (error) {
+          let streamError = error;
+          try {
+            await cleanup('failed');
+          } catch (cleanupError) {
+            streamError = cleanupError;
+          }
+          controller.error(streamError);
+        }
+      },
+      async cancel() {
+        await cleanup('cancelled');
+      },
+    });
 
-    return new NextResponse(JSON.stringify(exportData, null, 2), {
+    abortHandler = () => {
+      aborted = true;
+      void cleanup('cancelled').catch(() => undefined);
+    };
+    if (req.signal.aborted) {
+      abortHandler();
+    } else {
+      req.signal.addEventListener('abort', abortHandler, { once: true });
+    }
+
+    return new NextResponse(stream, {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="uniher-dados-${new Date().toISOString().slice(0, 10)}.json"`,
+        'Content-Disposition': `attachment; filename="uniher-dados-${exportedAt.slice(0, 10)}.json"`,
+        'Cache-Control': 'private, no-store',
+        'Vary': 'Cookie',
       },
     });
   } catch (error) {

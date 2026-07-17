@@ -8,6 +8,7 @@ import { ConflictError, UnauthorizedError, ValidationError } from '@/lib/errors'
 import type { RegisterInput, LoginInput } from '@/lib/validation/schemas';
 import { sanitizeObject } from '@/lib/security/sanitize';
 import { logAudit } from '@/lib/audit';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 // Pre-computed dummy hash for timing attack mitigation.
 // Generated once at server start so bcrypt always does a full cost-12 computation
@@ -58,6 +59,13 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     }
   }
 
+  if (companyId) {
+    const company = companyRepo.getCompanyById(companyId);
+    if (!company) {
+      throw new ValidationError('Empresa informada nÃ£o foi encontrada');
+    }
+  }
+
   const passwordHash = await hashPassword(sanitized.password);
 
   const user = await userRepo.createUser({
@@ -81,7 +89,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
   await refreshTokenRepo.createRefreshToken(user.id, refreshToken);
 
   return {
-    user: userRepo.toPublicUser(user),
+    user: toSafeUserProjection(user) as userRepo.PublicUser,
     accessToken,
     refreshToken,
   };
@@ -152,7 +160,7 @@ export async function login(input: LoginInput): Promise<AuthResult> {
   await refreshTokenRepo.createRefreshToken(user.id, refreshToken);
 
   return {
-    user: userRepo.toPublicUser(user),
+    user: toSafeUserProjection(user) as userRepo.PublicUser,
     accessToken,
     refreshToken,
   };
@@ -209,5 +217,5 @@ export async function logout(): Promise<void> {
 export function getMe(userId: string): userRepo.PublicUser | null {
   const user = userRepo.getUserById(userId);
   if (!user) return null;
-  return userRepo.toPublicUser(user);
+  return toSafeUserProjection(user) as userRepo.PublicUser;
 }

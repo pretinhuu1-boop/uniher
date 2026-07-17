@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
+const projectRoot = __dirname;
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 const hasHttpsAppUrl = /^https:\/\//i.test(appUrl);
 const isTrustworthyOrigin =
@@ -8,6 +9,8 @@ const isTrustworthyOrigin =
 
 const nextConfig: NextConfig = {
   output: isProd ? 'standalone' : undefined,
+  outputFileTracingRoot: projectRoot,
+  turbopack: { root: projectRoot },
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
   experimental: {},

@@ -85,6 +85,14 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
         VALUES (?, ?, ?, ?, ?, ?, ?, 'bronze', 0, datetime('now'), datetime('now'))
       `).run(userId, name, invite.email, passwordHash, invite.role, invite.company_id, invite.department_id || null);
 
+      db.prepare(`
+        INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+        VALUES (?, 'first_access_tour_completed', '0', datetime('now'))
+        ON CONFLICT(user_id, pref_key) DO UPDATE SET
+          pref_value = excluded.pref_value,
+          updated_at = excluded.updated_at
+      `).run(userId);
+
       db.prepare(`UPDATE invites SET status = 'accepted', accepted_at = datetime('now') WHERE token = ?`).run(token);
     });
   } catch (err: any) {

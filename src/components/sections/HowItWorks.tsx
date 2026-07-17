@@ -21,10 +21,10 @@ const steps = [
   {
     number: 3,
     tag: 'Colaboradora · Engajamento',
-    title: 'Missões diárias, campanhas e gamificação',
+    title: 'Missões educativas, campanhas e acompanhamento',
     description:
-      'Missões de saúde diárias, streaks, badges e competições entre departamentos mantêm o engajamento alto.',
-    chips: ['Streak diário', 'Badges e níveis', 'Arena departamentos'],
+      'Conteúdos de saúde e campanhas orientam próximos passos com acompanhamento privado da própria jornada.',
+    chips: ['Conteúdo diário', 'Campanhas de cuidado', 'Progresso individual'],
   },
   {
     number: 4,

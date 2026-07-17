@@ -5,6 +5,7 @@ import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
+import { privacyReviewResponse } from '@/lib/privacy/api-response';
 
 const LESSON_TYPES = [
   'pilula',
@@ -41,6 +42,19 @@ function getCurrentDayOfWeek(): number {
   const day = new Date().getDay();
   // Convert JS Sunday=0 to ISO Monday=1
   return day === 0 ? 7 : day;
+}
+
+function isMasterAdmin(auth: { role: string; isMasterAdmin?: boolean }) {
+  return auth.isMasterAdmin === true || (auth.role === 'admin' && auth.isMasterAdmin === undefined);
+}
+
+function canManageLessonBySchedule(weekNumber: number, dayOfWeek: number) {
+  const currentWeek = getCurrentWeek();
+  const currentDay = getCurrentDayOfWeek();
+
+  if (weekNumber < currentWeek) return false;
+  if (weekNumber === currentWeek && dayOfWeek < currentDay) return false;
+  return true;
 }
 
 function normalizeReflectionContent(content: Record<string, unknown>) {
@@ -88,7 +102,7 @@ async function ensureWeeklyReflections(companyId: string, weekNumber: number) {
         `INSERT INTO daily_lessons
           (id, company_id, title, description, type, theme, week_number, day_of_week,
            order_index, xp_reward, duration_seconds, active, campaign_context, content_json)
-         VALUES (?, ?, ?, ?, 'reflexao', 'mental', ?, ?, 900, 20, 90, 1, ?, ?)`
+         VALUES (?, ?, ?, ?, 'reflexao', 'mental', ?, ?, 900, 0, 90, 1, ?, ?)`
       ).run(
         nanoid(),
         companyId,
@@ -104,7 +118,7 @@ async function ensureWeeklyReflections(companyId: string, weekNumber: number) {
 }
 
 // GET /api/rh/lessons
-export const GET = withRole('rh')(async (req, { auth }) => {
+export const GET = withRole('rh', 'admin')(async (req, { auth }) => {
   try {
     await initDb();
     const db = getReadDb();
@@ -121,8 +135,18 @@ export const GET = withRole('rh')(async (req, { auth }) => {
     const type = url.searchParams.get('type');
     const search = url.searchParams.get('search');
 
-    const conditions: string[] = ['(dl.company_id = ? OR dl.company_id IS NULL)'];
-    const params: unknown[] = [companyId];
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (isMasterAdmin(auth)) {
+      if (companyId) {
+        conditions.push('(dl.company_id = ? OR dl.company_id IS NULL)');
+        params.push(companyId);
+      }
+    } else {
+      conditions.push('(dl.company_id = ? OR dl.company_id IS NULL)');
+      params.push(companyId);
+    }
 
     if (week) {
       conditions.push('dl.week_number = ?');
@@ -146,7 +170,9 @@ export const GET = withRole('rh')(async (req, { auth }) => {
     }
 
     const weekForProvision = week ? parseInt(week, 10) : getCurrentWeek();
-    await ensureWeeklyReflections(companyId, weekForProvision);
+    if (companyId) {
+      await ensureWeeklyReflections(companyId, weekForProvision);
+    }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -164,10 +190,12 @@ export const GET = withRole('rh')(async (req, { auth }) => {
         dl.week_number,
         dl.day_of_week,
         dl.order_index,
-        dl.xp_reward,
-        dl.duration_seconds,
-        dl.active,
-        dl.campaign_context,
+       dl.duration_seconds,
+       dl.active,
+       dl.campaign_context,
+        dl.validated_at,
+        dl.validated_by,
+        dl.validation_notes,
         dl.content_json,
         dl.company_id
        FROM daily_lessons dl
@@ -176,12 +204,20 @@ export const GET = withRole('rh')(async (req, { auth }) => {
        LIMIT ? OFFSET ?`
     ).all([...params, limit, offset]) as Record<string, unknown>[];
 
+    const masterAdmin = isMasterAdmin(auth);
+
     const mapped = lessons.map((lesson) => ({
       ...lesson,
       content_json: lesson.content_json
         ? JSON.parse(lesson.content_json as string)
         : null,
       isGlobal: lesson.company_id === null,
+      isValidated: Boolean(lesson.validated_at),
+      canManage:
+        canManageLessonBySchedule(
+          Number(lesson.week_number ?? 0),
+          Number(lesson.day_of_week ?? 0),
+        ) && (masterAdmin || lesson.company_id !== null),
     }));
 
     const total = countRow.total;
@@ -202,16 +238,18 @@ const createLessonSchema = z.object({
   week_number: z.number().int().min(1).max(52).optional(),
   day_of_week: z.number().int().min(1).max(7).optional(),
   order_index: z.number().int().min(0).optional().default(0),
-  xp_reward: z.number().int().min(10).max(100).optional().default(20),
   duration_seconds: z.number().int().min(30).max(3600).optional().default(120),
   campaign_context: z.string().optional(),
 });
 
 // POST /api/rh/lessons
-export const POST = withRole('rh')(async (req, { auth }) => {
+export const POST = withRole('rh', 'admin')(async (req, { auth }) => {
   try {
     await initDb();
     const body = await req.json();
+    if (Object.prototype.hasOwnProperty.call(body, 'xp_reward')) {
+      return privacyReviewResponse();
+    }
     const parsed = createLessonSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -256,7 +294,7 @@ export const POST = withRole('rh')(async (req, { auth }) => {
         weekNumber,
         dayOfWeek,
         data.order_index,
-        data.xp_reward,
+        0,
         data.duration_seconds,
         data.campaign_context ?? null,
         JSON.stringify(contentToSave)
@@ -266,9 +304,10 @@ export const POST = withRole('rh')(async (req, { auth }) => {
     const db = getReadDb();
     const created = db.prepare('SELECT * FROM daily_lessons WHERE id = ?').get(id) as Record<string, unknown>;
 
+    const { xp_reward: _xpReward, ...safeCreated } = created;
     return NextResponse.json(
       {
-        ...created,
+        ...safeCreated,
         content_json: created.content_json ? JSON.parse(created.content_json as string) : null,
         isGlobal: false,
       },

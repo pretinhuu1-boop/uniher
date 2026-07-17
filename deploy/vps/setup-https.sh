@@ -85,4 +85,8 @@ echo "[7/7] Recarregando app com novo ambiente..."
 cd "$APP_DIR"
 pm2 restart uniher --update-env
 
+echo "[7.1/7] Validando HTTPS..."
+curl -fI "https://$DOMAIN/" >/dev/null
+curl -fI "https://$DOMAIN/api/health" >/dev/null
+
 echo "HTTPS configurado em https://$DOMAIN"

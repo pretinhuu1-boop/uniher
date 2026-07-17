@@ -13,6 +13,34 @@ type ApiHandler = (
   context: AuthContext
 ) => Promise<NextResponse>;
 
+function applyPrivateCachePolicy(response: NextResponse): NextResponse {
+  response.headers.set('Cache-Control', 'private, no-store');
+
+  const varyTokens = response.headers
+    .get('Vary')
+    ?.split(',')
+    .map((token) => token.trim())
+    .filter(Boolean) ?? [];
+
+  if (varyTokens.includes('*')) {
+    response.headers.set('Vary', '*');
+    return response;
+  }
+
+  const uniqueTokens: string[] = [];
+  const seenTokens = new Set<string>();
+
+  for (const token of varyTokens) {
+    const normalizedToken = token.toLowerCase();
+    if (normalizedToken === 'cookie' || seenTokens.has(normalizedToken)) continue;
+    seenTokens.add(normalizedToken);
+    uniqueTokens.push(token);
+  }
+
+  response.headers.set('Vary', [...uniqueTokens, 'Cookie'].join(', '));
+  return response;
+}
+
 /** Wrapper que protege um API route handler com autenticacao JWT */
 export function withAuth(handler: ApiHandler) {
   return async (req: NextRequest, segmentData: { params: Promise<Record<string, string>> }) => {
@@ -27,30 +55,30 @@ export function withAuth(handler: ApiHandler) {
       const accessToken = token || bearerToken;
 
       if (!accessToken) {
-        return NextResponse.json(
+        return applyPrivateCachePolicy(NextResponse.json(
           { error: 'Token de autenticação não fornecido' },
           { status: 401 }
-        );
+        ));
       }
 
       if (isTokenBlacklisted(accessToken)) {
-        return NextResponse.json(
+        return applyPrivateCachePolicy(NextResponse.json(
           { error: 'Token revogado' },
           { status: 401 }
-        );
+        ));
       }
 
       const payload = await verifyAccessToken(accessToken);
 
-      return handler(req, {
+      return applyPrivateCachePolicy(await handler(req, {
         params: segmentData.params,
         auth: payload,
-      });
+      }));
     } catch {
-      return NextResponse.json(
+      return applyPrivateCachePolicy(NextResponse.json(
         { error: 'Token inválido ou expirado' },
         { status: 401 }
-      );
+      ));
     }
   };
 }

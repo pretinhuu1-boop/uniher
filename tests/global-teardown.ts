@@ -1,11 +1,11 @@
 /**
  * Playwright global teardown — clean test data after all tests
  */
-import Database from 'better-sqlite3';
-import path from 'path';
+import playwrightDbSafety from './playwright-db-safety.cjs';
 
 export default async function globalTeardown() {
-  const dbPath = path.join(__dirname, '..', 'data', 'uniher.db');
+  const dbPath = playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env);
+  const { default: Database } = await import('better-sqlite3');
 
   try {
     const db = new Database(dbPath);
@@ -35,6 +35,9 @@ export default async function globalTeardown() {
       try { db.prepare(`DELETE FROM refresh_tokens WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM notifications WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM health_events WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM alert_preferences WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM notification_preferences WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM push_subscriptions WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM user_badges WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM user_preferences WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       db.prepare(`DELETE FROM users WHERE ${where}`).run();

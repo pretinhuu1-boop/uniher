@@ -6,6 +6,7 @@
  * Rodar: npx playwright test --project=visual-ux
  */
 import { test, expect, Page } from '@playwright/test';
+import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 const BASE = 'http://localhost:3000';
 const ADMIN_EMAIL = 'admin@uniher.com.br';
@@ -19,11 +20,8 @@ async function ensureDemoRhUser(request: import('@playwright/test').APIRequestCo
   });
   if (!adminLoginRes.ok()) return;
 
-  const adminBody = await adminLoginRes.json();
-  const adminToken = adminBody.accessToken;
-  const cookies = adminLoginRes.headers()['set-cookie'] || '';
-  const match = cookies.match(/uniher-access-token=([^;]+)/);
-  const adminCookie = match?.[1] || adminToken;
+  const adminCookie = extractAccessTokenFromSetCookie(adminLoginRes);
+  if (!adminCookie) return;
 
   // Create demo company (409 if already exists — ignored)
   const compRes = await request.post(`${BASE}/api/admin/companies`, {

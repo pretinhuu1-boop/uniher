@@ -20,12 +20,12 @@ const PILLARS: Pillar[] = [
     tags: ['Repetição Espaçada', 'Feedback Instantâneo'],
   },
   {
-    number: '3x',
+    number: 'LGPD',
     numberColor: 'gold',
-    title: 'Loop de Dopamina Controlada',
+    title: 'Privacidade por Padrão',
     description:
-      'Pesquisa de Stanford demonstra que recompensas variáveis aumentam em 3x o engajamento sustentado. Calibramos cada micro-recompensa para manter a motivação intrínseca ativa.',
-    tags: ['Recompensas Calibradas', 'Motivação Intrínseca'],
+      'O acompanhamento individual prioriza autonomia, consentimento e minimização de dados, sem expor comparações entre pessoas.',
+    tags: ['Dados Mínimos', 'Acompanhamento Privado'],
     featured: true,
   },
   {

@@ -33,8 +33,6 @@ interface CompanyUser {
   name: string;
   email: string;
   role: string;
-  level: number;
-  points: number;
   blocked: number;
   department_name: string | null;
   created_at: string;
@@ -91,7 +89,7 @@ const RARITY_COLORS: Record<string, string> = {
   legendary: 'bg-amber-100 text-amber-700',
 };
 
-const TABS = ['Visão Geral', 'Empresas', 'Usuários', 'Admin Master', 'Badges', 'Sistema', 'Alertas', 'Auditoria'] as const;
+const TABS = ['Visão Geral', 'Empresas', 'Usuários', 'Admin Master', 'Sistema', 'Alertas', 'Auditoria'] as const;
 type Tab = (typeof TABS)[number];
 
 // ─── Shared Components ────────────────────────────────────────────────────────
@@ -355,8 +353,6 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
                   {ROLE_LABELS[u.role] ?? u.role}
                 </span>
                 {u.department_name && <span>{u.department_name}</span>}
-                <span>Nível {u.level}</span>
-                <span>{u.points.toLocaleString('pt-BR')} pts</span>
               </div>
               <div className="flex gap-2">
                 <button
@@ -396,8 +392,6 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usuária</th>
               <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Departamento</th>
               <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Nível</th>
-              <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Pts</th>
               <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
                     <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
             </tr>
@@ -419,8 +413,6 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
                       {ROLE_LABELS[u.role] ?? u.role}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center text-uni-text-600">{u.level}</td>
-                  <td className="px-4 py-3 text-center text-uni-text-600">{u.points.toLocaleString('pt-BR')}</td>
                   <td className="px-4 py-3 text-center">
                     <span
                       className={cn(
@@ -1052,7 +1044,7 @@ function UsersTab() {
               <div>
                 <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">
                   Papel
-                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usuária padrão — check-ins, campanhas e pontos'}>?</span>
+                  <span className="cursor-help opacity-50 ml-1" title={editForm.role === 'rh' ? 'Gerencia colaboradoras, campanhas e configurações da empresa' : editForm.role === 'lideranca' ? 'Gestora de equipe — visão dos indicadores do departamento' : 'Usuária padrão — acessa conteúdos e recursos de bem-estar'}>?</span>
                 </label>
                 <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))}
                   className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-rose-400">
@@ -1222,7 +1214,6 @@ function UsersTab() {
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usuária</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Empresa</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Nível</th>
                     <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
                     <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
                   </tr>
@@ -1244,7 +1235,6 @@ function UsersTab() {
                             {ROLE_LABELS[u.role] ?? u.role}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center text-uni-text-600">{u.level}</td>
                         <td className="px-4 py-3 text-center">
                           <span
                             className={cn(
@@ -1309,8 +1299,6 @@ interface AdminMasterUser {
   name: string;
   email: string;
   role: string;
-  level: number;
-  points: number;
   blocked: number;
   created_at: string;
   company_id: string | null;
@@ -3101,7 +3089,6 @@ export default function AdminPage() {
   const tabCounts: Partial<Record<Tab, number>> = {
     'Empresas': sysStats?.companies,
     'Usuários': sysStats?.users,
-    'Badges': sysStats?.badges,
   };
 
   return (
@@ -3139,7 +3126,6 @@ export default function AdminPage() {
         {activeTab === 'Empresas' && <CompaniesTab onGoToUsers={() => setActiveTab('Usuários')} />}
         {activeTab === 'Usuários' && <UsersTab />}
         {activeTab === 'Admin Master' && <AdminMasterTab />}
-        {activeTab === 'Badges' && <BadgesTab />}
         {activeTab === 'Sistema' && <SystemTab />}
         {activeTab === 'Alertas' && <AlertasTab />}
         {activeTab === 'Auditoria' && <AuditoriaTab />}

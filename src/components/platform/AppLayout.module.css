@@ -1,70 +1,149 @@
-/* ═══════════════════════════════════════════════════════════════
-   AppLayout — Platform Shell
-   ═══════════════════════════════════════════════════════════════ */
-
 .layout {
   display: flex;
+  width: 100%;
   min-height: 100vh;
-  background: var(--cream-50);
+  overflow-x: clip;
+  color: var(--platform-ink);
+  background: var(--platform-canvas);
+  font-family: var(--ff-body);
 }
 
-.main {
+.workspace {
+  display: flex;
   flex: 1;
-  margin-left: 240px;
-  padding: 0;
+  min-width: 0;
   min-height: 100vh;
+  flex-direction: column;
 }
 
-.topbar {
-  display: none;
+.mainContent {
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  outline: none;
+}
+
+.mainContent:focus-visible {
+  outline: 2px solid var(--platform-action);
+  outline-offset: -2px;
+}
+
+.mobileTopbar {
   position: sticky;
   top: 0;
-  z-index: 50;
-  background: var(--white);
-  border-bottom: 1px solid var(--border-1);
-  padding: 12px 20px;
+  z-index: var(--z-sticky);
+  display: flex;
+  min-height: 64px;
   align-items: center;
   gap: 12px;
+  padding: 10px 16px;
+  color: var(--platform-shell-text);
+  background: var(--platform-shell);
+  border-bottom: 1px solid rgb(255 247 236 / 18%);
 }
 
-.menuBtn {
-  background: none;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  color: var(--text-600);
-  display: flex;
+.mobileMenuButton {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-xs);
+  padding: 0;
+  color: var(--platform-shell-text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--platform-radius-control);
+  cursor: pointer;
 }
 
-.menuBtn:hover {
-  background: var(--cream-50);
+.mobileMenuButton:hover,
+.mobileMenuButton:focus-visible {
+  background: rgb(255 247 236 / 9%);
 }
 
-.topbarTitle {
-  font-family: var(--ff-display);
-  font-size: 1.1rem;
+.mobileMenuButton:focus-visible {
+  outline: 2px solid var(--platform-action);
+  outline-offset: 2px;
+}
+
+.mobileTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font-family: var(--ff-body);
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--text-900);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.content {
-  padding: 32px;
-  max-width: 1280px;
+.loadingScreen {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
 }
 
-@media (max-width: 768px) {
-  .main {
-    margin-left: 0;
+.loadingCard {
+  display: flex;
+  width: min(100%, 320px);
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  background: var(--platform-surface);
+  border: 1px solid var(--platform-line);
+  border-radius: var(--platform-radius-surface);
+}
+
+.loadingLogo {
+  width: 160px;
+  height: auto;
+  object-fit: contain;
+}
+
+.loadingSkeleton {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.loadingLine {
+  display: block;
+  width: 100%;
+  height: 10px;
+  background: var(--platform-group);
+  border-radius: var(--platform-radius-pill);
+}
+
+.loadingLineMedium {
+  width: 76%;
+}
+
+.loadingLineShort {
+  width: 52%;
+}
+
+@media (min-width: 769px) {
+  .workspace {
+    margin-left: 240px;
   }
 
-  .topbar {
-    display: flex;
+  .mainContent {
+    padding: 36px 40px 64px;
   }
 
-  .content {
-    padding: 20px 16px;
+  .mobileTopbar {
+    display: none;
+  }
+}
+
+@media (min-width: 1200px) {
+  .mainContent {
+    padding-right: 48px;
+    padding-left: 48px;
   }
 }

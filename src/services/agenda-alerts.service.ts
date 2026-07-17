@@ -1,20 +1,17 @@
-/**
- * Verifica eventos próximos e envia notificações para colaboradoras e gestores.
- * Deve ser chamado periodicamente (ex: 1x ao dia via cron ou no startup).
- */
+import type Database from 'better-sqlite3';
+import { nanoid } from 'nanoid';
+import { hasCollaboratorSelfCapability } from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { isPushEnabled, sendPushNotification } from '@/lib/push';
-import { nanoid } from 'nanoid';
+import { getAgendaReminderWindow } from '@/lib/time/agenda-clock';
 
 interface PendingEvent {
   id: string;
   user_id: string;
-  company_id: string;
   title: string;
   type: string;
   date: string;
   time: string | null;
-  user_name: string;
 }
 
 interface PushSubscriptionRow {
@@ -23,10 +20,40 @@ interface PushSubscriptionRow {
   auth: string;
 }
 
-async function sendReminderPush(userId: string, title: string, body: string, url = '/agenda') {
-  if (!isPushEnabled()) return;
+interface AgendaReminderQueue {
+  enqueue<T>(operation: (db: Database.Database) => T): Promise<T>;
+}
 
-  const db = getReadDb();
+interface AgendaPushDependencies {
+  enabled(): boolean;
+  send: typeof sendPushNotification;
+}
+
+export interface AgendaReminderDependencies {
+  database: Database.Database;
+  queue: AgendaReminderQueue;
+  push: AgendaPushDependencies;
+  now(): Date;
+}
+
+export interface AgendaReminderResult {
+  personalRemindersSent: number;
+}
+
+function getTableColumns(db: Database.Database, table: string): Set<string> {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return new Set(rows.map(({ name }) => name));
+}
+
+async function sendReminderPush(
+  db: Database.Database,
+  push: AgendaPushDependencies,
+  userId: string,
+  title: string,
+  body: string,
+) {
+  if (!push.enabled()) return;
+
   const prefs = db.prepare(`
     SELECT browser_enabled
     FROM notification_preferences
@@ -41,143 +68,121 @@ async function sendReminderPush(userId: string, title: string, body: string, url
     WHERE user_id = ?
   `).all(userId) as PushSubscriptionRow[];
 
-  if (!subscriptions.length) return;
-
   await Promise.all(
     subscriptions.map((subscription) =>
-      sendPushNotification(
+      push.send(
         {
           endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.p256dh,
-            auth: subscription.auth,
-          },
+          keys: { p256dh: subscription.p256dh, auth: subscription.auth },
         },
-        {
-          title,
-          body,
-          url,
-          icon: '/logo-uniher.png',
-        }
-      ).catch(() => false)
-    )
+        { title, body, url: '/agenda', icon: '/logo-uniher.png' },
+      ).catch(() => false),
+    ),
   );
 }
 
-/**
- * Envia lembretes para colaboradoras com eventos próximos.
- */
-export async function sendUpcomingReminders(): Promise<number> {
-  const db = getReadDb();
-  let sent = 0;
+/** Sends only self-owned Agenda reminders. Manager Agenda alerts are intentionally unsupported. */
+export async function sendUpcomingReminders(
+  overrides: Partial<AgendaReminderDependencies> = {},
+): Promise<AgendaReminderResult> {
+  const database = overrides.database ?? getReadDb();
+  const queue = overrides.queue ?? getWriteQueue();
+  const push = overrides.push ?? { enabled: isPushEnabled, send: sendPushNotification };
+  const now = overrides.now ?? (() => new Date());
+  let personalRemindersSent = 0;
 
-  // Find events due in the next 30 minutes that haven't been reminded yet.
-  // If no specific time was set, assume 09:00 on the selected date.
-  const events = db.prepare(`
-    SELECT he.id, he.user_id, he.company_id, he.title, he.type, he.date, he.time,
-           u.name as user_name
+  const userColumns = getTableColumns(database, 'users');
+  const capabilityCondition = userColumns.has('also_collaborator')
+    ? "(u.role = 'colaboradora' OR u.also_collaborator = 1)"
+    : "u.role = 'colaboradora'";
+  const activeConditions = [
+    capabilityCondition,
+    userColumns.has('deleted_at') ? 'u.deleted_at IS NULL' : null,
+    userColumns.has('blocked') ? 'COALESCE(u.blocked, 0) = 0' : null,
+    userColumns.has('approved') ? 'COALESCE(u.approved, 0) = 1' : null,
+  ].filter((condition): condition is string => condition !== null);
+
+  const initialWindow = getAgendaReminderWindow(now());
+  const events = database.prepare(`
+    SELECT he.id, he.user_id, he.title, he.type, he.date, he.time
     FROM health_events he
     JOIN users u ON u.id = he.user_id
     WHERE he.status = 'pending'
       AND he.deleted_at IS NULL
       AND he.reminder_sent = 0
-      AND datetime(
-        he.date || ' ' || COALESCE(NULLIF(he.time, ''), '09:00')
-      ) BETWEEN datetime('now') AND datetime('now', '+30 minutes')
+      AND ${activeConditions.join('\n      AND ')}
+      AND datetime(he.date || ' ' || COALESCE(NULLIF(he.time, ''), '09:00'))
+          BETWEEN datetime(?) AND datetime(?)
     ORDER BY he.date ASC, he.time ASC
-  `).all() as PendingEvent[];
+  `).all(initialWindow.windowStart, initialWindow.windowEnd) as PendingEvent[];
 
   for (const event of events) {
-    const scheduledAt = new Date(`${event.date}T${event.time || '09:00'}:00`);
-    const hoursUntil = Math.max(0, Math.round((scheduledAt.getTime() - Date.now()) / (1000 * 60 * 60)));
-    const daysUntil = Math.max(0, Math.ceil((new Date(event.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
     const typeLabel = event.type === 'exame' ? 'Exame' : event.type === 'consulta' ? 'Consulta' : 'Lembrete';
     const whenLabel = event.time ? `${event.date} às ${event.time}` : `${event.date} pela manhã`;
 
-    // Notify the collaborator
-    const wq = getWriteQueue();
-    await wq.enqueue((db) => {
-      db.prepare(`
-        INSERT INTO notifications (id, user_id, type, title, message)
-        VALUES (?, ?, 'reminder', ?, ?)
-      `).run(
-        nanoid(), event.user_id,
-        `${typeLabel} de hoje`,
-        `${event.title} - ${whenLabel}`
-      );
-
-      // Mark as reminded
-      db.prepare('UPDATE health_events SET reminder_sent = 1 WHERE id = ?').run(event.id);
+    const persisted = await queue.enqueue((db) => {
+      const persistReminder = db.transaction(() => {
+        if (!hasCollaboratorSelfCapability(event.user_id, db)) {
+          return false;
+        }
+        const transactionWindow = getAgendaReminderWindow(now());
+        const updated = db.prepare(`
+          UPDATE health_events
+          SET reminder_sent = 1
+          WHERE id = ?
+            AND user_id = ?
+            AND status = 'pending'
+            AND deleted_at IS NULL
+            AND reminder_sent = 0
+            AND date = ?
+            AND COALESCE(time, '') = COALESCE(?, '')
+            AND datetime(date || ' ' || COALESCE(NULLIF(time, ''), '09:00'))
+                BETWEEN datetime(?) AND datetime(?)
+        `).run(
+          event.id,
+          event.user_id,
+          event.date,
+          event.time,
+          transactionWindow.windowStart,
+          transactionWindow.windowEnd,
+        );
+        if (updated.changes !== 1) {
+          return false;
+        }
+        db.prepare(`
+          INSERT INTO notifications (id, user_id, type, title, message, source, resource_id)
+          VALUES (?, ?, 'reminder', ?, ?, 'agenda', ?)
+        `).run(
+          nanoid(),
+          event.user_id,
+          `${typeLabel} de hoje`,
+          `${event.title} - ${whenLabel}`,
+          event.id,
+        );
+        return true;
+      });
+      return persistReminder.immediate();
     });
+
+    if (!persisted) continue;
+
     await sendReminderPush(
+      database,
+      push,
       event.user_id,
       `${typeLabel} chegando`,
-      `${event.title} está marcado para ${whenLabel}. Toque para abrir sua agenda.`
+      `${event.title} está marcado para ${whenLabel}. Toque para abrir sua agenda.`,
     );
-    sent++;
-
-    // Notify managers based on their preferences
-    if (event.company_id && event.type !== 'lembrete') {
-      const managers = db.prepare(`
-        SELECT u.id, ap.days_before
-        FROM users u
-        LEFT JOIN alert_preferences ap ON ap.user_id = u.id AND (ap.alert_type = ? OR ap.alert_type = 'all')
-        WHERE u.company_id = ? AND u.role IN ('rh', 'lideranca')
-          AND u.deleted_at IS NULL AND u.blocked = 0
-          AND u.id != ?
-      `).all(event.type, event.company_id, event.user_id) as { id: string; days_before: number | null }[];
-
-      for (const mgr of managers) {
-        const alertDays = mgr.days_before ?? 3;
-        if (daysUntil <= alertDays) {
-          const wq2 = getWriteQueue();
-          await wq2.enqueue((db) => {
-            db.prepare(`
-              INSERT INTO notifications (id, user_id, type, title, message)
-              VALUES (?, ?, 'alert', ?, ?)
-            `).run(
-              nanoid(), mgr.id,
-              `${typeLabel} de colaboradora em ${daysUntil} dia${daysUntil > 1 ? 's' : ''}`,
-              `${event.user_name}: ${event.title} - ${whenLabel}`
-            );
-          });
-          await sendReminderPush(
-            mgr.id,
-            `${typeLabel} da equipe próximo`,
-            `${event.user_name} tem ${event.title} marcado para ${whenLabel}.`
-          );
-          sent++;
-        }
-      }
-    }
+    personalRemindersSent += 1;
   }
 
-  // Mark overdue events
-  const wqOverdue = getWriteQueue();
-  await wqOverdue.enqueue((db) => {
+  await queue.enqueue((db) => {
+    const { today } = getAgendaReminderWindow(now());
     db.prepare(`
       UPDATE health_events SET status = 'missed'
-      WHERE status = 'pending' AND date < date('now') AND deleted_at IS NULL
-    `).run();
+      WHERE status = 'pending' AND date < ? AND deleted_at IS NULL
+    `).run(today);
   });
 
-  return sent;
-}
-
-/**
- * Retorna estatísticas de adesão para o gestor.
- */
-export function getAgendaStats(companyId: string) {
-  const db = getReadDb();
-
-  return db.prepare(`
-    SELECT
-      COUNT(*) as total,
-      COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-      COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-      COUNT(CASE WHEN status = 'missed' THEN 1 END) as missed,
-      COUNT(DISTINCT user_id) as users_with_events
-    FROM health_events
-    WHERE company_id = ? AND deleted_at IS NULL
-  `).get(companyId);
+  return { personalRemindersSent };
 }

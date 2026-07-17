@@ -7,6 +7,7 @@ import { withRole } from '@/lib/auth/middleware';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { checkReadRateLimit } from '@/lib/security/rate-limit';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 export const GET = withRole('rh')(async (req, context) => {
   await checkReadRateLimit(req);
@@ -56,7 +57,7 @@ export const GET = withRole('rh')(async (req, context) => {
   const users = db.prepare(`
     SELECT
       u.id, u.name, u.email, u.role, u.department_id,
-      u.level, u.points, u.blocked, u.approved, u.created_at,
+      u.blocked, u.approved, u.created_at,
       d.name as department_name
     FROM users u
     LEFT JOIN departments d ON d.id = u.department_id
@@ -84,7 +85,7 @@ export const GET = withRole('rh')(async (req, context) => {
     ORDER BY d.name ASC
   `).all(companyId) as any[];
 
-  return NextResponse.json({
+  return NextResponse.json(toSafeUserProjection({
     users,
     total,
     limit,
@@ -95,5 +96,5 @@ export const GET = withRole('rh')(async (req, context) => {
       blocked: stats.blocked_count,
       departments: deptStats,
     },
-  });
+  }));
 });

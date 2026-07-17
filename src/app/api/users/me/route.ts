@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
-import { getUserById, toPublicUser } from '@/repositories/user.repository';
+import { getUserById } from '@/repositories/user.repository';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 import { getWriteQueue } from '@/lib/db';
 import { z } from 'zod';
 
@@ -9,7 +10,7 @@ export const GET = withAuth(async (_req: NextRequest, context) => {
   if (!user) {
     return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
   }
-  return NextResponse.json({ user: toPublicUser(user) });
+  return NextResponse.json({ user: toSafeUserProjection(user) });
 });
 
 const updateSchema = z.object({
@@ -50,5 +51,5 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
 
   const updated = getUserById(context.auth.userId);
   if (!updated) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
-  return NextResponse.json({ user: toPublicUser(updated) });
+  return NextResponse.json({ user: toSafeUserProjection(updated) });
 });

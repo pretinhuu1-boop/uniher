@@ -172,6 +172,7 @@
 }
 
 .saveBtn {
+  min-height: 44px;
   padding: 10px 28px;
   border-radius: var(--radius-sm);
   background: var(--rose-500);

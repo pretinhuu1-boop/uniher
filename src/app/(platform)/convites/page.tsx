@@ -10,7 +10,7 @@ type Tab = 'invites' | 'pending';
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 const ROLE_OPTIONS = [
-  { value: 'colaboradora', label: 'Colaboradora', hint: 'Usuária padrão — faz check-ins, participa de campanhas e acumula pontos' },
+  { value: 'colaboradora', label: 'Colaboradora', hint: 'Usuária padrão — acessa conteúdos e recursos de bem-estar' },
   { value: 'lideranca', label: 'Liderança', hint: 'Gestora de equipe — tudo da colaboradora + visão dos indicadores do departamento' },
   { value: 'rh', label: 'Admin Empresa', hint: 'Administradora da empresa — gerencia colaboradoras, campanhas e configurações' },
 ];

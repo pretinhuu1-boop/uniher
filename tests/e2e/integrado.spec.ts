@@ -4,9 +4,20 @@
  *        colaboradora aceita → RH aprova → colaboradora loga → check-in → missões
  */
 import { test, expect } from '@playwright/test';
+import type { ProtectedDashboardProjection } from '../../src/types/platform';
+import {
+  expectNoRecursiveKeys,
+  expectPrivacyReviewResponse,
+  expectPrivateResponse,
+} from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
+const SUPPRESSION_MESSAGE = 'Dados insuficientes para proteger a privacidade' as const;
+
+function suppressedMetric(reason: 'minimum_cohort' | 'not_computable') {
+  return { status: 'suppressed', reason, message: SUPPRESSION_MESSAGE } as const;
+}
 
 test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
   test.describe.configure({ mode: 'serial' });
@@ -117,9 +128,53 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     });
 
     expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty('kpis');
-    expect(body).toHaveProperty('invites');
+    expectPrivateResponse(res);
+    const body = await res.json() as ProtectedDashboardProjection;
+    expect(Object.keys(body).sort()).toEqual([
+      'ageDistribution',
+      'departments',
+      'examActivitySeries',
+      'filters',
+      'metrics',
+    ]);
+    expect(body.filters).toEqual({ period: '1m' });
+    expect(Object.keys(body.metrics).sort()).toEqual([
+      'campaignParticipation',
+      'engagement',
+      'examActivity',
+      'healthRisk',
+      'roi',
+    ]);
+    expect(body.metrics).toEqual({
+      examActivity: suppressedMetric('minimum_cohort'),
+      engagement: suppressedMetric('not_computable'),
+      healthRisk: suppressedMetric('not_computable'),
+      campaignParticipation: suppressedMetric('not_computable'),
+      roi: suppressedMetric('not_computable'),
+    });
+    expect(body.departments).toEqual([]);
+    expect(body.ageDistribution.map(({ label }) => label)).toEqual([
+      '18-25',
+      '26-35',
+      '36-45',
+      '46-55',
+      '56+',
+    ]);
+    for (const bucket of body.ageDistribution) {
+      expect(Object.keys(bucket).sort()).toEqual(['color', 'label', 'metric']);
+      expect(bucket.metric).toEqual(suppressedMetric('minimum_cohort'));
+    }
+    expect(body.examActivitySeries.length).toBeGreaterThan(0);
+    for (const point of body.examActivitySeries) {
+      expect(Object.keys(point).sort()).toEqual(['metric', 'period']);
+      expect(point.period).toMatch(/^\d{4}-\d{2}$/);
+      expect(point.metric).toEqual(suppressedMetric('minimum_cohort'));
+    }
+    expectNoRecursiveKeys(
+      body,
+      /numerator|denominator|counts?|collaborators?|points?|level|badges?|rankings?/i,
+      [companyName, companyId, rhEmail, colabEmail],
+    );
   });
 
   // ─── Step 6: RH cria convite ────────────────────────────────────────────────
@@ -252,9 +307,16 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     });
 
     expect(res.status()).toBe(200);
+    expectPrivateResponse(res);
     const body = await res.json();
+    expect(Object.keys(body).sort()).toEqual(['checkedInToday', 'streak']);
     expect(body.checkedInToday).toBe(true);
     expect(body.streak).toBeGreaterThanOrEqual(1);
+    expectNoRecursiveKeys(
+      body,
+      /ranking|points?|xp|level|league|badges?/i,
+      [companyName, companyId, rhEmail, colabEmail],
+    );
   });
 
   // ─── Step 14: Colaboradora visualiza missões ────────────────────────────────
@@ -274,16 +336,14 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
 
   // ─── Step 15: Colaboradora visualiza leaderboard ─────────────────────────────
 
-  test('Step 15: Colaboradora visualiza leaderboard', async ({ request }) => {
+  test('Step 15: Leaderboard permanece indisponível durante privacy review', async ({ request }) => {
     test.skip(!colabToken, 'Login da colaboradora falhou');
 
     const res = await request.get('/api/gamification/leaderboard', {
       headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
-    expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty('type');
+    await expectPrivacyReviewResponse(res, [companyName, companyId, rhEmail, colabEmail]);
   });
 
   // ─── Step 16: Health check continua saudável ────────────────────────────────

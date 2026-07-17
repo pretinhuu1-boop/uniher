@@ -69,7 +69,6 @@ interface Lesson {
   title: string;
   content: string | Record<string, unknown>;
   content_json?: string;
-  xp_reward: number;
   theme: string;
   description?: string;
   duration_seconds?: number;
@@ -78,7 +77,7 @@ interface Lesson {
 }
 
 interface DailyLessonProps {
-  onComplete?: (lessonId: string, xpEarned: number) => void;
+  onComplete?: (lessonId: string) => void;
 }
 
 // ─── Content shape per type ──────────────────────────────────────────────────
@@ -394,17 +393,6 @@ function FeedbackBanner({ correct, explanation }: { correct: boolean; explanatio
     >
       {correct ? '✅' : '❌'} {explanation}
     </div>
-  );
-}
-
-function XPBadge({ xp, color }: { xp: number; color: string }) {
-  return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-white"
-      style={{ background: color }}
-    >
-      +{xp} XP
-    </span>
   );
 }
 
@@ -1102,7 +1090,7 @@ function HistoriaActivity({
             <p className="font-bold mb-1">{choice.correct ? '🌟 Ótima escolha!' : '💡 Boa reflexão!'}</p>
             <p>{choice.feedback}</p>
             {choice.correct && (
-              <p className="text-xs mt-2 font-bold" style={{ color }}>Bônus: +XP extra ganho!</p>
+              <p className="text-xs mt-2 font-bold" style={{ color }}>Progresso educativo registrado.</p>
             )}
           </div>
 
@@ -1261,20 +1249,12 @@ function ImagemActivity({
 }
 
 function DesafioDiaActivity({
-  content, color, xpReward, completing, onComplete,
-}: { content: DesafioDiaContent; color: string; xpReward: number; completing: boolean; onComplete: () => void }) {
+  content, color, completing, onComplete,
+}: { content: DesafioDiaContent; color: string; completing: boolean; onComplete: () => void }) {
   const [accepted, setAccepted] = useState(false);
 
   return (
     <div>
-      {/* XP highlight */}
-      <div
-        className="flex items-center justify-center gap-2 rounded-xl py-3 mb-4 text-white font-bold text-sm"
-        style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}
-      >
-        🏆 Complete e ganhe <span className="text-lg">+{xpReward} XP</span>
-      </div>
-
       {/* Challenge card */}
       <div className="bg-cream-50 rounded-2xl p-4 mb-4">
         <p className="text-sm font-bold text-uni-text-900 mb-2">Desafio:</p>
@@ -1322,7 +1302,6 @@ function DesafioDiaActivity({
 export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonProps = {}) {
   const { data, mutate } = useSWR('/api/gamification/daily-lesson', fetcher, { revalidateOnFocus: false });
   const [completing, setCompleting] = useState(false);
-  const [xpEarned, setXpEarned] = useState(0);
   const [justCompleted, setJustCompleted] = useState(false);
 
   const lesson: Lesson | undefined = data?.lesson;
@@ -1350,11 +1329,9 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
           ...(extra !== undefined ? { knew_already: extra } : {}),
         }),
       });
-      const earned = lesson.xp_reward;
-      setXpEarned(earned);
       setJustCompleted(true);
       await mutate();
-      onCompleteProp?.(lesson.id, earned);
+      onCompleteProp?.(lesson.id);
     } catch {}
     setTimeout(() => setJustCompleted(false), 1400);
     setCompleting(false);
@@ -1393,9 +1370,7 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
       >
         <div className="text-4xl mb-2">🎉</div>
         <h3 className="font-display font-bold text-green-800">Lição Concluída!</h3>
-        <p className="text-sm text-green-600 mt-1">
-          +{xpEarned || 0} XP ganhos hoje
-        </p>
+        <p className="text-sm text-green-600 mt-1">Progresso educativo registrado.</p>
         <p className="text-xs text-green-500 mt-0.5">Volte amanhã para uma nova lição!</p>
       </div>
     );
@@ -1458,7 +1433,6 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
           </h3>
         </div>
         <div className="text-right flex-shrink-0">
-          <XPBadge xp={lesson.xp_reward} color={themeColor} />
           {lesson.duration_seconds && (
             <p className="text-[10px] text-uni-text-300 mt-0.5">
               ~{Math.ceil(lesson.duration_seconds / 60)} min
@@ -1471,7 +1445,7 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
       <div className="p-4">
         {justCompleted && (
           <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
-            +{xpEarned} XP registrado. Carregando proxima licao...
+            Progresso registrado. Carregando próxima lição...
           </div>
         )}
         {lesson.type === 'pilula' && (
@@ -1568,7 +1542,6 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
           <DesafioDiaActivity
             content={parsedContent as unknown as DesafioDiaContent}
             color={themeColor}
-            xpReward={lesson.xp_reward}
             completing={completing}
             onComplete={() => handleComplete(1)}
           />

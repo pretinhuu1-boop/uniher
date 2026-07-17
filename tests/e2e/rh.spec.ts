@@ -2,10 +2,71 @@
  * rh.spec.ts — Testes do painel RH / Admin da Empresa
  * Cobre: criação de RH via admin, login RH, dashboard, convites, aprovações, objetivos, permissões
  */
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import type { ProtectedDashboardProjection } from '../../src/types/platform';
+import {
+  expectNoRecursiveKeys,
+  expectPrivacyReviewResponse,
+  expectPrivateResponse,
+  extractAccessTokenFromSetCookie,
+} from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
+const SUPPRESSION_MESSAGE = 'Dados insuficientes para proteger a privacidade' as const;
+
+function suppressedMetric(reason: 'minimum_cohort' | 'not_computable') {
+  return { status: 'suppressed', reason, message: SUPPRESSION_MESSAGE } as const;
+}
+
+const protectedDashboardFixture: ProtectedDashboardProjection = {
+  filters: { period: '1m' },
+  metrics: {
+    examActivity: suppressedMetric('minimum_cohort'),
+    engagement: suppressedMetric('not_computable'),
+    healthRisk: suppressedMetric('not_computable'),
+    campaignParticipation: suppressedMetric('not_computable'),
+    roi: suppressedMetric('not_computable'),
+  },
+  departments: [
+    {
+      id: 'd1',
+      name: '=SUM(1,1)',
+      color: '#536444',
+      metric: suppressedMetric('minimum_cohort'),
+    },
+    {
+      id: 'd2',
+      name: 'Produto',
+      color: '#b98643',
+      metric: suppressedMetric('minimum_cohort'),
+    },
+  ],
+  ageDistribution: [
+    {
+      label: '26-35',
+      color: '#536444',
+      metric: suppressedMetric('minimum_cohort'),
+    },
+  ],
+  examActivitySeries: [
+    { period: '2026-07', metric: suppressedMetric('minimum_cohort') },
+  ],
+};
+
+async function completeAuthTourForDashboard(page: Page) {
+  await page.route('**/api/auth/me', async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({
+      response,
+      json: {
+        ...body,
+        user: { ...body.user, firstAccessTourCompleted: true },
+      },
+    });
+  });
+}
 
 test.describe('RH — Painel da Empresa', () => {
   test.describe.configure({ mode: 'serial' });
@@ -30,9 +91,7 @@ test.describe('RH — Painel da Empresa', () => {
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
     });
     expect(res.status()).toBe(200);
-    const cookies = res.headers()['set-cookie'] || '';
-    const match = cookies.match(/uniher-access-token=([^;]+)/);
-    adminToken = match?.[1] || '';
+    adminToken = extractAccessTokenFromSetCookie(res);
     expect(adminToken).toBeTruthy();
   });
 
@@ -76,9 +135,7 @@ test.describe('RH — Painel da Empresa', () => {
     });
 
     expect(res.status()).toBe(200);
-    const cookies = res.headers()['set-cookie'] || '';
-    const match = cookies.match(/uniher-access-token=([^;]+)/);
-    rhToken = match?.[1] || '';
+    rhToken = extractAccessTokenFromSetCookie(res);
     expect(rhToken).toBeTruthy();
     const body = await res.json();
     expect(body.user.role).toBe('rh');
@@ -93,12 +150,164 @@ test.describe('RH — Painel da Empresa', () => {
     });
 
     expect(res.status()).toBe(200);
-    const body = await res.json();
+    expectPrivateResponse(res);
+    const body = await res.json() as ProtectedDashboardProjection;
 
-    expect(body).toHaveProperty('kpis');
-    expect(body).toHaveProperty('departments');
-    expect(body).toHaveProperty('engagement');
-    expect(body).toHaveProperty('invites');
+    expect(Object.keys(body).sort()).toEqual([
+      'ageDistribution',
+      'departments',
+      'examActivitySeries',
+      'filters',
+      'metrics',
+    ]);
+    expect(body.filters).toEqual({ period: '1m' });
+    expect(Object.keys(body.metrics).sort()).toEqual([
+      'campaignParticipation',
+      'engagement',
+      'examActivity',
+      'healthRisk',
+      'roi',
+    ]);
+    expect(body.metrics).toEqual({
+      examActivity: suppressedMetric('minimum_cohort'),
+      engagement: suppressedMetric('not_computable'),
+      healthRisk: suppressedMetric('not_computable'),
+      campaignParticipation: suppressedMetric('not_computable'),
+      roi: suppressedMetric('not_computable'),
+    });
+    expect(body.departments).toEqual([]);
+    expect(body.ageDistribution.map(({ label }) => label)).toEqual([
+      '18-25',
+      '26-35',
+      '36-45',
+      '46-55',
+      '56+',
+    ]);
+    for (const bucket of body.ageDistribution) {
+      expect(Object.keys(bucket).sort()).toEqual(['color', 'label', 'metric']);
+      expect(bucket.metric).toEqual(suppressedMetric('minimum_cohort'));
+    }
+    expect(body.examActivitySeries.length).toBeGreaterThan(0);
+    for (const point of body.examActivitySeries) {
+      expect(Object.keys(point).sort()).toEqual(['metric', 'period']);
+      expect(point.period).toMatch(/^\d{4}-\d{2}$/);
+      expect(point.metric).toEqual(suppressedMetric('minimum_cohort'));
+    }
+    expectNoRecursiveKeys(
+      body,
+      /numerator|denominator|counts?|collaborators?|points?|level|badges?|rankings?/i,
+      [companyName, companyId, rhEmail, rhName, ADMIN_EMAIL],
+    );
+  });
+
+  test('Dashboard RH compõe somente indicadores protegidos sem overflow', async ({ page, context, baseURL }) => {
+    await context.addCookies([
+      {
+        name: 'uniher-access-token',
+        value: rhToken,
+        url: baseURL!,
+      },
+    ]);
+    await completeAuthTourForDashboard(page);
+    await page.route('**/api/rh/onboarding-status', (route) =>
+      route.fulfill({ json: { isNewRH: false, steps: {} } }),
+    );
+    await page.route('**/api/dashboard?**', (route) => route.fulfill({ json: protectedDashboardFixture }));
+    await page.setViewportSize({ width: 1024, height: 812 });
+    await page.goto('/dashboard');
+
+    await expect(page.getByRole('heading', { name: `Bom dia, ${rhName.split(' ')[0]}.` })).toBeVisible();
+
+    const dashboardContent = page.locator('#main-content');
+    await expect(dashboardContent).not.toContainText(/diagnóstico|paciente|dados? individuais?/i);
+    await expect(dashboardContent).not.toContainText(/\\u[0-9a-f]{4}/i);
+
+    const summary = page.getByRole('region', { name: 'Resumo protegido da empresa' });
+    await expect(summary.getByText('Atividade de exames')).toBeVisible();
+    await expect(summary.getByText('Engajamento')).toBeVisible();
+    await expect(summary.getByText('Participação em campanha')).toBeVisible();
+    await expect(summary).toContainText(SUPPRESSION_MESSAGE);
+
+    const actions = page.getByRole('region', { name: 'Próximas ações' });
+    await expect(actions.getByRole('link', { name: /Campanhas/ })).toHaveAttribute('href', '/campanhas');
+    await expect(actions.getByRole('link', { name: /Convites/ })).toHaveAttribute('href', '/convites');
+    await expect(actions.getByRole('link', { name: /Histórico/ })).toHaveAttribute('href', '/historico');
+
+    await expect(page.getByRole('heading', { name: 'Indicadores protegidos' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Contribuintes ativos por área' })).toBeVisible();
+    const ageOverview = page.getByRole('region', { name: 'Faixas etárias protegidas' });
+    await expect(ageOverview.getByRole('heading', { name: 'Faixas etárias protegidas' })).toBeVisible();
+    await expect(ageOverview.getByText(SUPPRESSION_MESSAGE, { exact: true })).toHaveCount(1);
+    await expect(page.getByRole('region', { name: 'Engajamento' }).getByRole('status')).toHaveText(SUPPRESSION_MESSAGE);
+    await expect(page.getByTestId('dashboard-roi')).toHaveCount(0);
+    await expect(page.locator('[data-legacy-stat-card]')).toHaveCount(0);
+    await expect(page.getByRole('table')).toHaveCount(0);
+
+    const periodFilter = page.getByRole('button', { name: '3m' }).locator('..');
+    const departmentFilter = page.getByRole('combobox', { name: 'Filtrar por departamento' });
+    for (const filter of [periodFilter, departmentFilter]) {
+      await expect(filter).toBeVisible();
+      expect(await filter.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return bounds.left >= 0 && bounds.right <= window.innerWidth;
+      })).toBe(true);
+    }
+    await periodFilter.getByRole('button', { name: '3m' }).click();
+    await expect(periodFilter.getByRole('button', { name: '3m' })).toHaveAttribute('aria-pressed', 'true');
+    await departmentFilter.selectOption('d1');
+    const departmentOverview = page.getByRole('region', { name: /Contribuintes ativos/ });
+    await expect(departmentOverview.getByText('=SUM(1,1)')).toBeVisible();
+    await expect(departmentOverview.getByText('Produto')).toBeVisible();
+    await expect(departmentOverview.getByText(SUPPRESSION_MESSAGE, { exact: true })).toHaveCount(2);
+    await expect.poll(() => page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    )).toBe(true);
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await expect.poll(() => page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    )).toBe(true);
+  });
+
+  test('Histórico e Comunicações renderizam copy portuguesa íntegra', async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: 'uniher-access-token', value: rhToken, url: baseURL! }]);
+    await completeAuthTourForDashboard(page);
+
+    await page.goto('/historico');
+    await expect(page.getByRole('heading', { name: 'Histórico protegido' })).toBeVisible();
+    await expect(page.locator('#main-content')).not.toContainText(/\\u[0-9a-f]{4}/i);
+
+    await page.goto('/analytics-emails');
+    await expect(page.getByRole('heading', { name: 'Entregas de comunicação' })).toBeVisible();
+    await expect(page.locator('#main-content')).not.toContainText(/\\u[0-9a-f]{4}/i);
+  });
+
+  test('Dashboard RH mostra erro da API e bloqueia exportação vazia', async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: 'uniher-access-token', value: rhToken, url: baseURL! }]);
+    await completeAuthTourForDashboard(page);
+    await page.route('**/api/rh/onboarding-status', (route) =>
+      route.fulfill({ json: { isNewRH: false, steps: {} } }),
+    );
+    await page.route('**/api/dashboard?**', (route) => route.fulfill({
+      status: 500,
+      json: { error: 'Falha controlada' },
+    }));
+
+    await page.goto('/dashboard');
+
+    await expect(page.getByRole('heading', { name: /carregar o dashboard/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Exportar CSV' })).toBeDisabled();
+  });
+
+  test('Dashboard RH preserva o redirect real do onboarding', async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: 'uniher-access-token', value: rhToken, url: baseURL! }]);
+    await completeAuthTourForDashboard(page);
+
+    await page.goto('/dashboard');
+
+    await expect(page).toHaveURL(/\/onboarding-rh$/);
+    await expect(page.getByRole('heading', { name: 'Bem-vinda ao UniHER!' })).toBeVisible();
+    await page.unrouteAll({ behavior: 'wait' });
   });
 
   // ─── Convites ────────────────────────────────────────────────────────────────
@@ -184,7 +393,7 @@ test.describe('RH — Painel da Empresa', () => {
     expect(res.status()).toBe(201);
     const body = await res.json();
     expect(body).toHaveProperty('user');
-    expect(body).toHaveProperty('accessToken');
+    expect(body).not.toHaveProperty('accessToken');
     invitedUserId = body.user.id;
   });
 
@@ -252,18 +461,15 @@ test.describe('RH — Painel da Empresa', () => {
 
   // ─── Objetivos ───────────────────────────────────────────────────────────────
 
-  test('GET /api/rh/objectives — RH lista objetivos da empresa', async ({ request }) => {
+  test('GET /api/rh/objectives — permanece indisponível durante privacy review', async ({ request }) => {
     const res = await request.get('/api/rh/objectives', {
       headers: { Cookie: `uniher-access-token=${rhToken}` },
     });
 
-    expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty('objectives');
-    expect(Array.isArray(body.objectives)).toBeTruthy();
+    await expectPrivacyReviewResponse(res, [companyName, companyId, rhEmail, rhName]);
   });
 
-  test('POST /api/rh/objectives — RH cria objetivo', async ({ request }) => {
+  test('POST /api/rh/objectives — não aceita objetivo durante privacy review', async ({ request }) => {
     const res = await request.post('/api/rh/objectives', {
       headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {
@@ -277,14 +483,10 @@ test.describe('RH — Painel da Empresa', () => {
       },
     });
 
-    expect(res.status()).toBe(201);
-    const body = await res.json();
-    expect(body).toHaveProperty('objective');
-    expect(body.objective).toHaveProperty('id');
-    expect(body.objective.title).toContain('Objetivo Teste');
+    await expectPrivacyReviewResponse(res, [companyName, companyId, rhEmail, rhName]);
   });
 
-  test('POST /api/rh/objectives — rejeita objetivo inválido (sem título)', async ({ request }) => {
+  test('POST /api/rh/objectives — não revela validação legada durante privacy review', async ({ request }) => {
     const res = await request.post('/api/rh/objectives', {
       headers: { Cookie: `uniher-access-token=${rhToken}` },
       data: {
@@ -296,7 +498,7 @@ test.describe('RH — Painel da Empresa', () => {
       },
     });
 
-    expect(res.status()).toBe(422);
+    await expectPrivacyReviewResponse(res, [companyName, companyId, rhEmail, rhName]);
   });
 
   // ─── Permissões ──────────────────────────────────────────────────────────────

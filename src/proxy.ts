@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Rotas que nao precisam de autenticacao
 const PUBLIC_ROUTES = [
   '/',
   '/auth',
@@ -19,7 +18,6 @@ const PUBLIC_ROUTES = [
   '/api/push/vapid-key',
 ];
 
-// Prefixos publicos
 const PUBLIC_PREFIXES = [
   '/api/auth/',
   '/api/invites/',
@@ -31,7 +29,6 @@ const PUBLIC_PREFIXES = [
 function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.includes(pathname)) return true;
   if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
-  // Arquivos estaticos
   if (pathname.includes('.')) return true;
   return false;
 }
@@ -39,65 +36,74 @@ function isPublicRoute(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Rotas publicas passam direto
   if (isPublicRoute(pathname)) {
     return NextResponse.next();
   }
 
-  // Verificar token de acesso no cookie ou header Authorization
   const cookieToken = request.cookies.get('uniher-access-token')?.value;
   const authHeader = request.headers.get('Authorization');
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
   const accessToken = cookieToken || bearerToken;
 
   if (!accessToken) {
-    // Se e API, retornar 401
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 });
     }
-    // Se e pagina, redirecionar para login
+
     const loginUrl = new URL('/auth', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Verificar se o JWT e valido (sem checar DB, apenas assinatura)
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(accessToken, secret);
-
-    // Redirect/deny non-admin users trying to access admin pages or admin APIs
+    const role = typeof payload.role === 'string' ? payload.role : '';
+    const mustChangePassword = payload.mustChangePassword === true;
     const isAdminSurface = pathname.startsWith('/admin') || pathname.startsWith('/api/admin/');
-    if ((payload as any).role !== 'admin' && isAdminSurface) {
+
+    if (role !== 'admin' && isAdminSurface) {
       if (pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+        return NextResponse.json({ error: 'Permissao insuficiente' }, { status: 403 });
       }
+
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    // Redirecionar para troca obrigatoria de senha se necessario
-    if ((payload as any).mustChangePassword === true) {
-      const allowedPaths = ['/primeiro-acesso', '/api/auth/change-password', '/api/auth/confirm-first-access', '/api/auth/me', '/api/auth/logout', '/api/auth/refresh', '/api/users/me'];
-      if (!allowedPaths.some(p => pathname.startsWith(p))) {
+    if (mustChangePassword) {
+      const allowedPaths = [
+        '/primeiro-acesso',
+        '/api/auth/change-password',
+        '/api/auth/confirm-first-access',
+        '/api/auth/me',
+        '/api/auth/logout',
+        '/api/auth/refresh',
+        '/api/users/me',
+      ];
+
+      if (!allowedPaths.some((path) => pathname.startsWith(path))) {
         if (pathname.startsWith('/api/')) {
-          return NextResponse.json({ error: 'Troca de senha obrigatória', mustChangePassword: true }, { status: 403 });
+          return NextResponse.json(
+            { error: 'Troca de senha obrigatoria', mustChangePassword: true },
+            { status: 403 },
+          );
         }
+
         return NextResponse.redirect(new URL('/primeiro-acesso', request.url));
       }
     }
 
     return NextResponse.next();
   } catch {
-    // Token invalido ou expirado
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
-    // If refresh token exists, let page load — client-side interceptor will handle reauth
+
     const refreshToken = request.cookies.get('uniher-refresh-token')?.value;
     if (refreshToken) {
       return NextResponse.next();
     }
-    // No refresh token either — full redirect to login
+
     const loginUrl = new URL('/auth', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
