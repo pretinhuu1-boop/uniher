@@ -27,7 +27,10 @@ import { POST as checkIn } from '@/app/api/gamification/check-in/route';
 import { GET as getLesson, POST as completeLesson } from '@/app/api/gamification/daily-lesson/route';
 import { POST as completeMission } from '@/app/api/gamification/daily-missions/[id]/complete/route';
 import { POST as joinCampaign } from '@/app/api/campaigns/join/route';
-import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
+import {
+  LEGACY_GAMIFICATION_STATE,
+  toSafeLessonProjection,
+} from '@/lib/gamification/containment';
 import * as objectivesService from '@/services/objectives.service';
 import * as leagueService from '@/services/league.service';
 import * as activityLogRepository from '@/repositories/activity-log.repository';
@@ -94,6 +97,24 @@ function legacySnapshotBytes(db: Database.Database) {
   return JSON.stringify(legacySnapshot(db));
 }
 
+const REVIEWED_LEGACY_LESSON_ALIASES = Object.freeze([
+  'points_next_level',
+  'achievement_count',
+  'level_info',
+  'points_earned',
+  'new_points',
+  'new_level',
+  'leveled_up',
+  'badges_unlocked',
+  'current_league',
+  'total_in_league',
+  'user_badges',
+  'point',
+  'xp_earned',
+  'ranking',
+  'badge',
+] as const);
+
 function findForbiddenResponseKeys(value: unknown, path = '$'): string[] {
   const forbidden = new Set([
     'point', 'points', 'level', 'xp', 'xpreward', 'xpearned', 'userxpearned', 'league',
@@ -101,6 +122,7 @@ function findForbiddenResponseKeys(value: unknown, path = '$'): string[] {
     'streak', 'currentstreak', 'longeststreak', 'streakcount', 'streakdays',
     'reward', 'rewards', 'pointcost', 'pointscost', 'rewardpoint', 'rewardpoints',
     'healthscore', 'healthscores', 'dimension',
+    ...REVIEWED_LEGACY_LESSON_ALIASES.map((key) => key.replace(/[^a-z0-9]/gi, '').toLowerCase()),
   ]);
   if (Array.isArray(value)) {
     return value.flatMap((item, index) => findForbiddenResponseKeys(item, `${path}[${index}]`));
@@ -132,8 +154,6 @@ function productionSources(directory = path.join(root, 'src')): string {
 
 describe('legacy gamification write containment', () => {
   it('projects lesson payloads immutably while preserving educational and neutral state fields', async () => {
-    const containment = await import('@/lib/gamification/containment') as Record<string, unknown>;
-    const project = containment.toSafeLessonProjection as ((value: unknown) => unknown) | undefined;
     const cycle: Record<string, unknown> = {
       label: 'conteudo seguro',
       points_spent: 31,
@@ -144,9 +164,11 @@ describe('legacy gamification write containment', () => {
       hearts: { current: 3, max: 5 },
       heartsEnabled: true,
       gamification: LEGACY_GAMIFICATION_STATE,
+      nullable: null,
       content: {
         key_points: ['Sono regular ajuda a saude.'],
         note: 'pontos de atencao para conversar com a equipe',
+        items: [null, { title: 'Material educativo' }],
         cycle,
         legacy: {
           week_points: 40,
@@ -164,19 +186,20 @@ describe('legacy gamification write containment', () => {
       },
     };
 
-    expect(project).toBeTypeOf('function');
-    const projected = project?.(source) as typeof source;
+    const projected = toSafeLessonProjection(source);
 
     expect(projected).not.toBe(source);
     expect(projected.content).not.toBe(source.content);
-    expect(projected).toMatchObject({
+    expect(projected).toEqual({
       score: 92,
       hearts: { current: 3, max: 5 },
       heartsEnabled: true,
       gamification: LEGACY_GAMIFICATION_STATE,
+      nullable: null,
       content: {
         key_points: ['Sono regular ajuda a saude.'],
         note: 'pontos de atencao para conversar com a equipe',
+        items: [null, { title: 'Material educativo' }],
         cycle: { label: 'conteudo seguro' },
         legacy: {},
       },
@@ -185,9 +208,43 @@ describe('legacy gamification write containment', () => {
     expect(source.content.cycle.self).toBe(cycle);
   });
 
+  it('removes every reviewed legacy lesson alias individually while preserving null', () => {
+    for (const alias of REVIEWED_LEGACY_LESSON_ALIASES) {
+      const projected = toSafeLessonProjection({
+        title: 'Conteudo educativo',
+        nullable: null,
+        [alias]: `LEGACY_${alias}`,
+      });
+
+      expect(projected, alias).toEqual({
+        title: 'Conteudo educativo',
+        nullable: null,
+      });
+    }
+  });
+
+  it('copies prototype-named educational keys as own data without changing the output prototype', () => {
+    const source = JSON.parse(`{
+      "__proto__": { "polluted": "LESSON_PROTO_CANARY" },
+      "constructor": { "title": "Conceito construtor" },
+      "prototype": { "title": "Conceito prototipo" },
+      "key_points": ["Conteudo educativo preservado"]
+    }`) as Record<string, unknown>;
+
+    const projected = toSafeLessonProjection(source) as Record<string, unknown>;
+
+    expect(Object.getPrototypeOf(projected)).toBe(Object.prototype);
+    expect(Object.prototype.hasOwnProperty.call(projected, '__proto__')).toBe(true);
+    expect(Object.entries(projected)).toEqual([
+      ['__proto__', { polluted: 'LESSON_PROTO_CANARY' }],
+      ['constructor', { title: 'Conceito construtor' }],
+      ['prototype', { title: 'Conceito prototipo' }],
+      ['key_points', ['Conteudo educativo preservado']],
+    ]);
+    expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
   it('omits excessively deep lesson subtrees without throwing or overflowing the stack', async () => {
-    const containment = await import('@/lib/gamification/containment') as Record<string, unknown>;
-    const project = containment.toSafeLessonProjection as ((value: unknown) => unknown) | undefined;
     const source: Record<string, unknown> = { title: 'Conteudo educativo' };
     let cursor = source;
     for (let depth = 0; depth < 5_000; depth += 1) {
@@ -198,9 +255,8 @@ describe('legacy gamification write containment', () => {
     cursor.deep_marker = 'TOO_DEEP_CANARY';
     cursor.daily_xp_earned = 999;
 
-    expect(project).toBeTypeOf('function');
-    expect(() => project?.(source)).not.toThrow();
-    const projected = project?.(source);
+    expect(() => toSafeLessonProjection(source)).not.toThrow();
+    const projected = toSafeLessonProjection(source);
     expect(JSON.stringify(projected)).not.toContain('TOO_DEEP_CANARY');
   });
 
@@ -331,7 +387,9 @@ describe('legacy gamification write containment', () => {
       score: 88,
       key_points: ['Observe sinais do seu corpo.'],
       note: 'pontos de atencao continuam sendo conteudo educativo',
+      nullable: null,
       nestedLegacy: {
+        ...Object.fromEntries(REVIEWED_LEGACY_LESSON_ALIASES.map((alias) => [alias, `LEGACY_${alias}`])),
         points: 731,
         points_spent: 12,
         level: 8,
@@ -364,11 +422,12 @@ describe('legacy gamification write containment', () => {
     expect(payload.heartsEnabled).toBe(true);
     expect(payload.gamification).toEqual(LEGACY_GAMIFICATION_STATE);
     expect(payload.lesson.user_score).toBe(88);
-    expect(payload.lesson.content_json).toMatchObject({
+    expect(payload.lesson.content_json).toEqual({
       text: 'Cuide-se hoje',
       score: 88,
       key_points: ['Observe sinais do seu corpo.'],
       note: 'pontos de atencao continuam sendo conteudo educativo',
+      nullable: null,
       nestedLegacy: {},
     });
     expect(payload.path[0].content_json).toEqual(payload.lesson.content_json);

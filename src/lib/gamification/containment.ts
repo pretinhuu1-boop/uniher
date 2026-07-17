@@ -81,6 +81,7 @@ const FORBIDDEN_PROJECTION_KEYS = new Set([
 ].map(normalizeProjectionKey));
 
 const FORBIDDEN_LESSON_PROJECTION_KEYS = new Set([
+  ...FORBIDDEN_PROJECTION_KEYS,
   'point',
   'points',
   'points_spent',
@@ -149,7 +150,14 @@ function projectLessonValue(
     for (const [key, child] of Object.entries(value)) {
       if (isForbiddenLessonProjectionKey(key)) continue;
       const safeChild = projectLessonValue(child, depth + 1, ancestors);
-      if (safeChild !== OMIT_LESSON_PROJECTION_VALUE) projected[key] = safeChild;
+      if (safeChild !== OMIT_LESSON_PROJECTION_VALUE) {
+        Object.defineProperty(projected, key, {
+          configurable: true,
+          enumerable: true,
+          value: safeChild,
+          writable: true,
+        });
+      }
     }
     return projected;
   } finally {
