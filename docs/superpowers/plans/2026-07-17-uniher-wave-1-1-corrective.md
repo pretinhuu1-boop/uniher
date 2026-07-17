@@ -503,6 +503,8 @@ Expected: one reviewed scoped commit and a clean lane worktree.
 
 ## Task 3: Align the intentional Admin visual baseline
 
+> **Gate-discovered localized deviation — 2026-07-17:** After the visual candidate was integrated, both the coordinator and the original Visual anchor reproduced the preexisting drawer-focus RED at `platform-foundation.spec.ts:148`. Section 3 therefore includes one additional TDD repair with an exclusive write set of `src/components/platform/Sidebar.tsx` and the existing drawer test in `tests/e2e/platform-foundation.spec.ts`. The minimal GREEN must focus the first `nav a[href]` whenever that exact link is not already active, rather than accepting any active element inside the dialog. Preserve focus trap, Escape close, opener restoration, desktop behavior, both snapshot files, and all amended scope exclusions. Commit and review this repair independently before the final 6/6 foundation rerun.
+
 **Lane:** Visual
 
 **Files:**

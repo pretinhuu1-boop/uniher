@@ -92,6 +92,8 @@ Required changes:
 
 ### 4.4 Admin visual baseline
 
+> **Gate-discovered localized deviation — 2026-07-17:** The integrated and anchor foundation runs both reproduce the existing mobile drawer focus failure: opening the dialog does not deterministically focus its first navigation link. The authorized Section 3 repair may additionally modify only `src/components/platform/Sidebar.tsx` and the existing drawer coverage in `tests/e2e/platform-foundation.spec.ts`. The focus effect must target the first navigation link even when focus has already moved to another control inside the dialog, while preserving the existing focus trap, Escape close, opener restoration, desktop behavior, and snapshots. This deviation does not authorize public/email, DSAR, navigation-taxonomy, or Wave 1.2 work.
+
 The removal of the Admin `Badges` tab is an intentional privacy-containment change introduced before this mission. It must not be reverted.
 
 The foundation browser contract adds a semantic assertion that no active Admin tab named `Badges` is rendered. The desktop snapshot is then regenerated and inspected at original resolution.
