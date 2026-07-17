@@ -113,7 +113,7 @@ Every production correction follows RED, verified RED, minimal GREEN, verified G
 
 Create `tests/unit/privacy/user-preferences-route.test.ts` with an in-memory SQLite database, direct authenticated route invocation, real transactional writes, and a write-queue call counter.
 
-Cover sparse success, empty no-op, unknown key, non-string value, `privacy_ranking`, and mixed atomic rejection. Add a real first-access browser regression to `tests/e2e/wave-1-1-privacy.spec.ts` and restore its test fixture in `finally`.
+Cover sparse success, empty no-op, unknown key, non-string value, `privacy_ranking`, and mixed atomic rejection. Retain and execute the existing real first-access browser regression in `tests/e2e/wave-1-1-privacy.spec.ts`, which already restores its test fixture in `finally` and is the browser-level RED contract for this correction.
 
 ### Copy coverage
 
@@ -139,7 +139,6 @@ Production files:
 Test and visual files:
 
 - `tests/unit/privacy/user-preferences-route.test.ts`;
-- `tests/e2e/wave-1-1-privacy.spec.ts`;
 - `tests/unit/platform/authenticated-jsx-copy.test.ts`;
 - `tests/unit/platform/dashboard-charts.test.tsx`;
 - `tests/e2e/rh.spec.ts`;
