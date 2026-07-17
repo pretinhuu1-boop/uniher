@@ -187,4 +187,75 @@ describe('Sidebar persisted collaborator capability', () => {
 
     expect(mocks.swrKeys).toEqual([null, null]);
   });
+
+  it('waits for the inert opener to release focus before focusing the first navigation link', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => ({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+
+    const openerRegion = document.createElement('main');
+    const opener = document.createElement('button');
+    opener.textContent = 'Abrir navegação';
+    openerRegion.append(opener);
+    document.body.append(openerRegion);
+    opener.focus();
+
+    const nativeFocus = HTMLElement.prototype.focus;
+    let openerReleasedFocus = false;
+    const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function focus(
+      this: HTMLElement,
+      options?: FocusOptions,
+    ) {
+      if (this.matches('nav a[href]') && !openerReleasedFocus) return;
+      nativeFocus.call(this, options);
+    });
+    const animationFrames: FrameRequestCallback[] = [];
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        animationFrames.push(callback);
+        return animationFrames.length;
+      });
+    const cancelAnimationFrameSpy = vi
+      .spyOn(window, 'cancelAnimationFrame')
+      .mockImplementation(() => undefined);
+    vi.useFakeTimers();
+
+    try {
+      const { rerender } = render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+      openerRegion.setAttribute('inert', '');
+      rerender(<Sidebar isOpen onClose={vi.fn()} />);
+
+      vi.runOnlyPendingTimers();
+      while (animationFrames.length > 0) {
+        const callback = animationFrames.shift();
+        callback?.(performance.now());
+      }
+
+      const firstNavigationLink = screen.getAllByRole('link')[0];
+      expect(document.activeElement).toBe(opener);
+
+      openerReleasedFocus = true;
+      opener.blur();
+      expect(document.activeElement).toBe(document.body);
+
+      while (animationFrames.length > 0) {
+        const callback = animationFrames.shift();
+        callback?.(performance.now());
+      }
+
+      expect(document.activeElement).toBe(firstNavigationLink);
+    } finally {
+      vi.useRealTimers();
+      focusSpy.mockRestore();
+      requestAnimationFrameSpy.mockRestore();
+      cancelAnimationFrameSpy.mockRestore();
+      openerRegion.remove();
+    }
+  });
 });

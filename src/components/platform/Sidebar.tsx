@@ -139,23 +139,35 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       const sidebar = sidebarRef.current;
       if (!sidebar) return;
 
+      const activeElement = document.activeElement;
+      if (activeElement && sidebar.contains(activeElement)) return;
+
       const firstNavigationLink = sidebar.querySelector<HTMLAnchorElement>('nav a[href]');
-      if (!firstNavigationLink || document.activeElement === firstNavigationLink) return;
+      if (!firstNavigationLink) return;
 
       firstNavigationLink.focus({ preventScroll: true });
     };
 
-    focusFirstLinkIfOutsideDialog();
-    const focusTimeout = window.setTimeout(focusFirstLinkIfOutsideDialog, 0);
-    let secondFrame = 0;
-    const firstFrame = window.requestAnimationFrame(() => {
-      secondFrame = window.requestAnimationFrame(focusFirstLinkIfOutsideDialog);
-    });
+    let focusFrame: number | null = null;
+
+    const scheduleFocusAttempt = () => {
+      if (focusFrame !== null) window.cancelAnimationFrame(focusFrame);
+      focusFrame = window.requestAnimationFrame(() => {
+        focusFrame = null;
+        focusFirstLinkIfOutsideDialog();
+      });
+    };
+
+    const handleFocusOut = () => {
+      scheduleFocusAttempt();
+    };
+
+    document.addEventListener('focusout', handleFocusOut, true);
+    scheduleFocusAttempt();
 
     return () => {
-      window.clearTimeout(focusTimeout);
-      window.cancelAnimationFrame(firstFrame);
-      window.cancelAnimationFrame(secondFrame);
+      if (focusFrame !== null) window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('focusout', handleFocusOut, true);
     };
   }, [isMobileDialogOpen]);
 
