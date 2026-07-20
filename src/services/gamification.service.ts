@@ -1,4 +1,6 @@
-import { getWriteQueue } from '@/lib/db';
+import { getReadDb, getWriteQueue } from '@/lib/db';
+import { nanoid } from 'nanoid';
+import { calcLevel } from '@/lib/gamification/levels';
 
 /**
  * Credita a conclusão da avaliação NR-1 (COPSOQ) como evento de PARTICIPAÇÃO.
@@ -34,7 +36,7 @@ export async function awardNr1Completion(
     if (!user) throw new Error('Usuário não encontrado');
 
     const newPoints = user.points + xp;
-    const { level } = getLevelFromPoints(newPoints);
+    const level = calcLevel(newPoints);
     db.prepare(`UPDATE users SET points = ?, level = ?, updated_at = datetime('now') WHERE id = ?`)
       .run(newPoints, level, userId);
     // target_type explícito 'nr1_assessment'; SEM payload de respostas. É a fonte de verdade de "participou".
