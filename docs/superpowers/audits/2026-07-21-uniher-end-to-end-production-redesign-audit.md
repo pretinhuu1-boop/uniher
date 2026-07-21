@@ -16,7 +16,7 @@ O redesign possui uma fundacao tecnica consistente e uma parte relevante dos flu
 
 Os principais motivos sao:
 
-1. o NR-1 atual e um scaffold de demonstracao com 11 `QUESTION` obrigatorias e 1 `ELEMENT`, nao o contrato operacional de 72 perguntas informado nesta missao;
+1. o NR-1 atual e um scaffold de demonstracao com 11 `QUESTION` obrigatorias e 1 `ELEMENT`, nao a definicao dinamica do formulario Yavix; o relato de 72 perguntas ainda precisa ser reconciliado com o payload real, enquanto o manual documenta codigos `1..120` sem confirmar uma contagem exata;
 2. a integracao Yavix real, a persistencia duravel, o scoring/laudo e a cadeia de evidencias GRO/PGR nao estao implementados;
 3. Semaforo, Objetivos, Desafios, Conquistas e Liga permanecem em placeholder ou bloqueio deliberado;
 4. Admin Empresa e RH compartilham o mesmo papel tecnico, e a Lideranca ainda recebe rotas/copy parcialmente herdadas de RH;
@@ -29,7 +29,7 @@ Os principais motivos sao:
 | Prioridade | Fonte | Uso nesta auditoria |
 | --- | --- | --- |
 | 1 | Ata e transcricao da reuniao de 15/07/2026 | Arquitetura de produto, prioridade NR-1, tres areas da colaboradora e limites dos add-ons |
-| 2 | Documentacao consolidada Yavix no repositorio | Contrato COPSOQ41, fluxo de oito passos, `QUESTION` x `ELEMENT`, autenticacao e bloqueios de scoring |
+| 2 | Originais Yavix recuperados e documentacao consolidada no repositorio | Contrato COPSOQ41, fluxo de oito passos, `QUESTION` x `ELEMENT`, autenticacao e bloqueios de scoring |
 | 3 | Producao canonica publicada | Comportamento atualmente demonstravel ao cliente |
 | 4 | Codigo, banco, testes e runtime do redesign | Estado real de implementacao, autorizacao, persistencia e cobertura |
 | 5 | Imagens aprovadas desktop/mobile | Direcao visual, nao prova de funcionalidade |
@@ -39,8 +39,9 @@ Documentos Yavix usados:
 - `docs/INTEGRACAO_YAVIX_NR1.md`
 - `docs/specs/SPEC_YAVIX_COPSOQ_PROXY.md`
 - `docs/PERGUNTAS_YAVIX_INTEGRACAO.md`
+- `docs/superpowers/audits/2026-07-21-yavix-copsoq41-source-audit.md`
 
-Nao foi encontrado um arquivo com os 72 enunciados e opcoes. O numero 72 foi informado pela stakeholder nesta missao e, por isso, e registrado como **requisito operacional a validar**, nao como fato confirmado pela documentacao Yavix. O contrato documentado determina que a definicao real venha dinamicamente de `GET /form/COPSOQ41`; os codigos podem ocupar a faixa 1..120 e apenas itens `QUESTION` entram na completude. A quantidade, a lista textual e as opcoes finais so podem ser congeladas a partir de um payload Yavix versionado, com hash e identificador do formulario.
+Os originais `form-response-flow.html` e `Yavix-Modelo_1_Cadastros.xlsx` foram recuperados do grupo `Uniher | Yavix` e lidos integralmente. O HTML mostra uma pergunta apenas como exemplo, indica `... ate 120 perguntas` e aceita `code` em `1..120`; a planilha possui apenas as abas de provisionamento `Empresas` e `Funcionarios`. Nenhum dos dois contem os 72 enunciados ou confirma uma contagem final. O numero 72 foi informado pela stakeholder e permanece **requisito de negocio a reconciliar**. A definicao tecnica real vem dinamicamente de `GET /form/COPSOQ41`; somente itens `QUESTION` entram na completude. Quantidade, textos e opcoes finais dependem de um payload autenticado versionado, com hash e identificador do formulario.
 
 ## Producao online observada em 21/07/2026
 
@@ -153,21 +154,22 @@ O produto fala em cinco perfis operacionais, mas o codigo possui quatro valores 
 - Mock atual: 11 itens `QUESTION` obrigatorios, codigos 2..12.
 - Item informativo: 1 `ELEMENT`, codigo 1.
 - Total renderizado no scaffold: 12 itens.
-- Requisito operacional informado pela stakeholder nesta missao: 72 perguntas, pendente de validacao contra o payload oficial.
-- Fonte textual oficial das 72: nao encontrada nos artefatos disponiveis.
+- Requisito operacional informado pela stakeholder nesta missao: 72 perguntas, em conflito ainda nao reconciliado com a fonte tecnica.
+- Manual Yavix original: definicao dinamica, exemplo de uma pergunta, indicacao `ate 120 perguntas` e codigos aceitos em `1..120`; nao confirma contagem exata.
+- XLSX Yavix original: somente cadastros de empresas e funcionarios; nao contem banco de perguntas.
 - Fonte tecnica correta: payload versionado de `GET /form/COPSOQ41`.
 
 ### Findings NR-1
 
 | ID | Severidade | Finding | Correcao exigida |
 | --- | --- | --- | --- |
-| NR1-01 | P0 | Nao existe contrato versionado que confirme a quantidade e o conteudo oficial | Armazenar payload real, hash e versao; se ele contiver 72 `QUESTION`, testar exatamente 72 |
+| NR1-01 | P0 | O manual define formulario dinamico e faixa `1..120`, mas nao confirma a quantidade nem o conteudo do formulario ativo | Armazenar payload real, hash e versao; testar exatamente a contagem de `QUESTION` recebida e reconciliar formalmente qualquer divergencia com as 72 informadas pela stakeholder |
 | NR1-02 | P0 | Integracao real e persistencia duravel ausentes | Implementar proxy server-side, servico Yavix, sessao/answer durable e retomada |
 | NR1-03 | P0 | Nao existe scoring, resultado, laudo ou agregado seguro | Obter endpoint/matriz oficial e construir ciclo tecnico NR-1/GRO/PGR |
 | NR1-04 | P1 | Consentimento pode ser contornado | Validar termo no bootstrap, save e submit; gravar recibo transacional e revogavel |
 | NR1-05 | P1 | Entitlement e guard apenas visuais | Enforce de capability/empresa/papel em pagina e todas as APIs |
 | NR1-06 | P1 | Autosave pode perder a ultima resposta | Flush antes de navegar/submit; chave de sessao escopada por usuario/empresa/formulario |
-| NR1-07 | P2 | Nao ha E2E completo do NR-1 | Cobrir a quantidade oficial versionada; se confirmada como 72, cobrir exatamente 72, alem de retomada, consentimento, entitlement, submit, resultado e reinicio |
+| NR1-07 | P2 | Nao ha E2E completo do NR-1 | Cobrir dinamicamente todos os `QUESTION` do fixture oficial versionado, alem de retomada, consentimento, entitlement, submit, resultado e reinicio |
 | NR1-08 | P2 | Migration legada ainda menciona XP/badge | Remover ou neutralizar sem reativar gamificacao sensivel |
 
 Responder um questionario, isoladamente, nao fecha a gestao de riscos. Inventario, avaliacao tecnica, plano de acao, responsaveis, prazos, eficacia e evidencias do GRO/PGR formam uma proposta de governanca para a entrega e devem ser validados por SST/juridico antes de se tornarem requisito regulatorio afirmado pela plataforma. Agregacao anonima e supressao de grupos pequenos permanecem gates de privacidade.
@@ -203,7 +205,7 @@ Responder um questionario, isoladamente, nao fecha a gestao de riscos. Inventari
 
 ### P0 - bloqueiam a promessa final
 
-1. Quantidade/conteudo NR-1 sem payload oficial versionado; 72 permanece requisito da stakeholder a validar.
+1. Quantidade/conteudo NR-1 sem payload autenticado versionado; o manual confirma faixa `1..120`, nao contagem exata, e 72 permanece requisito da stakeholder a reconciliar.
 2. Integracao Yavix real sem autenticacao server-side confirmada.
 3. Scoring/laudo/resultados agregados nao documentados nem implementados.
 4. Cinco superficies principais ainda em placeholder/bloqueio.
@@ -228,7 +230,7 @@ Responder um questionario, isoladamente, nao fecha a gestao de riscos. Inventari
 A plataforma so pode ser chamada de **reformulacao concluida** quando:
 
 - todas as rotas da matriz por perfil tiverem estado funcional, negado ou bloqueado intencionalmente, nunca placeholder acidental;
-- NR-1 usar a quantidade oficial do contrato Yavix versionado; se o payload confirmar 72 `QUESTION`, a paridade deve ser exatamente 72, com consentimento, retomada, submit e resultado;
+- NR-1 usar exatamente todos os `QUESTION` do contrato Yavix versionado, sem quantidade hardcoded, com divergencia frente ao requisito de 72 formalmente resolvida, alem de consentimento, retomada, submit e resultado;
 - RH receber apenas agregados permitidos e nunca respostas individuais;
 - Waves 5-9 passarem seus gates; Liga tiver decisao formal ou permanecer explicitamente fora do pacote final;
 - a matriz E2E desktop/mobile cobrir 375, 390, 768 e 1440 px, sem overflow ou sobreposicao;

@@ -1,6 +1,6 @@
 # Roadmap final de entrega - reformulacao UniHER
 
-**Versao:** 2, revisada apos auditoria independente
+**Versao:** 3, revisada apos leitura integral dos originais Yavix
 
 **Data-base:** 2026-07-21
 
@@ -16,7 +16,7 @@
 
 A estimativa defensavel para o nucleo autenticado reformulado e **18/09/2026**. O plano reserva **08 a 11/09** para UAT sobre um candidato completo e **14 a 17/09** para estabilizacao, go/no-go e preparacao da producao.
 
-O primeiro checkpoint funcional ocorre em **14/08/2026**. Ele demonstra somente o que tiver passado gate. Sem o payload oficial Yavix, o NR-1 desse checkpoint mostra o motor de jornada com dados sinteticos, rotulado como `nao-Yavix`, `nao-laudo` e sem alegar 72 perguntas ou paridade oficial.
+O primeiro checkpoint funcional ocorre em **14/08/2026**. Ele demonstra somente o que tiver passado gate. Sem o payload oficial Yavix, o NR-1 desse checkpoint mostra o motor de jornada com dados sinteticos, rotulado como `nao-Yavix`, `nao-laudo` e sem alegar quantidade fixa ou paridade oficial. O manual recuperado documenta uma definicao dinamica com codigos `1..120`, mas nao confirma uma contagem exata.
 
 Em **04/09/2026** deve existir um release candidate integral dentro do escopo cujos gates externos tenham passado. Essa data nao e entrega externa: ela antecede o UAT formal.
 
@@ -64,7 +64,7 @@ Esses itens podem aparecer com entitlement fechado, mas nao sao findings abertos
 
 | ID | Insumo | Dono externo | Consequencia se faltar |
 | --- | --- | --- | --- |
-| EXT-01 | Payload versionado de `GET /form/COPSOQ41`, com hash, versao, quantidade de `QUESTION`, textos e opcoes | Yavix/Paula | Nao se afirma 72 nem paridade; checkpoint usa somente fixture sintetico |
+| EXT-01 | Payload autenticado e versionado de `GET /form/COPSOQ41`, com hash, identificador de versao, quantidade de `QUESTION`/`ELEMENT`, textos e opcoes | Yavix/Paula | Nao se afirma contagem final nem paridade; checkpoint usa somente fixture sintetico e a divergencia com as 72 informadas fica aberta |
 | EXT-02 | Sandbox, tenant, credenciais e autenticacao server-side | Yavix | Proxy permanece em mock e NR-1 real sai do release candidate |
 | EXT-03 | Endpoint ou matriz oficial de scoring/laudo e agregados | Yavix/SST | Resultado NR-1 e dashboard RH ficam fora do release candidate |
 | EXT-04 | Consentimento, base legal, retencao, remocao e revogacao | UniHER/DPO/juridico | NR-1 e Semaforo nao promovem para producao |
@@ -127,7 +127,7 @@ Educacao, IA final e check-out exigem child specs/plans aprovados, revisados e e
 ### NR-1
 
 - [ ] Payload oficial armazenado com hash, versao e contagem de `QUESTION`/`ELEMENT`.
-- [ ] Se o payload contiver 72 `QUESTION`, teste de paridade exige exatamente 72; caso contrario, a divergencia volta para Produto/Yavix.
+- [ ] Teste de paridade exige exatamente todos os `QUESTION` do payload versionado; a diferenca frente as 72 informadas pela stakeholder deve ter decisao registrada por Produto/Yavix.
 - [ ] `ELEMENT` nao conta no progresso.
 - [ ] Consentimento enforced antes de bootstrap, answer e submit, com recibo transacional e revogavel.
 - [ ] Autosave descarrega a ultima resposta antes de navegar/submit.
