@@ -8,14 +8,13 @@
 import { test, expect, Page } from '@playwright/test';
 import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
-const BASE = 'http://localhost:3000';
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASS = 'Admin@2026';
 const DEMO_RH_EMAIL = 'contabilidade@eduardaeyurimarketingltda.com.br';
 
 // Helper: ensure the demo RH user exists (idempotent)
 async function ensureDemoRhUser(request: import('@playwright/test').APIRequestContext): Promise<void> {
-  const adminLoginRes = await request.post(`${BASE}/api/auth/login`, {
+  const adminLoginRes = await request.post('/api/auth/login', {
     data: { email: ADMIN_EMAIL, password: ADMIN_PASS },
   });
   if (!adminLoginRes.ok()) return;
@@ -24,7 +23,7 @@ async function ensureDemoRhUser(request: import('@playwright/test').APIRequestCo
   if (!adminCookie) return;
 
   // Create demo company (409 if already exists — ignored)
-  const compRes = await request.post(`${BASE}/api/admin/companies`, {
+  const compRes = await request.post('/api/admin/companies', {
     headers: { Cookie: `uniher-access-token=${adminCookie}` },
     data: { name: 'Eduardo e Yurimara Marketing LTDA', cnpj: '00.000.000/0001-00', sector: 'Marketing', plan: 'pro' },
   });
@@ -33,7 +32,7 @@ async function ensureDemoRhUser(request: import('@playwright/test').APIRequestCo
     demoCompanyId = (await compRes.json()).company?.id || '';
   } else {
     // Company already exists — fetch its ID
-    const listRes = await request.get(`${BASE}/api/admin/companies`, {
+    const listRes = await request.get('/api/admin/companies', {
       headers: { Cookie: `uniher-access-token=${adminCookie}` },
     });
     if (listRes.ok()) {
@@ -44,7 +43,7 @@ async function ensureDemoRhUser(request: import('@playwright/test').APIRequestCo
   }
 
   if (demoCompanyId) {
-    await request.post(`${BASE}/api/admin/users`, {
+    await request.post('/api/admin/users', {
       headers: { Cookie: `uniher-access-token=${adminCookie}` },
       data: {
         name: 'Contabilidade RH',
@@ -61,7 +60,7 @@ async function ensureDemoRhUser(request: import('@playwright/test').APIRequestCo
 
 // Helper: login via UI
 async function loginUI(page: Page, email: string, password: string) {
-  await page.goto(`${BASE}/auth`);
+  await page.goto('/auth');
   await page.waitForLoadState('networkidle');
   // Clear autofill and type
   await page.locator('input[type="email"]').fill(email);
@@ -99,11 +98,11 @@ test.describe('Master Admin — Visual UX', () => {
   });
 
   test.afterAll(async () => {
-    await page.close();
+    if (page && !page.isClosed()) await page.close();
   });
 
   test('Painel Master — Visão Geral carrega', async () => {
-    await page.goto(`${BASE}/admin`);
+    await page.goto('/admin');
     await page.waitForTimeout(5000);
     // Page loaded — check for any content
     await expect(page.locator('text=Painel UniHER')).toBeVisible({ timeout: 15000 });
@@ -117,12 +116,12 @@ test.describe('Master Admin — Visual UX', () => {
 
   test('Criar empresa via API e verificar na lista', async () => {
     // Create via API (more reliable than filling form)
-    const res = await page.request.post(`${BASE}/api/admin/companies`, {
+    const res = await page.request.post('/api/admin/companies', {
       data: { name: newCompanyName, cnpj: newCompanyCnpj, sector: 'Visual Test', plan: 'trial' },
     });
     expect(res.status()).toBe(200);
     // Reload and verify in list
-    await page.goto(`${BASE}/admin`);
+    await page.goto('/admin');
     await page.waitForTimeout(3000);
     await page.locator('text=Empresas').first().click();
     await page.waitForTimeout(2000);
@@ -188,11 +187,11 @@ test.describe('Admin Empresa — Visual UX', () => {
   });
 
   test.afterAll(async () => {
-    await page.close();
+    if (page && !page.isClosed()) await page.close();
   });
 
   test('Dashboard carrega sem badge debug', async () => {
-    await page.goto(`${BASE}/dashboard`);
+    await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
     // Dashboard loaded — any element containing "Dashboard" text
     await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
@@ -201,39 +200,39 @@ test.describe('Admin Empresa — Visual UX', () => {
   });
 
   test('Colaboradoras — gestão carrega', async () => {
-    await page.goto(`${BASE}/colaboradoras-gestao`);
+    await page.goto('/colaboradoras-gestao');
     await page.waitForLoadState('networkidle');
     await expect(page.locator('text=Gestão de Colaboradoras')).toBeVisible();
     await expect(page.locator('text=TOTAL')).toBeVisible();
   });
 
   test('Departamentos — página carrega', async () => {
-    await page.goto(`${BASE}/departamentos`);
+    await page.goto('/departamentos');
     await page.waitForTimeout(3000);
     await expect(page.locator('text=Departamentos').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('Convites — página carrega', async () => {
-    await page.goto(`${BASE}/convites`);
+    await page.goto('/convites');
     await page.waitForTimeout(3000);
     await expect(page.locator('text=Convites').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('Campanhas — lista carrega', async () => {
-    await page.goto(`${BASE}/campanhas`);
+    await page.goto('/campanhas');
     await page.waitForLoadState('networkidle');
     await expect(page.locator('text=Campanhas Temáticas')).toBeVisible();
     await expect(page.locator('text=+ Criar Campanha')).toBeVisible();
   });
 
   test('Semáforo de Saúde carrega', async () => {
-    await page.goto(`${BASE}/semaforo`);
+    await page.goto('/semaforo');
     await page.waitForTimeout(3000);
     await expect(page.locator('text=Semáforo').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('Troca para Colaboradora funciona', async () => {
-    await page.goto(`${BASE}/dashboard`);
+    await page.goto('/dashboard');
     await page.waitForTimeout(3000);
     const colabBtn = page.locator('button:has-text("Colaboradora")').first();
     if (await colabBtn.isVisible({ timeout: 5000 })) {
@@ -260,7 +259,7 @@ test.describe('Admin Empresa — Visual UX', () => {
   });
 
   test('Configurações carrega', async () => {
-    await page.goto(`${BASE}/configuracoes`);
+    await page.goto('/configuracoes');
     await page.waitForLoadState('networkidle');
     await expect(page.locator('h1:has-text("Configurações"), h2:has-text("Configurações")')).toBeVisible();
   });
@@ -278,7 +277,7 @@ test.describe('Mobile — Visual UX', () => {
   });
 
   test('Login page responsive', async ({ page }) => {
-    await page.goto(`${BASE}/auth`);
+    await page.goto('/auth');
     await page.waitForLoadState('networkidle');
     await expect(page.locator('button[type="submit"]')).toBeVisible();
     // Logo visible
@@ -287,7 +286,7 @@ test.describe('Mobile — Visual UX', () => {
 
   test('Dashboard mobile — sidebar accessible', async ({ page }) => {
     await loginUI(page, DEMO_RH_EMAIL, ADMIN_PASS);
-    await page.goto(`${BASE}/dashboard`);
+    await page.goto('/dashboard');
     await page.waitForTimeout(3000);
     // On mobile, content should be visible
     await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
@@ -295,7 +294,7 @@ test.describe('Mobile — Visual UX', () => {
 
   test('Buttons stack correctly on mobile', async ({ page }) => {
     await loginUI(page, DEMO_RH_EMAIL, ADMIN_PASS);
-    await page.goto(`${BASE}/dashboard`);
+    await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
     // On mobile, verify dashboard page loaded (buttons may be collapsed in hamburger menu)
     await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
