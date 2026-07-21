@@ -1,7 +1,7 @@
 # UniHER Waves 5-10 decision packet
 
-**Status:** pending explicit product/privacy approval  
-**Scope:** authenticated internal platform  
+**Status:** pending explicit product/privacy approval
+**Scope:** authenticated internal platform
 **Effect before approval:** documentation only; no ledger, objective, challenge,
 achievement, Semaforo or Liga data model is activated by this packet.
 

@@ -163,7 +163,7 @@ The database row must contain `id`, `event_key`, `mutation_id`, `company_id`, `u
 - Test: `tests/unit/personal-objective-policy.test.ts`
 - Test: `tests/e2e/personal-objectives.spec.ts`
 
-**Lifecycle:** `active -> completed | archived`. There is no reward claim, XP, points, rank, streak, employer-assigned target, or health score.
+**Lifecycle:** `active -> completed | archived` and `archived -> active`. Restoring an archived objective resumes the same private instance; a completed objective cannot be reopened. There is no reward claim, XP, points, rank, streak, employer-assigned target, or health score.
 
 **Gate:** self-only authorization, idempotent progress, clear loading/empty/error/completed states, private history, responsive screenshots, and no legacy objective table reads.
 
@@ -228,7 +228,7 @@ Semaforo is not a Wave 5 ledger consumer. Before implementation, the product spe
 
 ## 10. Wave 10 - Liga decision and implementation gate
 
-Liga remains a real blocked feature, not a visual placeholder repair. The recommended v1 is opt-in individual classification over a narrow set of Wave 5 eligible events, with no health or self-care input. A collective no-ranking experience should be preferred if legal/product review rejects individual classification.
+Liga remains a real blocked feature, not a visual placeholder repair. The recommended v1 is a private collective participation-band experience with cohort suppression and no named rank. Named individual ranking is only an alternative and requires the separate labor, discrimination, consent, revocation and data-subject-rights assessment defined in the decision packet.
 
 **Required pre-implementation artifact:**
 
@@ -245,7 +245,7 @@ The decision must record scoring formula, eligible events, opt-in/revocation, co
 - [ ] Cross-company and non-participant users are absent.
 - [ ] Small-cohort and re-identification review passes.
 - [ ] Semaforo, NR-1, check-in, mood, exams, appointments, psychology, and denunciations are impossible inputs.
-- [ ] Product/legal approves individual ranking or explicitly selects the collective alternative.
+- [ ] Product/legal approves the collective participation-band model or completes the additional assessment required for the named-ranking alternative.
 
 Until then, `/liga`, management routes, leaderboard APIs, and ranking preferences remain contained.
 

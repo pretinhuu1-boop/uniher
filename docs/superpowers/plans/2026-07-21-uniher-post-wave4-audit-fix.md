@@ -1,7 +1,7 @@
 # UniHER post-Wave 4 audit and correction plan
 
-**Status:** execution in progress  
-**Scope:** authenticated internal platform only  
+**Status:** execution in progress
+**Scope:** authenticated internal platform only
 **Source of truth:** `2026-07-21-uniher-pending-surfaces-orchestration.md`
 
 ## Promotion decision
