@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Release receipt (2026-07-21):** the company-scoped Community feed, collaborator actions, private saved items, supporter consent, RH/admin editorial management, company switch, navigation, and privacy boundaries are functional. Runtime verification was executed on HEAD `4511eb2`; the later documentation-only commit records that evidence and is not itself claimed as the tested HEAD.
+**Release receipt (2026-07-21):** the company-scoped Community feed, collaborator actions, private saved items, supporter consent, RH/admin editorial management, company switch, navigation, and privacy boundaries are functional. Evidence is gate-specific: visual regression on `f87c5fd`, the integrated E2E matrix twice on `908357f`, and the complete unit/build gate on `006770f`. The later documentation-only commit records these receipts and is not itself claimed as a tested runtime HEAD.
 
 **Goal:** Build a functional, company-scoped community feed for authenticated collaborators, with curated company content, private saves, anonymous aggregate support, and explicit opt-in for displaying a supporter name.
 
@@ -276,7 +276,7 @@ Expected: PASS with no company B sentinel in company A responses and no email/ro
 
 - [ ] **Step 5: Link this plan from the visual audit.** Keep the image audit honest: approved screens are visual direction; implementation status becomes functional only after API, tenant, privacy, and responsive gates pass.
 
-### Task 8: Independent verification and release gate - COMPLETE on tested HEAD `4511eb2`
+### Task 8: Independent verification and release gate - COMPLETE
 
 **Files:**
 - Test: `tests/unit/community-policy.test.ts`
@@ -288,13 +288,13 @@ Expected: PASS with no company B sentinel in company A responses and no email/ro
 
 Run: focused Community tests during implementation, followed by `npm run test:unit`.
 
-Receipt: **PASS, 469/469 tests in 50 files** on `4511eb2`.
+Receipt: **PASS, 470/470 tests in 51 files** on integral HEAD `006770f`. That commit adds the collaborator-company docs/OpenAPI parity test; the complete suite, not only the focused test, was verified at that HEAD.
 
 - [x] **Step 2: Run the Community and shell E2E matrix.**
 
 Run: `cd tests; npx playwright test --config=playwright.config.ts --project=community-feed --project=community-feed-ui --project=mobile-shell --project=privacy-wave-1-1 --project=seguranca`
 
-Receipt: **PASS, 65/65 in two consecutive executions, 3 workers, zero retries**, covering company isolation, role boundaries, support/save idempotence, preference revocation, disabled state, pagination, mobile shell, and security/privacy containment.
+Receipt: **PASS, 65/65 on `908357f`, then PASS, 65/65 again after the mobile external-host guard, with 3 workers and zero retries**, covering company isolation, role boundaries, support/save idempotence, preference revocation, disabled state, pagination, mobile shell, and security/privacy containment. Both executions are attributed to the branch state at `908357f`, before `006770f`; no unrecorded SHA is inferred.
 
 - [x] **Step 3: Preserve the existing privacy and security suite.**
 
@@ -306,11 +306,11 @@ Receipt: **PASS** with existing containment guarantees unchanged and no health-d
 
 Run: `npm run build` and `cd tests; npx playwright test --project=visual-ux --config=playwright.config.ts`.
 
-Receipt: build **PASS** with **137 routes/pages generated** and only the two pre-existing NFT trace warnings from `next.config.ts` to `src/app/api/admin/system/ops/route.ts`; `visual-ux` **PASS, 21/21 in two consecutive executions**. Community screenshots cover `375x812`, `390x844`, `768x900`, and `1440x1000`; the mobile-shell screenshot remains in the current Playwright result path recorded by the visual audit.
+Receipt: build on integral HEAD `006770f` **PASS** with **137 routes/pages generated** and only the two known, pre-existing NFT trace warnings from `next.config.ts` to `src/app/api/admin/system/ops/route.ts`; `visual-ux` on `f87c5fd` **PASS, 21/21 in two consecutive executions**. Community screenshots cover `375x812`, `390x844`, `768x900`, and `1440x1000`; the mobile-shell screenshot remains in the current Playwright result path recorded by the visual audit.
 
-- [x] **Step 5: Close the gate only when all conditions pass.** **CLOSED on tested HEAD `4511eb2`**: feed is off by default, every query is company-scoped, collaborator writes are limited to own support/save, names are opt-in, no health data is present, admin/RH CRUD is tested, and the visual audit uses real UniHER assets. Quality findings were closed by `ab419f3`, `8305edd`, `f0af53c`, `f87c5fd`, `4b3fcfc`, and `4511eb2`.
+- [x] **Step 5: Close the gate only when all conditions pass.** **CLOSED across the gate-specific evidence SHAs above**: feed is off by default, every query is company-scoped, collaborator writes are limited to own support/save, names are opt-in, no health data is present, admin/RH CRUD is tested, and the visual audit uses real UniHER assets. Quality findings were closed by `ab419f3`, `8305edd`, `f0af53c`, `f87c5fd`, `4b3fcfc`, `4511eb2`, `908357f`, and `006770f`.
 
-Documentation boundary: this checklist is the canonical release receipt for runtime verification performed on `4511eb2`. Its docs-only commit is intentionally not described as a tested runtime revision.
+Documentation boundary: this checklist is the canonical release receipt for visual verification on `f87c5fd`, E2E verification on `908357f`, and complete unit/build verification on `006770f`. Its docs-only commit is intentionally not described as a tested runtime revision.
 
 ## Self-review
 
