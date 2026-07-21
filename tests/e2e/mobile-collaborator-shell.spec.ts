@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 test.describe('Mobile collaborator shell', () => {
+  test.describe.configure({ mode: 'serial' });
   test.use({ viewport: { width: 375, height: 812 } });
 
   test('keeps the Admin shell without collaborator mobile navigation spacing', async ({ page, request }, testInfo) => {
