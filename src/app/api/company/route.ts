@@ -177,7 +177,7 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
       }
 
       return db.prepare('SELECT * FROM companies WHERE id = ?').get(actor.company_id) as CompanyRow;
-    })(), 'company-profile-update');
+    }).immediate(), 'company-profile-update');
 
     return NextResponse.json({ company: toSafeUserProjection(updated) });
   } catch (error) {

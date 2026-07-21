@@ -6,6 +6,7 @@ import type { AuthContext } from '@/lib/auth/middleware';
 
 const boundary = vi.hoisted(() => ({
   db: null as Database.Database | null,
+  transactionModes: [] as string[],
 }));
 
 vi.mock('@/lib/auth/middleware', () => ({
@@ -17,7 +18,27 @@ vi.mock('@/lib/db', () => ({
   getWriteQueue: () => ({
     enqueue: async (operation: (db: Database.Database) => unknown) => {
       if (!boundary.db) throw new Error('Test database is not configured');
-      return operation(boundary.db);
+      const guardedDb = new Proxy(boundary.db, {
+        get(target, property) {
+          if (property === 'transaction') {
+            return (callback: () => unknown) => {
+              const transaction = target.transaction(callback);
+              const guardedTransaction = () => {
+                boundary.transactionModes.push('deferred');
+                throw new Error('Deferred transaction is forbidden for feed setting writes');
+              };
+              guardedTransaction.immediate = () => {
+                boundary.transactionModes.push('immediate');
+                return transaction.immediate();
+              };
+              return guardedTransaction;
+            };
+          }
+          const value = Reflect.get(target, property, target);
+          return typeof value === 'function' ? value.bind(target) : value;
+        },
+      }) as Database.Database;
+      return operation(guardedDb);
     },
   }),
 }));
@@ -101,6 +122,7 @@ async function setFeedEnabled(enabled: boolean): Promise<Response> {
 
 beforeEach(() => {
   boundary.db = createDatabase();
+  boundary.transactionModes = [];
 });
 
 afterEach(() => {
@@ -109,6 +131,13 @@ afterEach(() => {
 });
 
 describe('company community feed setting audit', () => {
+  it('runs the complete company write in an IMMEDIATE transaction', async () => {
+    const response = await setFeedEnabled(true);
+
+    expect(boundary.transactionModes).toEqual(['immediate']);
+    expect(response.status).toBe(200);
+  });
+
   it('records one complete receipt only when the effective setting changes', async () => {
     expect((await setFeedEnabled(true)).status).toBe(200);
     const firstUpdatedAt = boundary.db!.prepare(`
