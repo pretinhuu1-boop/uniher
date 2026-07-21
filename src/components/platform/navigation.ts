@@ -73,12 +73,6 @@ const NAVIGATION = {
           icon: 'dashboard',
           description: 'Atenção, ações e impacto',
         },
-        {
-          href: '/semaforo',
-          label: 'Semáforo de saúde',
-          icon: 'semaforo',
-          description: 'Indicadores agregados de atenção',
-        },
       ],
     },
     {
@@ -120,22 +114,10 @@ const NAVIGATION = {
           description: 'Publicar e organizar conteúdos da comunidade',
         },
         {
-          href: '/objetivos',
-          label: 'Objetivos',
-          icon: 'objetivos',
-          description: 'Metas e recompensas',
-        },
-        {
           href: '/desafios/gerenciar',
           label: 'Desafios',
           icon: 'desafios',
           description: 'Configuração de desafios',
-        },
-        {
-          href: '/liga/gerenciar',
-          label: 'Ligas',
-          icon: 'liga',
-          description: 'Configuração de ligas',
         },
       ],
     },
@@ -178,12 +160,6 @@ const NAVIGATION = {
           label: 'Início',
           icon: 'dashboard',
           description: 'Resumo da equipe',
-        },
-        {
-          href: '/semaforo',
-          label: 'Semáforo da equipe',
-          icon: 'semaforo',
-          description: 'Indicadores agregados',
         },
         {
           href: '/campanhas',
@@ -250,12 +226,6 @@ const NAVIGATION = {
           label: 'Conquistas',
           icon: 'conquistas',
           description: 'Marcos da sua jornada',
-        },
-        {
-          href: '/liga',
-          label: 'Liga semanal',
-          icon: 'liga',
-          description: 'Participação e comunidade',
         },
       ],
     },

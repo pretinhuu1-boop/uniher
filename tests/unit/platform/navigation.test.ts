@@ -48,12 +48,6 @@ const EXPECTED_NAVIGATION = {
           icon: 'dashboard',
           description: 'Atenção, ações e impacto',
         },
-        {
-          href: '/semaforo',
-          label: 'Semáforo de saúde',
-          icon: 'semaforo',
-          description: 'Indicadores agregados de atenção',
-        },
       ],
     },
     {
@@ -95,22 +89,10 @@ const EXPECTED_NAVIGATION = {
           description: 'Publicar e organizar conteúdos da comunidade',
         },
         {
-          href: '/objetivos',
-          label: 'Objetivos',
-          icon: 'objetivos',
-          description: 'Metas e recompensas',
-        },
-        {
           href: '/desafios/gerenciar',
           label: 'Desafios',
           icon: 'desafios',
           description: 'Configuração de desafios',
-        },
-        {
-          href: '/liga/gerenciar',
-          label: 'Ligas',
-          icon: 'liga',
-          description: 'Configuração de ligas',
         },
       ],
     },
@@ -153,12 +135,6 @@ const EXPECTED_NAVIGATION = {
           label: 'Início',
           icon: 'dashboard',
           description: 'Resumo da equipe',
-        },
-        {
-          href: '/semaforo',
-          label: 'Semáforo da equipe',
-          icon: 'semaforo',
-          description: 'Indicadores agregados',
         },
         {
           href: '/campanhas',
@@ -226,12 +202,6 @@ const EXPECTED_NAVIGATION = {
           icon: 'conquistas',
           description: 'Marcos da sua jornada',
         },
-        {
-          href: '/liga',
-          label: 'Liga semanal',
-          icon: 'liga',
-          description: 'Participação e comunidade',
-        },
       ],
     },
   ],
@@ -289,6 +259,17 @@ describe('platform navigation', () => {
   it.each(['rh', 'lideranca'] as const)('keeps %s navigation free from personal Agenda', (role) => {
     const routes = getNavigationForRole(role).flatMap((group) => group.items.map((item) => item.href));
     expect(routes).not.toContain('/agenda');
+  });
+
+  it('keeps unapproved personal and competitive surfaces out of management navigation', () => {
+    const routesFor = (role: UserRole) => getNavigationForRole(role)
+      .flatMap((group) => group.items.map((item) => item.href));
+
+    expect(routesFor('rh')).not.toContain('/semaforo');
+    expect(routesFor('rh')).not.toContain('/objetivos');
+    expect(routesFor('rh')).not.toContain('/liga/gerenciar');
+    expect(routesFor('lideranca')).not.toContain('/semaforo');
+    expect(routesFor('colaboradora')).not.toContain('/liga');
   });
 
   it('uses only registered, unique navigation icons', () => {
