@@ -8,9 +8,11 @@ import type { CommunityFeedResponse } from '@/types/community';
 const mocks = vi.hoisted(() => ({
   feedMutate: vi.fn(),
   savedMutate: vi.fn(),
+  brandMutate: vi.fn(),
   globalMutate: vi.fn(),
   feedState: { data: undefined as unknown, error: undefined as unknown, isLoading: false },
   savedState: { data: undefined as unknown, error: undefined as unknown, isLoading: false },
+  brandState: { data: undefined as unknown, error: undefined as unknown, isLoading: false },
   swrKeys: [] as unknown[],
   user: {
     id: 'user-a',
@@ -24,6 +26,9 @@ vi.mock('swr', () => ({
   default: (key: unknown) => {
     mocks.swrKeys.push(key);
     const url = Array.isArray(key) ? key[0] : key;
+    if (url === '/api/collaborator/company') {
+      return { ...mocks.brandState, mutate: mocks.brandMutate };
+    }
     return typeof url === 'string' && url.includes('/saved')
       ? { ...mocks.savedState, mutate: mocks.savedMutate }
       : { ...mocks.feedState, mutate: mocks.feedMutate };
@@ -38,6 +43,7 @@ import {
   COLLABORATOR_FEED_KEY,
   COLLABORATOR_SAVED_KEY,
   buildCollaboratorSavedKey,
+  useCommunityBrand,
   useCollaboratorFeed,
   useCollaboratorSaved,
 } from '@/hooks/useCollaborator';
@@ -70,12 +76,26 @@ function authError(status: 401 | 403): Error & { status: number } {
 
 describe('collaborator community SWR lifecycle', () => {
   beforeEach(() => {
+    mocks.user.id = 'user-a';
+    mocks.user.companyId = 'company-a';
+    mocks.user.role = 'colaboradora';
+    mocks.user.also_collaborator = 0;
     mocks.feedState.data = feedData;
     mocks.feedState.error = undefined;
     mocks.savedState.data = feedData;
     mocks.savedState.error = undefined;
+    mocks.brandState.data = {
+      company: {
+        id: 'company-a',
+        name: 'Empresa Legal',
+        trade_name: 'Marca Legal',
+        logo_url: '/logos/company-a.png',
+      },
+    };
+    mocks.brandState.error = undefined;
     mocks.feedMutate.mockReset().mockResolvedValue(undefined);
     mocks.savedMutate.mockReset().mockResolvedValue(undefined);
+    mocks.brandMutate.mockReset().mockResolvedValue(undefined);
     mocks.globalMutate.mockReset().mockResolvedValue(undefined);
     mocks.swrKeys = [];
   });
@@ -118,6 +138,50 @@ describe('collaborator community SWR lifecycle', () => {
 
     rerender({ enabled: false });
     expect(mocks.swrKeys.at(-1)).toBeNull();
+  });
+
+  it('uses the collaborator identity endpoint only for a capability-bearing session', () => {
+    const { result, rerender } = renderHook(() => useCommunityBrand());
+
+    expect(mocks.swrKeys.at(-1)).toEqual([
+      '/api/collaborator/company',
+      'user-a',
+      'company-a',
+      'colaboradora',
+      1,
+    ]);
+    expect(result.current.brand).toEqual({
+      name: 'Marca Legal',
+      logoUrl: '/logos/company-a.png',
+    });
+
+    mocks.user.role = 'rh';
+    rerender();
+    expect(mocks.swrKeys.at(-1)).toBeNull();
+
+    mocks.user.also_collaborator = 1;
+    rerender();
+    expect(mocks.swrKeys.at(-1)).toEqual([
+      '/api/collaborator/company',
+      'user-a',
+      'company-a',
+      'rh',
+      1,
+    ]);
+  });
+
+  it.each([401, 403, 404, 410])('purges stale company identity after a %s response', async (status) => {
+    const error = Object.assign(new Error('identity unavailable'), { status });
+    mocks.brandState.error = error;
+
+    const { result } = renderHook(() => useCommunityBrand());
+
+    expect(result.current.brand).toBeNull();
+    expect(result.current.error).toBe(error);
+    await waitFor(() => expect(mocks.brandMutate).toHaveBeenCalledWith(
+      undefined,
+      { revalidate: false },
+    ));
   });
 
   it('never exposes saved data from session A after switching to session B', () => {

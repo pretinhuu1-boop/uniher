@@ -63,11 +63,12 @@ type SaveState = { savedByMe: boolean };
 export type CommunitySupportersResponse = { names: string[]; nextCursor: string | null };
 export type CommunityBrand = { name: string; logoUrl: string | null };
 
-type CompanyResponse = {
+type CollaboratorCompanyResponse = {
   company?: {
-    name?: string;
-    trade_name?: string | null;
-    logo_url?: string | null;
+    id: string;
+    name: string;
+    trade_name: string | null;
+    logo_url: string | null;
   };
 };
 
@@ -228,21 +229,30 @@ export function useCollaboratorFeed() {
 
 export function useCommunityBrand() {
   const { user } = useAuth();
-  const brandKey = user
-    ? ['/api/company', user.id, user.companyId ?? null, user.role] as const
+  const canUseCollaboratorCommunity = user?.role === 'colaboradora' || user?.also_collaborator === 1;
+  const brandKey = user && user.companyId && canUseCollaboratorCommunity
+    ? ['/api/collaborator/company', user.id, user.companyId, user.role, 1] as const
     : null;
-  const { data, error, isLoading, mutate } = useSWR<CompanyResponse, CollaboratorApiError>(
+  const { data, error, isLoading, mutate } = useSWR<CollaboratorCompanyResponse, CollaboratorApiError>(
     brandKey,
-    (key) => getFetcher<CompanyResponse>(key[0]),
+    (key) => getFetcher<CollaboratorCompanyResponse>(key[0]),
     { revalidateOnFocus: false, dedupingInterval: 60_000 },
   );
-  const company = data?.company;
+  const identityUnavailable = error
+    ? [401, 403, 404, 410].includes(error.status)
+    : false;
+
+  useEffect(() => {
+    if (identityUnavailable) void mutate(undefined, { revalidate: false });
+  }, [identityUnavailable, mutate]);
+
+  const company = error ? undefined : data?.company;
   const name = company?.trade_name?.trim() || company?.name?.trim() || '';
 
   return {
     brand: name ? { name, logoUrl: company?.logo_url ?? null } : null,
     error,
-    isLoading,
+    isLoading: brandKey ? isLoading : false,
     retry: mutate,
   };
 }
