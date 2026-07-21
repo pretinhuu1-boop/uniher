@@ -18,7 +18,7 @@ interface CompanyData {
   user_count: number;
   department_count: number;
   missions_active: number;
-  feed_company_enabled?: boolean;
+  feed_company_enabled: boolean;
 }
 
 function EditField({ label, value, onChange, isEditing, type = 'text' }: {
@@ -65,9 +65,9 @@ export default function CompanyProfilePage() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [feedCompanyEnabled, setFeedCompanyEnabled] = useState(true);
+  const [feedCompanyEnabled, setFeedCompanyEnabled] = useState(false);
 
-  const [snap, setSnap] = useState({ companyName: '', tradeName: '', cnpj: '', sector: '', contactName: '', contactEmail: '', contactPhone: '' });
+  const [snap, setSnap] = useState({ companyName: '', tradeName: '', cnpj: '', sector: '', contactName: '', contactEmail: '', contactPhone: '', feedCompanyEnabled: false });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,20 +88,21 @@ export default function CompanyProfilePage() {
         setContactEmail(c.contact_email || '');
         setContactPhone(c.contact_phone || '');
         setLogoUrl(c.logo_url || null);
-        setFeedCompanyEnabled(c.feed_company_enabled !== false);
+        setFeedCompanyEnabled(c.feed_company_enabled);
       })
       .catch(() => setError('Empresa nao encontrada. Verifique se sua conta esta vinculada a uma empresa.'))
       .finally(() => setLoading(false));
   }, []);
 
   const startEditing = () => {
-    setSnap({ companyName, tradeName, cnpj, sector, contactName, contactEmail, contactPhone });
+    setSnap({ companyName, tradeName, cnpj, sector, contactName, contactEmail, contactPhone, feedCompanyEnabled });
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
     setCompanyName(snap.companyName); setTradeName(snap.tradeName); setCnpj(snap.cnpj);
     setSector(snap.sector); setContactName(snap.contactName); setContactEmail(snap.contactEmail); setContactPhone(snap.contactPhone);
+    setFeedCompanyEnabled(snap.feedCompanyEnabled);
     setIsEditing(false);
   };
 
@@ -292,16 +293,16 @@ export default function CompanyProfilePage() {
         {/* Feed Setting */}
         <div className="bg-white rounded-2xl p-7 border border-border-1 shadow-sm">
           <h2 className="flex items-center gap-2 text-lg font-bold text-uni-text-900 mb-6">
-            <span className="text-rose-500">📣</span> Feed da Comunidade
+            <span className="text-rose-500">📣</span> Feed da comunidade da empresa
           </h2>
           <div className="space-y-3">
             <p className="text-sm text-uni-text-600">
-              Defina se colaboradoras podem ver atividades de toda a empresa ou somente do proprio grupo/setor.
+              Defina se os conteúdos editoriais da comunidade da empresa ficam disponíveis para as colaboradoras.
             </p>
             <label className="flex items-center justify-between gap-4 p-4 rounded-xl border border-border-1 bg-cream-50">
               <div>
-                <p className="text-sm font-bold text-uni-text-900">Mostrar feed da empresa inteira</p>
-                <p className="text-xs text-uni-text-500 mt-1">Quando desligado, colaboradoras veem apenas o feed do proprio grupo.</p>
+                <p className="text-sm font-bold text-uni-text-900">Feed da comunidade da empresa</p>
+                <p className="text-xs text-uni-text-500 mt-1">Quando desativado, nenhum conteúdo da comunidade da empresa é exibido para as colaboradoras.</p>
               </div>
               <button
                 type="button"
@@ -312,7 +313,7 @@ export default function CompanyProfilePage() {
                   feedCompanyEnabled ? 'bg-emerald-500' : 'bg-uni-text-300',
                   !isEditing && 'opacity-60 cursor-not-allowed'
                 )}
-                aria-label="Alternar feed da empresa inteira"
+                aria-label="Alternar Feed da comunidade da empresa"
               >
                 <span
                   className={cn(
