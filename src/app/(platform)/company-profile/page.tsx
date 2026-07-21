@@ -21,8 +21,8 @@ interface CompanyData {
   feed_company_enabled: boolean;
 }
 
-function EditField({ label, value, onChange, isEditing, type = 'text' }: {
-  label: string; value: string; onChange: (v: string) => void; isEditing: boolean; type?: string;
+function EditField({ label, value, onChange, isEditing, disabled, type = 'text' }: {
+  label: string; value: string; onChange: (v: string) => void; isEditing: boolean; disabled: boolean; type?: string;
 }) {
   return (
     <div>
@@ -32,6 +32,7 @@ function EditField({ label, value, onChange, isEditing, type = 'text' }: {
           type={type}
           value={value}
           onChange={e => onChange(e.target.value)}
+          disabled={disabled}
           className="w-full h-10 px-3 text-sm font-medium text-uni-text-900 bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all"
         />
       ) : (
@@ -55,6 +56,7 @@ export default function CompanyProfilePage() {
   const [error, setError] = useState('');
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [saveLabel, setSaveLabel] = useState('');
 
   const [companyName, setCompanyName] = useState('');
@@ -70,6 +72,7 @@ export default function CompanyProfilePage() {
   const [snap, setSnap] = useState({ companyName: '', tradeName: '', cnpj: '', sector: '', contactName: '', contactEmail: '', contactPhone: '', feedCompanyEnabled: false });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveRequestRef = useRef({ inFlight: false, id: 0 });
 
   // Fetch company data
   useEffect(() => {
@@ -107,6 +110,11 @@ export default function CompanyProfilePage() {
   };
 
   const saveEditing = async () => {
+    if (saveRequestRef.current.inFlight) return;
+
+    const requestId = ++saveRequestRef.current.id;
+    saveRequestRef.current.inFlight = true;
+    setIsSaving(true);
     setSaveLabel('Salvando...');
     try {
       const res = await fetch('/api/company', {
@@ -124,14 +132,21 @@ export default function CompanyProfilePage() {
       });
       if (!res.ok) throw new Error('Erro ao salvar');
       const { company: updated } = await res.json();
+      if (requestId !== saveRequestRef.current.id) return;
       setCompany(prev => prev ? { ...prev, ...updated } : prev);
       setCompany(prev => prev ? { ...prev, feed_company_enabled: feedCompanyEnabled } : prev);
       setSaveLabel('Salvo!');
       setIsEditing(false);
     } catch {
-      setSaveLabel('Erro ao salvar');
+      if (requestId === saveRequestRef.current.id) setSaveLabel('Erro ao salvar');
     } finally {
-      setTimeout(() => setSaveLabel(''), 2000);
+      if (requestId === saveRequestRef.current.id) {
+        saveRequestRef.current.inFlight = false;
+        setIsSaving(false);
+        setTimeout(() => {
+          if (requestId === saveRequestRef.current.id) setSaveLabel('');
+        }, 2000);
+      }
     }
   };
 
@@ -227,8 +242,8 @@ export default function CompanyProfilePage() {
           {saveLabel && <span className="text-sm font-bold text-emerald-600 animate-fadeIn">{saveLabel}</span>}
           {isEditing ? (
             <>
-              <button onClick={cancelEditing} className="px-4 py-2 rounded-lg border border-border-1 text-sm font-bold text-uni-text-600 hover:border-uni-text-400 transition-all">Cancelar</button>
-              <button onClick={saveEditing}   className="px-5 py-2 rounded-lg bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-sm">Salvar</button>
+              <button onClick={cancelEditing} disabled={isSaving} className="px-4 py-2 rounded-lg border border-border-1 text-sm font-bold text-uni-text-600 hover:border-uni-text-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed">Cancelar</button>
+              <button onClick={saveEditing} disabled={isSaving} className="px-5 py-2 rounded-lg bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">Salvar</button>
             </>
           ) : (
             <button onClick={startEditing} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-md shadow-rose/20">
@@ -263,10 +278,10 @@ export default function CompanyProfilePage() {
             <span className="text-rose-500">🏛</span> Informacoes da Empresa
           </h2>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
-            <EditField label="Razao Social"  value={companyName}  onChange={setCompanyName}  isEditing={isEditing} />
-            <EditField label="Nome Fantasia" value={tradeName}    onChange={setTradeName}    isEditing={isEditing} />
-            <EditField label="CNPJ"          value={cnpj}         onChange={setCnpj}         isEditing={isEditing} />
-            <EditField label="Setor"         value={sector}       onChange={setSector}       isEditing={isEditing} />
+            <EditField label="Razao Social"  value={companyName}  onChange={setCompanyName}  isEditing={isEditing} disabled={isSaving} />
+            <EditField label="Nome Fantasia" value={tradeName}    onChange={setTradeName}    isEditing={isEditing} disabled={isSaving} />
+            <EditField label="CNPJ"          value={cnpj}         onChange={setCnpj}         isEditing={isEditing} disabled={isSaving} />
+            <EditField label="Setor"         value={sector}       onChange={setSector}       isEditing={isEditing} disabled={isSaving} />
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400 mb-1">N de Colaboradoras</dt>
               <dd className="text-sm font-semibold text-uni-text-900">{company.user_count}</dd>
@@ -284,9 +299,9 @@ export default function CompanyProfilePage() {
             <span className="text-rose-500">✉️</span> Contato RH
           </h2>
           <dl className="space-y-5">
-            <EditField label="Nome do Responsavel" value={contactName}  onChange={setContactName}  isEditing={isEditing} />
-            <EditField label="E-mail"              value={contactEmail} onChange={setContactEmail} isEditing={isEditing} type="email" />
-            <EditField label="Telefone"            value={contactPhone} onChange={setContactPhone} isEditing={isEditing} type="tel" />
+            <EditField label="Nome do Responsavel" value={contactName}  onChange={setContactName}  isEditing={isEditing} disabled={isSaving} />
+            <EditField label="E-mail"              value={contactEmail} onChange={setContactEmail} isEditing={isEditing} disabled={isSaving} type="email" />
+            <EditField label="Telefone"            value={contactPhone} onChange={setContactPhone} isEditing={isEditing} disabled={isSaving} type="tel" />
           </dl>
         </div>
 
@@ -307,20 +322,29 @@ export default function CompanyProfilePage() {
               <button
                 type="button"
                 onClick={() => setFeedCompanyEnabled(v => !v)}
-                disabled={!isEditing}
+                disabled={!isEditing || isSaving}
+                role="switch"
+                aria-checked={feedCompanyEnabled}
+                aria-label="Feed da comunidade da empresa"
                 className={cn(
-                  'relative w-12 h-7 rounded-full transition-all flex-shrink-0',
-                  feedCompanyEnabled ? 'bg-emerald-500' : 'bg-uni-text-300',
-                  !isEditing && 'opacity-60 cursor-not-allowed'
+                  'relative min-w-11 min-h-11 flex items-center justify-center rounded-full flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2',
+                  (!isEditing || isSaving) && 'opacity-60 cursor-not-allowed'
                 )}
-                aria-label="Alternar Feed da comunidade da empresa"
               >
                 <span
                   className={cn(
-                    'absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-all',
-                    feedCompanyEnabled ? 'left-6' : 'left-1'
+                    'relative w-12 h-7 rounded-full transition-all',
+                    feedCompanyEnabled ? 'bg-emerald-500' : 'bg-uni-text-300'
                   )}
-                />
+                  aria-hidden="true"
+                >
+                  <span
+                    className={cn(
+                      'absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-all',
+                      feedCompanyEnabled ? 'left-6' : 'left-1'
+                    )}
+                  />
+                </span>
               </button>
             </label>
             {!isEditing && (
