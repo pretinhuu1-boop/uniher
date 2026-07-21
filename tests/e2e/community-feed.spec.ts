@@ -9,6 +9,7 @@ const ADMIN_EMAIL = 'admin@uniher.com.br';
 const PASSWORD = 'Admin@2026';
 const RUN_ID = `${Date.now()}-${process.pid}`;
 const COMPANY_B_SENTINEL = `COMMUNITY-B-SENTINEL-${RUN_ID}`;
+const MASTER_POST_TITLE = `MASTER-COMMUNITY-${RUN_ID}`;
 
 const ids = {
   companyA: `community-feed-company-a-${RUN_ID}`,
@@ -43,6 +44,7 @@ const emails = {
 type Tokens = Record<keyof typeof emails, string>;
 let tokens: Tokens;
 let editorialDraftId = '';
+let masterEditorialPostId = '';
 
 function editorialInput(overrides: Record<string, unknown> = {}) {
   return {
@@ -63,6 +65,25 @@ function openPlaywrightDatabase(): Database.Database {
 
 function authHeaders(token: string) {
   return { Cookie: `uniher-access-token=${token}` };
+}
+
+function setCompanyFeedEnabled(companyId: string, enabled: boolean) {
+  const db = openPlaywrightDatabase();
+  try {
+    db.prepare(`
+      INSERT INTO company_settings (id, company_id, setting_key, setting_value, updated_at)
+      VALUES (?, ?, 'feed_company_enabled', ?, ?)
+      ON CONFLICT(company_id, setting_key)
+      DO UPDATE SET setting_value = excluded.setting_value, updated_at = excluded.updated_at
+    `).run(
+      `community-browser-setting-${companyId}-${RUN_ID}`,
+      companyId,
+      enabled ? '1' : '0',
+      new Date().toISOString(),
+    );
+  } finally {
+    db.close();
+  }
 }
 
 async function login(request: APIRequestContext, email: string): Promise<string> {
@@ -462,7 +483,12 @@ test.describe('company community feed', () => {
     expect(listA.status(), await listA.text()).toBe(200);
     expectPrivateResponse(listA);
     const listPayload = await listA.json();
-    expect(listPayload).toMatchObject({ companyId: ids.companyA, status: 'published' });
+    expect(Object.keys(listPayload).sort()).toEqual(['companyId', 'items', 'settings', 'status']);
+    expect(listPayload).toMatchObject({
+      companyId: ids.companyA,
+      status: 'published',
+      settings: { companyFeedEnabled: true },
+    });
     expect(listPayload.items.map((item: { id: string }) => item.id)).toContain(ids.postA);
     expect(JSON.stringify(listPayload)).not.toContain(COMPANY_B_SENTINEL);
 
@@ -510,6 +536,83 @@ test.describe('company community feed', () => {
     expect(JSON.stringify(payload)).toContain(COMPANY_B_SENTINEL);
   });
 
+  test('lets master admin create, edit, publish, and archive only the explicitly selected company', async ({ request }) => {
+    const master = { headers: authHeaders(tokens.master) };
+    const created = await request.post('/api/rh/community/posts', {
+      ...master,
+      data: editorialInput({ companyId: ids.companyB, title: MASTER_POST_TITLE }),
+    });
+    expect(created.status(), await created.text()).toBe(201);
+    masterEditorialPostId = (await created.json()).post.id;
+
+    const edited = await request.patch(
+      `/api/rh/community/posts/${masterEditorialPostId}?companyId=${ids.companyB}`,
+      { ...master, data: { summary: 'Resumo editado pelo admin master no tenant selecionado.' } },
+    );
+    expect(edited.status(), await edited.text()).toBe(200);
+    expect((await edited.json()).post.summary).toBe('Resumo editado pelo admin master no tenant selecionado.');
+
+    const published = await request.patch(
+      `/api/rh/community/posts/${masterEditorialPostId}?companyId=${ids.companyB}`,
+      { ...master, data: { status: 'published' } },
+    );
+    expect(published.status(), await published.text()).toBe(200);
+    expect((await published.json()).post.status).toBe('published');
+
+    const archived = await request.patch(
+      `/api/rh/community/posts/${masterEditorialPostId}?companyId=${ids.companyB}`,
+      { ...master, data: { status: 'archived' } },
+    );
+    expect(archived.status(), await archived.text()).toBe(200);
+    expect((await archived.json()).post.status).toBe('archived');
+
+    const companyAList = await request.get('/api/rh/community/posts', {
+      headers: authHeaders(tokens.dualRoleA),
+    });
+    expect(companyAList.status(), await companyAList.text()).toBe(200);
+    expect(JSON.stringify(await companyAList.json())).not.toContain(MASTER_POST_TITLE);
+
+    const db = openPlaywrightDatabase();
+    try {
+      expect((db.prepare('SELECT company_id FROM community_posts WHERE id = ?').get(masterEditorialPostId) as {
+        company_id: string;
+      }).company_id).toBe(ids.companyB);
+      const auditRows = db.prepare(`
+        SELECT actor_id, actor_email, actor_role, action, entity_id, details
+        FROM audit_logs
+        WHERE entity_type = 'community_post' AND entity_id = ?
+        ORDER BY created_at ASC, rowid ASC
+      `).all(masterEditorialPostId) as Array<{
+        actor_id: string;
+        actor_email: string;
+        actor_role: string;
+        action: string;
+        entity_id: string;
+        details: string;
+      }>;
+      expect(auditRows.map((row) => row.action)).toEqual([
+        'community_post_create',
+        'community_post_update',
+        'community_post_publish',
+        'community_post_archive',
+      ]);
+      for (const row of auditRows) {
+        expect(row).toMatchObject({
+          actor_id: 'user_admin',
+          actor_email: ADMIN_EMAIL,
+          actor_role: 'admin',
+          entity_id: masterEditorialPostId,
+        });
+        expect(JSON.parse(row.details)).toMatchObject({
+          companyId: ids.companyB,
+          postId: masterEditorialPostId,
+        });
+      }
+    } finally {
+      db.close();
+    }
+  });
+
   test('revalidates the active persisted editorial actor before writes', async ({ request }) => {
     const db = openPlaywrightDatabase();
     try {
@@ -529,6 +632,51 @@ test.describe('company community feed', () => {
         restoreDb.prepare('UPDATE users SET blocked = 0 WHERE id = ?').run(ids.dualRoleA);
       } finally {
         restoreDb.close();
+      }
+    }
+  });
+
+  test('fails management reads and writes closed after persisted role and company changes', async ({ request }) => {
+    const options = { headers: authHeaders(tokens.dualRoleA) };
+    const assertClosed = async () => {
+      await expectError(await request.get('/api/rh/community/posts', options), 403, 'EDITORIAL_ACTOR_FORBIDDEN');
+      await expectError(await request.post('/api/rh/community/posts', {
+        ...options,
+        data: editorialInput(),
+      }), 403, 'EDITORIAL_ACTOR_FORBIDDEN');
+    };
+
+    const roleDb = openPlaywrightDatabase();
+    try {
+      roleDb.prepare("UPDATE users SET role = 'lideranca' WHERE id = ?").run(ids.dualRoleA);
+    } finally {
+      roleDb.close();
+    }
+    try {
+      await assertClosed();
+    } finally {
+      const restoreRoleDb = openPlaywrightDatabase();
+      try {
+        restoreRoleDb.prepare("UPDATE users SET role = 'rh' WHERE id = ?").run(ids.dualRoleA);
+      } finally {
+        restoreRoleDb.close();
+      }
+    }
+
+    const companyDb = openPlaywrightDatabase();
+    try {
+      companyDb.prepare('UPDATE users SET company_id = ? WHERE id = ?').run(ids.companyB, ids.dualRoleA);
+    } finally {
+      companyDb.close();
+    }
+    try {
+      await assertClosed();
+    } finally {
+      const restoreCompanyDb = openPlaywrightDatabase();
+      try {
+        restoreCompanyDb.prepare('UPDATE users SET company_id = ? WHERE id = ?').run(ids.companyA, ids.dualRoleA);
+      } finally {
+        restoreCompanyDb.close();
       }
     }
   });
@@ -618,6 +766,13 @@ test.describe('company community feed', () => {
 
   test('defaults a missing company feed setting off, blocks publish, and isolates switch writes', async ({ request }) => {
     const rhDisabled = { headers: authHeaders(tokens.rhDisabled) };
+    const managementList = await request.get('/api/rh/community/posts', rhDisabled);
+    expect(managementList.status(), await managementList.text()).toBe(200);
+    expect(await managementList.json()).toMatchObject({
+      companyId: ids.companyDisabled,
+      status: null,
+      settings: { companyFeedEnabled: false },
+    });
     const company = await request.get('/api/company', rhDisabled);
     expect(company.status(), await company.text()).toBe(200);
     expect((await company.json()).company.feed_company_enabled).toBe(false);
@@ -699,5 +854,101 @@ test.describe('company community feed', () => {
     } finally {
       db.close();
     }
+  });
+
+  test('browser covers RH management states and the full editorial workflow', async ({ page, context, baseURL }) => {
+    expect(baseURL).toBeTruthy();
+    setCompanyFeedEnabled(ids.companyDisabled, false);
+    await context.addCookies([{
+      name: 'uniher-access-token',
+      value: tokens.rhDisabled,
+      url: baseURL!,
+    }]);
+
+    await page.goto('/comunidade/gerenciar');
+    await expect(page.getByRole('heading', { name: 'Gestão editorial', exact: true })).toBeVisible();
+    await expect(page.getByText('Feed da comunidade desativado', { exact: true })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Conteúdos da comunidade' })).toContainText('Post de feed desativado');
+
+    const statusFilter = page.getByLabel('Filtrar por status');
+    await statusFilter.selectOption('archived');
+    await expect(page.getByRole('heading', { name: 'Nenhum conteúdo neste filtro' })).toBeVisible();
+    await statusFilter.selectOption('all');
+
+    await page.getByRole('button', { name: 'Novo conteúdo', exact: true }).click();
+    await page.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
+    await expect(page.getByText('Revise os campos destacados antes de continuar.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Use entre 3 e 120 caracteres.', { exact: true })).toBeVisible();
+
+    const browserTitle = `Browser editorial ${RUN_ID}`;
+    const editedBrowserTitle = `${browserTitle} revisado`;
+    const browserSummary = 'Resumo criado no navegador para validar a gestão editorial completa.';
+    const browserBody = 'Primeira linha da prévia.\nSegunda linha mantida como texto simples.';
+    await page.locator('#community-post-title').fill(browserTitle);
+    await page.locator('#community-post-summary').fill(browserSummary);
+    await page.locator('#community-post-body').fill(browserBody);
+    await expect(page.getByRole('heading', { name: 'Prévia em texto simples' })).toBeVisible();
+    await expect(
+      page
+        .locator('aside[aria-labelledby="community-preview-title"]')
+        .getByText(browserBody, { exact: true }),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
+    await expect(page.getByText('Rascunho criado. Agora ele pode ser publicado.', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Publicar', exact: true })).toBeDisabled();
+
+    await page.locator('#community-post-title').fill(editedBrowserTitle);
+    await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+    await expect(page.getByText('Alterações salvas.', { exact: true })).toBeVisible();
+
+    setCompanyFeedEnabled(ids.companyDisabled, true);
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Gestão editorial', exact: true })).toBeVisible();
+    await expect(page.getByText('Feed da comunidade desativado', { exact: true })).toHaveCount(0);
+    const editedPostButton = page
+      .getByRole('list', { name: 'Conteúdos da comunidade' })
+      .getByRole('button')
+      .filter({ hasText: editedBrowserTitle });
+    await expect(editedPostButton).toBeVisible();
+    await editedPostButton.click();
+
+    await expect(page.getByRole('button', { name: 'Publicar', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Publicar', exact: true }).click();
+    await expect(page.getByText('Conteúdo publicado no feed da empresa.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Publicado', { exact: true }).last()).toBeVisible();
+
+    await page.getByRole('button', { name: 'Arquivar', exact: true }).click();
+    await expect(page.getByText('Conteúdo arquivado e removido do feed.', { exact: true })).toBeVisible();
+    await expect(statusFilter).toHaveValue('archived');
+    await expect(page.getByRole('list', { name: 'Conteúdos da comunidade' })).toContainText(editedBrowserTitle);
+  });
+
+  test('browser requires master admin to select a company before loading its editorial scope', async ({ page, context, baseURL }) => {
+    expect(baseURL).toBeTruthy();
+    await context.addCookies([{
+      name: 'uniher-access-token',
+      value: tokens.master,
+      url: baseURL!,
+    }]);
+
+    await page.goto('/comunidade/gerenciar');
+    await expect(page.getByRole('heading', { name: 'Gestão editorial', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Selecione uma empresa' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Novo conteúdo', exact: true })).toBeDisabled();
+
+    const selectedCompanyResponse = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname === '/api/rh/community/posts'
+        && url.searchParams.get('companyId') === ids.companyB;
+    });
+    await page.getByLabel('Empresa selecionada').selectOption(ids.companyB);
+    const response = await selectedCompanyResponse;
+    expect(response.status(), await response.text()).toBe(200);
+
+    await expect(page.getByText(`Empresa selecionada: Community B.`, { exact: false })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Conteúdos da comunidade' })).toContainText(COMPANY_B_SENTINEL);
+    await expect(page.getByRole('list', { name: 'Conteúdos da comunidade' })).not.toContainText('Pausas que cabem no dia');
+    await expect(page.getByRole('button', { name: 'Novo conteúdo', exact: true })).toBeEnabled();
   });
 });

@@ -194,7 +194,12 @@ export function listEditorialPosts(
   auth: EditorialAuth,
   explicitCompanyId?: string,
   status?: CommunityPostStatus,
-): { companyId: string; status: CommunityPostStatus | null; items: EditorialPostDto[] } {
+): {
+  companyId: string;
+  status: CommunityPostStatus | null;
+  items: EditorialPostDto[];
+  settings: { companyFeedEnabled: boolean };
+} {
   const { companyId } = resolveEditorialCompany(database, auth, explicitCompanyId);
   const rows = (status
     ? database.prepare(`
@@ -211,7 +216,12 @@ export function listEditorialPosts(
         WHERE company_id = ? AND deleted_at IS NULL
         ORDER BY updated_at DESC, created_at DESC, id DESC
       `).all(companyId)) as EditorialPostRow[];
-  return { companyId, status: status ?? null, items: rows.map(mapEditorialPost) };
+  return {
+    companyId,
+    status: status ?? null,
+    items: rows.map(mapEditorialPost),
+    settings: { companyFeedEnabled: isFeedEnabled(database, companyId) },
+  };
 }
 
 export function getEditorialPost(

@@ -23,6 +23,7 @@ import {
   getCommunityFeed,
   getCommunitySupporters,
 } from '@/services/community.service';
+import { listEditorialPosts } from '@/lib/community/editorial';
 
 const databases: Database.Database[] = [];
 const NOW = '2026-07-21T12:00:00.000Z';
@@ -48,6 +49,7 @@ function createDatabase(): Database.Database {
       department_id TEXT,
       blocked INTEGER DEFAULT 0,
       approved INTEGER DEFAULT 1,
+      is_master_admin INTEGER DEFAULT 0,
       deleted_at TEXT
     );
     CREATE TABLE company_settings (
@@ -415,6 +417,34 @@ describe('community access and privacy policy', () => {
     ]) {
       expect(json.toLowerCase()).not.toContain(forbidden.toLowerCase());
     }
+  });
+
+  it('returns the exact management list shape with target-company feed settings default-off', () => {
+    const db = createDatabase();
+    const auth = {
+      userId: 'support-nick',
+      companyId: 'company-a',
+      role: 'rh',
+      isMasterAdmin: false,
+    };
+
+    expect(listEditorialPosts(db, auth)).toEqual({
+      companyId: 'company-a',
+      status: null,
+      items: [],
+      settings: { companyFeedEnabled: false },
+    });
+
+    enableFeed(db);
+    insertPost(db);
+    const enabled = listEditorialPosts(db, auth, undefined, 'published');
+    expect(Object.keys(enabled).sort()).toEqual(['companyId', 'items', 'settings', 'status']);
+    expect(enabled).toMatchObject({
+      companyId: 'company-a',
+      status: 'published',
+      settings: { companyFeedEnabled: true },
+    });
+    expect(enabled.items.map((post) => post.id)).toEqual(['post-a']);
   });
 
   it('returns only opted-in supporter display names and cursor keys', () => {
