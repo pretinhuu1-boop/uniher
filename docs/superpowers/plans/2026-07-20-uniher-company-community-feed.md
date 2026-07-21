@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Implementation note (2026-07-20):** the collaborator mobile shell and the `/comunidade` containment adapter are now present in the Wave 3 worktree. This plan still covers the real company-scoped feed; it must not be marked complete because the current route intentionally has no posts, mutations, or data layer.
+**Release receipt (2026-07-21):** the company-scoped Community feed, collaborator actions, private saved items, supporter consent, RH/admin editorial management, company switch, navigation, and privacy boundaries are functional. Runtime verification was executed on HEAD `4511eb2`; the later documentation-only commit records that evidence and is not itself claimed as the tested HEAD.
 
 **Goal:** Build a functional, company-scoped community feed for authenticated collaborators, with curated company content, private saves, anonymous aggregate support, and explicit opt-in for displaying a supporter name.
 
@@ -276,7 +276,7 @@ Expected: PASS with no company B sentinel in company A responses and no email/ro
 
 - [ ] **Step 5: Link this plan from the visual audit.** Keep the image audit honest: approved screens are visual direction; implementation status becomes functional only after API, tenant, privacy, and responsive gates pass.
 
-### Task 8: Independent verification and release gate
+### Task 8: Independent verification and release gate - COMPLETE on tested HEAD `4511eb2`
 
 **Files:**
 - Test: `tests/unit/community-policy.test.ts`
@@ -284,31 +284,33 @@ Expected: PASS with no company B sentinel in company A responses and no email/ro
 - Test: `tests/e2e/community-feed.spec.ts`
 - Test: `tests/e2e/visual-ux.spec.ts`
 
-- [ ] **Step 1: Run focused unit tests.**
+- [x] **Step 1: Run focused and complete unit tests.**
 
-Run: `npm run test:unit -- tests/unit/community-policy.test.ts tests/unit/community-repository.test.ts`
+Run: focused Community tests during implementation, followed by `npm run test:unit`.
 
-Expected: PASS.
+Receipt: **PASS, 469/469 tests in 50 files** on `4511eb2`.
 
-- [ ] **Step 2: Run the community e2e suite.**
+- [x] **Step 2: Run the Community and shell E2E matrix.**
 
-Run: `cd tests; npx playwright test e2e/community-feed.spec.ts --config=playwright.config.ts`
+Run: `cd tests; npx playwright test --config=playwright.config.ts --project=community-feed --project=community-feed-ui --project=mobile-shell --project=privacy-wave-1-1 --project=seguranca`
 
-Expected: PASS for company isolation, role boundaries, support/save idempotence, preference revocation, disabled state, and pagination.
+Receipt: **PASS, 65/65 in two consecutive executions, 3 workers, zero retries**, covering company isolation, role boundaries, support/save idempotence, preference revocation, disabled state, pagination, mobile shell, and security/privacy containment.
 
-- [ ] **Step 3: Run the existing privacy suite.**
+- [x] **Step 3: Preserve the existing privacy and security suite.**
 
-Run: `cd tests; npx playwright test e2e/wave-1-1-privacy.spec.ts e2e/seguranca.spec.ts --config=playwright.config.ts`
+Run: included as the `privacy-wave-1-1` and `seguranca` projects in the integrated matrix above.
 
-Expected: PASS with existing containment guarantees unchanged and no health-derived payload in community responses.
+Receipt: **PASS** with existing containment guarantees unchanged and no health-derived payload in Community responses.
 
-- [ ] **Step 4: Run build and visual checks.**
+- [x] **Step 4: Run build and visual checks.**
 
-Run: `npm run build` and `cd tests; npx playwright test e2e/visual-ux.spec.ts --config=playwright.config.ts`
+Run: `npm run build` and `cd tests; npx playwright test --project=visual-ux --config=playwright.config.ts`.
 
-Expected: build passes; community screenshots pass at desktop/mobile dimensions with no horizontal overflow.
+Receipt: build **PASS** with **137 routes/pages generated** and only the two pre-existing NFT trace warnings from `next.config.ts` to `src/app/api/admin/system/ops/route.ts`; `visual-ux` **PASS, 21/21 in two consecutive executions**. Community screenshots cover `375x812`, `390x844`, `768x900`, and `1440x1000`; the mobile-shell screenshot remains in the current Playwright result path recorded by the visual audit.
 
-- [ ] **Step 5: Close the gate only when all conditions pass.** The feature is ready for controlled rollout only when: feed is off by default, every query is company-scoped, collaborator writes are limited to own support/save, names are opt-in, no health data is present, admin/RH CRUD is tested, and the visual audit uses real UniHER assets.
+- [x] **Step 5: Close the gate only when all conditions pass.** **CLOSED on tested HEAD `4511eb2`**: feed is off by default, every query is company-scoped, collaborator writes are limited to own support/save, names are opt-in, no health data is present, admin/RH CRUD is tested, and the visual audit uses real UniHER assets. Quality findings were closed by `ab419f3`, `8305edd`, `f0af53c`, `f87c5fd`, `4b3fcfc`, and `4511eb2`.
+
+Documentation boundary: this checklist is the canonical release receipt for runtime verification performed on `4511eb2`. Its docs-only commit is intentionally not described as a tested runtime revision.
 
 ## Self-review
 

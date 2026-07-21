@@ -255,11 +255,17 @@ The visual design is approved and the collaborator mobile shell is implemented. 
 
 ### 9.5 Community functional gate
 
-- Full unit suite: `npm run test:unit` on HEAD `1428803`: **PASS, 451/451** tests in **48** files.
-- Real backend Community E2E: **PASS, 25/25** cases against the real API/database contract, covering auth, tenant isolation, disabled default-off behavior, idempotent support/save, consent and revocation, editorial lifecycle, switch/audit receipts, persisted actor changes, and explicit master company selection.
-- Mocked visual UI E2E: **PASS, 4/4** cases with deterministic network fixtures at exactly `375x812`, `390x844`, `768x900`, and `1440x1000`. These cases prove collaborator feed layout/states only; they are not backend-integration evidence.
-- Editorial management browser workflow: **PASS at the configured default viewport only**. No multi-viewport or responsive-management claim is made by this audit.
-- Cleanup: **PASS** for the real-backend suite; community fixture teardown completed without leaving test users, companies, posts, relations, settings, preferences, or audit receipts in the test database.
+- Tested runtime HEAD: `4511eb2` (`test(mobile): isolate shell from service worker reloads`), before this documentation-only release receipt.
+- Full unit suite: `npm run test:unit`: **PASS, 469/469** tests in **50** files.
+- Production build: `npm run build`: **PASS**, with **137 routes/pages generated**. The only diagnostics were the two pre-existing NFT tracing warnings from `next.config.ts` while tracing `src/app/api/admin/system/ops/route.ts`; they did not fail the build.
+- Visual regression gate: `visual-ux`: **PASS, 21/21** in **two consecutive executions**.
+- Integrated Wave 4 matrix: `community-feed`, `community-feed-ui`, `mobile-shell`, `privacy-wave-1-1`, and `seguranca`: **PASS, 65/65** in **two consecutive executions**, using **3 workers** and **zero retries**. The current `tests/results/results.json` records 65 passed results, no failures, `actualWorkers: 3`, and no non-zero retry.
+- The matrix retains real backend coverage for auth, tenant isolation, disabled default-off behavior, idempotent support/save, consent and revocation, editorial lifecycle, switch/audit receipts, persisted actor changes, explicit master company selection, cleanup, and security/privacy containment. Deterministic UI cases remain visual evidence, not substitutes for backend integration.
+- Current screenshot receipts: `tests/results/community-feed-ui-Collabor-f1792-verflow-or-identity-leakage-community-feed-ui/community-feed-375x812.png`, `tests/results/community-feed-ui-Collabor-54d55-verflow-or-identity-leakage-community-feed-ui/community-feed-390x844.png`, `tests/results/community-feed-ui-Collabor-a90d1-verflow-or-identity-leakage-community-feed-ui/community-feed-768x900.png`, and `tests/results/community-feed-ui-Collabor-d1d39-verflow-or-identity-leakage-community-feed-ui/community-feed-1440x1000.png`.
+- Current mobile-shell receipt: `tests/results/mobile-collaborator-shell--2b1fe-eserves-the-mobile-viewport-mobile-shell/mobile-collaborator-shell.png`.
+- Editorial management browser workflow remains evidenced only at the configured default viewport. No multi-viewport or responsive-management claim is made by this audit.
+- Quality findings are closed by `ab419f3`, `8305edd`, `f0af53c`, `f87c5fd`, `4b3fcfc`, and `4511eb2`.
+- Evidence boundary: all runtime commands and consecutive-run claims above apply to tested HEAD `4511eb2`. The following documentation commit is a docs-only receipt and is not represented as a runtime-tested HEAD; only documentation link/path validation and `git diff --check` are performed after this edit.
 - Contract source: [2026-07-20-uniher-company-community-feed.md](../plans/2026-07-20-uniher-company-community-feed.md).
 - The five placeholder screens (`/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, `/liga`) remain pending according to the master plan. Community becoming functional does not promote those modules.
 
