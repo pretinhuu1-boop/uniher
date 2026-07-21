@@ -3,9 +3,11 @@ import { COMMUNITY_TOPICS } from '@/types/community';
 
 const opaqueCursorSchema = z.string().min(1);
 const localImagePathSchema = z.string().refine((value) => {
-  if (!value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return false;
-  if (/^(?:https?:|javascript:|data:)/i.test(value)) return false;
-  return !value.split('/').includes('..');
+  if (!value.startsWith('/') || value.includes('//') || value.includes('\\')) return false;
+  if (value.includes('%') || /(?:https?:|javascript:|data:)/i.test(value)) return false;
+
+  const segments = value.slice(1).split('/');
+  return segments.every((segment) => segment.length > 0 && segment !== '.' && segment !== '..');
 }, 'Image path must be a safe local absolute path');
 const optionalIsoDateSchema = z.iso.datetime({ offset: true }).nullable().optional();
 

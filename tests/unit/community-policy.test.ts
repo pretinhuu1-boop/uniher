@@ -116,6 +116,13 @@ describe('community schemas and cursor policy', () => {
     '//cdn.example.test/image.png',
     '/community/../secret.png',
     '/community\\secret.png',
+    '/community//image.webp',
+    '/%2e%2e/secret.png',
+    '/%2E%2e/secret.png',
+    '/https://cdn.example.test/image.png',
+    '/javascript:alert(1)',
+    '/data:text/plain,x',
+    '/community\\image.webp',
     'javascript:alert(1)',
     'data:image/png;base64,abc',
   ])('rejects unsafe local image path %s', (imagePath) => {
