@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Release receipt (2026-07-21):** the company-scoped Community feed, collaborator actions, private saved items, supporter consent, RH/admin editorial management, company switch, navigation, and privacy boundaries are functional. Evidence is gate-specific: visual regression on `f87c5fd`, the integrated E2E matrix twice on `908357f`, and the complete unit/build gate on `006770f`. The later documentation-only commit records these receipts and is not itself claimed as a tested runtime HEAD.
+**Release receipt (2026-07-21):** the company-scoped Community feed, collaborator actions, private saved items, supporter consent, RH/admin editorial management, company switch, navigation, and privacy boundaries are functional. Evidence is gate-specific: visual regression on `f87c5fd`, the integrated E2E matrix twice on `4511eb2`, mobile `2/2` plus one matrix pass on `908357f`, and the complete unit/build gate on `006770f`. The later documentation-only commit records these receipts and is not itself claimed as a tested runtime HEAD.
 
 **Goal:** Build a functional, company-scoped community feed for authenticated collaborators, with curated company content, private saves, anonymous aggregate support, and explicit opt-in for displaying a supporter name.
 
@@ -294,7 +294,7 @@ Receipt: **PASS, 470/470 tests in 51 files** on integral HEAD `006770f`. That co
 
 Run: `cd tests; npx playwright test --config=playwright.config.ts --project=community-feed --project=community-feed-ui --project=mobile-shell --project=privacy-wave-1-1 --project=seguranca`
 
-Receipt: **PASS, 65/65 on `908357f`, then PASS, 65/65 again after the mobile external-host guard, with 3 workers and zero retries**, covering company isolation, role boundaries, support/save idempotence, preference revocation, disabled state, pagination, mobile shell, and security/privacy containment. Both executions are attributed to the branch state at `908357f`, before `006770f`; no unrecorded SHA is inferred.
+Receipt: on `4511eb2`, after the service-worker fix, **PASS, 65/65 in two consecutive executions, with 3 workers and zero retries**. On `908357f`, after the external fixture-host guard, mobile-shell **PASS, 2/2** and one complete integrated matrix **PASS, 65/65, with 3 workers and zero retries**. Together these runs cover company isolation, role boundaries, support/save idempotence, preference revocation, disabled state, pagination, mobile shell, and security/privacy containment.
 
 - [x] **Step 3: Preserve the existing privacy and security suite.**
 
@@ -310,7 +310,7 @@ Receipt: build on integral HEAD `006770f` **PASS** with **137 routes/pages gener
 
 - [x] **Step 5: Close the gate only when all conditions pass.** **CLOSED across the gate-specific evidence SHAs above**: feed is off by default, every query is company-scoped, collaborator writes are limited to own support/save, names are opt-in, no health data is present, admin/RH CRUD is tested, and the visual audit uses real UniHER assets. Quality findings were closed by `ab419f3`, `8305edd`, `f0af53c`, `f87c5fd`, `4b3fcfc`, `4511eb2`, `908357f`, and `006770f`.
 
-Documentation boundary: this checklist is the canonical release receipt for visual verification on `f87c5fd`, E2E verification on `908357f`, and complete unit/build verification on `006770f`. Its docs-only commit is intentionally not described as a tested runtime revision.
+Documentation boundary: this checklist is the canonical release receipt for visual verification on `f87c5fd`, two E2E matrix passes on `4511eb2`, one mobile plus E2E matrix confirmation on `908357f`, and complete unit/build verification on `006770f`. Its docs-only commit is intentionally not described as a tested runtime revision.
 
 ## Self-review
 
