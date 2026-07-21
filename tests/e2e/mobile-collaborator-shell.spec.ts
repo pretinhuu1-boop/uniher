@@ -4,6 +4,29 @@ import { extractAccessTokenFromSetCookie } from './helpers/auth';
 test.describe('Mobile collaborator shell', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
+  test('keeps the Admin shell without collaborator mobile navigation spacing', async ({ page, request }, testInfo) => {
+    test.setTimeout(60_000);
+
+    const adminLogin = await request.post('/api/auth/login', {
+      data: { email: 'admin@uniher.com.br', password: 'Admin@2026' },
+    });
+    expect(adminLogin.ok()).toBeTruthy();
+    const adminToken = extractAccessTokenFromSetCookie(adminLogin);
+    expect(adminToken).toBeTruthy();
+
+    const baseUrl = String(testInfo.project.use.baseURL || 'http://127.0.0.1:3100');
+    await page.context().addCookies([{
+      name: 'uniher-access-token',
+      value: adminToken,
+      domain: new URL(baseUrl).hostname,
+      path: '/',
+    }]);
+
+    await page.goto('/configuracoes');
+    await expect(page.getByRole('navigation', { name: 'Navegacao mobile' })).toHaveCount(0);
+    await expect(page.locator('main#main-content')).toHaveCSS('padding-bottom', '48px');
+  });
+
   test('renders four destinations and preserves the mobile viewport', async ({ page, request }, testInfo) => {
     test.setTimeout(60_000);
 

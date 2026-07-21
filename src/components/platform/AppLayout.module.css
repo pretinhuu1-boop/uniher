@@ -79,6 +79,42 @@
   white-space: nowrap;
 }
 
+.mobileBottomNav {
+  display: none;
+}
+
+.mobileBottomNavItem {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 52px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 4px;
+  color: var(--platform-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-decoration: none;
+  border-radius: var(--platform-radius-control);
+}
+
+.mobileBottomNavItem:hover,
+.mobileBottomNavItem:focus-visible {
+  color: var(--platform-action-strong);
+  background: var(--platform-group);
+}
+
+.mobileBottomNavItem:focus-visible {
+  outline: 2px solid var(--platform-action);
+  outline-offset: -2px;
+}
+
+.mobileBottomNavItemActive {
+  color: var(--platform-action-strong);
+}
+
 .loadingScreen {
   display: grid;
   min-height: 100vh;
@@ -138,6 +174,26 @@
 
   .mobileTopbar {
     display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .workspaceWithMobileNav .mainContent {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+
+  .mobileBottomNav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: calc(var(--z-sticky) + 1);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    background: var(--platform-surface);
+    border-top: 1px solid var(--platform-line);
   }
 }
 

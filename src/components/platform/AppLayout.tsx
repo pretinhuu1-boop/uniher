@@ -7,6 +7,7 @@ import { ScrollToTop } from '@/components/ui/ScrollToTop';
 import ReminderPopup from './ReminderPopup';
 import AuthLoadingScreen from './AuthLoadingScreen';
 import MobileTopbar from './MobileTopbar';
+import MobileBottomNav from './MobileBottomNav';
 import styles from './AppLayout.module.css';
 
 interface AppLayoutProps {
@@ -17,7 +18,8 @@ interface AppLayoutProps {
 export default function AppLayout({ children, title }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
+  const showCollaboratorMobileNav = user?.role === 'colaboradora' || Boolean(user?.also_collaborator);
 
   const closeNavigation = useCallback(() => {
     setSidebarOpen(false);
@@ -31,7 +33,10 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
       <Sidebar isOpen={sidebarOpen} onClose={closeNavigation} />
       <ReminderPopup />
 
-      <div className={styles.workspace} inert={sidebarOpen ? true : undefined}>
+      <div
+        className={`${styles.workspace} ${showCollaboratorMobileNav ? styles.workspaceWithMobileNav : ''}`}
+        inert={sidebarOpen ? true : undefined}
+      >
         <MobileTopbar
           ref={menuButtonRef}
           title={title}
@@ -40,6 +45,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
         <main id="main-content" tabIndex={-1} className={styles.mainContent}>
           {children}
         </main>
+        {showCollaboratorMobileNav ? <MobileBottomNav /> : null}
       </div>
       <ScrollToTop />
     </div>
