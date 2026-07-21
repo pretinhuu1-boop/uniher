@@ -1,6 +1,6 @@
 # UniHER NR-1 Front Preview - Visual Audit and Implementation Target
 
-**Status:** NR-1 preview remains controlled; the company-scoped Community feed and editorial management are **FUNCTIONAL** after API, tenant, privacy, unit, E2E, responsive, and cleanup gates. The five placeholder modules remain pending.
+**Status:** NR-1 preview remains controlled; the company-scoped Community feed and editorial management are **FUNCTIONAL** after API, tenant, privacy, unit, E2E, and cleanup gates. The collaborator feed has separate responsive evidence; editorial management was checked only at the default browser viewport. The five placeholder modules remain pending.
 
 **Date:** 2026-07-20
 
@@ -255,10 +255,11 @@ The visual design is approved and the collaborator mobile shell is implemented. 
 
 ### 9.5 Community functional gate
 
-- Full unit suite: **PASS, 435/435** tests.
-- Community E2E: **PASS, 29/29** tests, covering auth, tenant isolation, disabled default-off behavior, idempotent support/save, consent and revocation, editorial lifecycle, switch/audit receipts, persisted actor changes, browser management, and explicit master company selection.
-- Responsive browser evidence: **PASS** at `375x812`, `390x844`, `768x1024`, and `1440x900`, with the real Community feed/management states and no root overflow or shell overlap.
-- Cleanup: **PASS**; community fixture teardown completed without leaving test users, companies, posts, relations, settings, preferences, or audit receipts in the test database.
+- Full unit suite: **PASS, 443/443** tests.
+- Real backend Community E2E: **PASS, 25/25** cases against the real API/database contract, covering auth, tenant isolation, disabled default-off behavior, idempotent support/save, consent and revocation, editorial lifecycle, switch/audit receipts, persisted actor changes, and explicit master company selection.
+- Mocked visual UI E2E: **PASS, 4/4** cases with deterministic network fixtures at exactly `375x812`, `390x844`, `768x900`, and `1440x1000`. These cases prove collaborator feed layout/states only; they are not backend-integration evidence.
+- Editorial management browser workflow: **PASS at the configured default viewport only**. No multi-viewport or responsive-management claim is made by this audit.
+- Cleanup: **PASS** for the real-backend suite; community fixture teardown completed without leaving test users, companies, posts, relations, settings, preferences, or audit receipts in the test database.
 - Contract source: [2026-07-20-uniher-company-community-feed.md](../plans/2026-07-20-uniher-company-community-feed.md).
 - The five placeholder screens (`/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, `/liga`) remain pending according to the master plan. Community becoming functional does not promote those modules.
 

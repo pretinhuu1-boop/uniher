@@ -79,7 +79,7 @@ Uso:
 
 ## Comunidade da empresa
 
-Todas as respostas autenticadas usam `Cache-Control: private, no-store` e `Vary: Cookie`. O frontend nunca escolhe o tenant da experiência colaboradora: `userId` e `companyId` vêm da sessão e a associação ativa, a empresa e a capacidade de colaboradora são revalidadas no banco. A capacidade existe para `role = colaboradora` ou `also_collaborator = 1`.
+Todas as respostas autenticadas usam `Cache-Control: private, no-store` e `Vary: Cookie`. A autenticação aceita o cookie `uniher-access-token` ou `Authorization: Bearer`; são alternativas, não requisitos simultâneos. O frontend nunca escolhe o tenant da experiência colaboradora: `userId` e `companyId` vêm da sessão e a associação ativa, a empresa e a capacidade de colaboradora são revalidadas no banco. A capacidade existe para `role = colaboradora` ou `also_collaborator = 1`.
 
 ### Feed e itens privados da colaboradora
 
@@ -107,6 +107,8 @@ Erros de domínio estáveis:
 
 - `GET /api/users/me/preferences` retorna apenas preferências do próprio ator e injeta `privacy_community_supporter_name: "0"` quando a chave não existe.
 - `PATCH /api/users/me/preferences` aceita `"0"` ou `"1"` para essa chave. Mudança real usa `transaction.immediate()` e grava receipt `user_preference_update`; repetição idempotente não grava outro receipt. O receipt contém ator, chave, IP e timestamp, sem valor da preferência nem conteúdo sensível.
+- O consentimento aparece para qualquer perfil autenticado. Somente a lista privada de itens salvos exige capacidade de colaboradora.
+- Se o PATCH contiver `privacy_ranking`, a rota retorna `410` com `{ status: "unavailable", reason: "privacy_review", message }` antes de persistir qualquer preferência do corpo.
 - Revogar de `"1"` para `"0"` remove o nome da próxima consulta de apoiadoras sem apagar o apoio e sem reduzir `supportCount`.
 - Salvos são privados por usuário e empresa. Cache SWR é particionado por identidade/capacidade; troca de sessão e perda de autorização limpam as variantes privadas antes de nova leitura.
 

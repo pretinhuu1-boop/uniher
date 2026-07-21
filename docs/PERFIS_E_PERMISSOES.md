@@ -25,11 +25,11 @@ Pontos centrais:
 
 Arquivos centrais:
 
-- [src/lib/auth/middleware.ts](C:/Users/User/projetoss/uniher/src/lib/auth/middleware.ts)
-- [src/lib/auth/jwt.ts](C:/Users/User/projetoss/uniher/src/lib/auth/jwt.ts)
-- [src/app/api/admin/users/route.ts](C:/Users/User/projetoss/uniher/src/app/api/admin/users/route.ts)
-- [src/app/api/admin/users/[id]/route.ts](C:/Users/User/projetoss/uniher/src/app/api/admin/users/[id]/route.ts)
-- [src/lib/db/migrations/046_add_is_master_admin_to_users.sql](C:/Users/User/projetoss/uniher/src/lib/db/migrations/046_add_is_master_admin_to_users.sql)
+- [src/lib/auth/middleware.ts](../src/lib/auth/middleware.ts)
+- [src/lib/auth/jwt.ts](../src/lib/auth/jwt.ts)
+- [src/app/api/admin/users/route.ts](../src/app/api/admin/users/route.ts)
+- [src/app/api/admin/users/[id]/route.ts](../src/app/api/admin/users/%5Bid%5D/route.ts)
+- [src/lib/db/migrations/046_add_is_master_admin_to_users.sql](../src/lib/db/migrations/046_add_is_master_admin_to_users.sql)
 
 ### Admin Empresa / RH
 
@@ -53,8 +53,8 @@ Não deve:
 
 Arquivos centrais:
 
-- [src/app/api/admin/alerts/send/route.ts](C:/Users/User/projetoss/uniher/src/app/api/admin/alerts/send/route.ts)
-- [src/app/api/departments/route.ts](C:/Users/User/projetoss/uniher/src/app/api/departments/route.ts)
+- [src/app/api/admin/alerts/send/route.ts](../src/app/api/admin/alerts/send/route.ts)
+- [src/app/api/departments/route.ts](../src/app/api/departments/route.ts)
 
 ### Liderança
 
@@ -92,13 +92,15 @@ Pode acessar `/comunidade` e executar apenas as relações próprias de apoio e 
 | --- | --- | --- | --- | --- |
 | `/comunidade` e feed da empresa | Sim | Sim | Somente se também tiver capacidade colaboradora | Somente se também tiver capacidade colaboradora |
 | Apoiar e salvar | Próprio usuário | Próprio usuário | Não por papel de gestão | Não por papel master |
-| `/configuracoes` - consentimento e salvos | Próprio usuário | Próprio usuário | Se também colaboradora | Se também colaboradora |
+| `/configuracoes` - consentimento de nome | Próprio usuário | Próprio usuário | Próprio usuário | Próprio usuário |
+| `/configuracoes` - itens salvos | Próprio usuário | Próprio usuário | Somente se também tiver capacidade colaboradora | Somente se também tiver capacidade colaboradora |
 | `/comunidade/gerenciar` | Não | Conforme papel RH/admin | Empresa persistida do ator | Empresa ativa selecionada explicitamente |
 | `/company-profile` - switch do feed | Não | Conforme papel RH/admin | Somente empresa autenticada | Somente empresa autenticada nesta rota |
 
 Regras de tenant:
 
 - o cliente não envia `companyId` para feed, salvos, apoio ou apoiadoras;
+- o consentimento `Mostrar meu nome ao apoiar` pertence ao próprio usuário e aparece para todo perfil autenticado; somente a seção de itens salvos é capability-gated;
 - RH/admin de empresa não pode listar, ler ou alterar posts de outra empresa;
 - apenas master persistido pode usar `companyId` na gestão editorial, sem inferência de alvo;
 - empresa ausente, inativa, excluída ou divergente faz a operação falhar fechada;

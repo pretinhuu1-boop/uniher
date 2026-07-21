@@ -26,7 +26,7 @@
       "cookieAuth": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "token",
+        "name": "uniher-access-token",
         "description": "Cookie httpOnly com token JWT"
       }
     },
@@ -57,6 +57,68 @@
           "logo_url": { "type": "string", "nullable": true },
           "primary_color": { "type": "string", "nullable": true }
         }
+      },
+      "AuthenticatedCompanyProfile": {
+        "type": "object",
+        "required": ["id", "name", "trade_name", "cnpj", "sector", "plan", "is_active", "logo_url", "primary_color", "secondary_color", "contact_name", "contact_email", "contact_phone", "created_at", "updated_at", "deleted_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "trade_name": { "type": "string", "nullable": true },
+          "cnpj": { "type": "string" },
+          "sector": { "type": "string", "nullable": true },
+          "plan": { "type": "string" },
+          "is_active": { "type": "integer", "enum": [0, 1] },
+          "logo_url": { "type": "string", "nullable": true },
+          "primary_color": { "type": "string", "nullable": true },
+          "secondary_color": { "type": "string", "nullable": true },
+          "contact_name": { "type": "string", "nullable": true },
+          "contact_email": { "type": "string", "nullable": true },
+          "contact_phone": { "type": "string", "nullable": true },
+          "created_at": { "type": "string" },
+          "updated_at": { "type": "string" },
+          "deleted_at": { "type": "string", "nullable": true }
+        }
+      },
+      "AuthenticatedCompanyGetResponse": {
+        "type": "object",
+        "required": ["company"],
+        "properties": {
+          "company": {
+            "allOf": [
+              { "$ref": "#/components/schemas/AuthenticatedCompanyProfile" },
+              {
+                "type": "object",
+                "required": ["user_count", "department_count", "missions_active", "feed_company_enabled"],
+                "properties": {
+                  "user_count": { "type": "integer", "minimum": 0 },
+                  "department_count": { "type": "integer", "minimum": 0 },
+                  "missions_active": { "type": "integer", "minimum": 0 },
+                  "feed_company_enabled": { "type": "boolean", "default": false }
+                }
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "AuthenticatedCompanyPatchResponse": {
+        "type": "object",
+        "required": ["company"],
+        "properties": {
+          "company": { "$ref": "#/components/schemas/AuthenticatedCompanyProfile" }
+        },
+        "additionalProperties": false
+      },
+      "PrivacyReviewResponse": {
+        "type": "object",
+        "required": ["status", "reason", "message"],
+        "properties": {
+          "status": { "type": "string", "enum": ["unavailable"] },
+          "reason": { "type": "string", "enum": ["privacy_review"] },
+          "message": { "type": "string" }
+        },
+        "additionalProperties": false
       },
       "Badge": {
         "type": "object",
@@ -1400,6 +1462,7 @@
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": {
           "200": { "description": "Estado agregado do apoio", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySupportState" } } } },
+          "400": { "description": "Empresa ausente (COMPANY_REQUIRED)" },
           "401": { "description": "Sessão ausente, revogada ou expirada" },
           "403": { "description": "Capacidade/associação negada ou feed desligado (COLLABORATOR_CAPABILITY_REQUIRED, MEMBERSHIP_DENIED ou FEED_DISABLED)" },
           "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
@@ -1414,6 +1477,7 @@
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": {
           "200": { "description": "Estado agregado do apoio", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySupportState" } } } },
+          "400": { "description": "Empresa ausente (COMPANY_REQUIRED)" },
           "401": { "description": "Sessão ausente, revogada ou expirada" },
           "403": { "description": "Capacidade/associação negada ou feed desligado" },
           "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
@@ -1430,6 +1494,7 @@
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": {
           "200": { "description": "Estado privado do salvamento", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySaveState" } } } },
+          "400": { "description": "Empresa ausente (COMPANY_REQUIRED)" },
           "401": { "description": "Sessão ausente, revogada ou expirada" },
           "403": { "description": "Capacidade/associação negada ou feed desligado" },
           "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
@@ -1444,6 +1509,7 @@
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
         "responses": {
           "200": { "description": "Estado privado do salvamento", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySaveState" } } } },
+          "400": { "description": "Empresa ausente (COMPANY_REQUIRED)" },
           "401": { "description": "Sessão ausente, revogada ou expirada" },
           "403": { "description": "Capacidade/associação negada ou feed desligado" },
           "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
@@ -1464,6 +1530,7 @@
         ],
         "responses": {
           "200": { "description": "Nomes consentidos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySupportersResponse" } } } },
+          "400": { "description": "Empresa ausente (COMPANY_REQUIRED)" },
           "401": { "description": "Sessão ausente, revogada ou expirada" },
           "403": { "description": "Capacidade/associação negada ou feed desligado" },
           "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
@@ -1554,7 +1621,7 @@
         "tags": ["Perfil do Usuário"],
         "summary": "Preferências do próprio usuário",
         "description": "Resposta privada/no-store. privacy_community_supporter_name é sempre retornada e assume \"0\" quando ausente.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "200": {
             "description": "Preferências atuais do ator autenticado",
@@ -1583,8 +1650,8 @@
       "patch": {
         "tags": ["Perfil do Usuário"],
         "summary": "Atualizar preferências",
-        "description": "Atualiza apenas o próprio usuário. Para consentimento de nome, aceita somente \"0\"/\"1\"; mudança real é auditada na mesma transação e repetição é idempotente. O receipt não contém os valores.",
-        "security": [{ "cookieAuth": [] }],
+        "description": "Atualiza apenas o próprio usuário. Para consentimento de nome, aceita somente \"0\"/\"1\"; mudança real é auditada na mesma transação e repetição é idempotente. O receipt não contém os valores. Se privacy_ranking estiver presente, retorna 410 privacy_review antes de persistir qualquer preferência do corpo.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -1601,7 +1668,7 @@
                       "notif_challenges": { "type": "string" },
                       "notif_email": { "type": "string" },
                       "first_access_tour_completed": { "type": "string" },
-                      "privacy_ranking": { "type": "string", "description": "Permanece sob privacy review e não é persistida por este contrato." },
+                      "privacy_ranking": { "type": "string", "description": "Qualquer PATCH que contenha esta chave retorna 410 privacy_review antes de persistir preferências." },
                       "privacy_profile": { "type": "string" },
                       "privacy_analytics": { "type": "string" },
                       "privacy_community_supporter_name": { "type": "string", "enum": ["0", "1"] }
@@ -1630,7 +1697,11 @@
           },
           "400": { "description": "Chave ou valor inválido" },
           "401": { "description": "Sessão ausente, revogada ou expirada" },
-          "403": { "description": "Ator persistido inválido (PREFERENCE_ACTOR_FORBIDDEN)" }
+          "403": { "description": "Ator persistido inválido (PREFERENCE_ACTOR_FORBIDDEN)" },
+          "410": {
+            "description": "privacy_ranking permanece indisponível durante revisão de privacidade",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
@@ -1657,9 +1728,12 @@
         "tags": ["Empresa"],
         "summary": "Dados da empresa do usuário",
         "description": "Deriva a empresa do usuário persistido. company.feed_company_enabled é booleano e assume false quando o setting não existe. Resposta privada/no-store.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "Dados da empresa, incluindo company.feed_company_enabled" },
+          "200": {
+            "description": "Dados da empresa, incluindo company.feed_company_enabled",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthenticatedCompanyGetResponse" } } }
+          },
           "401": { "description": "Sessão ausente, revogada ou expirada" },
           "404": { "description": "Empresa não encontrada" }
         }
@@ -1668,7 +1742,7 @@
         "tags": ["Empresa"],
         "summary": "Atualizar perfil e switch do feed da empresa autenticada",
         "description": "Somente RH/admin ativos da própria empresa. Não aceita companyId. Mudança real de feedCompanyEnabled é serializada e auditada; repetição não duplica receipt.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -1693,7 +1767,10 @@
           }
         },
         "responses": {
-          "200": { "description": "Empresa atualizada" },
+          "200": {
+            "description": "Empresa atualizada; o envelope contém o CompanyRow persistido, sem os agregados exclusivos do GET",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthenticatedCompanyPatchResponse" } } }
+          },
           "401": { "description": "Sessão ausente, revogada ou expirada" },
           "403": { "description": "Papel não permitido (FORBIDDEN)" },
           "404": { "description": "Empresa autenticada inválida ou inativa (COMPANY_NOT_FOUND)" },
