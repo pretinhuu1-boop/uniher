@@ -27,6 +27,85 @@ export interface AdminCompaniesResponse {
   offset: number;
 }
 
+export interface EditorialWorkspaceSnapshot {
+  epoch: number;
+  companyId: string | null;
+  postId: string | null;
+}
+
+export interface EditorialWorkspaceGuard {
+  transition: (companyId: string | null, postId: string | null) => void;
+  adoptPost: (postId: string | null) => void;
+  capture: () => EditorialWorkspaceSnapshot;
+  isCurrent: (snapshot: EditorialWorkspaceSnapshot) => boolean;
+}
+
+type CompaniesFetcher = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+
+function throwIfAborted(signal: AbortSignal): void {
+  if (signal.aborted) throw new DOMException('The operation was aborted.', 'AbortError');
+}
+
+export async function loadAllEditorialCompanies(
+  signal: AbortSignal,
+  fetcher: CompaniesFetcher = fetch,
+): Promise<EditorialCompany[]> {
+  const companiesById = new Map<string, EditorialCompany>();
+  let loaded = 0;
+  let total = 0;
+
+  do {
+    throwIfAborted(signal);
+    const response = await fetcher(`/api/admin/companies?limit=200&offset=${loaded}`, {
+      signal,
+      cache: 'no-store',
+    });
+    throwIfAborted(signal);
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null) as { error?: string; message?: string } | null;
+      throw new Error(payload?.message ?? payload?.error ?? 'Não foi possível carregar as empresas.');
+    }
+
+    const payload = await response.json() as AdminCompaniesResponse;
+    throwIfAborted(signal);
+    if (!Array.isArray(payload.companies) || !Number.isInteger(payload.total) || payload.total < 0) {
+      throw new Error('A API retornou uma lista de empresas inválida.');
+    }
+
+    total = payload.total;
+    if (payload.companies.length === 0 && loaded < total) {
+      throw new Error('A paginação de empresas terminou antes do total informado.');
+    }
+
+    for (const company of payload.companies) companiesById.set(company.id, company);
+    loaded += payload.companies.length;
+  } while (loaded < total);
+
+  return [...companiesById.values()];
+}
+
+export function createEditorialWorkspaceGuard(): EditorialWorkspaceGuard {
+  let current: EditorialWorkspaceSnapshot = { epoch: 0, companyId: null, postId: null };
+
+  return {
+    transition(companyId, postId) {
+      current = { epoch: current.epoch + 1, companyId, postId };
+    },
+    adoptPost(postId) {
+      current = { ...current, postId };
+    },
+    capture() {
+      return { ...current };
+    },
+    isCurrent(snapshot) {
+      return snapshot.epoch === current.epoch
+        && snapshot.companyId === current.companyId
+        && snapshot.postId === current.postId;
+    },
+  };
+}
+
 export interface CommunityPostFormValue {
   title: string;
   summary: string;

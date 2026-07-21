@@ -13,6 +13,7 @@ interface CommunityPostListProps {
   statusFilter: CommunityPostStatusFilter;
   isLoading: boolean;
   error: string;
+  isInteractionDisabled?: boolean;
   onFilterChange: (status: CommunityPostStatusFilter) => void;
   onSelect: (post: ManagedCommunityPost) => void;
   onCreate: () => void;
@@ -37,6 +38,7 @@ export function CommunityPostList({
   statusFilter,
   isLoading,
   error,
+  isInteractionDisabled = false,
   onFilterChange,
   onSelect,
   onCreate,
@@ -52,7 +54,8 @@ export function CommunityPostList({
         <button
           type="button"
           onClick={onRetry}
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-[var(--platform-radius-control)] text-[var(--platform-muted)] transition-colors hover:bg-[var(--platform-group)] hover:text-[var(--platform-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)]"
+          disabled={isInteractionDisabled}
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-[var(--platform-radius-control)] text-[var(--platform-muted)] transition-colors hover:bg-[var(--platform-group)] hover:text-[var(--platform-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)] disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Atualizar lista de conteúdos"
           title="Atualizar lista"
         >
@@ -68,7 +71,8 @@ export function CommunityPostList({
           id="community-status-filter"
           value={statusFilter}
           onChange={(event) => onFilterChange(event.target.value as CommunityPostStatusFilter)}
-          className="h-11 w-full rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] bg-[var(--platform-surface)] px-3 text-sm text-[var(--platform-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)]"
+          disabled={isInteractionDisabled}
+          className="h-11 w-full rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] bg-[var(--platform-surface)] px-3 text-sm text-[var(--platform-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)] disabled:cursor-not-allowed disabled:bg-[var(--platform-group)] disabled:opacity-75"
         >
           <option value="all">Todos</option>
           <option value="draft">Rascunhos</option>
@@ -88,7 +92,7 @@ export function CommunityPostList({
               kind="error"
               title="Não foi possível carregar"
               description={error}
-              action={<Button type="button" variant="secondary" onClick={onRetry}><RefreshCw aria-hidden="true" className="mr-2 h-4 w-4" />Tentar novamente</Button>}
+              action={<Button type="button" variant="secondary" onClick={onRetry} disabled={isInteractionDisabled}><RefreshCw aria-hidden="true" className="mr-2 h-4 w-4" />Tentar novamente</Button>}
             />
           </div>
         ) : posts.length === 0 ? (
@@ -97,7 +101,7 @@ export function CommunityPostList({
               kind="empty"
               title="Nenhum conteúdo neste filtro"
               description="Crie um rascunho ou selecione outro status para continuar."
-              action={<Button type="button" onClick={onCreate}><Plus aria-hidden="true" className="mr-2 h-4 w-4" />Novo conteúdo</Button>}
+              action={<Button type="button" onClick={onCreate} disabled={isInteractionDisabled}><Plus aria-hidden="true" className="mr-2 h-4 w-4" />Novo conteúdo</Button>}
             />
           </div>
         ) : (
@@ -107,9 +111,10 @@ export function CommunityPostList({
                 <button
                   type="button"
                   onClick={() => onSelect(post)}
+                  disabled={isInteractionDisabled}
                   aria-current={selectedId === post.id ? 'true' : undefined}
                   className={cn(
-                    'w-full min-w-0 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--platform-action)] sm:px-5',
+                    'w-full min-w-0 px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--platform-action)] disabled:cursor-not-allowed disabled:opacity-60 sm:px-5',
                     selectedId === post.id ? 'bg-[var(--platform-group)]' : 'hover:bg-[color-mix(in_srgb,var(--platform-group)_45%,transparent)]',
                   )}
                 >

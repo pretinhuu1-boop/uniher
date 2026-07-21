@@ -1,14 +1,12 @@
+import { useEffect, useRef, useState } from 'react';
 import { Building2, LoaderCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import type { EditorialCompany } from './types';
+import { loadAllEditorialCompanies, type EditorialCompany } from './types';
 
 interface MasterCompanySelectorProps {
-  companies: EditorialCompany[];
   selectedCompanyId: string;
-  isLoading: boolean;
-  error: string;
-  onChange: (companyId: string) => void;
-  onRetry: () => void;
+  disabled?: boolean;
+  onChange: (companyId: string, company: EditorialCompany | null) => void;
 }
 
 function isActiveCompany(company: EditorialCompany): boolean {
@@ -20,13 +18,47 @@ export function getEditorialCompanyName(company: EditorialCompany): string {
 }
 
 export function MasterCompanySelector({
-  companies,
   selectedCompanyId,
-  isLoading,
-  error,
+  disabled = false,
   onChange,
-  onRetry,
 }: MasterCompanySelectorProps) {
+  const [companies, setCompanies] = useState<EditorialCompany[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+  const selectedCompanyIdRef = useRef(selectedCompanyId);
+  const onChangeRef = useRef(onChange);
+  selectedCompanyIdRef.current = selectedCompanyId;
+  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError('');
+
+    void loadAllEditorialCompanies(controller.signal)
+      .then((loadedCompanies) => {
+        if (controller.signal.aborted) return;
+        setCompanies(loadedCompanies);
+        const selectedCompany = loadedCompanies.find((company) => (
+          company.id === selectedCompanyIdRef.current && isActiveCompany(company)
+        ));
+        if (selectedCompanyIdRef.current && !selectedCompany) onChangeRef.current('', null);
+      })
+      .catch((loadError: unknown) => {
+        if (loadError instanceof DOMException && loadError.name === 'AbortError') return;
+        if (controller.signal.aborted) return;
+        setCompanies([]);
+        setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar as empresas.');
+        if (selectedCompanyIdRef.current) onChangeRef.current('', null);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [reloadKey]);
+
   const activeCompanies = companies.filter(isActiveCompany);
   const hasActiveCompanies = activeCompanies.length > 0;
 
@@ -50,7 +82,14 @@ export function MasterCompanySelector({
               </p>
             </div>
             {error && (
-              <Button type="button" variant="secondary" size="sm" onClick={onRetry} className="w-full gap-2 sm:w-auto">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setReloadKey((value) => value + 1)}
+                disabled={disabled}
+                className="w-full gap-2 sm:w-auto"
+              >
                 <RefreshCw aria-hidden="true" className="h-4 w-4" />Tentar novamente
               </Button>
             )}
@@ -69,8 +108,11 @@ export function MasterCompanySelector({
               <select
                 id="master-editorial-company"
                 value={selectedCompanyId}
-                onChange={(event) => onChange(event.target.value)}
-                disabled={isLoading || Boolean(error) || !hasActiveCompanies}
+                onChange={(event) => {
+                  const companyId = event.target.value;
+                  onChange(companyId, activeCompanies.find((company) => company.id === companyId) ?? null);
+                }}
+                disabled={disabled || isLoading || Boolean(error) || !hasActiveCompanies}
                 aria-describedby={error ? 'master-company-error' : !isLoading && !hasActiveCompanies ? 'master-company-empty' : 'master-company-help'}
                 className="h-11 w-full rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] bg-[var(--platform-surface)] pl-9 pr-9 text-sm text-[var(--platform-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)] disabled:cursor-not-allowed disabled:bg-[var(--platform-group)] disabled:opacity-75"
               >
