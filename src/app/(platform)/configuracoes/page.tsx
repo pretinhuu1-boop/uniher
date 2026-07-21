@@ -1,6 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useCollaboratorSaved } from '@/hooks/useCollaborator';
+import type { CommunityFeedItem, CommunityTopic } from '@/types/community';
 import styles from './config.module.css';
 
 const MISSION_LABELS: Record<string, string> = {
@@ -39,7 +42,42 @@ const TOGGLE_KEY_MAP: Record<string, string> = {
   communitySupporterName: 'privacy_community_supporter_name',
 };
 
+const COMMUNITY_TOPIC_LABELS: Record<CommunityTopic, string> = {
+  pausas: 'Pausas',
+  sono: 'Sono',
+  movimento: 'Movimento',
+  cuidado: 'Cuidado',
+  geral: 'Geral',
+};
+
+type PreferencesLoadState = 'loading' | 'ready' | 'error';
+
+function isValidPreferencesPayload(payload: unknown): payload is {
+  preferences: Record<string, '0' | '1'>;
+} {
+  if (!payload || typeof payload !== 'object' || !('preferences' in payload)) return false;
+  const preferences = (payload as { preferences?: unknown }).preferences;
+  if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)) return false;
+  const supporterName = (preferences as Record<string, unknown>).privacy_community_supporter_name;
+  return supporterName === '0' || supporterName === '1';
+}
+
+function isSavedItemsPage(payload: unknown): payload is {
+  items: CommunityFeedItem[];
+  nextCursor: string | null;
+} {
+  if (!payload || typeof payload !== 'object') return false;
+  const page = payload as { items?: unknown; nextCursor?: unknown };
+  return Array.isArray(page.items)
+    && (page.nextCursor === null || typeof page.nextCursor === 'string');
+}
+
 export default function ConfiguracoesPage() {
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const saved = useCollaboratorSaved();
+  const preferenceSessionKey = authUser
+    ? JSON.stringify([authUser.id, authUser.companyId ?? null, authUser.role])
+    : null;
   const [nome, setNome] = useState('');
   const [nickname, setNickname] = useState('');
   const [emailVal, setEmailVal] = useState('');
@@ -67,12 +105,23 @@ export default function ConfiguracoesPage() {
     });
     return initial;
   });
-  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [preferencesLoadState, setPreferencesLoadState] = useState<PreferencesLoadState>('loading');
+  const [preferencesReloadKey, setPreferencesReloadKey] = useState(0);
+  const preferenceGenerationRef = useRef(0);
   const [supporterNameSaving, setSupporterNameSaving] = useState(false);
   const [supporterNameFeedback, setSupporterNameFeedback] = useState<{
     kind: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [savedItems, setSavedItems] = useState<CommunityFeedItem[]>([]);
+  const [savedNextCursor, setSavedNextCursor] = useState<string | null>(null);
+  const [savedLoadingMore, setSavedLoadingMore] = useState(false);
+  const [savedRemovingId, setSavedRemovingId] = useState<string | null>(null);
+  const [savedFeedback, setSavedFeedback] = useState<{
+    kind: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const savedItemsSnapshot = JSON.stringify(saved.items);
 
   // Archetype
   const [archetype, setArchetype] = useState<{ name: string; key: string; description: string; assignedAt: string } | null>(null);
@@ -157,32 +206,60 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  // Load notification/privacy toggle preferences from API
+  // Preference state is scoped to the current authenticated session.
   useEffect(() => {
-    fetch('/api/users/me/preferences')
-      .then(r => r.json())
-      .then(({ preferences }) => {
-        if (preferences && typeof preferences === 'object') {
-          setToggles(prev => {
-            const updated = { ...prev };
-            // Reverse map: pref_key -> toggle id
-            const reverseMap: Record<string, string> = {};
-            for (const [toggleId, prefKey] of Object.entries(TOGGLE_KEY_MAP)) {
-              reverseMap[prefKey] = toggleId;
-            }
-            for (const [key, value] of Object.entries(preferences)) {
-              const toggleId = reverseMap[key];
-              if (toggleId) {
-                updated[toggleId] = value === '1';
-              }
-            }
-            return updated;
-          });
-        }
-        setPrefsLoaded(true);
-      })
-      .catch(() => setPrefsLoaded(true));
-  }, []);
+    const generation = ++preferenceGenerationRef.current;
+    const controller = new AbortController();
+    setPreferencesLoadState('loading');
+    setSupporterNameFeedback(null);
+
+    if (authLoading) {
+      return () => controller.abort();
+    }
+    if (!preferenceSessionKey) {
+      setPreferencesLoadState('error');
+      return () => controller.abort();
+    }
+
+    async function loadPreferences() {
+      try {
+        const response = await fetch('/api/users/me/preferences', { signal: controller.signal });
+        if (!response.ok) throw new Error('Preference load failed');
+        const payload: unknown = await response.json();
+        if (!isValidPreferencesPayload(payload)) throw new Error('Invalid preference payload');
+        if (controller.signal.aborted || preferenceGenerationRef.current !== generation) return;
+
+        setToggles(prev => {
+          const updated = { ...prev };
+          const reverseMap = Object.fromEntries(
+            Object.entries(TOGGLE_KEY_MAP).map(([toggleId, prefKey]) => [prefKey, toggleId]),
+          );
+          for (const [key, value] of Object.entries(payload.preferences)) {
+            const toggleId = reverseMap[key];
+            if (toggleId && (value === '0' || value === '1')) updated[toggleId] = value === '1';
+          }
+          return updated;
+        });
+        setPreferencesLoadState('ready');
+      } catch (error) {
+        if (controller.signal.aborted || preferenceGenerationRef.current !== generation) return;
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setPreferencesLoadState('error');
+      }
+    }
+
+    void loadPreferences();
+    return () => {
+      controller.abort();
+      if (preferenceGenerationRef.current === generation) preferenceGenerationRef.current += 1;
+    };
+  }, [authLoading, preferenceSessionKey, preferencesReloadKey]);
+
+  useEffect(() => {
+    setSavedItems(saved.items);
+    setSavedNextCursor(saved.nextCursor);
+    setSavedFeedback(null);
+  }, [preferenceSessionKey, saved.nextCursor, savedItemsSnapshot]);
 
   useEffect(() => {
     setBrowserSupported('Notification' in window && 'serviceWorker' in navigator);
@@ -320,7 +397,7 @@ export default function ConfiguracoesPage() {
   }, []);
 
   async function handleSupporterNameToggle() {
-    if (!prefsLoaded || supporterNameSaving) return;
+    if (preferencesLoadState !== 'ready' || supporterNameSaving) return;
     const id = 'communitySupporterName';
     const previousValue = toggles[id];
     const newValue = !previousValue;
@@ -350,6 +427,7 @@ export default function ConfiguracoesPage() {
   }
 
   const handleToggle = (id: string) => {
+    if (preferencesLoadState !== 'ready') return;
     if (id === 'communitySupporterName') {
       void handleSupporterNameToggle();
       return;
@@ -369,6 +447,55 @@ export default function ConfiguracoesPage() {
       });
     }
   };
+
+  async function handleRemoveSaved(item: CommunityFeedItem) {
+    if (savedRemovingId) return;
+    setSavedRemovingId(item.id);
+    setSavedFeedback(null);
+    try {
+      const response = await fetch(`/api/collaborator/feed/${encodeURIComponent(item.id)}/save`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Saved item removal failed');
+      setSavedItems(current => current.filter(candidate => candidate.id !== item.id));
+      setSavedFeedback({ kind: 'success', message: `${item.title} removido dos salvos.` });
+      await saved.mutate();
+    } catch {
+      setSavedFeedback({
+        kind: 'error',
+        message: 'Não foi possível remover este item dos salvos. Tente novamente.',
+      });
+    } finally {
+      setSavedRemovingId(null);
+    }
+  }
+
+  async function handleLoadMoreSaved() {
+    if (!savedNextCursor || savedLoadingMore) return;
+    setSavedLoadingMore(true);
+    setSavedFeedback(null);
+    try {
+      const response = await fetch(
+        `/api/collaborator/saved?limit=20&cursor=${encodeURIComponent(savedNextCursor)}`,
+      );
+      if (!response.ok) throw new Error('Saved items page failed');
+      const payload: unknown = await response.json();
+      if (!isSavedItemsPage(payload)) throw new Error('Invalid saved items page');
+      setSavedItems(current => {
+        const byId = new Map(current.map(item => [item.id, item]));
+        for (const item of payload.items) byId.set(item.id, item);
+        return [...byId.values()];
+      });
+      setSavedNextCursor(payload.nextCursor);
+    } catch {
+      setSavedFeedback({
+        kind: 'error',
+        message: 'Não foi possível carregar mais itens salvos. Tente novamente.',
+      });
+    } finally {
+      setSavedLoadingMore(false);
+    }
+  }
 
   async function handleSaveProfile() {
     setSaveLabel('Salvando...');
@@ -468,7 +595,7 @@ export default function ConfiguracoesPage() {
             aria-label={pref.label}
             aria-describedby={`${descriptionId}${isSupporterName && feedbackMessage ? ` ${feedbackId}` : ''}`}
             checked={toggles[pref.id]}
-            disabled={isSupporterName && (!prefsLoaded || supporterNameSaving)}
+            disabled={preferencesLoadState !== 'ready' || (isSupporterName && supporterNameSaving)}
             onChange={() => handleToggle(pref.id)}
           />
           <span className={styles.toggleSlider} />
@@ -612,9 +739,106 @@ export default function ConfiguracoesPage() {
         {/* Privacidade */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Privacidade</h2>
+          {preferencesLoadState === 'loading' && (
+            <p className={styles.stateMessage} role="status" aria-live="polite">
+              Carregando preferências...
+            </p>
+          )}
+          {preferencesLoadState === 'error' && (
+            <div className={styles.stateBlock}>
+              <p className={styles.errorMessage} role="alert">
+                Não foi possível carregar suas preferências. Os controles permanecem desativados.
+              </p>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                onClick={() => setPreferencesReloadKey(current => current + 1)}
+              >
+                Tentar carregar preferências novamente
+              </button>
+            </div>
+          )}
           <div className={styles.toggleList}>
             {PRIVACY_PREFS.map(renderToggle)}
           </div>
+          <p className={styles.privacyBoundary}>
+            Check-ins, semáforo e respostas da NR-1 nunca entram na comunidade.
+          </p>
+        </div>
+
+        {/* Itens salvos */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Itens salvos</h2>
+          <p className={styles.sectionDesc}>
+            Conteúdos guardados aqui são privados e visíveis somente para você.
+          </p>
+          {saved.isLoading ? (
+            <p className={styles.stateMessage} role="status" aria-live="polite">
+              Carregando itens salvos...
+            </p>
+          ) : saved.error ? (
+            <div className={styles.stateBlock}>
+              <p className={styles.errorMessage} role="alert">
+                Não foi possível carregar seus itens salvos.
+              </p>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                onClick={() => {
+                  setSavedFeedback(null);
+                  void saved.mutate();
+                }}
+              >
+                Tentar carregar itens salvos novamente
+              </button>
+            </div>
+          ) : savedItems.length === 0 ? (
+            <p className={styles.stateMessage}>Você ainda não salvou conteúdos da comunidade.</p>
+          ) : (
+            <ul className={styles.savedList}>
+              {savedItems.map(item => (
+                <li key={item.id} className={styles.savedItem}>
+                  <div className={styles.savedItemCopy}>
+                    <span className={styles.savedItemMeta}>
+                      {COMMUNITY_TOPIC_LABELS[item.topic]} · {item.readTimeMinutes} min
+                    </span>
+                    <h3 className={styles.savedItemTitle}>{item.title}</h3>
+                    <p className={styles.savedItemSummary}>{item.summary}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.savedRemoveButton}
+                    aria-label={`Remover ${item.title} dos salvos`}
+                    disabled={savedRemovingId !== null}
+                    onClick={() => void handleRemoveSaved(item)}
+                  >
+                    {savedRemovingId === item.id ? 'Removendo...' : 'Remover'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {savedNextCursor && !saved.isLoading && !saved.error && (
+            <div className={styles.savedActions}>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                disabled={savedLoadingMore}
+                onClick={() => void handleLoadMoreSaved()}
+              >
+                {savedLoadingMore ? 'Carregando...' : 'Carregar mais itens salvos'}
+              </button>
+            </div>
+          )}
+          {savedFeedback && (
+            <p
+              className={savedFeedback.kind === 'error' ? styles.errorMessage : styles.stateMessage}
+              role={savedFeedback.kind === 'error' ? 'alert' : 'status'}
+              aria-live={savedFeedback.kind === 'error' ? 'assertive' : 'polite'}
+            >
+              {savedFeedback.message}
+            </p>
+          )}
         </div>
 
         {/* Lembretes */}

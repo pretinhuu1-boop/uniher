@@ -1,7 +1,30 @@
 // @vitest-environment jsdom
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const auth = vi.hoisted(() => ({
+  user: {
+    id: 'user-a',
+    companyId: 'company-a',
+    role: 'colaboradora',
+  },
+}));
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: auth.user, isLoading: false }),
+}));
+vi.mock('@/hooks/useCollaborator', () => ({
+  useCollaboratorSaved: () => ({
+    items: [],
+    nextCursor: null,
+    error: null,
+    isLoading: false,
+    mutate: vi.fn(async () => undefined),
+  }),
+}));
 
 import ConfiguracoesPage from '@/app/(platform)/configuracoes/page';
 
@@ -14,14 +37,10 @@ function jsonResponse(body: object, status = 200): Response {
   });
 }
 
-function initialResponse(url: string, supporterNameValue?: '0' | '1'): Response {
+function initialResponse(url: string, supporterNameValue: '0' | '1' = '0'): Response {
   if (url === '/api/collaborator/archetype') return jsonResponse({ archetype: null });
   if (url === '/api/users/me/preferences') {
-    return jsonResponse({
-      preferences: supporterNameValue === undefined
-        ? {}
-        : { [SUPPORTER_NAME_KEY]: supporterNameValue },
-    });
+    return jsonResponse({ preferences: { [SUPPORTER_NAME_KEY]: supporterNameValue } });
   }
   if (url === '/api/push/vapid-key') return jsonResponse({ enabled: false });
   if (url === '/api/users/me/notification-preferences') return jsonResponse({ prefs: null });
@@ -38,12 +57,88 @@ function initialResponse(url: string, supporterNameValue?: '0' | '1'): Response 
   throw new Error(`Unexpected request: ${url}`);
 }
 
+beforeEach(() => {
+  auth.user = { id: 'user-a', companyId: 'company-a', role: 'colaboradora' };
+});
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
 
 describe('supporter-name privacy toggle', () => {
+  it('keeps consent disabled after a failed load and enables it only after a valid retry', async () => {
+    let preferenceReads = 0;
+    const fetcher = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/users/me/preferences' && !init?.method) {
+        preferenceReads += 1;
+        if (preferenceReads === 1) return Promise.resolve(jsonResponse({ error: 'Falha controlada' }, 500));
+        if (preferenceReads === 2) return Promise.resolve(jsonResponse({ preferences: {} }));
+        return Promise.resolve(initialResponse(url, '1'));
+      }
+      return Promise.resolve(initialResponse(url));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    render(<ConfiguracoesPage />);
+    const toggle = await screen.findByRole('checkbox', { name: 'Mostrar meu nome ao apoiar' });
+    const loadError = await screen.findByRole('alert');
+    expect(loadError.textContent).toContain('Não foi possível carregar suas preferências');
+    expect((toggle as HTMLInputElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar carregar preferências novamente' }));
+
+    await waitFor(() => expect(preferenceReads).toBe(2));
+    expect((toggle as HTMLInputElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar carregar preferências novamente' }));
+
+    await waitFor(() => {
+      expect((toggle as HTMLInputElement).checked).toBe(true);
+      expect((toggle as HTMLInputElement).disabled).toBe(false);
+    });
+    expect(preferenceReads).toBe(3);
+  });
+
+  it('aborts and ignores a stale preference response after the authenticated session changes', async () => {
+    let resolveFirst: ((response: Response) => void) | undefined;
+    const firstResponse = new Promise<Response>((resolve) => {
+      resolveFirst = resolve;
+    });
+    let preferenceReads = 0;
+    let firstSignal: AbortSignal | undefined;
+    const fetcher = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/users/me/preferences' && !init?.method) {
+        preferenceReads += 1;
+        if (preferenceReads === 1) {
+          firstSignal = init?.signal ?? undefined;
+          return firstResponse;
+        }
+        return Promise.resolve(initialResponse(url, '0'));
+      }
+      return Promise.resolve(initialResponse(url));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const view = render(<ConfiguracoesPage />);
+    const toggle = await screen.findByRole('checkbox', { name: 'Mostrar meu nome ao apoiar' });
+    expect((toggle as HTMLInputElement).disabled).toBe(true);
+
+    auth.user = { id: 'user-b', companyId: 'company-b', role: 'colaboradora' };
+    view.rerender(<ConfiguracoesPage />);
+    await waitFor(() => expect(preferenceReads).toBe(2));
+    expect(firstSignal?.aborted).toBe(true);
+
+    await act(async () => {
+      resolveFirst?.(initialResponse('/api/users/me/preferences', '1'));
+      await firstResponse;
+    });
+
+    await waitFor(() => expect((toggle as HTMLInputElement).disabled).toBe(false));
+    expect((toggle as HTMLInputElement).checked).toBe(false);
+  });
+
   it('starts off by default and exposes saving, disabled, and confirmation states', async () => {
     let resolvePatch: ((response: Response) => void) | undefined;
     const pendingPatch = new Promise<Response>((resolve) => {
@@ -104,5 +199,16 @@ describe('supporter-name privacy toggle', () => {
     expect(error.textContent).toContain('configuração anterior foi restaurada');
     expect((toggle as HTMLInputElement).checked).toBe(true);
     expect((toggle as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it('provides a 44px touch target and visible keyboard focus by CSS contract', () => {
+    const css = fs.readFileSync(path.join(
+      process.cwd(),
+      'src/app/(platform)/configuracoes/config.module.css',
+    ), 'utf8');
+
+    expect(css).toMatch(/\.toggle\s*\{[\s\S]*?min-height:\s*44px[^}]*\}/);
+    expect(css).toMatch(/\.toggle\s*\{[\s\S]*?min-width:\s*44px[^}]*\}/);
+    expect(css).toMatch(/\.toggleInput:focus-visible\s*\+\s*\.toggleSlider\s*\{[\s\S]*?outline:/);
   });
 });
