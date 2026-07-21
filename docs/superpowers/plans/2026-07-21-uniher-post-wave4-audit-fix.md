@@ -1,6 +1,6 @@
 # UniHER post-Wave 4 audit and correction plan
 
-**Status:** execution in progress
+**Status:** automatic corrections complete; manual approvals pending
 **Scope:** authenticated internal platform only
 **Source of truth:** `2026-07-21-uniher-pending-surfaces-orchestration.md`
 
@@ -36,7 +36,7 @@ be reactivated to make a placeholder look functional.
 | F-05 | P1 | FIXED | Authenticated API/permission docs describe legacy Liga/objective/reward contracts as live. | Docs and OpenAPI now match containment runtime. |
 | F-06 | P3 | FIXED | Semaforo error boundary has incorrect copy and collaborator redirect. | Copy corrected; return points to `/colaboradora`. |
 | F-07 | P1 | MANUAL PACKET READY | Wave 5 lacks approved retention, erasure and audit policy. | Decision packet published; no migration until approval. |
-| F-08 | P1 | AUTO AFTER F-07 | Wave 5 omits DSAR, deterministic event keys and transaction-safe producer contracts. | Add these to the Wave 5 spec and implementation write set. |
+| F-08 | P1 | MANUAL PACKET READY | Wave 5 omits DSAR, deterministic event keys and transaction-safe producer contracts. | Decision packet now defines DSAR, mutation-safe idempotency and transaction boundaries; implementation waits for F-07 approval. |
 | F-09 | P1 | FIXED | OpenAPI advertises contained legacy badge/challenge/objective APIs as operational. | Parity regression covers methods and `410` contracts. |
 | F-10 | P2 | FIXED | Legacy quarantine omits objective/challenge tables and active writers/counters remain. | Migration 055, seed and operational counter containment completed. |
 | F-11 | P2 | MANUAL PACKET READY | Challenge leave/revocation and achievement revocation lifecycle are underspecified. | Recommended versioned reversals await approval. |
@@ -62,3 +62,26 @@ be reactivated to make a placeholder look functional.
 - No public landing, metadata or email changes in this correction mission.
 - Migration 055 extends legacy quarantine. Migrations 056-059 execute serially
   and only after the preceding gate passes.
+
+## Post-wave closeout
+
+| Gate | Result | Evidence |
+| --- | --- | --- |
+| Automatic findings | PASS | F-01, F-02, F-04, F-05, F-06, F-08, F-09 and F-10 corrected. |
+| Unit suite | PASS | 52 files, 472 tests. |
+| TypeScript | PASS | `npx tsc --noEmit`. |
+| Production build | PASS | Turbopack compiled and generated 137 pages/routes in an isolated worktree. |
+| Contract review | PASS | Independent reviewer accepted OpenAPI, Semaforo, Wave 5-10 and lifecycle alignment. |
+| Runtime review | PASS | Independent reviewer accepted NR-1, navigation, Semaforo and collaborator-home containment. |
+| Diff hygiene | PASS | `git diff --check cf2c873..HEAD`. |
+| Protected scope | PASS | No public landing, metadata or email template changed. |
+
+The build retains the known NFT tracing warning from
+`next.config.ts -> src/app/api/admin/system/ops/route.ts`; it does not fail the
+build and was not introduced by this correction wave.
+
+F-07, F-11 and F-12 remain intentional manual gates. No migration 056-059 and
+no Objectives, Challenges, Achievements, Semaforo or Liga activation may begin
+until the corresponding product, privacy, clinical or legal decisions are
+explicitly approved. The local NR-1 meeting preview uses `YAVIX_MOCK=1`; it is
+not a real Yavix integration, laudo or compliance proof.
