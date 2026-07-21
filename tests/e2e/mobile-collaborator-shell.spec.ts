@@ -4,7 +4,7 @@ import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 test.describe('Mobile collaborator shell', () => {
   test.describe.configure({ mode: 'serial' });
-  test.use({ viewport: { width: 375, height: 812 } });
+  test.use({ viewport: { width: 375, height: 812 }, serviceWorkers: 'block' });
 
   test('keeps the Admin shell without collaborator mobile navigation spacing', async ({ page, request }, testInfo) => {
     test.setTimeout(60_000);
@@ -29,7 +29,7 @@ test.describe('Mobile collaborator shell', () => {
     await expect(page.getByRole('navigation', { name: 'Navegação mobile' })).toHaveCount(0);
     await expect(page.locator('main#main-content')).toHaveCSS('padding-bottom', '48px');
 
-    await page.goto('/comunidade', { waitUntil: 'commit' });
+    await page.goto('/comunidade');
     await expect(page).toHaveURL(/\/comunidade$/);
     await expect(page.getByRole('heading', { name: 'Comunidade indisponível para este perfil' })).toBeVisible();
   });
