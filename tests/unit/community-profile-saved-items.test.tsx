@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const saved = vi.hoisted(() => ({
@@ -8,7 +8,7 @@ const saved = vi.hoisted(() => ({
   nextCursor: null as string | null,
   error: null as Error | null,
   isLoading: false,
-  mutate: vi.fn(async () => undefined),
+  mutate: vi.fn<(data?: unknown, options?: unknown) => Promise<unknown>>(async () => undefined),
   options: null as null | { sessionKey: readonly unknown[] | null; enabled: boolean },
 }));
 
@@ -89,7 +89,7 @@ beforeEach(() => {
   saved.nextCursor = null;
   saved.error = null;
   saved.isLoading = false;
-  saved.mutate = vi.fn(async () => undefined);
+  saved.mutate.mockReset().mockResolvedValue(undefined);
   saved.options = null;
   auth.user = {
     id: 'user-a',
@@ -220,6 +220,135 @@ describe('profile saved community items', () => {
     expect(screen.queryByRole('button', { name: 'Carregar mais itens salvos' })).toBeNull();
   });
 
+  it.each([
+    ['DELETE', 401],
+    ['load-more', 403],
+  ] as const)('purges all private saved state after a manual %s receives %s', async (operation, status) => {
+    saved.items = [postA];
+    saved.nextCursor = 'private-cursor';
+    const fetcher = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (operation === 'DELETE' && url.endsWith('/post-a/save') && init?.method === 'DELETE') {
+        return Promise.resolve(jsonResponse({ error: 'forbidden' }, status));
+      }
+      if (operation === 'load-more' && url.includes('/api/collaborator/saved?limit=20&cursor=')) {
+        return Promise.resolve(jsonResponse({ error: 'forbidden' }, status));
+      }
+      return Promise.resolve(baseResponse(url));
+    });
+    vi.stubGlobal('fetch', fetcher);
+    render(<ConfiguracoesPage />);
+
+    const action = operation === 'DELETE'
+      ? await screen.findByRole('button', { name: `Remover ${postA.title} dos salvos` })
+      : await screen.findByRole('button', { name: 'Carregar mais itens salvos' });
+    fireEvent.click(action);
+
+    await waitFor(() => expect(screen.queryByText(postA.title)).toBeNull());
+    expect(saved.mutate).toHaveBeenCalledWith(undefined, { revalidate: false });
+    expect(screen.queryByRole('button', { name: 'Carregar mais itens salvos' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('serializes a same-tick DELETE before pagination and cross-disables controls', async () => {
+    saved.items = [postA];
+    saved.nextCursor = 'cursor-old';
+    let resolveDelete: ((response: Response) => void) | undefined;
+    const pendingDelete = new Promise<Response>((resolve) => { resolveDelete = resolve; });
+    const fetcher = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/post-a/save') && init?.method === 'DELETE') return pendingDelete;
+      if (url.includes('/api/collaborator/saved?limit=20&cursor=')) {
+        return Promise.resolve(jsonResponse({ items: [postB], nextCursor: null }));
+      }
+      return Promise.resolve(baseResponse(url));
+    });
+    vi.stubGlobal('fetch', fetcher);
+    render(<ConfiguracoesPage />);
+    const removeButton = await screen.findByRole('button', { name: `Remover ${postA.title} dos salvos` });
+    const pageButton = screen.getByRole('button', { name: 'Carregar mais itens salvos' });
+
+    act(() => {
+      removeButton.click();
+      pageButton.click();
+    });
+
+    const privateCalls = fetcher.mock.calls.filter(([input]) => {
+      const url = String(input);
+      return url.includes('/feed/') || url.includes('/api/collaborator/saved?');
+    });
+    expect(privateCalls).toHaveLength(1);
+    expect(String(privateCalls[0][0])).toContain('/post-a/save');
+    expect((pageButton as HTMLButtonElement).disabled).toBe(true);
+    expect((removeButton as HTMLButtonElement).disabled).toBe(true);
+
+    resolveDelete?.(jsonResponse({ savedByMe: false }));
+    await pendingDelete;
+    await waitFor(() => expect(screen.queryByText(postA.title)).toBeNull());
+  });
+
+  it('serializes in-flight pagination before a same-tick DELETE', async () => {
+    saved.items = [postA];
+    saved.nextCursor = 'cursor-old';
+    let resolvePage: ((response: Response) => void) | undefined;
+    const pendingPage = new Promise<Response>((resolve) => { resolvePage = resolve; });
+    const fetcher = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/collaborator/saved?limit=20&cursor=')) return pendingPage;
+      if (url.endsWith('/post-a/save') && init?.method === 'DELETE') {
+        return Promise.resolve(jsonResponse({ savedByMe: false }));
+      }
+      return Promise.resolve(baseResponse(url));
+    });
+    vi.stubGlobal('fetch', fetcher);
+    render(<ConfiguracoesPage />);
+    const removeButton = await screen.findByRole('button', { name: `Remover ${postA.title} dos salvos` });
+    const pageButton = screen.getByRole('button', { name: 'Carregar mais itens salvos' });
+
+    act(() => {
+      pageButton.click();
+      removeButton.click();
+    });
+
+    const privateCalls = fetcher.mock.calls.filter(([input]) => {
+      const url = String(input);
+      return url.includes('/feed/') || url.includes('/api/collaborator/saved?');
+    });
+    expect(privateCalls).toHaveLength(1);
+    expect(String(privateCalls[0][0])).toContain('/api/collaborator/saved');
+    expect((removeButton as HTMLButtonElement).disabled).toBe(true);
+    expect((pageButton as HTMLButtonElement).disabled).toBe(true);
+
+    resolvePage?.(jsonResponse({ items: [postB], nextCursor: null }));
+    await pendingPage;
+    await waitFor(() => expect(screen.getByText(postB.title)).toBeTruthy());
+  });
+
+  it('rebuilds the first saved page and cursor from authoritative revalidation after DELETE', async () => {
+    saved.items = [postA];
+    saved.nextCursor = 'cursor-old';
+    saved.mutate.mockResolvedValue({
+      items: [postB],
+      nextCursor: 'cursor-new',
+      scope: 'company',
+      settings: { companyFeedEnabled: true },
+    });
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/post-a/save') && init?.method === 'DELETE') {
+        return Promise.resolve(jsonResponse({ savedByMe: false }));
+      }
+      return Promise.resolve(baseResponse(url));
+    }));
+    render(<ConfiguracoesPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: `Remover ${postA.title} dos salvos` }));
+
+    expect(await screen.findByText(postB.title)).toBeTruthy();
+    expect(screen.queryByText(postA.title)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Carregar mais itens salvos' })).toBeTruthy();
+  });
+
   it('aborts and ignores a session A page that resolves after switching to B', async () => {
     saved.items = [postA];
     saved.nextCursor = 'cursor-a';
@@ -286,7 +415,8 @@ describe('profile saved community items', () => {
 
   it('keeps authoritative removal successful when cache revalidation fails', async () => {
     saved.items = [postA];
-    saved.mutate = vi.fn(async () => { throw new Error('revalidation failed'); });
+    saved.nextCursor = 'cursor-old';
+    saved.mutate.mockRejectedValue(new Error('revalidation failed'));
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith('/post-a/save') && init?.method === 'DELETE') {
@@ -303,5 +433,6 @@ describe('profile saved community items', () => {
     expect(section).not.toBeNull();
     expect(within(section!).getByRole('status').textContent).toContain('removido dos salvos');
     expect(within(section!).queryByRole('alert')).toBeNull();
+    expect(within(section!).queryByRole('button', { name: 'Carregar mais itens salvos' })).toBeNull();
   });
 });

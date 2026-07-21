@@ -26,6 +26,19 @@ export function buildCollaboratorSavedKey(
   return [COLLABORATOR_SAVED_KEY, ...sessionKey];
 }
 
+export function isCollaboratorSavedCacheKeyForIdentity(
+  key: unknown,
+  sessionKey: CollaboratorSavedSessionKey,
+): key is CollaboratorSavedCacheKey {
+  return Array.isArray(key)
+    && key.length === 5
+    && key[0] === COLLABORATOR_SAVED_KEY
+    && key[1] === sessionKey[0]
+    && key[2] === sessionKey[1]
+    && typeof key[3] === 'string'
+    && (key[4] === 0 || key[4] === 1);
+}
+
 class CollaboratorApiError extends Error {
   constructor(
     public readonly status: number,
@@ -188,7 +201,9 @@ export function useCollaboratorFeed() {
     const state = await mutateCommunity<SaveState>(`/api/collaborator/feed/${encodedId}/save`, method);
     await Promise.all([
       mutateCache(COLLABORATOR_FEED_KEY),
-      savedSessionKey ? mutateCache(buildCollaboratorSavedKey(savedSessionKey)) : Promise.resolve(),
+      savedSessionKey
+        ? mutateCache((key) => isCollaboratorSavedCacheKeyForIdentity(key, savedSessionKey))
+        : Promise.resolve(),
     ]);
     return state;
   };
@@ -290,7 +305,9 @@ export function useCollaboratorCommunityFeed(topic?: CommunityTopic) {
       (current) => patchCommunityFeedPages(current, id, state),
       { revalidate: false },
     );
-    if (savedSessionKey) await mutateCache(buildCollaboratorSavedKey(savedSessionKey));
+    if (savedSessionKey) {
+      await mutateCache((key) => isCollaboratorSavedCacheKeyForIdentity(key, savedSessionKey));
+    }
     return state;
   };
 

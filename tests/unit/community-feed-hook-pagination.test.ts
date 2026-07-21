@@ -4,6 +4,7 @@ import {
   COLLABORATOR_SAVED_KEY,
   buildCollaboratorFeedKey,
   buildCollaboratorSavedKey,
+  isCollaboratorSavedCacheKeyForIdentity,
   mergeCommunityFeedPages,
 } from '@/hooks/useCollaborator';
 import type { CommunityFeedItem, CommunityFeedResponse } from '@/types/community';
@@ -63,5 +64,30 @@ describe('collaborator feed pagination helpers', () => {
       1,
     ]);
     expect(COLLABORATOR_SAVED_KEY).toBe('/api/collaborator/saved?limit=20');
+  });
+
+  it('matches every saved tuple for the same user and company regardless of role or capability', () => {
+    const identity = ['user-a', 'company-a', 'colaboradora', 1] as const;
+
+    expect(isCollaboratorSavedCacheKeyForIdentity(
+      buildCollaboratorSavedKey(['user-a', 'company-a', 'rh', 0]),
+      identity,
+    )).toBe(true);
+    expect(isCollaboratorSavedCacheKeyForIdentity(
+      buildCollaboratorSavedKey(['user-a', 'company-a', 'admin', 1]),
+      identity,
+    )).toBe(true);
+    expect(isCollaboratorSavedCacheKeyForIdentity(
+      buildCollaboratorSavedKey(['user-b', 'company-a', 'colaboradora', 1]),
+      identity,
+    )).toBe(false);
+    expect(isCollaboratorSavedCacheKeyForIdentity(
+      buildCollaboratorSavedKey(['user-a', 'company-b', 'colaboradora', 1]),
+      identity,
+    )).toBe(false);
+    expect(isCollaboratorSavedCacheKeyForIdentity(
+      ['/api/collaborator/saved?limit=20&session=user-a'],
+      identity,
+    )).toBe(false);
   });
 });

@@ -73,6 +73,10 @@ function isSavedItemsPage(payload: unknown): payload is {
     && (page.nextCursor === null || typeof page.nextCursor === 'string');
 }
 
+function isAuthorizationStatus(status: number): status is 401 | 403 {
+  return status === 401 || status === 403;
+}
+
 export default function ConfiguracoesPage() {
   const { user: authUser, isLoading: authLoading } = useAuth();
   const canUseCollaboratorCommunity = Boolean(
@@ -147,6 +151,7 @@ export default function ConfiguracoesPage() {
   currentSavedSessionRef.current = collaboratorSessionId;
   const savedOperationGenerationRef = useRef(0);
   const savedOperationControllersRef = useRef(new Set<AbortController>());
+  const savedOperationLockRef = useRef<symbol | null>(null);
   const hasCurrentSavedState = savedItemsSessionId === collaboratorSessionId;
   const visibleSavedItems = hasCurrentSavedState ? savedItems : [];
   const visibleSavedNextCursor = hasCurrentSavedState ? savedNextCursor : null;
@@ -301,6 +306,7 @@ export default function ConfiguracoesPage() {
     savedOperationGenerationRef.current += 1;
     for (const controller of savedOperationControllersRef.current) controller.abort();
     savedOperationControllersRef.current.clear();
+    savedOperationLockRef.current = null;
     setSavedItems([]);
     setSavedNextCursor(null);
     setSavedItemsSessionId(collaboratorSessionId);
@@ -312,6 +318,7 @@ export default function ConfiguracoesPage() {
       savedOperationGenerationRef.current += 1;
       for (const controller of savedOperationControllersRef.current) controller.abort();
       savedOperationControllersRef.current.clear();
+      savedOperationLockRef.current = null;
     };
   }, [collaboratorSessionId]);
 
@@ -533,10 +540,33 @@ export default function ConfiguracoesPage() {
     }
   };
 
+  async function purgeSavedAuthorizationBoundary(sessionId: string) {
+    if (currentSavedSessionRef.current !== sessionId) return;
+    savedOperationGenerationRef.current += 1;
+    for (const controller of savedOperationControllersRef.current) controller.abort();
+    savedOperationControllersRef.current.clear();
+    savedOperationLockRef.current = null;
+    setSavedItems([]);
+    setSavedNextCursor(null);
+    setSavedItemsSessionId(sessionId);
+    setSavedFeedback(null);
+    setSavedLoadingMore(false);
+    setSavedRemovingId(null);
+    try {
+      await saved.mutate(undefined, { revalidate: false });
+    } catch {
+      // Local private state is already purged; cache cleanup is best effort.
+    }
+  }
+
   async function handleRemoveSaved(item: CommunityFeedItem) {
-    if (savedRemovingId || !collaboratorSessionId || !canUseCollaboratorCommunity) return;
+    if (savedOperationLockRef.current || !collaboratorSessionId || !canUseCollaboratorCommunity) return;
+    const lock = Symbol('saved-delete');
+    savedOperationLockRef.current = lock;
+    for (const pendingController of savedOperationControllersRef.current) pendingController.abort();
+    savedOperationControllersRef.current.clear();
     const sessionId = collaboratorSessionId;
-    const generation = savedOperationGenerationRef.current;
+    const generation = ++savedOperationGenerationRef.current;
     const controller = new AbortController();
     savedOperationControllersRef.current.add(controller);
     const isCurrent = () => (
@@ -551,14 +581,24 @@ export default function ConfiguracoesPage() {
         method: 'DELETE',
         signal: controller.signal,
       });
+      if (isAuthorizationStatus(response.status)) {
+        await purgeSavedAuthorizationBoundary(sessionId);
+        return;
+      }
       if (!response.ok) throw new Error('Saved item removal failed');
       if (!isCurrent()) return;
       setSavedItems(current => current.filter(candidate => candidate.id !== item.id));
+      setSavedNextCursor(null);
       setSavedFeedback({ kind: 'success', message: `${item.title} removido dos salvos.` });
       try {
-        await saved.mutate();
+        const refreshedPage = await saved.mutate();
+        if (!isCurrent()) return;
+        if (!isSavedItemsPage(refreshedPage)) throw new Error('Saved revalidation returned no page');
+        setSavedItems(refreshedPage.items);
+        setSavedNextCursor(refreshedPage.nextCursor);
       } catch {
         if (!isCurrent()) return;
+        setSavedNextCursor(null);
         setSavedFeedback({
           kind: 'success',
           message: `${item.title} removido dos salvos. A lista será atualizada novamente.`,
@@ -572,15 +612,20 @@ export default function ConfiguracoesPage() {
       });
     } finally {
       savedOperationControllersRef.current.delete(controller);
-      if (isCurrent()) setSavedRemovingId(null);
+      if (savedOperationLockRef.current === lock) {
+        savedOperationLockRef.current = null;
+        if (isCurrent()) setSavedRemovingId(null);
+      }
     }
   }
 
   async function handleLoadMoreSaved() {
-    if (!visibleSavedNextCursor || savedLoadingMore || !collaboratorSessionId) return;
+    if (!visibleSavedNextCursor || savedOperationLockRef.current || !collaboratorSessionId) return;
+    const lock = Symbol('saved-page');
+    savedOperationLockRef.current = lock;
     const cursor = visibleSavedNextCursor;
     const sessionId = collaboratorSessionId;
-    const generation = savedOperationGenerationRef.current;
+    const generation = ++savedOperationGenerationRef.current;
     const controller = new AbortController();
     savedOperationControllersRef.current.add(controller);
     const isCurrent = () => (
@@ -595,6 +640,10 @@ export default function ConfiguracoesPage() {
         `/api/collaborator/saved?limit=20&cursor=${encodeURIComponent(cursor)}`,
         { signal: controller.signal },
       );
+      if (isAuthorizationStatus(response.status)) {
+        await purgeSavedAuthorizationBoundary(sessionId);
+        return;
+      }
       if (!response.ok) throw new Error('Saved items page failed');
       const payload: unknown = await response.json();
       if (!isSavedItemsPage(payload)) throw new Error('Invalid saved items page');
@@ -613,7 +662,10 @@ export default function ConfiguracoesPage() {
       });
     } finally {
       savedOperationControllersRef.current.delete(controller);
-      if (isCurrent()) setSavedLoadingMore(false);
+      if (savedOperationLockRef.current === lock) {
+        savedOperationLockRef.current = null;
+        if (isCurrent()) setSavedLoadingMore(false);
+      }
     }
   }
 
@@ -930,7 +982,7 @@ export default function ConfiguracoesPage() {
                     type="button"
                     className={styles.savedRemoveButton}
                     aria-label={`Remover ${item.title} dos salvos`}
-                    disabled={savedRemovingId !== null}
+                    disabled={savedRemovingId !== null || savedLoadingMore}
                     onClick={() => void handleRemoveSaved(item)}
                   >
                     {savedRemovingId === item.id ? 'Removendo...' : 'Remover'}
@@ -944,7 +996,7 @@ export default function ConfiguracoesPage() {
               <button
                 type="button"
                 className={styles.inlineAction}
-                disabled={savedLoadingMore}
+                disabled={savedLoadingMore || savedRemovingId !== null}
                 onClick={() => void handleLoadMoreSaved()}
               >
                 {savedLoadingMore ? 'Carregando...' : 'Carregar mais itens salvos'}

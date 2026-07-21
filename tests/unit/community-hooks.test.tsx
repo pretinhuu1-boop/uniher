@@ -156,12 +156,16 @@ describe('collaborator community SWR lifecycle', () => {
       '/api/collaborator/feed/post%2Fid%20%3F/save',
       { method: 'DELETE' },
     );
-    expect(mocks.globalMutate.mock.calls).toEqual([
-      [COLLABORATOR_FEED_KEY],
-      [buildCollaboratorSavedKey(sessionA)],
-      [COLLABORATOR_FEED_KEY],
-      [buildCollaboratorSavedKey(sessionA)],
-    ]);
+    expect(mocks.globalMutate).toHaveBeenCalledTimes(4);
+    expect(mocks.globalMutate.mock.calls[0]).toEqual([COLLABORATOR_FEED_KEY]);
+    expect(mocks.globalMutate.mock.calls[2]).toEqual([COLLABORATOR_FEED_KEY]);
+    for (const callIndex of [1, 3]) {
+      const predicate = mocks.globalMutate.mock.calls[callIndex][0] as (key: unknown) => boolean;
+      expect(predicate(buildCollaboratorSavedKey(['user-a', 'company-a', 'rh', 0]))).toBe(true);
+      expect(predicate(buildCollaboratorSavedKey(['user-a', 'company-a', 'admin', 1]))).toBe(true);
+      expect(predicate(buildCollaboratorSavedKey(['user-b', 'company-a', 'colaboradora', 1]))).toBe(false);
+      expect(predicate(buildCollaboratorSavedKey(['user-a', 'company-b', 'colaboradora', 1]))).toBe(false);
+    }
   });
 
   it('encodes support IDs and revalidates the feed key', async () => {
