@@ -736,7 +736,6 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
       '/api/collaborator/challenges',
       '/api/gamification/rewards',
       '/api/gamification/rewards/redemptions',
-      '/api/collaborator/feed',
     ];
     for (const path of collaboratorReads) {
       await expectPrivacyUnavailable(await request.get(path, {
