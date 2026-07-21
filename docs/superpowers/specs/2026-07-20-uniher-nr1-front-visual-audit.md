@@ -1,6 +1,6 @@
 # UniHER NR-1 Front Preview - Visual Audit and Implementation Target
 
-**Status:** implemented in isolated Wave 3 worktree; visual QA passed
+**Status:** NR-1 preview and collaborator mobile shell implemented in isolated Wave 3 worktree; CommunityPage is a contained adapter, while the real company feed and placeholder modules remain pending
 
 **Date:** 2026-07-20
 
@@ -145,7 +145,7 @@ The images are art-direction references only. They must not be shipped as raster
 
 **Implementation location:** dedicated collaborator Wave 3 worktree branched from the validated Editorial Operational foundation.
 
-**Current status:** implementation complete in the dedicated worktree; documentation updated and commit prepared.
+**Current status:** controlled NR-1 preview, conditional collaborator mobile shell, and the CommunityPage containment adapter are implemented in the dedicated worktree. The company-scoped feed is still planned, and the five placeholder routes remain a separate gated wave.
 
 ## 8. Implementation and validation record
 
@@ -173,7 +173,8 @@ The preview requires the explicit build-time flag `NEXT_PUBLIC_UNIHER_NR1_PREVIE
 ### 8.3 Evidence and checks
 
 - Unit suite: `29` test files and `278` tests passed.
-- Production build: passed with the existing Turbopack NFT tracing warning in `next.config.ts` / `src/app/api/admin/system/ops/route.ts`.
+- Production build: passed with the known Turbopack NFT tracing warning in `next.config.ts` / `src/app/api/admin/system/ops/route.ts`.
+- Final mobile-shell E2E: `2 passed` in `1 worker`; no horizontal overflow, real Journey focus navigation, Admin denied community state, and clean teardown of `1` test user and `1` test company.
 - Authenticated browser smoke: collaborator login, `/colaboradora`, and `/avaliacao-nr1` reached the consent screen.
 - Desktop screenshot: `1440x900`, visual pass.
 - Mobile screenshot: `390x844`, visual pass after the duplicate-action repair.
@@ -185,3 +186,77 @@ The preview requires the explicit build-time flag `NEXT_PUBLIC_UNIHER_NR1_PREVIE
 ### 8.4 Remaining gate
 
 The feature is ready as a controlled front-end preview. It must not be promoted to real NR-1 integration until the blockers in `INTEGRACAO_YAVIX_NR1.md` are resolved and independently reviewed.
+
+## 9. Individual mobile screens audit and next implementation map
+
+The approved mobile direction was generated as four individual visual references. These files are outside the repository and are evidence for art direction only:
+
+- Hoje: `C:\Users\user\.codex\generated_images\019f71d7-ec52-77a0-881e-14421bd0b15e\exec-b2337de1-f29b-49dc-943e-7484e3cc190a.png`
+- Comunidade: `C:\Users\user\.codex\generated_images\019f71d7-ec52-77a0-881e-14421bd0b15e\exec-dc2c2a29-a31b-4f5e-b80c-a603986155e9.png`
+- Jornada: `C:\Users\user\.codex\generated_images\019f71d7-ec52-77a0-881e-14421bd0b15e\exec-0e6c786f-f812-4bc7-b0d9-208ef564d8d0.png`
+- Perfil: `C:\Users\user\.codex\generated_images\019f71d7-ec52-77a0-881e-14421bd0b15e\exec-39835128-d347-4e2e-8f8e-b5a6f4cc2e8b.png`
+
+### 9.1 Visual audit result
+
+The four screens are visually coherent with the approved Editorial Operational direction: porcelain canvas, espresso text, bronze action color, sage privacy/care accents, editorial headings, generous touch targets, and a four-destination mobile shell: `Hoje`, `Comunidade`, `Jornada`, `Perfil`.
+
+Screen-specific findings:
+
+- `Hoje`: PASS for the private check-in framing and the NR-1 lock, controlled-access badge, preview action, and disclaimer. The mood-face selector and some content-card behavior are new interactions that are not in the current typed contract.
+- `Comunidade`: PASS for a curated feed, topic filters, `Apoiar`, `Salvar`, aggregate support count, and consent-based names. It must remain read-only/curated in the first wave: no open composer, comments, ranking, or public response content.
+- `Jornada`: PASS for ordered steps, personal progress, controlled NR-1 access, and the no-ranking statement. The progress calculation and the first/next-step status are not currently supplied by the collaborator home API.
+- `Perfil`: PASS for a privacy-first control center, saved items, notifications, content preferences, and the explicit statement that check-ins, semaforo, and NR-1 responses never enter the community feed. The `Mostrar meu nome ao apoiar` preference is a new consent contract.
+
+### 9.2 Reference-only corrections
+
+The generated images contain fictional or approximate assets. They must not be copied into production:
+
+- The botanical marks, circular `UniHER editorial` badge, shield/leaf marks, and gold decorative logos are not canonical UniHER brand assets.
+- The generated portraits, avatars, coffee/bedroom photos, and plant illustrations are art-direction placeholders, not approved product content.
+- The generated icons are visual approximations; implementation must use the existing `lucide-react` and `SidebarNavItem` primitives where applicable.
+- The exact UI copy must come from the approved product/spec contract, including the NR-1 disclaimer. Generated spelling or accent omissions are not a source of truth.
+
+Use the existing real assets and components instead:
+
+- Brand: `public/logo-uniher.png`, `public/logo.svg`, and the existing company-logo contract.
+- Avatar: `src/components/ui/AvatarBadge.tsx` (`Avatar`) with a real user image or initials fallback.
+- Shell icons and navigation primitives: `src/components/platform/SidebarNavItem.tsx` and existing `lucide-react` usage.
+- Real content media: only after a typed content/media source is approved; do not ship the generated raster previews.
+
+### 9.3 Current code reality and implementation locations
+
+The correct implementation location remains the dedicated worktree:
+
+`C:\Users\user\Documents\uniher-app-audit\.worktrees\uniher-wave3-collaborator-nr1`
+
+Current code map:
+
+- `src/app/(platform)/colaboradora/page.tsx`: current `Hoje` entry point and the already implemented NR-1 journey row. Keep the controlled preview here; do not duplicate it in a new community route.
+- `src/components/platform/AppLayout.tsx`: global authenticated shell. It renders `Sidebar`, `MobileTopbar`, and the collaborator-only `MobileBottomNav` at mobile widths; the bottom-nav `112px + safe-area` spacing is conditional on the collaborator workspace class.
+- `src/components/platform/MobileTopbar.tsx`, `src/components/platform/MobileBottomNav.tsx`, and `src/components/platform/AppLayout.module.css`: runtime mobile header, bottom destinations, breakpoint behavior, focus states, safe-area padding, and overflow protection.
+- `src/components/platform/navigation.ts`: existing role navigation contract. Any `Comunidade` or bottom-nav addition must be deliberate and role-scoped, not inferred from the image.
+- `src/app/(platform)/configuracoes/page.tsx`: existing profile, notification, and privacy settings. Use this as the initial `Perfil` destination instead of creating a duplicate profile route.
+- `src/app/(platform)/avaliacao-nr1/page.tsx`: controlled NR-1 preview route and current scaffold boundary.
+- `src/app/(platform)/comunidade/page.tsx`: client-side containment adapter with `loading`, `denied`, and collaborator-only `empty` states; it is not yet the generated community feed.
+- `src/app/api/collaborator/feed/route.ts`: remains an authenticated privacy-review response. It is not a feed data contract and cannot support the generated community screen.
+- `src/services/collaborator.service.ts` and `src/types/platform.ts`: current collaborator data include streak/content/achievement/exam fields, but not weekly check-in aggregates, journey start state, community posts, reactions, saves, or opt-in supporter names.
+
+### 9.4 Next implementation waves
+
+The visual design is approved and the collaborator mobile shell is implemented. The next work must remain split into independently reviewable waves:
+
+1. `Wave A - Mobile shell`: **PASS WITH FOLLOW-UP / IMPLEMENTADA**. `AppLayout` exposes a conditional responsive bottom-nav contract for collaborator sessions, preserves the drawer/sidebar fallback, and maps `Hoje`, `Comunidade`, `Jornada`, and `Perfil` to authenticated destinations. The `/comunidade` destination is an explicit loading/denied/empty adapter until the real feed contract is green.
+2. `Wave B - Community read-only`: add a typed curated-feed service/API, topic filtering, `Apoiar`, private `Salvar`, aggregate counts, and opt-in supporter names. Keep comments, composer, ranking, and public health responses out of scope.
+3. `Wave C - Profile privacy`: extend `/configuracoes` or extract a shared settings surface for saved items, content preferences, notifications, and the explicit supporter-name consent. Define schema, default, revocation, retention, and audit behavior before implementation.
+4. `Wave D - Placeholder repair`: resolve `/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, and `/liga` in that order, only after each data/privacy contract is approved. The legacy gamification containment is not evidence of a completed module.
+5. `NR-1 gate`: keep `/avaliacao-nr1` as a controlled preview until the Yavix and legal gates in `INTEGRACAO_YAVIX_NR1.md` pass independent review.
+
+### 9.5 Task 5 final gate
+
+- `npm run test:unit`: PASS, 29 files / 278 tests.
+- `npm run build`: PASS, with the known NFT tracing warning from Turbopack.
+- `cd tests; npx playwright test --project=mobile-shell --config=playwright.config.ts`: PASS, 2 passed in 1 worker; no overflow, real Journey focus, Admin denied, and clean teardown.
+- Findings P1/P2/P3: CORRECTED. Conditional AppLayout spacing, unique mobile fixture IDs, and serial fixture execution are verified in the current shell.
+- The five placeholder screens (`/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, `/liga`) and the real company-scoped community feed remain outside this round.
+
+**Decision:** the four images pass as visual direction with the corrections above. They do not prove feature implementation. The next coding target is the shared mobile shell, followed by the read-only community contract. The company-scoped feed plan is documented in `docs/superpowers/plans/2026-07-20-uniher-company-community-feed.md`; generated logos, portraits, illustrations, and approximate text will be replaced by canonical UniHER code assets and approved data.
