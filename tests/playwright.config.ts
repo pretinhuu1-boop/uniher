@@ -69,5 +69,6 @@ export default defineConfig({
     { name: 'seguranca', testMatch: 'seguranca.spec.ts' },
     { name: 'visual-ux', testMatch: 'visual-ux.spec.ts', use: { headless: true } },
     { name: 'mobile-shell', testMatch: 'mobile-collaborator-shell.spec.ts', use: { headless: true } },
+    { name: 'community-feed', testMatch: 'community-feed.spec.ts', use: { headless: true, serviceWorkers: 'block' } },
   ],
 });

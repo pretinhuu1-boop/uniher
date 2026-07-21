@@ -10,26 +10,19 @@ import {
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { createCommunityRepository } from '@/repositories/community.repository';
-import { getCommunityFeed } from '@/services/community.service';
+import { getCommunitySupporters } from '@/services/community.service';
 
 export const GET = withAuth(async (req: NextRequest, context: AuthContext) => {
   await initDb();
   const db = getReadDb();
   const capabilityError = requireCollaboratorCapability(context, db);
   if (capabilityError) return capabilityError;
-
-  const scopes = req.nextUrl.searchParams.getAll('scope');
-  if (scopes.some((scope) => scope !== 'company')) {
-    return NextResponse.json(
-      { error: 'Unsupported community scope', code: 'COMMUNITY_SCOPE_UNSUPPORTED' },
-      { status: 422 },
-    );
-  }
+  const { id } = await context.params;
 
   try {
     const repository = createCommunityRepository(db);
     return NextResponse.json(
-      getCommunityFeed(communityActor(context), repository, communityQuery(req, ['scope'])),
+      getCommunitySupporters(communityActor(context), repository, id, communityQuery(req)),
     );
   } catch (error) {
     return communityApiErrorResponse(error);

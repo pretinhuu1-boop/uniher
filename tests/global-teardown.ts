@@ -24,15 +24,34 @@ export default async function globalTeardown() {
       "email LIKE 'colab-seg-%'",
       "email LIKE 'api-test-%'",
       "email LIKE 'mobile-%'",
+      "email LIKE 'community-feed-test-%'",
     ];
     const where = testPatterns.join(' OR ');
+    const testCompanyWhere = "name LIKE 'Empresa RH%' OR name LIKE 'Empresa Colab%' OR name LIKE 'Empresa Int%' OR name LIKE 'Empresa Seg%' OR name LIKE 'Empresa Mobile%' OR name LIKE 'Community Feed E2E %'";
 
     // Get test user IDs for cascade cleanup
     const testUsers = db.prepare(`SELECT id FROM users WHERE ${where}`).all() as { id: string }[];
     const testUserIds = testUsers.map(u => u.id);
+    const testCompanies = db.prepare(
+      `SELECT id FROM companies WHERE ${testCompanyWhere}`
+    ).all() as { id: string }[];
+    const testCompanyIds = testCompanies.map(company => company.id);
+
+    if (testCompanyIds.length > 0) {
+      const ph = testCompanyIds.map(() => '?').join(',');
+      try { db.prepare(`DELETE FROM community_post_supports WHERE post_id IN (SELECT id FROM community_posts WHERE company_id IN (${ph}))`).run(...testCompanyIds); } catch {}
+      try { db.prepare(`DELETE FROM community_post_saves WHERE post_id IN (SELECT id FROM community_posts WHERE company_id IN (${ph}))`).run(...testCompanyIds); } catch {}
+      try { db.prepare(`DELETE FROM community_posts WHERE company_id IN (${ph})`).run(...testCompanyIds); } catch {}
+      try { db.prepare(`DELETE FROM company_settings WHERE company_id IN (${ph})`).run(...testCompanyIds); } catch {}
+    }
 
     if (testUserIds.length > 0) {
       const ph = testUserIds.map(() => '?').join(',');
+      try { db.prepare(`DELETE FROM community_post_supports WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM community_post_saves WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM community_post_supports WHERE post_id IN (SELECT id FROM community_posts WHERE created_by IN (${ph}) OR updated_by IN (${ph}))`).run(...testUserIds, ...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM community_post_saves WHERE post_id IN (SELECT id FROM community_posts WHERE created_by IN (${ph}) OR updated_by IN (${ph}))`).run(...testUserIds, ...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM community_posts WHERE created_by IN (${ph}) OR updated_by IN (${ph})`).run(...testUserIds, ...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM refresh_tokens WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM notifications WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM health_events WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
@@ -45,10 +64,6 @@ export default async function globalTeardown() {
     }
 
     // Clean test companies
-    const testCompanies = db.prepare(
-      "SELECT id FROM companies WHERE name LIKE 'Empresa RH%' OR name LIKE 'Empresa Colab%' OR name LIKE 'Empresa Int%' OR name LIKE 'Empresa Seg%' OR name LIKE 'Empresa Mobile%'"
-    ).all() as { id: string }[];
-
     for (const c of testCompanies) {
       try { db.prepare('DELETE FROM departments WHERE company_id = ?').run(c.id); } catch {}
       try { db.prepare('DELETE FROM invites WHERE company_id = ?').run(c.id); } catch {}
