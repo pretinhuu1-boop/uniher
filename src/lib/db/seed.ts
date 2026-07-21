@@ -1,6 +1,6 @@
 /**
  * Seed de Homologação — UniHER
- * Cria apenas: 1 admin master + arquétipos + badges base
+ * Cria apenas: 1 admin master + arquétipos + fixtures operacionais aprovadas
  * Sem empresas, usuários ou dados fake.
  */
 import { getWriteQueue, getReadDb } from './index';
@@ -49,41 +49,6 @@ async function seed() {
         archetypes.forEach(a => archStmt.run(a.id, a.key, a.name, a.desc, JSON.stringify(a.base), JSON.stringify(a.g30), JSON.stringify(a.g30), JSON.stringify(a.g30), a.missions, a.campaigns, a.habits));
       } else {
         console.log('[seed] Arquétipos já existem, pulando...');
-      }
-
-      // ─── Badges base (estrutura do sistema de gamificação) ───
-      const existingBadges = db.prepare('SELECT COUNT(*) as c FROM badges').get() as { c: number };
-      if (existingBadges.c === 0) {
-        console.log('[seed] Inserindo badges base...');
-        const badges = [
-          { id: 'badge_1', name: 'Primeira Semana', desc: 'Complete sua primeira semana na plataforma.', icon: '🌱', pts: 50, rarity: 'common' },
-          { id: 'badge_2', name: 'Sequência de 7 dias', desc: 'Mantenha 7 dias consecutivos de check-in.', icon: '🔥', pts: 150, rarity: 'rare' },
-          { id: 'badge_3', name: 'Guardiã da Saúde', desc: 'Complete 5 desafios de saúde preventiva.', icon: '🏥', pts: 200, rarity: 'rare' },
-          { id: 'badge_4', name: 'Mente Zen', desc: 'Complete 3 desafios de saúde mental.', icon: '🧘', pts: 100, rarity: 'common' },
-          { id: 'badge_5', name: 'Hidratação Campeã', desc: 'Registre hidratação por 14 dias consecutivos.', icon: '💧', pts: 300, rarity: 'epic' },
-          { id: 'badge_6', name: 'Exploradora', desc: 'Participe de 3 campanhas diferentes.', icon: '🌟', pts: 500, rarity: 'legendary' },
-        ];
-        const badgeStmt = db.prepare('INSERT OR IGNORE INTO badges (id, name, description, icon, points, rarity) VALUES (?, ?, ?, ?, ?, ?)');
-        badges.forEach(b => badgeStmt.run(b.id, b.name, b.desc, b.icon, b.pts, b.rarity));
-      } else {
-        console.log('[seed] Badges já existem, pulando...');
-      }
-
-      // ─── Desafios padrão da plataforma ───
-      const existingCh = db.prepare('SELECT COUNT(*) as c FROM challenges WHERE is_default = 1').get() as { c: number };
-      if (existingCh.c === 0) {
-        console.log('[seed] Inserindo desafios padrão...');
-        const challenges = [
-          { id: 'ch_1', title: 'Ritual de Meditação', cat: 'Saúde Mental', steps: 5, arche: 'arch_protetora' },
-          { id: 'ch_2', title: 'Hidratação 2L', cat: 'Hábitos', steps: 5, arche: 'arch_guardia' },
-          { id: 'ch_3', title: 'Sono Reparador', cat: 'Sono', steps: 7, arche: 'arch_guardia' },
-          { id: 'ch_4', title: 'Pausas Ativas', cat: 'Energia', steps: 10, arche: 'arch_guerreira' },
-          { id: 'ch_5', title: 'Mindfulness 10 min', cat: 'Saúde Mental', steps: 3, arche: 'arch_protetora' },
-        ];
-        const chStmt = db.prepare('INSERT OR IGNORE INTO challenges (id, title, description, category, points, total_steps, archetype_id, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, 1)');
-        challenges.forEach(c => chStmt.run(c.id, c.title, c.title, c.cat, 100, c.steps, c.arche));
-      } else {
-        console.log('[seed] Desafios padrão já existem, pulando...');
       }
 
       // ─── Demo Company + RH (usados pelos testes visuais E2E) ──────────────

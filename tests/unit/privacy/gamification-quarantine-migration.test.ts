@@ -19,6 +19,10 @@ function createLegacyDatabase() {
     CREATE TABLE activity_log (id TEXT PRIMARY KEY, user_id TEXT, action TEXT, points INTEGER);
     CREATE TABLE health_scores (id TEXT PRIMARY KEY, user_id TEXT, score INTEGER, level TEXT);
     CREATE TABLE notifications (id TEXT PRIMARY KEY, user_id TEXT, type TEXT, title TEXT, message TEXT);
+    CREATE TABLE company_objectives (id TEXT PRIMARY KEY, company_id TEXT, title TEXT);
+    CREATE TABLE user_objective_progress (id TEXT PRIMARY KEY, user_id TEXT, objective_id TEXT);
+    CREATE TABLE challenges (id TEXT PRIMARY KEY, title TEXT);
+    CREATE TABLE user_challenges (user_id TEXT, challenge_id TEXT, progress INTEGER, PRIMARY KEY (user_id, challenge_id));
     CREATE TABLE audit_logs (
       id TEXT PRIMARY KEY, actor_id TEXT, actor_email TEXT NOT NULL, actor_role TEXT NOT NULL,
       action TEXT NOT NULL, entity_type TEXT, entity_id TEXT, entity_label TEXT, details TEXT,
@@ -33,12 +37,70 @@ function createLegacyDatabase() {
     INSERT INTO activity_log VALUES ('al-1', 'user-1', 'check_in', 10);
     INSERT INTO health_scores VALUES ('hs-1', 'user-1', 88, 'green');
     INSERT INTO notifications VALUES ('n-1', 'user-1', 'badge', 'Conquista', 'Você ganhou um badge');
+    INSERT INTO company_objectives VALUES ('objective-1', 'company-1', 'Objetivo legado');
+    INSERT INTO user_objective_progress VALUES ('objective-progress-1', 'user-1', 'objective-1');
+    INSERT INTO challenges VALUES ('challenge-1', 'Desafio legado');
+    INSERT INTO user_challenges VALUES ('user-1', 'challenge-1', 1);
   `);
   return db;
 }
 
 afterEach(() => {
   while (databases.length > 0) databases.pop()?.close();
+});
+
+describe('migration 055 objective and challenge quarantine expansion', () => {
+  it('preserves legacy rows, marks all omitted domains and records one count-only receipt', () => {
+    const db = createLegacyDatabase();
+    const migrationDir = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations');
+    const migration049 = fs.readFileSync(path.join(migrationDir, '049_legacy_gamification_quarantine.sql'), 'utf8');
+    const migration055 = fs.readFileSync(path.join(migrationDir, '055_legacy_objective_challenge_quarantine.sql'), 'utf8');
+    const before = {
+      objectives: db.prepare('SELECT * FROM company_objectives').all(),
+      objectiveProgress: db.prepare('SELECT * FROM user_objective_progress').all(),
+      challenges: db.prepare('SELECT * FROM challenges').all(),
+      challengeProgress: db.prepare('SELECT * FROM user_challenges').all(),
+    };
+
+    expect(applyMigration(db, '049_legacy_gamification_quarantine.sql', migration049)).toBe('applied');
+    expect(applyMigration(db, '055_legacy_objective_challenge_quarantine.sql', migration055)).toBe('applied');
+    expect(applyMigration(db, '055_legacy_objective_challenge_quarantine.sql', migration055)).toBe('skipped');
+
+    expect(db.prepare('SELECT * FROM company_objectives').all()).toEqual(before.objectives);
+    expect(db.prepare('SELECT * FROM user_objective_progress').all()).toEqual(before.objectiveProgress);
+    expect(db.prepare('SELECT * FROM challenges').all()).toEqual(before.challenges);
+    expect(db.prepare('SELECT * FROM user_challenges').all()).toEqual(before.challengeProgress);
+
+    const markers = db.prepare(`
+      SELECT domain, record_table, record_key, reason
+      FROM legacy_privacy_quarantine
+      WHERE domain IN ('objective', 'objective_progress', 'challenge', 'challenge_progress')
+      ORDER BY domain
+    `).all();
+    expect(markers).toEqual([
+      { domain: 'challenge', record_table: 'challenges', record_key: 'challenge-1', reason: 'legacy_contract_not_eligible' },
+      { domain: 'challenge_progress', record_table: 'user_challenges', record_key: 'user-1:challenge-1', reason: 'legacy_contract_not_eligible' },
+      { domain: 'objective', record_table: 'company_objectives', record_key: 'objective-1', reason: 'legacy_contract_not_eligible' },
+      { domain: 'objective_progress', record_table: 'user_objective_progress', record_key: 'objective-progress-1', reason: 'legacy_contract_not_eligible' },
+    ]);
+
+    const receipt = db.prepare(`
+      SELECT action, details FROM audit_logs
+      WHERE id = 'migration_055_legacy_objective_challenge_quarantine'
+    `).get() as { action: string; details: string };
+    expect(receipt.action).toBe('legacy_objective_challenge_quarantine');
+    expect(receipt.details).toBe('{"count":4}');
+    expect(receipt.details).not.toMatch(/user-1|objective-1|challenge-1/);
+  });
+
+  it('keeps legacy seeds and operational counters disconnected from quarantined domains', () => {
+    const read = (relativePath: string) => fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
+
+    expect(read('src/lib/db/seed.ts')).not.toMatch(/INSERT[\s\S]+?INTO\s+(?:badges|challenges)/i);
+    expect(read('src/app/api/admin/system/route.ts')).not.toMatch(/FROM\s+(?:badges|challenges)/i);
+    expect(read('src/app/api/rh/onboarding-status/route.ts')).not.toMatch(/FROM\s+challenges/i);
+    expect(read('src/app/(platform)/onboarding-rh/page.tsx')).not.toMatch(/key:\s*['"]challenges['"]/i);
+  });
 });
 
 describe('migration 049 preservation-first quarantine', () => {

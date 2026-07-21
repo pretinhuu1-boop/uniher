@@ -57,8 +57,6 @@ interface Badge {
 interface SystemStats {
   companies: number;
   users: number;
-  challenges: number;
-  badges: number;
   campaigns: number;
   notifications: number;
   db_size_kb: number;
@@ -2258,7 +2256,6 @@ function SystemTab() {
           sub="tempo de processo"
           accent="text-emerald-600"
         />
-        <StatCard label="Challenges" value={data?.challenges ?? '—'} sub="na plataforma" />
         <StatCard label="Notificações" value={data?.notifications ?? '—'} sub="total geradas" />
       </div>
 

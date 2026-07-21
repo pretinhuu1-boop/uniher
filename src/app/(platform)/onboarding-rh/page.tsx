@@ -15,7 +15,6 @@ interface OnboardingStatus {
     profile: boolean;
     departments: boolean;
     invites: boolean;
-    challenges: boolean;
     companyProfile: boolean;
   };
 }
@@ -42,18 +41,6 @@ const STEPS = [
     icon: (
       <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4 20-7z" />
-      </svg>
-    ),
-  },
-  {
-    key: 'challenges' as const,
-    title: 'Configure seu primeiro desafio',
-    description: 'Crie desafios para engajar as colaboradoras',
-    href: '/desafios/gerenciar',
-    estimate: '~1 min',
-    icon: (
-      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
       </svg>
     ),
   },
@@ -100,7 +87,7 @@ export default function OnboardingRHPage() {
 
   const steps = data?.steps;
   const completedCount = data?.completedCount ?? 0;
-  const totalSteps = data?.totalSteps ?? 5;
+  const totalSteps = data?.totalSteps ?? 4;
   const progressPct = totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
 
   return (
