@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { submit } from '@/lib/yavix/copsoq.mock';
-import { awardNr1Completion } from '@/services/gamification.service';
 import { isYavixMock } from '@/lib/yavix/config';
 import { checkWriteRateLimit } from '@/lib/security/rate-limit';
 import type { CopsoqIncomplete, CopsoqSubmitResult } from '@/lib/yavix/copsoq.types';
@@ -19,19 +18,7 @@ export const PUT = withRole('colaboradora', 'lideranca')(async (req, { auth }) =
         const body: CopsoqIncomplete = { error: 'INCOMPLETE', missing: result.missing };
         return NextResponse.json(body, { status: 422 });
       }
-      // Conclusão (DONE) = evento de engajamento de PARTICIPAÇÃO.
-      // Passa SÓ userId/companyId — NUNCA respostas/score (muro LGPD).
-      // Best-effort: falha na gamificação NUNCA bloqueia a conclusão do questionário.
-      let xpEarned = 0;
-      let alreadyAwarded = false;
-      try {
-        const award = await awardNr1Completion(auth.userId, auth.companyId);
-        xpEarned = award.xpEarned;
-        alreadyAwarded = award.alreadyAwarded;
-      } catch {
-        /* gamificação é best-effort */
-      }
-      const ok: CopsoqSubmitResult = { status: 'DONE', xpEarned, alreadyAwarded };
+      const ok: CopsoqSubmitResult = { status: 'DONE' };
       return NextResponse.json(ok, { status: 200 });
     }
 
