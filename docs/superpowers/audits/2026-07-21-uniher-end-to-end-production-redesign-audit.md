@@ -194,7 +194,7 @@ Responder um questionario, isoladamente, nao fecha a gestao de riscos. Inventari
 | Build executado em 21/07 no HEAD `d90147f` | PASS - 137 paginas/rotas; warning NFT conhecido |
 | Playwright completo executado em 21/07 no HEAD `d90147f` | 179/180; unico erro foi diff de baseline visual desktop Admin |
 | Causa do diff | Mudanca intencional da Wave 4 no menu Admin (`Gerenciar comunidade`) |
-| Correcao local | Baseline desktop regenerada; projeto `platform-foundation`, teste focado 1/1 PASS; pendente de commit neste pacote |
+| Correcao integrada | Baseline desktop regenerada; projeto `platform-foundation`, teste focado 1/1 PASS; versionada no commit `36d5e16` |
 | Playwright completo apos a correcao, em 21/07 | PASS - 180/180 em 3,3 minutos; teardown removeu 8 usuarios e 6 empresas de teste |
 | Recibo versionado | `docs/superpowers/audits/2026-07-21-uniher-playwright-regression-receipt.md` |
 | Warning conhecido | NFT tracing do Turbopack em `next.config.ts` / rota admin ops; nao falha o build |

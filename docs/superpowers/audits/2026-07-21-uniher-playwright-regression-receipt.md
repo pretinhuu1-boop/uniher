@@ -46,7 +46,7 @@ npx playwright test --config=playwright.config.ts
 
 ## Decisao
 
-**PASS.** A baseline representa o estado promovido da Wave 4 e a matriz Playwright completa esta verde no HEAD de codigo auditado. Este recibo, a baseline e os documentos de auditoria/roadmap devem ser versionados no mesmo commit para manter a cadeia de evidencia.
+**PASS.** A baseline representa o estado promovido da Wave 4 e a matriz Playwright completa esta verde no HEAD de codigo auditado. Este recibo, a baseline e os documentos de auditoria/roadmap foram versionados juntos no commit `36d5e16`, mantendo a cadeia de evidencia.
 
 ## Verificacoes complementares do mesmo pacote
 
