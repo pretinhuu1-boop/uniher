@@ -40,8 +40,6 @@ Riscos:
 - `GET /api/rh/users`
 - `GET /api/rh/departments`
 - `GET/POST/PATCH /api/rh/lessons`
-- `GET/POST/PATCH /api/rh/challenges`
-- `GET/POST/PATCH /api/rh/leagues`
 - `GET /api/rh/agenda`
 
 Riscos:
@@ -64,8 +62,20 @@ Riscos:
 
 - progresso não persistir
 - leitura voltar como não lida
-- pontuação inconsistente
 - missão “clicável” sem efeito real
+
+## Superfícies em revisão de privacidade
+
+As rotas legadas de objetivos, desafios, badges/conquistas e ligas não são
+operacionais. Todos os métodos exportados respondem `410` com
+`{ status: "unavailable", reason: "privacy_review", message }`,
+`Cache-Control: private, no-store` e `Vary: Cookie`.
+
+Isso inclui `/api/objectives/**`, `/api/rh/objectives/**`,
+`/api/collaborator/challenges/**`, `/api/rh/challenges/**`,
+`/api/admin/badges/**`, `/api/collaborator/badges`,
+`/api/collaborator/leagues`, `/api/gamification/league` e `/api/rh/leagues/**`.
+Essas URLs não devem ser usadas como base para as novas Waves 5-10.
 
 ## Operação
 

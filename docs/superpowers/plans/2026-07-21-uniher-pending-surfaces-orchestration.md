@@ -94,7 +94,7 @@ This wave creates infrastructure only. It does not expose `/objetivos`, `/desafi
 
 - Create: `docs/superpowers/specs/2026-07-21-uniher-eligible-participation-ledger-design.md`
 - Create: `docs/superpowers/plans/2026-07-21-uniher-eligible-participation-ledger.md`
-- Create: `src/lib/db/migrations/055_eligible_participation_ledger.sql`
+- Create: `src/lib/db/migrations/056_eligible_participation_ledger.sql`
 - Create: `src/types/participation.ts`
 - Create: `src/lib/participation/eligibility.ts`
 - Create: `src/lib/participation/schemas.ts`
@@ -149,7 +149,7 @@ The database row must contain `id`, `event_key`, `company_id`, `user_id`, `event
 
 - Create: `docs/superpowers/specs/2026-07-21-uniher-personal-objectives-design.md`
 - Create: `docs/superpowers/plans/2026-07-21-uniher-personal-objectives.md`
-- Create: `src/lib/db/migrations/056_personal_objectives.sql`
+- Create: `src/lib/db/migrations/057_personal_objectives.sql`
 - Create: `src/types/objectives.ts`
 - Create: `src/repositories/personal-objective.repository.ts`
 - Create: `src/services/personal-objective.service.ts`
@@ -172,7 +172,7 @@ The database row must contain `id`, `event_key`, `company_id`, `user_id`, `event
 
 - Create: `docs/superpowers/specs/2026-07-21-uniher-company-challenges-design.md`
 - Create: `docs/superpowers/plans/2026-07-21-uniher-company-challenges.md`
-- Create: `src/lib/db/migrations/057_company_challenges_v2.sql`
+- Create: `src/lib/db/migrations/058_company_challenges_v2.sql`
 - Create: `src/types/challenges.ts`
 - Create: `src/repositories/company-challenge.repository.ts`
 - Create: `src/services/company-challenge.service.ts`
@@ -195,7 +195,7 @@ The database row must contain `id`, `event_key`, `company_id`, `user_id`, `event
 
 - Create: `docs/superpowers/specs/2026-07-21-uniher-private-achievements-design.md`
 - Create: `docs/superpowers/plans/2026-07-21-uniher-private-achievements.md`
-- Create: `src/lib/db/migrations/058_private_achievements.sql`
+- Create: `src/lib/db/migrations/059_private_achievements.sql`
 - Create: `src/types/achievements.ts`
 - Create: `src/repositories/achievement-v2.repository.ts`
 - Create: `src/services/achievement-v2.service.ts`
@@ -215,7 +215,7 @@ Semaforo is not a Wave 5 ledger consumer. Before implementation, the product spe
 
 - Create: `docs/superpowers/specs/2026-07-21-uniher-personal-semaforo-design.md`
 - Create: `docs/superpowers/plans/2026-07-21-uniher-personal-semaforo.md`
-- Create a new migration after `058`; do not reactivate `health_scores`.
+- Create a new migration after `059`; do not reactivate `health_scores`.
 - Create a dedicated type, repository, service, self API, collaborator UI components, and focused privacy/E2E tests named in the approved child plan.
 - Replace the three contained Semaforo routes only after the new self API is green.
 

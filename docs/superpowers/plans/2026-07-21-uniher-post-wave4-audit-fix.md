@@ -39,7 +39,7 @@ be reactivated to make a placeholder look functional.
 | F-08 | P1 | AUTO AFTER F-07 | Wave 5 omits DSAR, deterministic event keys and transaction-safe producer contracts. | Add these to the Wave 5 spec and implementation write set. |
 | F-09 | P1 | AUTO | OpenAPI advertises contained legacy badge/challenge/objective APIs as operational. | Add parity regression and document `410` contracts. |
 | F-10 | P2 | AUTO | Legacy quarantine omits objective/challenge tables and active writers/counters remain. | Extend containment without deleting preservation/DSAR data. |
-| F-11 | P2 | MANUAL | Challenge leave/revocation and achievement revocation lifecycle are underspecified. | Decide versioned reversal semantics before migrations 057/058. |
+| F-11 | P2 | MANUAL | Challenge leave/revocation and achievement revocation lifecycle are underspecified. | Decide versioned reversal semantics before migrations 058/059. |
 | F-12 | P2 | MANUAL | Approved catalogs, units, bounds and completion rules are unspecified. | Freeze textual contracts before Waves 6-8 implementation. |
 
 ## Execution order
@@ -48,7 +48,7 @@ be reactivated to make a placeholder look functional.
 2. Correct authenticated navigation (`F-02`) and Semaforo operational reads/error state (`F-04`, `F-06`).
 3. Repair docs/OpenAPI/quarantine drift (`F-05`, `F-09`, `F-10`).
 4. Publish the Wave 5 privacy and lifecycle decision packet (`F-07`, `F-11`, `F-12`).
-5. After explicit approval, implement Wave 5 serially: migration 055, strict participation domain, DSAR and tests.
+5. After explicit approval, implement Wave 5 serially: migration 056, strict participation domain, DSAR and tests.
 6. Implement Waves 6, 7 and 8 serially, each with focused tests, full privacy gates and desktop/mobile screenshots.
 7. Re-audit all findings, run the full unit/build/integrated matrix twice, update receipts and push the existing draft PR.
 
@@ -60,5 +60,5 @@ be reactivated to make a placeholder look functional.
 - No company, RH or leadership access to personal objective/Semaforo progress.
 - No Liga navigation or API reactivation before the Wave 10 policy gate.
 - No public landing, metadata or email changes in this correction mission.
-- Migrations 055-058 execute serially and only after the preceding gate passes.
-
+- Migration 055 extends legacy quarantine. Migrations 056-059 execute serially
+  and only after the preceding gate passes.

@@ -701,62 +701,70 @@
     "/admin/badges": {
       "get": {
         "tags": ["Admin - Badges"],
-        "summary": "Listar badges",
-        "description": "Lista todas as badges disponíveis",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": {
-            "description": "Lista de badges",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "badges": {
-                      "type": "array",
-                      "items": { "$ref": "#/components/schemas/Badge" }
-                    }
-                  }
-                }
-              }
-            }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
           }
         }
       },
       "post": {
         "tags": ["Admin - Badges"],
-        "summary": "Criar badge",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/Badge" }
-            }
-          }
-        },
         "responses": {
-          "201": { "description": "Badge criada" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
     "/admin/badges/{id}": {
-      "put": {
-        "tags": ["Admin - Badges"],
-        "summary": "Atualizar badge",
+      "patch": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Badge atualizada" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       },
       "delete": {
         "tags": ["Admin - Badges"],
-        "summary": "Remover badge",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Badge removida" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
@@ -849,48 +857,87 @@
     "/collaborator/challenges": {
       "get": {
         "tags": ["Colaboradora - Desafios"],
-        "summary": "Listar desafios da colaboradora",
-        "description": "Retorna desafios disponíveis e em andamento",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": {
-            "description": "Lista de desafios",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "challenges": {
-                      "type": "array",
-                      "items": { "$ref": "#/components/schemas/Challenge" }
-                    }
-                  }
-                }
-              }
-            }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
           }
         }
       }
     },
     "/collaborator/challenges/{id}": {
-      "get": {
-        "tags": ["Colaboradora - Desafios"],
-        "summary": "Detalhes do desafio",
+      "patch": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Dados do desafio" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
     "/collaborator/badges": {
       "get": {
         "tags": ["Colaboradora - Conquistas"],
-        "summary": "Listar badges da colaboradora",
-        "description": "Retorna badges conquistadas pela colaboradora",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Lista de badges conquistadas" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
@@ -908,10 +955,18 @@
     "/collaborator/leagues": {
       "get": {
         "tags": ["Colaboradora - Liga"],
-        "summary": "Informações da liga semanal",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Dados da liga" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
@@ -1076,25 +1131,17 @@
     "/objectives": {
       "get": {
         "tags": ["Objetivos e Recompensas"],
-        "summary": "Listar objetivos",
-        "description": "Retorna objetivos e progresso do usuário",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": {
-            "description": "Lista de objetivos",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "objectives": {
-                      "type": "array",
-                      "items": { "$ref": "#/components/schemas/Objective" }
-                    }
-                  }
-                }
-              }
-            }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
           }
         }
       }
@@ -1102,13 +1149,19 @@
     "/objectives/{id}/claim": {
       "post": {
         "tags": ["Objetivos e Recompensas"],
-        "summary": "Resgatar recompensa",
-        "description": "Resgata a recompensa de um objetivo concluído",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Recompensa resgatada" },
-          "400": { "description": "Objetivo ainda não concluído" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
@@ -1156,10 +1209,18 @@
     "/gamification/league": {
       "get": {
         "tags": ["Gamificação"],
-        "summary": "Informações da liga",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Dados da liga semanal" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
@@ -1828,134 +1889,246 @@
     "/rh/challenges": {
       "get": {
         "tags": ["RH - Desafios"],
-        "summary": "Listar desafios (RH)",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Lista de desafios" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       },
       "post": {
         "tags": ["RH - Desafios"],
-        "summary": "Criar desafio",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "201": { "description": "Desafio criado" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
     "/rh/challenges/{id}": {
-      "put": {
-        "tags": ["RH - Desafios"],
-        "summary": "Atualizar desafio",
+      "patch": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Desafio atualizado" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       },
       "delete": {
         "tags": ["RH - Desafios"],
-        "summary": "Remover desafio",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Desafio removido" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
     "/rh/leagues": {
       "get": {
         "tags": ["RH - Ligas"],
-        "summary": "Listar ligas",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Lista de ligas" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       },
       "post": {
         "tags": ["RH - Ligas"],
-        "summary": "Criar liga",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "201": { "description": "Liga criada" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
     "/rh/leagues/{id}": {
-      "get": {
-        "tags": ["RH - Ligas"],
-        "summary": "Detalhes da liga",
+      "patch": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Dados da liga" }
-        }
-      },
-      "put": {
-        "tags": ["RH - Ligas"],
-        "summary": "Atualizar liga",
-        "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": {
-          "200": { "description": "Liga atualizada" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       },
       "delete": {
         "tags": ["RH - Ligas"],
-        "summary": "Remover liga",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Liga removida" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
     "/rh/leagues/{id}/join": {
       "post": {
         "tags": ["RH - Ligas"],
-        "summary": "Entrar na liga",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Entrada confirmada" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
     "/rh/objectives": {
       "get": {
         "tags": ["RH - Objetivos"],
-        "summary": "Listar objetivos (RH)",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Lista de objetivos" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       },
       "post": {
         "tags": ["RH - Objetivos"],
-        "summary": "Criar objetivo",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "201": { "description": "Objetivo criado" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
     "/rh/objectives/{id}": {
-      "put": {
-        "tags": ["RH - Objetivos"],
-        "summary": "Atualizar objetivo",
+      "patch": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Objetivo atualizado" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       },
       "delete": {
         "tags": ["RH - Objetivos"],
-        "summary": "Remover objetivo",
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
         "security": [{ "cookieAuth": [] }],
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
-          "200": { "description": "Objetivo removido" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },

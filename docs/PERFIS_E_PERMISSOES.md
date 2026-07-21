@@ -39,9 +39,7 @@ Escopo:
 - gestão de departamentos
 - colaboradoras
 - campanhas
-- ligas
-- desafios
-- lições e gamificação da empresa
+- lições da empresa
 - gestão editorial em `/comunidade/gerenciar`
 - switch do feed da própria empresa em `/company-profile`
 
@@ -78,6 +76,10 @@ Escopo:
 - trilha
 - agenda
 - semáforo
+
+Objetivos pessoais, desafios v2 e conquistas privadas permanecem em preparação.
+Liga não aparece na navegação de nenhum perfil. RH e liderança não recebem
+acesso a Semáforo pessoal ou agregado durante a revisão de privacidade.
 
 Não deve:
 
