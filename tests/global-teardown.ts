@@ -1,14 +1,68 @@
 /**
  * Playwright global teardown — clean test data after all tests
  */
+import type Database from 'better-sqlite3';
+
 import playwrightDbSafety from './playwright-db-safety.cjs';
 
-export default async function globalTeardown() {
-  const dbPath = playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env);
-  const { default: Database } = await import('better-sqlite3');
+export function cleanupCommunityData(
+  db: Database.Database,
+  companyIds: readonly string[],
+  userIds: readonly string[],
+) {
+  const previousForeignKeys = Number(db.pragma('foreign_keys', { simple: true }));
+  db.pragma('foreign_keys = ON');
 
   try {
-    const db = new Database(dbPath);
+    db.transaction(() => {
+      if (companyIds.length > 0) {
+        const placeholders = companyIds.map(() => '?').join(',');
+        db.prepare(`DELETE FROM community_post_supports WHERE post_id IN (SELECT id FROM community_posts WHERE company_id IN (${placeholders}))`).run(...companyIds);
+        db.prepare(`DELETE FROM community_post_saves WHERE post_id IN (SELECT id FROM community_posts WHERE company_id IN (${placeholders}))`).run(...companyIds);
+        db.prepare(`DELETE FROM community_posts WHERE company_id IN (${placeholders})`).run(...companyIds);
+        db.prepare(`DELETE FROM company_settings WHERE company_id IN (${placeholders})`).run(...companyIds);
+      }
+
+      if (userIds.length > 0) {
+        const placeholders = userIds.map(() => '?').join(',');
+        db.prepare(`DELETE FROM community_post_supports WHERE user_id IN (${placeholders})`).run(...userIds);
+        db.prepare(`DELETE FROM community_post_saves WHERE user_id IN (${placeholders})`).run(...userIds);
+        db.prepare(`DELETE FROM community_post_supports WHERE post_id IN (SELECT id FROM community_posts WHERE created_by IN (${placeholders}) OR updated_by IN (${placeholders}))`).run(...userIds, ...userIds);
+        db.prepare(`DELETE FROM community_post_saves WHERE post_id IN (SELECT id FROM community_posts WHERE created_by IN (${placeholders}) OR updated_by IN (${placeholders}))`).run(...userIds, ...userIds);
+        db.prepare(`DELETE FROM community_posts WHERE created_by IN (${placeholders}) OR updated_by IN (${placeholders})`).run(...userIds, ...userIds);
+      }
+    })();
+  } finally {
+    db.pragma(`foreign_keys = ${previousForeignKeys ? 'ON' : 'OFF'}`);
+  }
+}
+
+export function closeTeardownDatabase(
+  db: Database.Database,
+  previousForeignKeys: number,
+) {
+  try {
+    db.pragma(`foreign_keys = ${previousForeignKeys ? 'ON' : 'OFF'}`);
+    db.pragma('wal_checkpoint(TRUNCATE)');
+  } finally {
+    db.close();
+  }
+}
+
+export default async function globalTeardown() {
+  if (process.env.BASE_URL?.trim()) {
+    console.log('[Teardown] Skipped local database cleanup for external BASE_URL');
+    return;
+  }
+
+  const dbPath = playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env);
+  const { default: DatabaseConstructor } = await import('better-sqlite3');
+  let db: Database.Database | undefined;
+  let previousForeignKeys = 0;
+
+  try {
+    db = new DatabaseConstructor(dbPath);
+    previousForeignKeys = Number(db.pragma('foreign_keys', { simple: true }));
     db.pragma('foreign_keys = OFF');
 
     // Keep only real users (not test-created)
@@ -37,21 +91,10 @@ export default async function globalTeardown() {
     ).all() as { id: string }[];
     const testCompanyIds = testCompanies.map(company => company.id);
 
-    if (testCompanyIds.length > 0) {
-      const ph = testCompanyIds.map(() => '?').join(',');
-      try { db.prepare(`DELETE FROM community_post_supports WHERE post_id IN (SELECT id FROM community_posts WHERE company_id IN (${ph}))`).run(...testCompanyIds); } catch {}
-      try { db.prepare(`DELETE FROM community_post_saves WHERE post_id IN (SELECT id FROM community_posts WHERE company_id IN (${ph}))`).run(...testCompanyIds); } catch {}
-      try { db.prepare(`DELETE FROM community_posts WHERE company_id IN (${ph})`).run(...testCompanyIds); } catch {}
-      try { db.prepare(`DELETE FROM company_settings WHERE company_id IN (${ph})`).run(...testCompanyIds); } catch {}
-    }
+    cleanupCommunityData(db, testCompanyIds, testUserIds);
 
     if (testUserIds.length > 0) {
       const ph = testUserIds.map(() => '?').join(',');
-      try { db.prepare(`DELETE FROM community_post_supports WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
-      try { db.prepare(`DELETE FROM community_post_saves WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
-      try { db.prepare(`DELETE FROM community_post_supports WHERE post_id IN (SELECT id FROM community_posts WHERE created_by IN (${ph}) OR updated_by IN (${ph}))`).run(...testUserIds, ...testUserIds); } catch {}
-      try { db.prepare(`DELETE FROM community_post_saves WHERE post_id IN (SELECT id FROM community_posts WHERE created_by IN (${ph}) OR updated_by IN (${ph}))`).run(...testUserIds, ...testUserIds); } catch {}
-      try { db.prepare(`DELETE FROM community_posts WHERE created_by IN (${ph}) OR updated_by IN (${ph})`).run(...testUserIds, ...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM refresh_tokens WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM notifications WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM health_events WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
@@ -76,12 +119,13 @@ export default async function globalTeardown() {
     // Clean audit logs from tests
     db.prepare('DELETE FROM audit_logs').run();
 
-    db.pragma('foreign_keys = ON');
-    db.pragma('wal_checkpoint(TRUNCATE)');
-    db.close();
-
     console.log(`[Teardown] Cleaned ${testUsers.length} test users, ${testCompanies.length} test companies`);
   } catch (err) {
     console.warn('[Teardown] Failed:', err);
+    throw err;
+  } finally {
+    if (db) {
+      closeTeardownDatabase(db, previousForeignKeys);
+    }
   }
 }

@@ -1,6 +1,10 @@
 'use client';
-import useSWR from 'swr';
+import { useEffect } from 'react';
+import useSWR, { useSWRConfig, type SWRConfiguration } from 'swr';
 import type { CommunityFeedResponse } from '@/types/community';
+
+export const COLLABORATOR_FEED_KEY = '/api/collaborator/feed?scope=company&limit=20';
+export const COLLABORATOR_SAVED_KEY = '/api/collaborator/saved?limit=20';
 
 class CollaboratorApiError extends Error {
   constructor(
@@ -26,6 +30,30 @@ type SaveState = { savedByMe: boolean };
 
 async function mutateCommunity<T>(path: string, method: 'POST' | 'DELETE'): Promise<T> {
   return fetcher<T>(path, { method });
+}
+
+function isAuthorizationError(error: unknown): error is { status: 401 | 403 } {
+  if (typeof error !== 'object' || error === null || !('status' in error)) return false;
+  return error.status === 401 || error.status === 403;
+}
+
+function useCommunityResponse(
+  key: string,
+  configuration: SWRConfiguration<CommunityFeedResponse, CollaboratorApiError>,
+) {
+  const response = useSWR<CommunityFeedResponse, CollaboratorApiError>(key, getFetcher, configuration);
+  const authorizationError = isAuthorizationError(response.error);
+
+  useEffect(() => {
+    if (authorizationError) {
+      void response.mutate(undefined, { revalidate: false });
+    }
+  }, [authorizationError, response.mutate]);
+
+  return {
+    ...response,
+    data: authorizationError ? undefined : response.data,
+  };
 }
 
 export function useCollaboratorHome() {
@@ -67,9 +95,9 @@ export function useNotifications() {
 }
 
 export function useCollaboratorFeed() {
-  const { data, error, isLoading, mutate } = useSWR<CommunityFeedResponse>(
-    '/api/collaborator/feed?scope=company&limit=20',
-    getFetcher,
+  const { mutate: mutateCache } = useSWRConfig();
+  const { data, error, isLoading, mutate } = useCommunityResponse(
+    COLLABORATOR_FEED_KEY,
     {
     revalidateOnFocus: false,
     refreshInterval: 60_000,
@@ -78,13 +106,18 @@ export function useCollaboratorFeed() {
   );
 
   const changeSupport = async (id: string, method: 'POST' | 'DELETE') => {
-    const state = await mutateCommunity<SupportState>(`/api/collaborator/feed/${id}/support`, method);
-    await mutate();
+    const encodedId = encodeURIComponent(id);
+    const state = await mutateCommunity<SupportState>(`/api/collaborator/feed/${encodedId}/support`, method);
+    await mutateCache(COLLABORATOR_FEED_KEY);
     return state;
   };
   const changeSave = async (id: string, method: 'POST' | 'DELETE') => {
-    const state = await mutateCommunity<SaveState>(`/api/collaborator/feed/${id}/save`, method);
-    await mutate();
+    const encodedId = encodeURIComponent(id);
+    const state = await mutateCommunity<SaveState>(`/api/collaborator/feed/${encodedId}/save`, method);
+    await Promise.all([
+      mutateCache(COLLABORATOR_FEED_KEY),
+      mutateCache(COLLABORATOR_SAVED_KEY),
+    ]);
     return state;
   };
 
@@ -104,9 +137,8 @@ export function useCollaboratorFeed() {
 }
 
 export function useCollaboratorSaved() {
-  const { data, error, isLoading, mutate } = useSWR<CommunityFeedResponse>(
-    '/api/collaborator/saved?limit=20',
-    getFetcher,
+  const { data, error, isLoading, mutate } = useCommunityResponse(
+    COLLABORATOR_SAVED_KEY,
     { revalidateOnFocus: false },
   );
 

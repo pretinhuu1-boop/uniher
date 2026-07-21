@@ -1,0 +1,132 @@
+// @vitest-environment jsdom
+
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { CommunityFeedResponse } from '@/types/community';
+
+const mocks = vi.hoisted(() => ({
+  feedMutate: vi.fn(),
+  savedMutate: vi.fn(),
+  globalMutate: vi.fn(),
+  feedState: { data: undefined as unknown, error: undefined as unknown, isLoading: false },
+  savedState: { data: undefined as unknown, error: undefined as unknown, isLoading: false },
+}));
+
+vi.mock('swr', () => ({
+  default: (key: string) => key.includes('/saved')
+    ? { ...mocks.savedState, mutate: mocks.savedMutate }
+    : { ...mocks.feedState, mutate: mocks.feedMutate },
+  useSWRConfig: () => ({ mutate: mocks.globalMutate }),
+}));
+
+import {
+  COLLABORATOR_FEED_KEY,
+  COLLABORATOR_SAVED_KEY,
+  useCollaboratorFeed,
+  useCollaboratorSaved,
+} from '@/hooks/useCollaborator';
+
+const feedData: CommunityFeedResponse = {
+  items: [{
+    id: 'post-a',
+    title: 'Post A',
+    summary: 'Resumo seguro',
+    bodyText: 'Conteudo seguro da comunidade',
+    topic: 'geral',
+    readTimeMinutes: 4,
+    imagePath: null,
+    publishedAt: '2026-07-20T12:00:00.000Z',
+    supportCount: 1,
+    supportedByMe: true,
+    savedByMe: true,
+  }],
+  nextCursor: 'cursor-a',
+  scope: 'company',
+  settings: { companyFeedEnabled: true },
+};
+
+function authError(status: 401 | 403): Error & { status: number } {
+  return Object.assign(new Error('auth boundary'), { status });
+}
+
+describe('collaborator community SWR lifecycle', () => {
+  beforeEach(() => {
+    mocks.feedState.data = feedData;
+    mocks.feedState.error = undefined;
+    mocks.savedState.data = feedData;
+    mocks.savedState.error = undefined;
+    mocks.feedMutate.mockReset().mockResolvedValue(undefined);
+    mocks.savedMutate.mockReset().mockResolvedValue(undefined);
+    mocks.globalMutate.mockReset().mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ['feed', 401, useCollaboratorFeed, mocks.feedState, mocks.feedMutate],
+    ['saved', 403, useCollaboratorSaved, mocks.savedState, mocks.savedMutate],
+  ] as const)('masks and purges stale %s data after a %s error', async (_name, status, hook, state, mutate) => {
+    const error = authError(status);
+    state.error = error;
+
+    const { result } = renderHook(() => hook());
+
+    expect(result.current.items).toEqual([]);
+    expect(result.current.nextCursor).toBeNull();
+    expect(result.current.settings).toEqual({ companyFeedEnabled: false });
+    expect(result.current.error).toBe(error);
+    await waitFor(() => expect(mutate).toHaveBeenCalledWith(undefined, { revalidate: false }));
+    expect(mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('encodes mutation IDs and invalidates both feed and saved after save changes', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValue(new Response(JSON.stringify({ savedByMe: true }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const { result } = renderHook(() => useCollaboratorFeed());
+
+    await act(async () => {
+      await result.current.save('post/id ?');
+      await result.current.unsave('post/id ?');
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/collaborator/feed/post%2Fid%20%3F/save',
+      { method: 'POST' },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/collaborator/feed/post%2Fid%20%3F/save',
+      { method: 'DELETE' },
+    );
+    expect(mocks.globalMutate.mock.calls).toEqual([
+      [COLLABORATOR_FEED_KEY],
+      [COLLABORATOR_SAVED_KEY],
+      [COLLABORATOR_FEED_KEY],
+      [COLLABORATOR_SAVED_KEY],
+    ]);
+  });
+
+  it('encodes support IDs and revalidates the feed key', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ supportCount: 1, supportedByMe: true }),
+      { status: 200 },
+    )));
+    const { result } = renderHook(() => useCollaboratorFeed());
+
+    await act(async () => {
+      await result.current.support('post/id ?');
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/collaborator/feed/post%2Fid%20%3F/support',
+      { method: 'POST' },
+    );
+    expect(mocks.globalMutate).toHaveBeenCalledWith(COLLABORATOR_FEED_KEY);
+  });
+});

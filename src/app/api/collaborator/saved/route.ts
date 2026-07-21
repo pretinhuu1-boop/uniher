@@ -5,7 +5,7 @@ import {
   communityActor,
   communityApiErrorResponse,
   communityQuery,
-  requireCollaboratorCapability,
+  runCollaboratorCommunityRead,
 } from '@/lib/community/api';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
@@ -16,13 +16,12 @@ export const GET = withAuth(async (req: NextRequest, context: AuthContext) => {
   try {
     await initDb();
     const db = getReadDb();
-    const capabilityError = requireCollaboratorCapability(context, db);
-    if (capabilityError) return capabilityError;
 
-    const repository = createCommunityRepository(db);
-    return NextResponse.json(
-      getSavedCommunityPosts(communityActor(context), repository, communityQuery(req)),
+    const query = communityQuery(req);
+    const response = runCollaboratorCommunityRead(context, db, () =>
+      getSavedCommunityPosts(communityActor(context), createCommunityRepository(db), query),
     );
+    return NextResponse.json(response);
   } catch (error) {
     return communityApiErrorResponse(error);
   }

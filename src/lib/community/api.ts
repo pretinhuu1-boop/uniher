@@ -22,6 +22,20 @@ export function requireCollaboratorCapability(
   );
 }
 
+export function runCollaboratorCommunityRead<T>(
+  context: AuthContext,
+  database: Database.Database,
+  read: () => T,
+): T {
+  const snapshot = database.transaction(() => {
+    if (!hasCollaboratorSelfCapability(context.auth.userId, database)) {
+      throw new AppError('Permissao insuficiente', 403, 'COLLABORATOR_CAPABILITY_REQUIRED');
+    }
+    return read();
+  });
+  return snapshot.deferred();
+}
+
 export function communityQuery(req: NextRequest, omitted: readonly string[] = []): Record<string, string> {
   const omittedKeys = new Set(omitted);
   const query: Record<string, string> = {};

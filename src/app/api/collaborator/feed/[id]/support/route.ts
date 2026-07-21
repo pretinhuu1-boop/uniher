@@ -23,7 +23,7 @@ async function mutateSupport(req: NextRequest, context: AuthContext, action: Sup
     await initDb();
     const capabilityError = requireCollaboratorCapability(context, getReadDb());
     if (capabilityError) return capabilityError;
-    await checkWriteRateLimit(req);
+    await checkWriteRateLimit(req, context.auth.userId);
     const { id } = await context.params;
 
     const state = await enqueueCollaboratorSelfWrite(

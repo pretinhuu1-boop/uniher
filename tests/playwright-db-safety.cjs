@@ -68,10 +68,42 @@ function assertSafePlaywrightDatabaseEnvironment(environment = process.env) {
   return actualPath;
 }
 
+function assertCommunityFeedFixtureEnvironment(environment = process.env) {
+  const databasePath = assertSafePlaywrightDatabaseEnvironment(environment);
+  const baseURL = environment.BASE_URL?.trim();
+
+  if (!baseURL) return databasePath;
+
+  if (environment.COMMUNITY_FEED_EXTERNAL_SAME_DATABASE !== '1') {
+    throw new Error(
+      'Refusing community fixture mutation with an external BASE_URL without explicit same-database opt-in',
+    );
+  }
+
+  let parsedBaseURL;
+  try {
+    parsedBaseURL = new URL(baseURL);
+  } catch {
+    throw new Error('Community fixture BASE_URL must be a valid loopback URL');
+  }
+
+  if (!['localhost', '127.0.0.1', '::1'].includes(parsedBaseURL.hostname)) {
+    throw new Error('Community fixture external BASE_URL must use a loopback host');
+  }
+
+  const attestedPath = environment.COMMUNITY_FEED_EXTERNAL_DATABASE_PATH?.trim();
+  if (!attestedPath || path.resolve(attestedPath) !== databasePath) {
+    throw new Error('Community fixture external server must attest to the same Playwright database');
+  }
+
+  return databasePath;
+}
+
 module.exports = {
   DEFAULT_PLAYWRIGHT_DATABASE_PATH,
   PLAYWRIGHT_DATABASE_FILENAME,
   PLAYWRIGHT_DATA_ROOT,
+  assertCommunityFeedFixtureEnvironment,
   assertSafePlaywrightDatabaseEnvironment,
   createPlaywrightTestEnvironment,
   resolvePlaywrightDatabasePath,

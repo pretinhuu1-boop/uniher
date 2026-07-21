@@ -36,7 +36,8 @@ type Tokens = Record<keyof typeof emails, string>;
 let tokens: Tokens;
 
 function openPlaywrightDatabase(): Database.Database {
-  return new Database(playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env));
+  const databasePath = playwrightDbSafety.assertCommunityFeedFixtureEnvironment(process.env);
+  return new Database(databasePath);
 }
 
 function authHeaders(token: string) {
@@ -114,6 +115,7 @@ function seedCommunityFixtures() {
 
 function cleanupCommunityFixtures() {
   const db = openPlaywrightDatabase();
+  const previousForeignKeys = Number(db.pragma('foreign_keys', { simple: true }));
   try {
     db.pragma('foreign_keys = ON');
     db.transaction(() => {
@@ -130,6 +132,7 @@ function cleanupCommunityFixtures() {
       db.prepare(`DELETE FROM companies WHERE id IN (${placeholders(companyIds)})`).run(...companyIds);
     })();
   } finally {
+    db.pragma(`foreign_keys = ${previousForeignKeys ? 'ON' : 'OFF'}`);
     db.close();
   }
 }
@@ -362,19 +365,23 @@ test.describe('collaborator company community feed', () => {
   });
 
   test('rate-limits collaborator community writes with a stable private 429', async ({ request }) => {
-    const headers = {
-      ...authHeaders(tokens.collaboratorA),
-      'x-forwarded-for': '198.51.100.77',
-    };
     for (let index = 0; index < 30; index += 1) {
       const relation = index % 2 === 0 ? 'support' : 'save';
-      const response = await request.post(`/api/collaborator/feed/${ids.postA}/${relation}`, {
-        headers,
+      const response = await request.post(`/api/collaborator/feed/${ids.postB}/${relation}`, {
+        headers: {
+          ...authHeaders(tokens.collaboratorB),
+          'x-forwarded-for': `198.51.100.${index + 1}`,
+        },
       });
       expect(response.status(), `write ${index + 1}: ${await response.text()}`).toBe(200);
     }
 
-    const limited = await request.delete(`/api/collaborator/feed/${ids.postA}/save`, { headers });
+    const limited = await request.delete(`/api/collaborator/feed/${ids.postB}/save`, {
+      headers: {
+        ...authHeaders(tokens.collaboratorB),
+        'x-forwarded-for': '203.0.113.250',
+      },
+    });
     expect(limited.status(), await limited.text()).toBe(429);
     expectPrivateResponse(limited);
     expect(await limited.json()).toMatchObject({ status: 429, code: 'RATE_LIMIT' });
