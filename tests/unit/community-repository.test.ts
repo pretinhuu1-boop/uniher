@@ -36,7 +36,11 @@ function createDatabase(): Database.Database {
   db.pragma('foreign_keys = ON');
   databases.push(db);
   db.exec(`
-    CREATE TABLE companies (id TEXT PRIMARY KEY);
+    CREATE TABLE companies (
+      id TEXT PRIMARY KEY,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      deleted_at TEXT
+    );
     CREATE TABLE users (
       id TEXT PRIMARY KEY,
       company_id TEXT REFERENCES companies(id),
@@ -73,6 +77,10 @@ function createDatabase(): Database.Database {
       ('member-b', 'company-b', 'Bruna B', NULL, 'member-b@example.test', 'colaboradora'),
       ('author-a', 'company-a', 'Autora A', NULL, 'author-a@example.test', 'rh'),
       ('author-b', 'company-b', 'Autora B', NULL, 'author-b@example.test', 'rh');
+    INSERT INTO users (id, company_id, name, nickname, email, role, blocked, approved, deleted_at) VALUES
+      ('blocked-a', 'company-a', 'Bloqueada A', NULL, 'blocked-a@example.test', 'colaboradora', 1, 1, NULL),
+      ('deleted-a', 'company-a', 'Excluida A', NULL, 'deleted-a@example.test', 'colaboradora', 0, 1, '2026-07-20T00:00:00.000Z'),
+      ('unapproved-a', 'company-a', 'Pendente A', NULL, 'unapproved-a@example.test', 'colaboradora', 0, 0, NULL);
   `);
   applyMigration(db, '054_company_community_feed.sql', fs.readFileSync(migrationPath, 'utf8'));
   db.exec(`
@@ -265,9 +273,67 @@ describe('community support and save repository behavior', () => {
       expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_saves WHERE post_id = ?`).get(postId)).toEqual({ count: 1 });
     }
   });
+
+  it('requires an active same-company user inside every relation query', () => {
+    const db = createDatabase();
+    insertPost(db, { id: 'post-a' });
+    const repository = repo(db);
+    const invalidUserIds = ['member-b', 'blocked-a', 'deleted-a', 'unapproved-a'];
+
+    for (const userId of invalidUserIds) {
+      const input = { postId: 'post-a', userId, companyId: 'company-a', now: NOW };
+      repository.addSupport(input);
+      repository.addSave(input);
+    }
+
+    expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_supports`).get()).toEqual({ count: 0 });
+    expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_saves`).get()).toEqual({ count: 0 });
+    expect(repository.getSupportState({
+      postId: 'post-a', userId: 'actor-a', companyId: 'company-a', now: NOW,
+    })).toEqual({ supportCount: 0, supportedByMe: false });
+
+    for (const userId of invalidUserIds) {
+      const input = { postId: 'post-a', userId, companyId: 'company-a', now: NOW };
+      db.prepare(`INSERT INTO community_post_supports (post_id, user_id) VALUES ('post-a', ?)`).run(userId);
+      db.prepare(`INSERT INTO community_post_saves (post_id, user_id) VALUES ('post-a', ?)`).run(userId);
+
+      expect(repository.getSupportState(input)).toEqual({ supportCount: 0, supportedByMe: false });
+      expect(repository.isSaved(input)).toBe(false);
+      repository.removeSupport(input);
+      repository.removeSave(input);
+      expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_supports WHERE user_id = ?`).get(userId)).toEqual({ count: 1 });
+      expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_saves WHERE user_id = ?`).get(userId)).toEqual({ count: 1 });
+
+      db.prepare(`DELETE FROM community_post_supports WHERE user_id = ?`).run(userId);
+      db.prepare(`DELETE FROM community_post_saves WHERE user_id = ?`).run(userId);
+    }
+  });
 });
 
 describe('community supporter repository behavior', () => {
+  it('returns no names when a direct supporter query targets a foreign or inactive post', () => {
+    const db = createDatabase();
+    insertPost(db, { id: 'foreign', companyId: 'company-b' });
+    insertPost(db, { id: 'inactive', status: 'draft', publishedAt: null });
+    db.exec(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value)
+      VALUES ('actor-a', 'privacy_community_supporter_name', '1');
+      INSERT INTO community_post_supports (post_id, user_id) VALUES
+        ('foreign', 'actor-a'),
+        ('inactive', 'actor-a');
+    `);
+    const repository = repo(db);
+
+    for (const postId of ['foreign', 'inactive']) {
+      expect(repository.listSupporters({
+        postId,
+        companyId: 'company-a',
+        limit: 20,
+        now: NOW,
+      })).toEqual({ names: [], nextCursorTuple: null });
+    }
+  });
+
   it('decodes and paginates supports inserted with migration timestamp defaults', () => {
     const db = createDatabase();
     insertPost(db, { id: 'post-a' });

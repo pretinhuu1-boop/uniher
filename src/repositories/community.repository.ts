@@ -71,6 +71,7 @@ export interface CommunityRepository {
     companyId: string;
     cursor?: CommunitySupporterCursor;
     limit: number;
+    now?: string;
   }): CommunitySupporterPage;
 }
 
@@ -156,6 +157,15 @@ function mapFeedPage(rows: FeedRow[], limit: number): CommunityFeedPage {
 export function createCommunityRepository(database: Database.Database): CommunityRepository {
   const userColumns = tableColumns(database, 'users');
   const userActive = activeUserConditions(userColumns, 'u');
+  const relationUserActive = activeUserConditions(userColumns, 'relation_user');
+  const activeRelationMembershipSql = `
+    relation_user.id = @userId
+    AND relation_user.company_id = @companyId
+    ${relationUserActive.map((condition) => `AND ${condition}`).join('\n')}
+    AND relation_company.id = @companyId
+    AND COALESCE(relation_company.is_active, 0) = 1
+    AND relation_company.deleted_at IS NULL
+  `;
 
   return {
     isActiveMember(userId, companyId) {
@@ -163,8 +173,11 @@ export function createCommunityRepository(database: Database.Database): Communit
       const row = database.prepare(`
         SELECT 1 AS allowed
         FROM users u
+        JOIN companies c ON c.id = u.company_id
         WHERE u.id = @userId
           AND u.company_id = @companyId
+          AND COALESCE(c.is_active, 0) = 1
+          AND c.deleted_at IS NULL
           ${userActive.map((condition) => `AND ${condition}`).join('\n')}
         LIMIT 1
       `).get({ userId, companyId }) as { allowed: number } | undefined;
@@ -233,7 +246,11 @@ export function createCommunityRepository(database: Database.Database): Communit
         INSERT OR IGNORE INTO community_post_supports (post_id, user_id, created_at)
         SELECT p.id, @userId, @now
         FROM community_posts p
-        WHERE p.id = @postId AND ${postVisibilitySql('p')}
+        JOIN users relation_user ON relation_user.id = @userId
+        JOIN companies relation_company ON relation_company.id = relation_user.company_id
+        WHERE p.id = @postId
+          AND ${postVisibilitySql('p')}
+          AND ${activeRelationMembershipSql}
       `).run(input);
     },
 
@@ -243,9 +260,13 @@ export function createCommunityRepository(database: Database.Database): Communit
         WHERE post_id = @postId
           AND user_id = @userId
           AND EXISTS (
-            SELECT 1 FROM community_posts p
+            SELECT 1
+            FROM community_posts p
+            JOIN users relation_user ON relation_user.id = @userId
+            JOIN companies relation_company ON relation_company.id = relation_user.company_id
             WHERE p.id = community_post_supports.post_id
               AND ${postVisibilitySql('p')}
+              AND ${activeRelationMembershipSql}
           )
       `).run(input);
     },
@@ -256,8 +277,12 @@ export function createCommunityRepository(database: Database.Database): Communit
           COUNT(ps.user_id) AS support_count,
           MAX(CASE WHEN ps.user_id = @userId THEN 1 ELSE 0 END) AS supported_by_me
         FROM community_posts p
+        JOIN users relation_user ON relation_user.id = @userId
+        JOIN companies relation_company ON relation_company.id = relation_user.company_id
         LEFT JOIN community_post_supports ps ON ps.post_id = p.id
-        WHERE p.id = @postId AND ${postVisibilitySql('p')}
+        WHERE p.id = @postId
+          AND ${postVisibilitySql('p')}
+          AND ${activeRelationMembershipSql}
       `).get(input) as { support_count: number; supported_by_me: number | null };
       return { supportCount: row?.support_count ?? 0, supportedByMe: row?.supported_by_me === 1 };
     },
@@ -267,7 +292,11 @@ export function createCommunityRepository(database: Database.Database): Communit
         INSERT OR IGNORE INTO community_post_saves (post_id, user_id, created_at)
         SELECT p.id, @userId, @now
         FROM community_posts p
-        WHERE p.id = @postId AND ${postVisibilitySql('p')}
+        JOIN users relation_user ON relation_user.id = @userId
+        JOIN companies relation_company ON relation_company.id = relation_user.company_id
+        WHERE p.id = @postId
+          AND ${postVisibilitySql('p')}
+          AND ${activeRelationMembershipSql}
       `).run(input);
     },
 
@@ -277,9 +306,13 @@ export function createCommunityRepository(database: Database.Database): Communit
         WHERE post_id = @postId
           AND user_id = @userId
           AND EXISTS (
-            SELECT 1 FROM community_posts p
+            SELECT 1
+            FROM community_posts p
+            JOIN users relation_user ON relation_user.id = @userId
+            JOIN companies relation_company ON relation_company.id = relation_user.company_id
             WHERE p.id = community_post_saves.post_id
               AND ${postVisibilitySql('p')}
+              AND ${activeRelationMembershipSql}
           )
       `).run(input);
     },
@@ -289,15 +322,19 @@ export function createCommunityRepository(database: Database.Database): Communit
         SELECT 1
         FROM community_post_saves own_save
         JOIN community_posts p ON p.id = own_save.post_id
+        JOIN users relation_user ON relation_user.id = @userId
+        JOIN companies relation_company ON relation_company.id = relation_user.company_id
         WHERE own_save.post_id = @postId
           AND own_save.user_id = @userId
           AND ${postVisibilitySql('p')}
+          AND ${activeRelationMembershipSql}
         LIMIT 1
       `).get(input));
     },
 
     listSupporters(input) {
       const supporterActive = activeUserConditions(userColumns, 'u');
+      const now = input.now ?? new Date().toISOString();
       const cursorSql = input.cursor ? `AND (
         ps.created_at < @cursorCreatedAt
         OR (ps.created_at = @cursorCreatedAt AND ps.rowid < CAST(@cursorSupportRowId AS INTEGER))
@@ -305,13 +342,18 @@ export function createCommunityRepository(database: Database.Database): Communit
       const rows = database.prepare(`
         SELECT ps.rowid AS support_row_id, ps.created_at, u.name, u.nickname
         FROM community_post_supports ps
+        JOIN community_posts p ON p.id = ps.post_id
         JOIN users u ON u.id = ps.user_id
+        JOIN companies c ON c.id = u.company_id
         JOIN user_preferences pref
           ON pref.user_id = u.id
           AND pref.pref_key = 'privacy_community_supporter_name'
           AND pref.pref_value = '1'
         WHERE ps.post_id = @postId
+          AND ${postVisibilitySql('p')}
           AND u.company_id = @companyId
+          AND COALESCE(c.is_active, 0) = 1
+          AND c.deleted_at IS NULL
           ${supporterActive.map((condition) => `AND ${condition}`).join('\n')}
           ${cursorSql}
         ORDER BY ps.created_at DESC, ps.rowid DESC
@@ -319,6 +361,7 @@ export function createCommunityRepository(database: Database.Database): Communit
       `).all({
         postId: input.postId,
         companyId: input.companyId,
+        now,
         fetchLimit: input.limit + 1,
         cursorCreatedAt: input.cursor?.[0] ?? null,
         cursorSupportRowId: input.cursor?.[1] ?? null,

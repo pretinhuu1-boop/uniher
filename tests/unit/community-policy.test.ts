@@ -18,6 +18,7 @@ import {
 } from '@/lib/community/cursor';
 import { createCommunityRepository } from '@/repositories/community.repository';
 import {
+  addCommunityPostSupport,
   CommunityServiceError,
   getCommunityFeed,
   getCommunitySupporters,
@@ -32,7 +33,11 @@ function createDatabase(): Database.Database {
   db.pragma('foreign_keys = ON');
   databases.push(db);
   db.exec(`
-    CREATE TABLE companies (id TEXT PRIMARY KEY);
+    CREATE TABLE companies (
+      id TEXT PRIMARY KEY,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      deleted_at TEXT
+    );
     CREATE TABLE users (
       id TEXT PRIMARY KEY,
       company_id TEXT REFERENCES companies(id),
@@ -204,6 +209,31 @@ describe('community schemas and cursor policy', () => {
     }).publishedAt).toBe('2026-07-21T10:00:00.123Z');
   });
 
+  it('requires publishedAt when create or patch explicitly publishes a post', () => {
+    const base = {
+      title: 'Titulo seguro',
+      summary: 'Resumo suficientemente longo.',
+      bodyText: 'Corpo suficientemente longo para publicacao.',
+      topic: 'cuidado',
+      readTimeMinutes: 5,
+      status: 'published',
+    } as const;
+
+    expect(communityPostCreateSchema.safeParse(base).success).toBe(false);
+    expect(communityPostCreateSchema.safeParse({ ...base, publishedAt: null }).success).toBe(false);
+    expect(communityPostCreateSchema.safeParse({
+      ...base,
+      publishedAt: '2026-07-21T10:00:00.000Z',
+    }).success).toBe(true);
+    expect(communityPostPatchSchema.safeParse({ status: 'published' }).success).toBe(false);
+    expect(communityPostPatchSchema.safeParse({ status: 'published', publishedAt: null }).success).toBe(false);
+    expect(communityPostPatchSchema.safeParse({
+      status: 'published',
+      publishedAt: '2026-07-21T10:00:00.000Z',
+    }).success).toBe(true);
+    expect(communityPostPatchSchema.safeParse({ status: 'draft' }).success).toBe(true);
+  });
+
   it('round-trips canonical cursors and rejects malformed or non-canonical encodings', () => {
     const feedTuple = ['2026-07-20T10:00:00.000Z', '2026-07-20T09:00:00.000Z', 'post-a'] as const;
     const supporterTuple = ['2026-07-20T08:00:00.000Z', '42'] as const;
@@ -255,6 +285,35 @@ describe('community access and privacy policy', () => {
       code: 'MEMBERSHIP_DENIED',
       statusCode: 403,
     }));
+  });
+
+  it.each([
+    ['inactive', { isActive: 0, deletedAt: null }],
+    ['soft-deleted', { isActive: 1, deletedAt: '2026-07-21T08:00:00.000Z' }],
+  ])('denies feed and mutations for an %s company', (_case, company) => {
+    const db = createDatabase();
+    enableFeed(db);
+    insertPost(db);
+    db.prepare(`UPDATE companies SET is_active = ?, deleted_at = ? WHERE id = 'company-a'`)
+      .run(company.isActive, company.deletedAt);
+    const repository = createCommunityRepository(db);
+
+    expect(repository.isActiveMember('actor-a', 'company-a')).toBe(false);
+    for (const action of [
+      () => getCommunityFeed({ userId: 'actor-a', companyId: 'company-a' }, repository, {}, NOW),
+      () => addCommunityPostSupport(
+        { userId: 'actor-a', companyId: 'company-a' },
+        repository,
+        'post-a',
+        NOW,
+      ),
+    ]) {
+      expect(action).toThrowError(expect.objectContaining<Partial<CommunityServiceError>>({
+        code: 'MEMBERSHIP_DENIED',
+        statusCode: 403,
+      }));
+    }
+    expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_supports`).get()).toEqual({ count: 0 });
   });
 
   it('returns the exact disabled response without posts', () => {

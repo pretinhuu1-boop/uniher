@@ -52,7 +52,7 @@ export const communitySupportersQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(20).default(20),
 }).strict();
 
-export const communityPostManagementSchema = z.object({
+const communityPostManagementFieldsSchema = z.object({
   title: z.string().trim().min(3).max(120),
   summary: z.string().trim().min(10).max(240),
   bodyText: z.string().min(20).max(8000),
@@ -64,11 +64,25 @@ export const communityPostManagementSchema = z.object({
   expiresAt: optionalIsoDateSchema,
 }).strict();
 
+const hasPublicationDateWhenPublished = (value: {
+  status?: 'draft' | 'published' | 'archived';
+  publishedAt?: string | null;
+}) => value.status !== 'published' || Boolean(value.publishedAt);
+
+export const communityPostManagementSchema = communityPostManagementFieldsSchema.refine(
+  hasPublicationDateWhenPublished,
+  { path: ['publishedAt'], message: 'publishedAt is required when status is published' },
+);
+
 export const communityPostCreateSchema = communityPostManagementSchema;
 
-export const communityPostPatchSchema = communityPostManagementSchema
+export const communityPostPatchSchema = communityPostManagementFieldsSchema
   .partial()
-  .refine((value) => Object.keys(value).length > 0, 'At least one field is required');
+  .refine((value) => Object.keys(value).length > 0, 'At least one field is required')
+  .refine(hasPublicationDateWhenPublished, {
+    path: ['publishedAt'],
+    message: 'publishedAt is required when status is published',
+  });
 
 export type CommunityFeedQuery = z.infer<typeof communityFeedQuerySchema>;
 export type CommunitySavedQuery = z.infer<typeof communitySavedQuerySchema>;
