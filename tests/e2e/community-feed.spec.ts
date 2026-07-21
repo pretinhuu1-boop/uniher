@@ -14,11 +14,15 @@ const ids = {
   companyA: `community-feed-company-a-${RUN_ID}`,
   companyB: `community-feed-company-b-${RUN_ID}`,
   companyDisabled: `community-feed-company-disabled-${RUN_ID}`,
+  companyInactive: `community-feed-company-inactive-${RUN_ID}`,
   collaboratorA: `community-feed-collaborator-a-${RUN_ID}`,
   collaboratorAHidden: `community-feed-collaborator-hidden-${RUN_ID}`,
   collaboratorB: `community-feed-collaborator-b-${RUN_ID}`,
   collaboratorDisabled: `community-feed-collaborator-disabled-${RUN_ID}`,
   dualRoleA: `community-feed-dual-role-${RUN_ID}`,
+  rhB: `community-feed-rh-b-${RUN_ID}`,
+  rhDisabled: `community-feed-rh-disabled-${RUN_ID}`,
+  companyAdminA: `community-feed-admin-a-${RUN_ID}`,
   postA: `community-feed-post-a-${RUN_ID}`,
   postB: `community-feed-post-b-${RUN_ID}`,
   postDisabled: `community-feed-post-disabled-${RUN_ID}`,
@@ -30,10 +34,27 @@ const emails = {
   collaboratorB: `community-feed-test-b-${RUN_ID}@local.invalid`,
   collaboratorDisabled: `community-feed-test-disabled-${RUN_ID}@local.invalid`,
   dualRoleA: `community-feed-test-dual-${RUN_ID}@local.invalid`,
+  rhB: `community-feed-test-rh-b-${RUN_ID}@local.invalid`,
+  rhDisabled: `community-feed-test-rh-disabled-${RUN_ID}@local.invalid`,
+  companyAdminA: `community-feed-test-admin-a-${RUN_ID}@local.invalid`,
+  master: ADMIN_EMAIL,
 };
 
 type Tokens = Record<keyof typeof emails, string>;
 let tokens: Tokens;
+let editorialDraftId = '';
+
+function editorialInput(overrides: Record<string, unknown> = {}) {
+  return {
+    title: 'Pausa editorial segura',
+    summary: 'Orientacao editorial para uma pausa consciente durante o trabalho.',
+    bodyText: 'Conteudo em texto simples, suficientemente detalhado para a comunidade da empresa.',
+    topic: 'pausas',
+    readTimeMinutes: 4,
+    status: 'draft',
+    ...overrides,
+  };
+}
 
 function openPlaywrightDatabase(): Database.Database {
   const databasePath = playwrightDbSafety.assertCommunityFeedFixtureEnvironment(process.env);
@@ -88,16 +109,20 @@ function seedCommunityFixtures() {
       insertCompany.run(ids.companyA, `Community Feed E2E A ${RUN_ID}`, 'Community A', `81${RUN_ID.replace(/\D/g, '').slice(-12).padStart(12, '0')}`);
       insertCompany.run(ids.companyB, `Community Feed E2E B ${RUN_ID}`, 'Community B', `82${RUN_ID.replace(/\D/g, '').slice(-12).padStart(12, '0')}`);
       insertCompany.run(ids.companyDisabled, `Community Feed E2E Disabled ${RUN_ID}`, 'Community Disabled', `83${RUN_ID.replace(/\D/g, '').slice(-12).padStart(12, '0')}`);
+      insertCompany.run(ids.companyInactive, `Community Feed E2E Inactive ${RUN_ID}`, 'Community Inactive', `84${RUN_ID.replace(/\D/g, '').slice(-12).padStart(12, '0')}`);
+      db.prepare('UPDATE companies SET is_active = 0 WHERE id = ?').run(ids.companyInactive);
 
       insertUser.run(ids.collaboratorA, ids.companyA, 'Ana Segura', 'Ana Comunidade', emails.collaboratorA, admin.password_hash, 'colaboradora', 0);
       insertUser.run(ids.collaboratorAHidden, ids.companyA, 'Beatriz Privada', null, emails.collaboratorAHidden, admin.password_hash, 'colaboradora', 0);
       insertUser.run(ids.collaboratorB, ids.companyB, 'Carla Empresa B', null, emails.collaboratorB, admin.password_hash, 'colaboradora', 0);
       insertUser.run(ids.collaboratorDisabled, ids.companyDisabled, 'Dora Sem Feed', null, emails.collaboratorDisabled, admin.password_hash, 'colaboradora', 0);
       insertUser.run(ids.dualRoleA, ids.companyA, 'Eva Dupla Funcao', null, emails.dualRoleA, admin.password_hash, 'rh', 1);
+      insertUser.run(ids.rhB, ids.companyB, 'Renata RH B', null, emails.rhB, admin.password_hash, 'rh', 0);
+      insertUser.run(ids.rhDisabled, ids.companyDisabled, 'Rita RH Disabled', null, emails.rhDisabled, admin.password_hash, 'rh', 0);
+      insertUser.run(ids.companyAdminA, ids.companyA, 'Alice Admin Empresa', null, emails.companyAdminA, admin.password_hash, 'admin', 0);
 
       insertSetting.run(`community-feed-setting-a-${RUN_ID}`, ids.companyA, '1');
       insertSetting.run(`community-feed-setting-b-${RUN_ID}`, ids.companyB, '1');
-      insertSetting.run(`community-feed-setting-disabled-${RUN_ID}`, ids.companyDisabled, '0');
 
       insertPost.run(ids.postA, ids.companyA, 'Pausas que cabem no dia', 'Um guia pratico para recuperar energia com seguranca.', 'Conteudo seguro da empresa A para colaboradoras autorizadas.', 'pausas', publishedAt, ids.dualRoleA, ids.dualRoleA, createdAt, createdAt);
       insertPost.run(ids.postB, ids.companyB, COMPANY_B_SENTINEL, 'Conteudo exclusivo e isolado da empresa B.', 'Este corpo tambem deve permanecer restrito ao tenant B.', 'sono', publishedAt, ids.collaboratorB, ids.collaboratorB, createdAt, createdAt);
@@ -119,12 +144,29 @@ function cleanupCommunityFixtures() {
   try {
     db.pragma('foreign_keys = ON');
     db.transaction(() => {
-      const userIds = Object.values(ids).filter((id) => id.includes('collaborator') || id.includes('dual-role'));
-      const companyIds = [ids.companyA, ids.companyB, ids.companyDisabled];
+      const userIds = [
+        ids.collaboratorA,
+        ids.collaboratorAHidden,
+        ids.collaboratorB,
+        ids.collaboratorDisabled,
+        ids.dualRoleA,
+        ids.rhB,
+        ids.rhDisabled,
+        ids.companyAdminA,
+      ];
+      const companyIds = [ids.companyA, ids.companyB, ids.companyDisabled, ids.companyInactive];
       const placeholders = (values: readonly string[]) => values.map(() => '?').join(',');
-      db.prepare(`DELETE FROM community_post_supports WHERE post_id IN (${placeholders([ids.postA, ids.postB, ids.postDisabled])})`).run(ids.postA, ids.postB, ids.postDisabled);
-      db.prepare(`DELETE FROM community_post_saves WHERE post_id IN (${placeholders([ids.postA, ids.postB, ids.postDisabled])})`).run(ids.postA, ids.postB, ids.postDisabled);
-      db.prepare(`DELETE FROM community_posts WHERE id IN (${placeholders([ids.postA, ids.postB, ids.postDisabled])})`).run(ids.postA, ids.postB, ids.postDisabled);
+      const companyPlaceholders = placeholders(companyIds);
+      db.prepare(`
+        DELETE FROM community_post_supports
+        WHERE post_id IN (SELECT id FROM community_posts WHERE company_id IN (${companyPlaceholders}))
+      `).run(...companyIds);
+      db.prepare(`
+        DELETE FROM community_post_saves
+        WHERE post_id IN (SELECT id FROM community_posts WHERE company_id IN (${companyPlaceholders}))
+      `).run(...companyIds);
+      db.prepare(`DELETE FROM community_posts WHERE company_id IN (${companyPlaceholders})`).run(...companyIds);
+      db.prepare(`DELETE FROM audit_logs WHERE actor_id IN (${placeholders(userIds)})`).run(...userIds);
       db.prepare(`DELETE FROM company_settings WHERE company_id IN (${placeholders(companyIds)})`).run(...companyIds);
       db.prepare(`DELETE FROM refresh_tokens WHERE user_id IN (${placeholders(userIds)})`).run(...userIds);
       db.prepare(`DELETE FROM user_preferences WHERE user_id IN (${placeholders(userIds)})`).run(...userIds);
@@ -153,7 +195,7 @@ test('maps unexpected community API errors to a safe 500 response', async () => 
   expect(JSON.stringify(payload)).not.toContain('community-secret-sentinel');
 });
 
-test.describe('collaborator company community feed', () => {
+test.describe('company community feed', () => {
   test.beforeAll(async ({ request }) => {
     cleanupCommunityFixtures();
     seedCommunityFixtures();
@@ -163,6 +205,10 @@ test.describe('collaborator company community feed', () => {
       collaboratorB: await login(request, emails.collaboratorB),
       collaboratorDisabled: await login(request, emails.collaboratorDisabled),
       dualRoleA: await login(request, emails.dualRoleA),
+      rhB: await login(request, emails.rhB),
+      rhDisabled: await login(request, emails.rhDisabled),
+      companyAdminA: await login(request, emails.companyAdminA),
+      master: await login(request, emails.master),
     };
   });
 
@@ -385,5 +431,273 @@ test.describe('collaborator company community feed', () => {
     expect(limited.status(), await limited.text()).toBe(429);
     expectPrivateResponse(limited);
     expect(await limited.json()).toMatchObject({ status: 429, code: 'RATE_LIMIT' });
+  });
+
+  test('requires authentication and rejects collaborators on editorial management routes', async ({ request }) => {
+    expect((await request.get('/api/rh/community/posts')).status()).toBe(401);
+    expect((await request.post('/api/rh/community/posts', { data: editorialInput() })).status()).toBe(401);
+    expect((await request.patch(`/api/rh/community/posts/${ids.postA}`, {
+      data: { status: 'archived' },
+    })).status()).toBe(401);
+
+    const collaboratorOptions = { headers: authHeaders(tokens.collaboratorA) };
+    expect((await request.get('/api/rh/community/posts', collaboratorOptions)).status()).toBe(403);
+    expect((await request.post('/api/rh/community/posts', {
+      ...collaboratorOptions,
+      data: editorialInput(),
+    })).status()).toBe(403);
+    expect((await request.patch(`/api/rh/community/posts/${ids.postA}`, {
+      ...collaboratorOptions,
+      data: { status: 'archived' },
+    })).status()).toBe(403);
+    expect((await request.patch('/api/company', {
+      ...collaboratorOptions,
+      data: { feedCompanyEnabled: true },
+    })).status()).toBe(403);
+  });
+
+  test('scopes RH and company-admin reads to their authenticated company', async ({ request }) => {
+    const rhA = { headers: authHeaders(tokens.dualRoleA) };
+    const listA = await request.get('/api/rh/community/posts?status=published', rhA);
+    expect(listA.status(), await listA.text()).toBe(200);
+    expectPrivateResponse(listA);
+    const listPayload = await listA.json();
+    expect(listPayload).toMatchObject({ companyId: ids.companyA, status: 'published' });
+    expect(listPayload.items.map((item: { id: string }) => item.id)).toContain(ids.postA);
+    expect(JSON.stringify(listPayload)).not.toContain(COMPANY_B_SENTINEL);
+
+    await expectError(await request.get(`/api/rh/community/posts?companyId=${ids.companyB}`, rhA), 403, 'COMPANY_TARGET_FORBIDDEN');
+    await expectError(await request.get(`/api/rh/community/posts/${ids.postB}`, rhA), 404, 'COMMUNITY_POST_NOT_FOUND');
+    await expectError(await request.patch(`/api/rh/community/posts/${ids.postB}`, {
+      ...rhA,
+      data: { title: 'Tentativa de edicao entre tenants' },
+    }), 404, 'COMMUNITY_POST_NOT_FOUND');
+    await expectError(await request.patch(`/api/rh/community/posts/${ids.postB}`, {
+      ...rhA,
+      data: { status: 'published' },
+    }), 404, 'COMMUNITY_POST_NOT_FOUND');
+    await expectError(await request.patch(`/api/rh/community/posts/${ids.postB}`, {
+      ...rhA,
+      data: { status: 'archived' },
+    }), 404, 'COMMUNITY_POST_NOT_FOUND');
+
+    const listB = await request.get('/api/rh/community/posts?status=published', {
+      headers: authHeaders(tokens.rhB),
+    });
+    expect(listB.status(), await listB.text()).toBe(200);
+    expect(JSON.stringify(await listB.json())).toContain(COMPANY_B_SENTINEL);
+
+    const companyAdmin = await request.get('/api/rh/community/posts?status=published', {
+      headers: authHeaders(tokens.companyAdminA),
+    });
+    expect(companyAdmin.status(), await companyAdmin.text()).toBe(200);
+    expect((await companyAdmin.json()).companyId).toBe(ids.companyA);
+  });
+
+  test('requires an explicit active company for master-admin reads and writes', async ({ request }) => {
+    const master = { headers: authHeaders(tokens.master) };
+    await expectError(await request.get('/api/rh/community/posts', master), 400, 'COMPANY_REQUIRED');
+    await expectError(await request.post('/api/rh/community/posts', {
+      ...master,
+      data: editorialInput(),
+    }), 400, 'COMPANY_REQUIRED');
+    await expectError(await request.get(`/api/rh/community/posts?companyId=${ids.companyInactive}`, master), 404, 'COMPANY_NOT_FOUND');
+
+    const listB = await request.get(`/api/rh/community/posts?companyId=${ids.companyB}&status=published`, master);
+    expect(listB.status(), await listB.text()).toBe(200);
+    const payload = await listB.json();
+    expect(payload.companyId).toBe(ids.companyB);
+    expect(JSON.stringify(payload)).toContain(COMPANY_B_SENTINEL);
+  });
+
+  test('revalidates the active persisted editorial actor before writes', async ({ request }) => {
+    const db = openPlaywrightDatabase();
+    try {
+      db.prepare('UPDATE users SET blocked = 1 WHERE id = ?').run(ids.dualRoleA);
+    } finally {
+      db.close();
+    }
+
+    try {
+      await expectError(await request.post('/api/rh/community/posts', {
+        headers: authHeaders(tokens.dualRoleA),
+        data: editorialInput(),
+      }), 403, 'EDITORIAL_ACTOR_FORBIDDEN');
+    } finally {
+      const restoreDb = openPlaywrightDatabase();
+      try {
+        restoreDb.prepare('UPDATE users SET blocked = 0 WHERE id = ?').run(ids.dualRoleA);
+      } finally {
+        restoreDb.close();
+      }
+    }
+  });
+
+  test('creates safe draft and published editorial DTOs with server-owned publication time', async ({ request }) => {
+    const rhA = { headers: authHeaders(tokens.dualRoleA) };
+    await expectError(await request.post('/api/rh/community/posts', {
+      ...rhA,
+      data: editorialInput({ bodyText: '<script>alert(1)</script> conteudo editorial proibido' }),
+    }), 422, 'COMMUNITY_POST_INVALID');
+
+    const draft = await request.post('/api/rh/community/posts', {
+      ...rhA,
+      data: editorialInput(),
+    });
+    expect(draft.status(), await draft.text()).toBe(201);
+    expectPrivateResponse(draft);
+    const draftPayload = await draft.json();
+    editorialDraftId = draftPayload.post.id;
+    expect(draftPayload.post).toMatchObject({
+      title: 'Pausa editorial segura',
+      status: 'draft',
+      publishedAt: null,
+    });
+    expect(Object.keys(draftPayload.post).sort()).toEqual([
+      'bodyText', 'createdAt', 'expiresAt', 'id', 'imagePath', 'publishedAt',
+      'readTimeMinutes', 'status', 'summary', 'title', 'topic', 'updatedAt',
+    ].sort());
+
+    const published = await request.post('/api/rh/community/posts', {
+      ...rhA,
+      data: editorialInput({ status: 'published', title: 'Publicacao imediata segura' }),
+    });
+    expect(published.status(), await published.text()).toBe(201);
+    const publishedPost = (await published.json()).post;
+    expect(publishedPost.status).toBe('published');
+    expect(publishedPost.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
+
+  test('enforces ordered transitions while allowing same-status content edits', async ({ request }) => {
+    const rhA = { headers: authHeaders(tokens.dualRoleA) };
+    expect(editorialDraftId).toBeTruthy();
+
+    const editedDraft = await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
+      data: { title: 'Pausa editorial revisada', status: 'draft' },
+    });
+    expect(editedDraft.status(), await editedDraft.text()).toBe(200);
+    expect((await editedDraft.json()).post.title).toBe('Pausa editorial revisada');
+
+    await expectError(await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
+      data: { status: 'archived' },
+    }), 409, 'COMMUNITY_TRANSITION_INVALID');
+
+    const published = await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
+      data: { status: 'published' },
+    });
+    expect(published.status(), await published.text()).toBe(200);
+    const firstPublishedAt = (await published.json()).post.publishedAt;
+    expect(firstPublishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+
+    const editedPublished = await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
+      data: { summary: 'Resumo atualizado sem alterar o instante original de publicacao.', status: 'published' },
+    });
+    expect(editedPublished.status(), await editedPublished.text()).toBe(200);
+    expect((await editedPublished.json()).post.publishedAt).toBe(firstPublishedAt);
+
+    await expectError(await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
+      data: { status: 'draft' },
+    }), 409, 'COMMUNITY_TRANSITION_INVALID');
+
+    const archived = await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
+      data: { status: 'archived' },
+    });
+    expect(archived.status(), await archived.text()).toBe(200);
+    expect((await archived.json()).post.status).toBe('archived');
+    await expectError(await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
+      data: { status: 'published' },
+    }), 409, 'COMMUNITY_TRANSITION_INVALID');
+  });
+
+  test('defaults a missing company feed setting off, blocks publish, and isolates switch writes', async ({ request }) => {
+    const rhDisabled = { headers: authHeaders(tokens.rhDisabled) };
+    const company = await request.get('/api/company', rhDisabled);
+    expect(company.status(), await company.text()).toBe(200);
+    expect((await company.json()).company.feed_company_enabled).toBe(false);
+
+    const draft = await request.post('/api/rh/community/posts', {
+      ...rhDisabled,
+      data: editorialInput({ title: 'Rascunho de tenant desativado' }),
+    });
+    expect(draft.status(), await draft.text()).toBe(201);
+    const disabledDraftId = (await draft.json()).post.id;
+    await expectError(await request.patch(`/api/rh/community/posts/${disabledDraftId}`, {
+      ...rhDisabled,
+      data: { status: 'published' },
+    }), 409, 'FEED_DISABLED');
+
+    const enabled = await request.patch('/api/company', {
+      ...rhDisabled,
+      data: { feedCompanyEnabled: true },
+    });
+    expect(enabled.status(), await enabled.text()).toBe(200);
+
+    const db = openPlaywrightDatabase();
+    try {
+      const ownSetting = db.prepare(`
+        SELECT setting_value, updated_at FROM company_settings
+        WHERE company_id = ? AND setting_key = 'feed_company_enabled'
+      `).get(ids.companyDisabled) as { setting_value: string; updated_at: string };
+      expect(ownSetting.setting_value).toBe('1');
+      expect(ownSetting.updated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect((db.prepare(`
+        SELECT setting_value FROM company_settings
+        WHERE company_id = ? AND setting_key = 'feed_company_enabled'
+      `).get(ids.companyB) as { setting_value: string }).setting_value).toBe('1');
+    } finally {
+      db.close();
+    }
+
+    const published = await request.patch(`/api/rh/community/posts/${disabledDraftId}`, {
+      ...rhDisabled,
+      data: { status: 'published' },
+    });
+    expect(published.status(), await published.text()).toBe(200);
+    expect((await published.json()).post.status).toBe('published');
+  });
+
+  test('records body-free audit receipts for create, update, publish, and archive', () => {
+    const db = openPlaywrightDatabase();
+    try {
+      const rows = db.prepare(`
+        SELECT actor_id, actor_email, actor_role, action, entity_id, details
+        FROM audit_logs
+        WHERE entity_type = 'community_post' AND entity_id = ?
+        ORDER BY created_at ASC, rowid ASC
+      `).all(editorialDraftId) as Array<{
+        actor_id: string;
+        actor_email: string;
+        actor_role: string;
+        action: string;
+        entity_id: string;
+        details: string;
+      }>;
+      expect(rows.map((row) => row.action)).toEqual(expect.arrayContaining([
+        'community_post_create',
+        'community_post_update',
+        'community_post_publish',
+        'community_post_archive',
+      ]));
+      for (const row of rows) {
+        expect(row).toMatchObject({
+          actor_id: ids.dualRoleA,
+          actor_email: emails.dualRoleA,
+          actor_role: 'rh',
+          entity_id: editorialDraftId,
+        });
+        const details = JSON.parse(row.details);
+        expect(details).toMatchObject({ companyId: ids.companyA, postId: editorialDraftId });
+        expect(JSON.stringify(details)).not.toMatch(/body|summary|title|conteudo/i);
+      }
+    } finally {
+      db.close();
+    }
   });
 });

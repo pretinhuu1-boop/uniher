@@ -181,7 +181,7 @@ describe('community schemas and cursor policy', () => {
     expect(communityPostPatchSchema.safeParse({ title: 'Novo titulo' }).success).toBe(true);
   });
 
-  it('canonicalizes create and patch editorial timestamps to equivalent UTC', () => {
+  it('keeps publication timestamps server-owned and canonicalizes expiration to UTC', () => {
     const base = {
       title: 'Titulo seguro',
       summary: 'Resumo suficientemente longo.',
@@ -192,24 +192,24 @@ describe('community schemas and cursor policy', () => {
     } as const;
     const created = communityPostCreateSchema.parse({
       ...base,
-      publishedAt: '2026-07-21T10:00:00+03:00',
       expiresAt: '2026-07-22T10:00:00+03:00',
     });
     const patched = communityPostPatchSchema.parse({
-      publishedAt: '2026-07-21T10:00:00+03:00',
       expiresAt: '2026-07-22T10:00:00+03:00',
     });
 
-    expect(created.publishedAt).toBe('2026-07-21T07:00:00.000Z');
     expect(created.expiresAt).toBe('2026-07-22T07:00:00.000Z');
-    expect(patched.publishedAt).toBe('2026-07-21T07:00:00.000Z');
     expect(patched.expiresAt).toBe('2026-07-22T07:00:00.000Z');
-    expect(communityPostPatchSchema.parse({
-      publishedAt: '2026-07-21T10:00:00.123Z',
-    }).publishedAt).toBe('2026-07-21T10:00:00.123Z');
+    expect(communityPostCreateSchema.safeParse({
+      ...base,
+      publishedAt: '2026-07-21T10:00:00.000Z',
+    }).success).toBe(false);
+    expect(communityPostPatchSchema.safeParse({
+      publishedAt: '2026-07-21T10:00:00.000Z',
+    }).success).toBe(false);
   });
 
-  it('requires publishedAt when create or patch explicitly publishes a post', () => {
+  it('allows publish commands without a client supplied publishedAt', () => {
     const base = {
       title: 'Titulo seguro',
       summary: 'Resumo suficientemente longo.',
@@ -219,19 +219,25 @@ describe('community schemas and cursor policy', () => {
       status: 'published',
     } as const;
 
-    expect(communityPostCreateSchema.safeParse(base).success).toBe(false);
+    expect(communityPostCreateSchema.safeParse(base).success).toBe(true);
     expect(communityPostCreateSchema.safeParse({ ...base, publishedAt: null }).success).toBe(false);
-    expect(communityPostCreateSchema.safeParse({
-      ...base,
-      publishedAt: '2026-07-21T10:00:00.000Z',
-    }).success).toBe(true);
-    expect(communityPostPatchSchema.safeParse({ status: 'published' }).success).toBe(false);
+    expect(communityPostPatchSchema.safeParse({ status: 'published' }).success).toBe(true);
     expect(communityPostPatchSchema.safeParse({ status: 'published', publishedAt: null }).success).toBe(false);
-    expect(communityPostPatchSchema.safeParse({
-      status: 'published',
-      publishedAt: '2026-07-21T10:00:00.000Z',
-    }).success).toBe(true);
     expect(communityPostPatchSchema.safeParse({ status: 'draft' }).success).toBe(true);
+  });
+
+  it.each(['title', 'summary', 'bodyText'] as const)('rejects HTML markup in %s', (field) => {
+    const input = {
+      title: 'Titulo seguro',
+      summary: 'Resumo suficientemente longo.',
+      bodyText: 'Corpo suficientemente longo para publicacao.',
+      topic: 'cuidado',
+      readTimeMinutes: 5,
+      status: 'draft',
+      [field]: '<script>alert(1)</script> conteudo suficientemente longo',
+    };
+
+    expect(communityPostCreateSchema.safeParse(input).success).toBe(false);
   });
 
   it('round-trips canonical cursors and rejects malformed or non-canonical encodings', () => {

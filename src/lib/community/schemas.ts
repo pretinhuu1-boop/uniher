@@ -35,6 +35,13 @@ const localImagePathSchema = z.string().refine((value) => {
 const canonicalUtcDateSchema = z.iso.datetime({ offset: true })
   .transform((value) => new Date(value).toISOString());
 const optionalIsoDateSchema = canonicalUtcDateSchema.nullable().optional();
+const htmlMarkupPattern = /<(?:\/?[a-z][^>]*|!--[\s\S]*?--)>/i;
+const plainTitleSchema = z.string().trim().min(3).max(120)
+  .refine((value) => !htmlMarkupPattern.test(value), 'HTML markup is not allowed');
+const plainSummarySchema = z.string().trim().min(10).max(240)
+  .refine((value) => !htmlMarkupPattern.test(value), 'HTML markup is not allowed');
+const plainBodySchema = z.string().min(20).max(8000)
+  .refine((value) => !htmlMarkupPattern.test(value), 'HTML markup is not allowed');
 
 export const communityFeedQuerySchema = z.object({
   topic: z.enum(COMMUNITY_TOPICS).optional(),
@@ -53,36 +60,23 @@ export const communitySupportersQuerySchema = z.object({
 }).strict();
 
 const communityPostManagementFieldsSchema = z.object({
-  title: z.string().trim().min(3).max(120),
-  summary: z.string().trim().min(10).max(240),
-  bodyText: z.string().min(20).max(8000),
+  title: plainTitleSchema,
+  summary: plainSummarySchema,
+  bodyText: plainBodySchema,
   topic: z.enum(COMMUNITY_TOPICS),
   readTimeMinutes: z.coerce.number().int().min(1).max(60),
   imagePath: localImagePathSchema.nullable().optional(),
   status: z.enum(['draft', 'published', 'archived']),
-  publishedAt: optionalIsoDateSchema,
   expiresAt: optionalIsoDateSchema,
 }).strict();
 
-const hasPublicationDateWhenPublished = (value: {
-  status?: 'draft' | 'published' | 'archived';
-  publishedAt?: string | null;
-}) => value.status !== 'published' || Boolean(value.publishedAt);
-
-export const communityPostManagementSchema = communityPostManagementFieldsSchema.refine(
-  hasPublicationDateWhenPublished,
-  { path: ['publishedAt'], message: 'publishedAt is required when status is published' },
-);
+export const communityPostManagementSchema = communityPostManagementFieldsSchema;
 
 export const communityPostCreateSchema = communityPostManagementSchema;
 
 export const communityPostPatchSchema = communityPostManagementFieldsSchema
   .partial()
-  .refine((value) => Object.keys(value).length > 0, 'At least one field is required')
-  .refine(hasPublicationDateWhenPublished, {
-    path: ['publishedAt'],
-    message: 'publishedAt is required when status is published',
-  });
+  .refine((value) => Object.keys(value).length > 0, 'At least one field is required');
 
 export type CommunityFeedQuery = z.infer<typeof communityFeedQuerySchema>;
 export type CommunitySavedQuery = z.infer<typeof communitySavedQuerySchema>;
