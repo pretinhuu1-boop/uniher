@@ -255,7 +255,7 @@ The visual design is approved and the collaborator mobile shell is implemented. 
 
 ### 9.5 Community functional gate
 
-- Full unit suite: **PASS, 443/443** tests.
+- Full unit suite: `npm run test:unit` on HEAD `1428803`: **PASS, 451/451** tests in **48** files.
 - Real backend Community E2E: **PASS, 25/25** cases against the real API/database contract, covering auth, tenant isolation, disabled default-off behavior, idempotent support/save, consent and revocation, editorial lifecycle, switch/audit receipts, persisted actor changes, and explicit master company selection.
 - Mocked visual UI E2E: **PASS, 4/4** cases with deterministic network fixtures at exactly `375x812`, `390x844`, `768x900`, and `1440x1000`. These cases prove collaborator feed layout/states only; they are not backend-integration evidence.
 - Editorial management browser workflow: **PASS at the configured default viewport only**. No multi-viewport or responsive-management claim is made by this audit.
