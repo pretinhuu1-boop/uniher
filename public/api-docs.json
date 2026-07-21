@@ -120,6 +120,16 @@
         },
         "additionalProperties": false
       },
+      "SemaforoReviewResponse": {
+        "type": "object",
+        "required": ["status", "label", "message"],
+        "properties": {
+          "status": { "type": "string", "enum": ["under_review"] },
+          "label": { "type": "string", "enum": ["Em revisão"] },
+          "message": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
       "Badge": {
         "type": "object",
         "properties": {
@@ -703,7 +713,7 @@
         "tags": ["Admin - Badges"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -719,7 +729,7 @@
         "tags": ["Admin - Badges"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -737,7 +747,7 @@
         "tags": ["Privacy"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -754,8 +764,26 @@
         "tags": ["Admin - Badges"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      }
+    },
+    "/badges": {
+      "get": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -859,7 +887,7 @@
         "tags": ["Colaboradora - Desafios"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -875,7 +903,7 @@
         "tags": ["Privacy"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -891,7 +919,7 @@
         "tags": ["Privacy"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -909,7 +937,7 @@
         "tags": ["Privacy"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -928,7 +956,7 @@
         "tags": ["Colaboradora - Conquistas"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -957,7 +985,7 @@
         "tags": ["Colaboradora - Liga"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -972,11 +1000,55 @@
     },
     "/collaborator/semaforo": {
       "get": {
-        "tags": ["Colaboradora"],
-        "summary": "Semáforo de saúde da colaboradora",
-        "security": [{ "cookieAuth": [] }],
+        "tags": ["Privacy"],
+        "summary": "Neutral Semaforo state during privacy review",
+        "description": "Returns only the neutral review state; no health score or health band is exposed.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "Status do semáforo de saúde" }
+          "200": {
+            "description": "Neutral review state",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SemaforoReviewResponse" } } }
+          }
+        }
+      }
+    },
+    "/collaborator/semaforo/history": {
+      "get": {
+        "tags": ["Privacy"],
+        "summary": "Neutral Semaforo history state during privacy review",
+        "description": "Returns only the neutral review state; no health history is exposed.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Neutral review state without history",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SemaforoReviewResponse" } } }
+          }
+        }
+      }
+    },
+    "/collaborator/semaforo/recalculate": {
+      "post": {
+        "tags": ["Privacy"],
+        "summary": "Semaforo recalculation locked during privacy review",
+        "description": "Returns only the neutral review state; recalculation remains locked.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "423": {
+            "description": "Recalculation locked with neutral review state",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SemaforoReviewResponse" } } }
+          }
         }
       }
     },
@@ -1133,7 +1205,7 @@
         "tags": ["Objetivos e Recompensas"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -1151,7 +1223,7 @@
         "tags": ["Objetivos e Recompensas"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -1198,11 +1270,19 @@
     },
     "/gamification/leaderboard": {
       "get": {
-        "tags": ["Gamificação"],
-        "summary": "Ranking de pontuação",
-        "security": [{ "cookieAuth": [] }],
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "Ranking dos usuários" }
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
         }
       }
     },
@@ -1211,7 +1291,111 @@
         "tags": ["Gamificação"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      }
+    },
+    "/gamification/journey": {
+      "get": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      }
+    },
+    "/gamification/rewards": {
+      "get": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      }
+    },
+    "/gamification/rewards/redeem": {
+      "post": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      }
+    },
+    "/gamification/rewards/redemptions": {
+      "get": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "410": {
+            "description": "Resource unavailable during privacy review",
+            "headers": {
+              "Cache-Control": { "schema": { "type": "string", "enum": ["private, no-store"] } },
+              "Vary": { "schema": { "type": "string", "enum": ["Cookie"] } }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PrivacyReviewResponse" } } }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Privacy"],
+        "summary": "Unavailable during privacy review",
+        "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -1891,7 +2075,7 @@
         "tags": ["RH - Desafios"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -1907,7 +2091,7 @@
         "tags": ["RH - Desafios"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -1925,7 +2109,7 @@
         "tags": ["Privacy"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -1942,7 +2126,7 @@
         "tags": ["RH - Desafios"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -1961,7 +2145,7 @@
         "tags": ["RH - Ligas"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -1977,7 +2161,7 @@
         "tags": ["RH - Ligas"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -1995,7 +2179,7 @@
         "tags": ["Privacy"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -2012,7 +2196,7 @@
         "tags": ["RH - Ligas"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -2031,7 +2215,7 @@
         "tags": ["RH - Ligas"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -2048,7 +2232,7 @@
         "tags": ["Privacy"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -2067,7 +2251,7 @@
         "tags": ["RH - Objetivos"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -2083,7 +2267,7 @@
         "tags": ["RH - Objetivos"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "responses": {
           "410": {
             "description": "Resource unavailable during privacy review",
@@ -2101,7 +2285,7 @@
         "tags": ["Privacy"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -2118,7 +2302,7 @@
         "tags": ["RH - Objetivos"],
         "summary": "Unavailable during privacy review",
         "description": "Legacy contract contained. Do not use it as a source for new objectives, challenges, achievements, or leagues.",
-        "security": [{ "cookieAuth": [] }],
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
         "parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],
         "responses": {
           "410": {
@@ -2158,17 +2342,17 @@
     { "name": "Autenticação", "description": "Login, registro, recuperação de senha e gerenciamento de sessão" },
     { "name": "Admin - Empresas", "description": "Gerenciamento de empresas (somente admin master)" },
     { "name": "Admin - Usuários", "description": "Gerenciamento de usuários (somente admin master)" },
-    { "name": "Admin - Badges", "description": "Gerenciamento de badges/conquistas (somente admin)" },
+    { "name": "Admin - Badges", "description": "Legacy badge contract contained during privacy review; not operational." },
     { "name": "Admin - Sistema", "description": "Configurações e operações do sistema (somente admin)" },
     { "name": "Colaboradora", "description": "Painel e funcionalidades da colaboradora" },
-    { "name": "Colaboradora - Desafios", "description": "Desafios disponíveis para a colaboradora" },
-    { "name": "Colaboradora - Conquistas", "description": "Badges e conquistas da colaboradora" },
+    { "name": "Colaboradora - Desafios", "description": "Legacy challenge contract contained during privacy review; not operational." },
+    { "name": "Colaboradora - Conquistas", "description": "Legacy achievement contract contained during privacy review; not operational." },
     { "name": "Colaboradora - Campanhas", "description": "Campanhas disponíveis para participação" },
-    { "name": "Colaboradora - Liga", "description": "Liga semanal e ranking" },
+    { "name": "Colaboradora - Liga", "description": "Legacy league contract contained during privacy review; not operational." },
     { "name": "Campanhas", "description": "Gerenciamento de campanhas (RH/Liderança)" },
     { "name": "Notificações", "description": "Gerenciamento de notificações do usuário" },
-    { "name": "Objetivos e Recompensas", "description": "Objetivos com recompensas resgatáveis" },
-    { "name": "Gamificação", "description": "Sistema de gamificação, check-in, missões e liga" },
+    { "name": "Objetivos e Recompensas", "description": "Legacy objectives and rewards contracts contained during privacy review; not operational." },
+    { "name": "Gamificação", "description": "Daily check-in and missions; legacy leaderboard, league, journey, and rewards are contained during privacy review." },
     { "name": "Upload", "description": "Upload de arquivos (avatar e logo)" },
     { "name": "Dashboard", "description": "Dados do dashboard para RH e Liderança" },
     { "name": "Convites", "description": "Sistema de convites para novas colaboradoras" },
@@ -2178,9 +2362,10 @@
     { "name": "Perfil do Usuário", "description": "Gerenciamento de perfil e preferências" },
     { "name": "Empresa", "description": "Dados da empresa do usuário" },
     { "name": "Departamentos", "description": "Listagem de departamentos" },
-    { "name": "RH - Desafios", "description": "Gerenciamento de desafios pelo RH" },
-    { "name": "RH - Ligas", "description": "Gerenciamento de ligas pelo RH" },
-    { "name": "RH - Objetivos", "description": "Gerenciamento de objetivos pelo RH" },
+    { "name": "RH - Desafios", "description": "Legacy RH challenge contract contained during privacy review; not operational." },
+    { "name": "RH - Ligas", "description": "Legacy RH league contract contained during privacy review; not operational." },
+    { "name": "RH - Objetivos", "description": "Legacy RH objective contract contained during privacy review; not operational." },
+    { "name": "Privacy", "description": "Contracts contained or neutralized during privacy review." },
     { "name": "Push Notifications", "description": "Web push notifications" }
   ]
 }

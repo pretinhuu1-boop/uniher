@@ -66,16 +66,51 @@ Riscos:
 
 ## Superfícies em revisão de privacidade
 
-As rotas legadas de objetivos, desafios, badges/conquistas e ligas não são
-operacionais. Todos os métodos exportados respondem `410` com
+As rotas legadas abaixo não são operacionais. Elas aceitam autenticação por
+cookie `uniher-access-token` **ou** `Authorization: Bearer` e todos os métodos
+exportados respondem `410` com
 `{ status: "unavailable", reason: "privacy_review", message }`,
 `Cache-Control: private, no-store` e `Vary: Cookie`.
 
-Isso inclui `/api/objectives/**`, `/api/rh/objectives/**`,
-`/api/collaborator/challenges/**`, `/api/rh/challenges/**`,
-`/api/admin/badges/**`, `/api/collaborator/badges`,
-`/api/collaborator/leagues`, `/api/gamification/league` e `/api/rh/leagues/**`.
+| Rota | Métodos contidos |
+| --- | --- |
+| `/api/admin/badges` | `GET`, `POST` |
+| `/api/admin/badges/[id]` | `PATCH`, `DELETE` |
+| `/api/badges` | `GET` |
+| `/api/collaborator/badges` | `GET` |
+| `/api/collaborator/challenges` | `GET`, `POST`, `PATCH` |
+| `/api/collaborator/challenges/[id]` | `PATCH` |
+| `/api/collaborator/leagues` | `GET` |
+| `/api/gamification/journey` | `GET` |
+| `/api/gamification/leaderboard` | `GET` |
+| `/api/gamification/league` | `GET` |
+| `/api/gamification/rewards` | `GET`, `POST` |
+| `/api/gamification/rewards/redeem` | `POST` |
+| `/api/gamification/rewards/redemptions` | `GET`, `PATCH` |
+| `/api/objectives` | `GET` |
+| `/api/objectives/[id]/claim` | `POST` |
+| `/api/rh/challenges` | `GET`, `POST` |
+| `/api/rh/challenges/[id]` | `PATCH`, `DELETE` |
+| `/api/rh/leagues` | `GET`, `POST` |
+| `/api/rh/leagues/[id]` | `PATCH`, `DELETE` |
+| `/api/rh/leagues/[id]/join` | `POST`, `DELETE` |
+| `/api/rh/objectives` | `GET`, `POST` |
+| `/api/rh/objectives/[id]` | `PATCH`, `DELETE` |
+
 Essas URLs não devem ser usadas como base para as novas Waves 5-10.
+
+### Semáforo contido
+
+O Semáforo também aceita cookie **ou** Bearer e expõe somente o estado neutro
+`{ status: "under_review", label: "Em revisão", message }`, sem pontuação,
+faixa de saúde ou histórico clínico. Todas as respostas usam
+`Cache-Control: private, no-store` e `Vary: Cookie`.
+
+| Rota | Contrato runtime |
+| --- | --- |
+| `GET /api/collaborator/semaforo` | `200` com o estado neutro de revisão. |
+| `GET /api/collaborator/semaforo/history` | `200` com o mesmo estado neutro, sem histórico. |
+| `POST /api/collaborator/semaforo/recalculate` | `423` com o mesmo estado neutro; recálculo bloqueado. |
 
 ## Operação
 
