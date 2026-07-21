@@ -1,12 +1,14 @@
 import { z } from 'zod';
 
 const nonEmptyString = z.string().trim().min(1);
-const feedCursorSchema = z.tuple([nonEmptyString, nonEmptyString, nonEmptyString]);
-const supporterCursorSchema = z.tuple([nonEmptyString, nonEmptyString]);
+const isoTimestamp = z.iso.datetime({ offset: true });
+const positiveCanonicalInteger = z.string().regex(/^[1-9]\d*$/);
+const feedCursorSchema = z.tuple([isoTimestamp, isoTimestamp, nonEmptyString]);
+const supporterCursorSchema = z.tuple([isoTimestamp, positiveCanonicalInteger]);
 const base64UrlPattern = /^[A-Za-z0-9_-]+$/;
 
 export type CommunityFeedCursor = readonly [publishedAt: string, createdAt: string, id: string];
-export type CommunitySupporterCursor = readonly [createdAt: string, userId: string];
+export type CommunitySupporterCursor = readonly [createdAt: string, supportRowId: string];
 
 function encodeCursor(tuple: readonly string[]): string {
   return Buffer.from(JSON.stringify(tuple), 'utf8').toString('base64url');

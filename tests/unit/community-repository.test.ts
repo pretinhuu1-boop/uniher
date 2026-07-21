@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { applyMigration } from '@/lib/db/migrations/runner';
+import { decodeSupporterCursor } from '@/lib/community/cursor';
 import { createCommunityRepository } from '@/repositories/community.repository';
 import {
   addCommunityPostSupport,
@@ -235,9 +236,51 @@ describe('community support and save repository behavior', () => {
     }
     expect(getSavedCommunityPosts(actorA, repo(db), {}, NOW).items.map((item) => item.id)).toEqual(['visible']);
   });
+
+  it('prevents repository support and save state changes for foreign or inactive posts', () => {
+    const db = createDatabase();
+    insertPost(db, { id: 'foreign', companyId: 'company-b' });
+    insertPost(db, { id: 'inactive', status: 'draft', publishedAt: null });
+    const repository = repo(db);
+
+    for (const postId of ['foreign', 'inactive']) {
+      const input = { postId, userId: actorA.userId, companyId: actorA.companyId, now: NOW };
+
+      repository.addSupport(input);
+      repository.addSave(input);
+      expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_supports WHERE post_id = ?`).get(postId)).toEqual({ count: 0 });
+      expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_saves WHERE post_id = ?`).get(postId)).toEqual({ count: 0 });
+
+      db.prepare(`INSERT INTO community_post_supports (post_id, user_id) VALUES (?, ?)`).run(postId, actorA.userId);
+      db.prepare(`INSERT INTO community_post_saves (post_id, user_id) VALUES (?, ?)`).run(postId, actorA.userId);
+      expect(repository.getSupportState(input)).toEqual({ supportCount: 0, supportedByMe: false });
+      expect(repository.isSaved(input)).toBe(false);
+
+      repository.removeSupport(input);
+      repository.removeSave(input);
+      expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_supports WHERE post_id = ?`).get(postId)).toEqual({ count: 1 });
+      expect(db.prepare(`SELECT COUNT(*) AS count FROM community_post_saves WHERE post_id = ?`).get(postId)).toEqual({ count: 1 });
+    }
+  });
 });
 
 describe('community supporter repository behavior', () => {
+  it('emits a strict ISO rowid cursor for repository-created supports', () => {
+    const db = createDatabase();
+    insertPost(db, { id: 'post-a' });
+    db.exec(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value) VALUES
+        ('actor-a', 'privacy_community_supporter_name', '1'),
+        ('member-a', 'privacy_community_supporter_name', '1');
+    `);
+    const repository = repo(db);
+    repository.addSupport({ postId: 'post-a', userId: 'actor-a', companyId: 'company-a', now: NOW });
+    repository.addSupport({ postId: 'post-a', userId: 'member-a', companyId: 'company-a', now: NOW });
+
+    const first = getCommunitySupporters(actorA, repository, 'post-a', { limit: 1 }, NOW);
+    expect(decodeSupporterCursor(first.nextCursor!)[0]).toBe(NOW);
+  });
+
   it('paginates opted-in supporters stably across tied timestamps', () => {
     const db = createDatabase();
     insertPost(db, { id: 'post-a' });
@@ -252,10 +295,14 @@ describe('community supporter repository behavior', () => {
     const repository = repo(db);
     const first = getCommunitySupporters(actorA, repository, 'post-a', { limit: 1 }, NOW);
     const second = getCommunitySupporters(actorA, repository, 'post-a', { limit: 1, cursor: first.nextCursor! }, NOW);
+    const decodedCursor = decodeSupporterCursor(first.nextCursor!);
 
     expect(first.names).toEqual(['Maria']);
     expect(second.names).toEqual(['Ana']);
     expect(second.nextCursor).toBeNull();
+    expect(decodedCursor[1]).toMatch(/^[1-9]\d*$/);
+    expect(decodedCursor).not.toContain('member-a');
+    expect(decodedCursor).not.toContain('actor-a');
   });
 
   it('works without legacy gamification or health tables', () => {

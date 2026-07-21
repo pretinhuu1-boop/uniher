@@ -135,9 +135,10 @@ export function addCommunityPostSupport(
   postId: string,
   now = new Date().toISOString(),
 ): { supportCount: number; supportedByMe: boolean } {
-  prepareMutation(actor, repository, postId, now);
-  repository.addSupport(postId, actor.userId);
-  return repository.getSupportState(postId, actor.userId);
+  const companyId = prepareMutation(actor, repository, postId, now);
+  const input = { postId, userId: actor.userId, companyId, now };
+  repository.addSupport(input);
+  return repository.getSupportState(input);
 }
 
 export function removeCommunityPostSupport(
@@ -146,9 +147,10 @@ export function removeCommunityPostSupport(
   postId: string,
   now = new Date().toISOString(),
 ): { supportCount: number; supportedByMe: boolean } {
-  prepareMutation(actor, repository, postId, now);
-  repository.removeSupport(postId, actor.userId);
-  return repository.getSupportState(postId, actor.userId);
+  const companyId = prepareMutation(actor, repository, postId, now);
+  const input = { postId, userId: actor.userId, companyId, now };
+  repository.removeSupport(input);
+  return repository.getSupportState(input);
 }
 
 export function saveCommunityPost(
@@ -157,9 +159,10 @@ export function saveCommunityPost(
   postId: string,
   now = new Date().toISOString(),
 ): { savedByMe: boolean } {
-  prepareMutation(actor, repository, postId, now);
-  repository.addSave(postId, actor.userId);
-  return { savedByMe: repository.isSaved(postId, actor.userId) };
+  const companyId = prepareMutation(actor, repository, postId, now);
+  const input = { postId, userId: actor.userId, companyId, now };
+  repository.addSave(input);
+  return { savedByMe: repository.isSaved(input) };
 }
 
 export function unsaveCommunityPost(
@@ -168,9 +171,10 @@ export function unsaveCommunityPost(
   postId: string,
   now = new Date().toISOString(),
 ): { savedByMe: boolean } {
-  prepareMutation(actor, repository, postId, now);
-  repository.removeSave(postId, actor.userId);
-  return { savedByMe: repository.isSaved(postId, actor.userId) };
+  const companyId = prepareMutation(actor, repository, postId, now);
+  const input = { postId, userId: actor.userId, companyId, now };
+  repository.removeSave(input);
+  return { savedByMe: repository.isSaved(input) };
 }
 
 export function getCommunitySupporters(
@@ -182,6 +186,7 @@ export function getCommunitySupporters(
 ): { names: string[]; nextCursor: string | null } {
   const companyId = requireCompany(actor, repository);
   const query = communitySupportersQuerySchema.parse(input);
+  requireEnabledFeed(repository, companyId);
   requirePost(repository, postId, companyId, now);
   const page = repository.listSupporters({
     postId,

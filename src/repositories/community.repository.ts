@@ -18,10 +18,17 @@ type FeedRow = {
 };
 
 type SupporterRow = {
-  user_id: string;
+  support_row_id: number;
   name: string;
   nickname: string | null;
   created_at: string;
+};
+
+export type CommunityPostRelationInput = {
+  postId: string;
+  userId: string;
+  companyId: string;
+  now: string;
 };
 
 export type CommunityFeedPage = {
@@ -53,12 +60,12 @@ export interface CommunityRepository {
     now: string;
   }): CommunityFeedPage;
   hasActivePublishedPost(postId: string, companyId: string, now: string): boolean;
-  addSupport(postId: string, userId: string): void;
-  removeSupport(postId: string, userId: string): void;
-  getSupportState(postId: string, userId: string): { supportCount: number; supportedByMe: boolean };
-  addSave(postId: string, userId: string): void;
-  removeSave(postId: string, userId: string): void;
-  isSaved(postId: string, userId: string): boolean;
+  addSupport(input: CommunityPostRelationInput): void;
+  removeSupport(input: CommunityPostRelationInput): void;
+  getSupportState(input: CommunityPostRelationInput): { supportCount: number; supportedByMe: boolean };
+  addSave(input: CommunityPostRelationInput): void;
+  removeSave(input: CommunityPostRelationInput): void;
+  isSaved(input: CommunityPostRelationInput): boolean;
   listSupporters(input: {
     postId: string;
     companyId: string;
@@ -221,51 +228,82 @@ export function createCommunityRepository(database: Database.Database): Communit
       return row?.found === 1;
     },
 
-    addSupport(postId, userId) {
+    addSupport(input) {
       database.prepare(`
-        INSERT OR IGNORE INTO community_post_supports (post_id, user_id) VALUES (?, ?)
-      `).run(postId, userId);
+        INSERT OR IGNORE INTO community_post_supports (post_id, user_id, created_at)
+        SELECT p.id, @userId, @now
+        FROM community_posts p
+        WHERE p.id = @postId AND ${postVisibilitySql('p')}
+      `).run(input);
     },
 
-    removeSupport(postId, userId) {
-      database.prepare(`DELETE FROM community_post_supports WHERE post_id = ? AND user_id = ?`).run(postId, userId);
+    removeSupport(input) {
+      database.prepare(`
+        DELETE FROM community_post_supports
+        WHERE post_id = @postId
+          AND user_id = @userId
+          AND EXISTS (
+            SELECT 1 FROM community_posts p
+            WHERE p.id = community_post_supports.post_id
+              AND ${postVisibilitySql('p')}
+          )
+      `).run(input);
     },
 
-    getSupportState(postId, userId) {
+    getSupportState(input) {
       const row = database.prepare(`
         SELECT
-          COUNT(*) AS support_count,
-          MAX(CASE WHEN user_id = @userId THEN 1 ELSE 0 END) AS supported_by_me
-        FROM community_post_supports
-        WHERE post_id = @postId
-      `).get({ postId, userId }) as { support_count: number; supported_by_me: number | null };
-      return { supportCount: row.support_count, supportedByMe: row.supported_by_me === 1 };
+          COUNT(ps.user_id) AS support_count,
+          MAX(CASE WHEN ps.user_id = @userId THEN 1 ELSE 0 END) AS supported_by_me
+        FROM community_posts p
+        LEFT JOIN community_post_supports ps ON ps.post_id = p.id
+        WHERE p.id = @postId AND ${postVisibilitySql('p')}
+      `).get(input) as { support_count: number; supported_by_me: number | null };
+      return { supportCount: row?.support_count ?? 0, supportedByMe: row?.supported_by_me === 1 };
     },
 
-    addSave(postId, userId) {
+    addSave(input) {
       database.prepare(`
-        INSERT OR IGNORE INTO community_post_saves (post_id, user_id) VALUES (?, ?)
-      `).run(postId, userId);
+        INSERT OR IGNORE INTO community_post_saves (post_id, user_id, created_at)
+        SELECT p.id, @userId, @now
+        FROM community_posts p
+        WHERE p.id = @postId AND ${postVisibilitySql('p')}
+      `).run(input);
     },
 
-    removeSave(postId, userId) {
-      database.prepare(`DELETE FROM community_post_saves WHERE post_id = ? AND user_id = ?`).run(postId, userId);
+    removeSave(input) {
+      database.prepare(`
+        DELETE FROM community_post_saves
+        WHERE post_id = @postId
+          AND user_id = @userId
+          AND EXISTS (
+            SELECT 1 FROM community_posts p
+            WHERE p.id = community_post_saves.post_id
+              AND ${postVisibilitySql('p')}
+          )
+      `).run(input);
     },
 
-    isSaved(postId, userId) {
+    isSaved(input) {
       return Boolean(database.prepare(`
-        SELECT 1 FROM community_post_saves WHERE post_id = ? AND user_id = ? LIMIT 1
-      `).get(postId, userId));
+        SELECT 1
+        FROM community_post_saves own_save
+        JOIN community_posts p ON p.id = own_save.post_id
+        WHERE own_save.post_id = @postId
+          AND own_save.user_id = @userId
+          AND ${postVisibilitySql('p')}
+        LIMIT 1
+      `).get(input));
     },
 
     listSupporters(input) {
       const supporterActive = activeUserConditions(userColumns, 'u');
       const cursorSql = input.cursor ? `AND (
         ps.created_at < @cursorCreatedAt
-        OR (ps.created_at = @cursorCreatedAt AND ps.user_id < @cursorUserId)
+        OR (ps.created_at = @cursorCreatedAt AND ps.rowid < CAST(@cursorSupportRowId AS INTEGER))
       )` : '';
       const rows = database.prepare(`
-        SELECT ps.user_id, ps.created_at, u.name, u.nickname
+        SELECT ps.rowid AS support_row_id, ps.created_at, u.name, u.nickname
         FROM community_post_supports ps
         JOIN users u ON u.id = ps.user_id
         JOIN user_preferences pref
@@ -276,14 +314,14 @@ export function createCommunityRepository(database: Database.Database): Communit
           AND u.company_id = @companyId
           ${supporterActive.map((condition) => `AND ${condition}`).join('\n')}
           ${cursorSql}
-        ORDER BY ps.created_at DESC, ps.user_id DESC
+        ORDER BY ps.created_at DESC, ps.rowid DESC
         LIMIT @fetchLimit
       `).all({
         postId: input.postId,
         companyId: input.companyId,
         fetchLimit: input.limit + 1,
         cursorCreatedAt: input.cursor?.[0] ?? null,
-        cursorUserId: input.cursor?.[1] ?? null,
+        cursorSupportRowId: input.cursor?.[1] ?? null,
       }) as SupporterRow[];
       const pageRows = rows.slice(0, input.limit);
       const last = pageRows.at(-1);
@@ -292,7 +330,9 @@ export function createCommunityRepository(database: Database.Database): Communit
           const nickname = row.nickname?.trim();
           return nickname || row.name.trim().split(/\s+/)[0];
         }),
-        nextCursorTuple: rows.length > input.limit && last ? [last.created_at, last.user_id] : null,
+        nextCursorTuple: rows.length > input.limit && last
+          ? [last.created_at, String(last.support_row_id)]
+          : null,
       };
     },
   };

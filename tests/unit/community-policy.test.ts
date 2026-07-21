@@ -178,16 +178,22 @@ describe('community schemas and cursor policy', () => {
 
   it('round-trips canonical cursors and rejects malformed or non-canonical encodings', () => {
     const feedTuple = ['2026-07-20T10:00:00.000Z', '2026-07-20T09:00:00.000Z', 'post-a'] as const;
-    const supporterTuple = ['2026-07-20T08:00:00.000Z', 'actor-a'] as const;
+    const supporterTuple = ['2026-07-20T08:00:00.000Z', '42'] as const;
     expect(decodeFeedCursor(encodeFeedCursor(feedTuple))).toEqual(feedTuple);
     expect(decodeSupporterCursor(encodeSupporterCursor(supporterTuple))).toEqual(supporterTuple);
 
     const nonCanonical = Buffer.from(JSON.stringify([...feedTuple], null, 2)).toString('base64url');
+    const rawCursor = (tuple: unknown[]) => Buffer.from(JSON.stringify(tuple)).toString('base64url');
     expect(() => decodeFeedCursor('not-base64url!')).toThrow();
     expect(() => decodeFeedCursor(`${encodeFeedCursor(feedTuple)}=`)).toThrow();
     expect(() => decodeFeedCursor(nonCanonical)).toThrow();
     expect(() => decodeFeedCursor(Buffer.from(JSON.stringify([...feedTuple, 'extra'])).toString('base64url'))).toThrow();
-    expect(() => decodeSupporterCursor(Buffer.from(JSON.stringify(['', 'actor-a'])).toString('base64url'))).toThrow();
+    expect(() => decodeFeedCursor(rawCursor(['not-a-date', feedTuple[1], 'post-a']))).toThrow();
+    expect(() => decodeFeedCursor(rawCursor([feedTuple[0], '2026-07-20', 'post-a']))).toThrow();
+    expect(() => decodeSupporterCursor(rawCursor(['not-a-date', '42']))).toThrow();
+    for (const invalidRowId of ['0', '01', '-1', '1.0', 'actor-a']) {
+      expect(() => decodeSupporterCursor(rawCursor([supporterTuple[0], invalidRowId]))).toThrow();
+    }
   });
 });
 
@@ -231,6 +237,27 @@ describe('community access and privacy policy', () => {
       settings: { companyFeedEnabled: false },
     });
     expect(listFeed).not.toHaveBeenCalled();
+  });
+
+  it('blocks supporter reads before checking or querying the post when the feed is disabled', () => {
+    const db = createDatabase();
+    insertPost(db);
+    const repository = createCommunityRepository(db);
+    const hasActivePublishedPost = vi.spyOn(repository, 'hasActivePublishedPost');
+    const listSupporters = vi.spyOn(repository, 'listSupporters');
+
+    expect(() => getCommunitySupporters(
+      { userId: 'actor-a', companyId: 'company-a' },
+      repository,
+      'post-a',
+      {},
+      NOW,
+    )).toThrowError(expect.objectContaining<Partial<CommunityServiceError>>({
+      code: 'FEED_DISABLED',
+      statusCode: 403,
+    }));
+    expect(hasActivePublishedPost).not.toHaveBeenCalled();
+    expect(listSupporters).not.toHaveBeenCalled();
   });
 
   it('projects feed cards without forbidden privacy fields', () => {
