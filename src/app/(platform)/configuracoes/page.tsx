@@ -22,6 +22,12 @@ const NOTIFICATION_PREFS: TogglePref[] = [
 const PRIVACY_PREFS: TogglePref[] = [
   { id: 'profile', label: 'Perfil visivel', description: 'Outros colaboradoras podem ver seu perfil', defaultOn: true },
   { id: 'analytics', label: 'Dados anonimizados', description: 'Permitir uso de dados anonimizados para melhoria', defaultOn: true },
+  {
+    id: 'communitySupporterName',
+    label: 'Mostrar meu nome ao apoiar',
+    description: 'Desativada por padrão. Aplica-se somente a futuras visualizações de quem apoiou uma publicação.',
+    defaultOn: false,
+  },
 ];
 
 /** Maps toggle id -> API pref_key */
@@ -30,6 +36,7 @@ const TOGGLE_KEY_MAP: Record<string, string> = {
   email: 'notif_email',
   profile: 'privacy_profile',
   analytics: 'privacy_analytics',
+  communitySupporterName: 'privacy_community_supporter_name',
 };
 
 export default function ConfiguracoesPage() {
@@ -61,6 +68,11 @@ export default function ConfiguracoesPage() {
     return initial;
   });
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [supporterNameSaving, setSupporterNameSaving] = useState(false);
+  const [supporterNameFeedback, setSupporterNameFeedback] = useState<{
+    kind: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   // Archetype
   const [archetype, setArchetype] = useState<{ name: string; key: string; description: string; assignedAt: string } | null>(null);
@@ -307,7 +319,41 @@ export default function ConfiguracoesPage() {
       .catch(() => {});
   }, []);
 
+  async function handleSupporterNameToggle() {
+    if (!prefsLoaded || supporterNameSaving) return;
+    const id = 'communitySupporterName';
+    const previousValue = toggles[id];
+    const newValue = !previousValue;
+    setToggles(prev => ({ ...prev, [id]: newValue }));
+    setSupporterNameSaving(true);
+    setSupporterNameFeedback(null);
+
+    try {
+      const response = await fetch('/api/users/me/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preferences: { privacy_community_supporter_name: newValue ? '1' : '0' },
+        }),
+      });
+      if (!response.ok) throw new Error('Preference update failed');
+      setSupporterNameFeedback({ kind: 'success', message: 'Preferência salva.' });
+    } catch {
+      setToggles(prev => ({ ...prev, [id]: previousValue }));
+      setSupporterNameFeedback({
+        kind: 'error',
+        message: 'Não foi possível salvar. A configuração anterior foi restaurada.',
+      });
+    } finally {
+      setSupporterNameSaving(false);
+    }
+  }
+
   const handleToggle = (id: string) => {
+    if (id === 'communitySupporterName') {
+      void handleSupporterNameToggle();
+      return;
+    }
     const newValue = !toggles[id];
     setToggles(prev => ({ ...prev, [id]: newValue }));
 
@@ -391,23 +437,45 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  const renderToggle = (pref: TogglePref) => (
-    <div key={pref.id} className={styles.toggleRow}>
-      <div className={styles.toggleInfo}>
-        <span className={styles.toggleLabel}>{pref.label}</span>
-        <span className={styles.toggleDesc}>{pref.description}</span>
+  const renderToggle = (pref: TogglePref) => {
+    const isSupporterName = pref.id === 'communitySupporterName';
+    const descriptionId = `preference-${pref.id}-description`;
+    const feedbackId = `preference-${pref.id}-feedback`;
+    const feedbackMessage = supporterNameSaving
+      ? 'Salvando preferência...'
+      : supporterNameFeedback?.message;
+
+    return (
+      <div key={pref.id} className={styles.toggleRow}>
+        <div className={styles.toggleInfo}>
+          <span className={styles.toggleLabel}>{pref.label}</span>
+          <span id={descriptionId} className={styles.toggleDesc}>{pref.description}</span>
+          {isSupporterName && feedbackMessage && (
+            <span
+              id={feedbackId}
+              className={styles.toggleDesc}
+              role={supporterNameFeedback?.kind === 'error' ? 'alert' : 'status'}
+              aria-live={supporterNameFeedback?.kind === 'error' ? 'assertive' : 'polite'}
+            >
+              {feedbackMessage}
+            </span>
+          )}
+        </div>
+        <label className={styles.toggle}>
+          <input
+            type="checkbox"
+            className={styles.toggleInput}
+            aria-label={pref.label}
+            aria-describedby={`${descriptionId}${isSupporterName && feedbackMessage ? ` ${feedbackId}` : ''}`}
+            checked={toggles[pref.id]}
+            disabled={isSupporterName && (!prefsLoaded || supporterNameSaving)}
+            onChange={() => handleToggle(pref.id)}
+          />
+          <span className={styles.toggleSlider} />
+        </label>
       </div>
-      <label className={styles.toggle}>
-        <input
-          type="checkbox"
-          className={styles.toggleInput}
-          checked={toggles[pref.id]}
-          onChange={() => handleToggle(pref.id)}
-        />
-        <span className={styles.toggleSlider} />
-      </label>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className={styles.page}>

@@ -242,6 +242,10 @@ test.describe('company community feed', () => {
       request.post(`/api/collaborator/feed/${ids.postA}/support`),
       request.post(`/api/collaborator/feed/${ids.postA}/save`),
       request.get(`/api/collaborator/feed/${ids.postA}/supporters`),
+      request.get('/api/users/me/preferences'),
+      request.patch('/api/users/me/preferences', {
+        data: { preferences: { privacy_community_supporter_name: '1' } },
+      }),
     ]);
     for (const response of responses) {
       expect(response.status(), await response.text()).toBe(401);
@@ -429,6 +433,93 @@ test.describe('company community feed', () => {
     await expectError(await request.get(`/api/collaborator/feed/${ids.postA}/supporters?cursor=bad`, {
       headers: authHeaders(tokens.collaboratorA),
     }), 422, 'COMMUNITY_CURSOR_INVALID');
+  });
+
+  test('persists isolated supporter-name consent and applies revocation immediately', async ({ request }) => {
+    const preferenceKey = 'privacy_community_supporter_name';
+    const requestIp = '198.51.100.91';
+    const optedIn = { headers: authHeaders(tokens.collaboratorA) };
+    const defaultOff = { headers: authHeaders(tokens.collaboratorAHidden) };
+
+    const ownPreference = await request.get('/api/users/me/preferences', optedIn);
+    expect(ownPreference.status(), await ownPreference.text()).toBe(200);
+    expectPrivateResponse(ownPreference);
+    expect((await ownPreference.json()).preferences[preferenceKey]).toBe('1');
+
+    const otherPreference = await request.get('/api/users/me/preferences', defaultOff);
+    expect(otherPreference.status(), await otherPreference.text()).toBe(200);
+    expectPrivateResponse(otherPreference);
+    expect((await otherPreference.json()).preferences).toMatchObject({ [preferenceKey]: '0' });
+
+    const invalid = await request.patch('/api/users/me/preferences', {
+      ...defaultOff,
+      data: { preferences: { [preferenceKey]: '2' } },
+    });
+    expect(invalid.status(), await invalid.text()).toBe(400);
+
+    const support = await request.post(`/api/collaborator/feed/${ids.postA}/support`, optedIn);
+    expect(support.status(), await support.text()).toBe(200);
+    const feedBefore = await request.get('/api/collaborator/feed', optedIn);
+    const beforeItem = (await feedBefore.json()).items.find((item: { id: string }) => item.id === ids.postA);
+    expect(beforeItem.supportedByMe).toBe(true);
+    const supportCountBefore = beforeItem.supportCount;
+
+    const namesBefore = await request.get(`/api/collaborator/feed/${ids.postA}/supporters`, optedIn);
+    expect((await namesBefore.json()).names).toContain('Ana Comunidade');
+
+    const revokeOptions = {
+      headers: {
+        ...authHeaders(tokens.collaboratorA),
+        'x-forwarded-for': `${requestIp}, 10.0.0.9`,
+      },
+      data: { preferences: { [preferenceKey]: '0' } },
+    };
+    const revoked = await request.patch('/api/users/me/preferences', revokeOptions);
+    expect(revoked.status(), await revoked.text()).toBe(200);
+    const repeated = await request.patch('/api/users/me/preferences', revokeOptions);
+    expect(repeated.status(), await repeated.text()).toBe(200);
+
+    const namesAfter = await request.get(`/api/collaborator/feed/${ids.postA}/supporters`, optedIn);
+    expect(await namesAfter.json()).toEqual({ names: [], nextCursor: null });
+    const feedAfter = await request.get('/api/collaborator/feed', optedIn);
+    const afterItem = (await feedAfter.json()).items.find((item: { id: string }) => item.id === ids.postA);
+    expect(afterItem).toMatchObject({ supportedByMe: true, supportCount: supportCountBefore });
+
+    const db = openPlaywrightDatabase();
+    try {
+      expect(db.prepare(`
+        SELECT COUNT(*) FROM community_post_supports WHERE post_id = ? AND user_id = ?
+      `).pluck().get(ids.postA, ids.collaboratorA)).toBe(1);
+      const receipts = db.prepare(`
+        SELECT actor_id, actor_email, actor_role, action, entity_type, entity_id,
+               details, ip, created_at
+        FROM audit_logs
+        WHERE action = 'user_preference_update' AND actor_id = ?
+        ORDER BY created_at ASC, rowid ASC
+      `).all(ids.collaboratorA) as Array<Record<string, string>>;
+      expect(receipts).toHaveLength(1);
+      expect(receipts[0]).toMatchObject({
+        actor_id: ids.collaboratorA,
+        actor_email: emails.collaboratorA,
+        actor_role: 'colaboradora',
+        action: 'user_preference_update',
+        entity_type: 'user_preference',
+        entity_id: ids.collaboratorA,
+        ip: requestIp,
+      });
+      expect(JSON.parse(receipts[0].details)).toEqual({
+        key: preferenceKey,
+        timestamp: receipts[0].created_at,
+      });
+    } finally {
+      db.close();
+    }
+
+    const restored = await request.patch('/api/users/me/preferences', {
+      ...optedIn,
+      data: { preferences: { [preferenceKey]: '1' } },
+    });
+    expect(restored.status(), await restored.text()).toBe(200);
   });
 
   test('rate-limits collaborator community writes with a stable private 429', async ({ request }) => {
