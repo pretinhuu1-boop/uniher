@@ -13,6 +13,20 @@ export interface ManagedCommunityPost {
   expiresAt?: string | null;
 }
 
+export interface EditorialCompany {
+  id: string;
+  name: string;
+  trade_name: string | null;
+  is_active: number | boolean;
+}
+
+export interface AdminCompaniesResponse {
+  companies: EditorialCompany[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface CommunityPostFormValue {
   title: string;
   summary: string;

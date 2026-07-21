@@ -12,10 +12,16 @@ import {
 } from '@/components/community/management/CommunityPostList';
 import { CommunityPostEditor } from '@/components/community/management/CommunityPostEditor';
 import {
+  getEditorialCompanyName,
+  MasterCompanySelector,
+} from '@/components/community/management/MasterCompanySelector';
+import {
+  type AdminCompaniesResponse,
   EMPTY_COMMUNITY_POST_FORM,
   type CommunityPostField,
   type CommunityPostFieldErrors,
   type CommunityPostFormValue,
+  type EditorialCompany,
   type ManagedCommunityPost,
   toApiExpiry,
   toCommunityPostForm,
@@ -62,9 +68,21 @@ async function requestPost(url: string, method: 'POST' | 'PATCH', body: object):
   return payload.post;
 }
 
+function withCompanyTarget(url: string, companyId: string | null): string {
+  if (!companyId) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}companyId=${encodeURIComponent(companyId)}`;
+}
+
 export default function CommunityManagementPage() {
   const { isLoading: authLoading, user } = useAuth();
   const canManageCommunity = user?.role === 'rh' || user?.role === 'admin';
+  const isMasterAdmin = user?.isMasterAdmin === true;
+  const [companies, setCompanies] = useState<EditorialCompany[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [companiesError, setCompaniesError] = useState('');
+  const [companiesReloadKey, setCompaniesReloadKey] = useState(0);
   const [posts, setPosts] = useState<ManagedCommunityPost[]>([]);
   const [statusFilter, setStatusFilter] = useState<CommunityPostStatusFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -77,12 +95,29 @@ export default function CommunityManagementPage() {
   const [fieldErrors, setFieldErrors] = useState<CommunityPostFieldErrors>({});
   const [message, setMessage] = useState<ActionMessage | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const editorialCompanyId = isMasterAdmin ? selectedCompanyId || null : null;
+  const editorialTargetReady = canManageCommunity && (!isMasterAdmin || Boolean(editorialCompanyId));
+  const selectedCompany = companies.find((company) => company.id === selectedCompanyId) ?? null;
 
-  const loadPosts = useCallback(async (signal?: AbortSignal) => {
+  const resetEditorialWorkspace = useCallback(() => {
+    setPosts([]);
+    setStatusFilter('all');
+    setSelectedId(null);
+    setForm({ ...EMPTY_COMMUNITY_POST_FORM });
+    setEditorStatus('draft');
+    setCompanyFeedEnabled(false);
+    setIsLoading(false);
+    setIsPending(false);
+    setListError('');
+    setFieldErrors({});
+    setMessage(null);
+  }, []);
+
+  const loadPosts = useCallback(async (targetCompanyId: string | null, signal?: AbortSignal) => {
     setIsLoading(true);
     setListError('');
     try {
-      const response = await fetch('/api/rh/community/posts', { signal, cache: 'no-store' });
+      const response = await fetch(withCompanyTarget('/api/rh/community/posts', targetCompanyId), { signal, cache: 'no-store' });
       if (!response.ok) throw new Error(await readApiError(response));
       const payload = await response.json() as ManagementListResponse;
       if (!Array.isArray(payload.items)) throw new Error('A API retornou uma lista inválida.');
@@ -97,11 +132,45 @@ export default function CommunityManagementPage() {
   }, []);
 
   useEffect(() => {
-    if (!canManageCommunity) return;
+    if (!isMasterAdmin) return;
     const controller = new AbortController();
-    void loadPosts(controller.signal);
+    setCompaniesLoading(true);
+    setCompaniesError('');
+
+    fetch('/api/admin/companies?limit=200', { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(await readApiError(response));
+        return response.json() as Promise<AdminCompaniesResponse>;
+      })
+      .then((payload) => {
+        if (!Array.isArray(payload.companies)) throw new Error('A API retornou uma lista de empresas inválida.');
+        setCompanies(payload.companies);
+        setSelectedCompanyId((current) => {
+          const remainsActive = payload.companies.some((company) => (
+            company.id === current && (company.is_active === true || company.is_active === 1)
+          ));
+          return remainsActive ? current : '';
+        });
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setCompanies([]);
+        setSelectedCompanyId('');
+        setCompaniesError(error instanceof Error ? error.message : 'Não foi possível carregar as empresas.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCompaniesLoading(false);
+      });
+
     return () => controller.abort();
-  }, [canManageCommunity, loadPosts, reloadKey]);
+  }, [isMasterAdmin, companiesReloadKey]);
+
+  useEffect(() => {
+    if (!editorialTargetReady) return;
+    const controller = new AbortController();
+    void loadPosts(editorialCompanyId, controller.signal);
+    return () => controller.abort();
+  }, [editorialCompanyId, editorialTargetReady, loadPosts, reloadKey]);
 
   const filteredPosts = useMemo(
     () => statusFilter === 'all' ? posts : posts.filter((post) => post.status === statusFilter),
@@ -114,6 +183,11 @@ export default function CommunityManagementPage() {
     setForm({ ...EMPTY_COMMUNITY_POST_FORM });
     setFieldErrors({});
     setMessage(null);
+  }
+
+  function changeMasterCompany(companyId: string) {
+    resetEditorialWorkspace();
+    setSelectedCompanyId(companyId);
   }
 
   function selectPost(post: ManagedCommunityPost) {
@@ -167,15 +241,16 @@ export default function CommunityManagementPage() {
   }
 
   async function savePost() {
-    if (!validateForm()) return;
+    if (!editorialTargetReady || !validateForm()) return;
     setIsPending(true);
     setMessage(null);
     try {
       const post = selectedId
-        ? await requestPost(`/api/rh/community/posts/${encodeURIComponent(selectedId)}`, 'PATCH', editablePayload())
+        ? await requestPost(withCompanyTarget(`/api/rh/community/posts/${encodeURIComponent(selectedId)}`, editorialCompanyId), 'PATCH', editablePayload())
         : await requestPost('/api/rh/community/posts', 'POST', {
           ...editablePayload(),
           status: 'draft',
+          ...(editorialCompanyId ? { companyId: editorialCompanyId } : {}),
         });
       mergePost(post);
       setMessage({ kind: 'success', text: selectedId ? 'Alterações salvas.' : 'Rascunho criado. Agora ele pode ser publicado.' });
@@ -187,11 +262,11 @@ export default function CommunityManagementPage() {
   }
 
   async function publishPost() {
-    if (!selectedId || editorStatus !== 'draft' || !companyFeedEnabled || !validateForm()) return;
+    if (!editorialTargetReady || !selectedId || editorStatus !== 'draft' || !companyFeedEnabled || !validateForm()) return;
     setIsPending(true);
     setMessage(null);
     try {
-      const post = await requestPost(`/api/rh/community/posts/${encodeURIComponent(selectedId)}`, 'PATCH', {
+      const post = await requestPost(withCompanyTarget(`/api/rh/community/posts/${encodeURIComponent(selectedId)}`, editorialCompanyId), 'PATCH', {
         ...editablePayload(),
         status: 'published',
       });
@@ -205,11 +280,11 @@ export default function CommunityManagementPage() {
   }
 
   async function archivePost() {
-    if (!selectedId || editorStatus !== 'published') return;
+    if (!editorialTargetReady || !selectedId || editorStatus !== 'published') return;
     setIsPending(true);
     setMessage(null);
     try {
-      const post = await requestPost(`/api/rh/community/posts/${encodeURIComponent(selectedId)}`, 'PATCH', { status: 'archived' });
+      const post = await requestPost(withCompanyTarget(`/api/rh/community/posts/${encodeURIComponent(selectedId)}`, editorialCompanyId), 'PATCH', { status: 'archived' });
       mergePost(post);
       setStatusFilter('archived');
       setMessage({ kind: 'success', text: 'Conteúdo arquivado e removido do feed.' });
@@ -233,15 +308,45 @@ export default function CommunityManagementPage() {
       <PageHeader
         context="Comunidade"
         title="Gestão editorial"
-        description="Crie, revise e publique conteúdos da comunidade da empresa. O texto é sempre tratado como conteúdo simples."
+        description={isMasterAdmin
+          ? selectedCompany
+            ? `Empresa selecionada: ${getEditorialCompanyName(selectedCompany)}. Crie, revise e publique conteúdo em texto simples.`
+            : 'Selecione uma empresa para abrir o escopo editorial. Nenhuma leitura ou alteração é feita sem esse alvo.'
+          : 'Crie, revise e publique conteúdos da comunidade da empresa. O texto é sempre tratado como conteúdo simples.'}
         primaryAction={(
-          <Button type="button" onClick={startNewPost} className="w-full gap-2 sm:w-auto">
+          <Button type="button" onClick={startNewPost} disabled={!editorialTargetReady} className="w-full gap-2 sm:w-auto">
             <Plus aria-hidden="true" className="h-4 w-4" />Novo conteúdo
           </Button>
         )}
       />
 
-      <div className="grid min-w-0 overflow-hidden rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] lg:grid-cols-[minmax(17rem,0.72fr)_minmax(0,1.6fr)]">
+      {isMasterAdmin && (
+        <MasterCompanySelector
+          companies={companies}
+          selectedCompanyId={selectedCompanyId}
+          isLoading={companiesLoading}
+          error={companiesError}
+          onChange={changeMasterCompany}
+          onRetry={() => {
+            resetEditorialWorkspace();
+            setSelectedCompanyId('');
+            setCompaniesReloadKey((value) => value + 1);
+          }}
+        />
+      )}
+
+      {isMasterAdmin && !selectedCompany ? (
+        <FeedbackState
+          kind="empty"
+          title={companiesLoading ? 'Carregando empresas' : companiesError ? 'Seleção de empresa indisponível' : 'Selecione uma empresa'}
+          description={companiesLoading
+            ? 'Aguarde a lista de empresas autorizadas.'
+            : companiesError
+              ? 'A gestão editorial permanece bloqueada até a lista ser carregada.'
+              : 'Escolha uma empresa ativa acima para carregar conteúdos e liberar as ações editoriais.'}
+        />
+      ) : (
+        <div className="grid min-w-0 overflow-hidden rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] lg:grid-cols-[minmax(17rem,0.72fr)_minmax(0,1.6fr)]">
         <CommunityPostList
           posts={filteredPosts}
           selectedId={selectedId}
@@ -266,7 +371,8 @@ export default function CommunityManagementPage() {
           onPublish={() => { void publishPost(); }}
           onArchive={() => { void archivePost(); }}
         />
-      </div>
+        </div>
+      )}
     </div>
   );
 }
