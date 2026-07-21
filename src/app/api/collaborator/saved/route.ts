@@ -13,12 +13,12 @@ import { createCommunityRepository } from '@/repositories/community.repository';
 import { getSavedCommunityPosts } from '@/services/community.service';
 
 export const GET = withAuth(async (req: NextRequest, context: AuthContext) => {
-  await initDb();
-  const db = getReadDb();
-  const capabilityError = requireCollaboratorCapability(context, db);
-  if (capabilityError) return capabilityError;
-
   try {
+    await initDb();
+    const db = getReadDb();
+    const capabilityError = requireCollaboratorCapability(context, db);
+    if (capabilityError) return capabilityError;
+
     const repository = createCommunityRepository(db);
     return NextResponse.json(
       getSavedCommunityPosts(communityActor(context), repository, communityQuery(req)),

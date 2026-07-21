@@ -19,13 +19,13 @@ import {
 type SupportAction = typeof addCommunityPostSupport;
 
 async function mutateSupport(req: NextRequest, context: AuthContext, action: SupportAction) {
-  await initDb();
-  const capabilityError = requireCollaboratorCapability(context, getReadDb());
-  if (capabilityError) return capabilityError;
-  await checkWriteRateLimit(req);
-  const { id } = await context.params;
-
   try {
+    await initDb();
+    const capabilityError = requireCollaboratorCapability(context, getReadDb());
+    if (capabilityError) return capabilityError;
+    await checkWriteRateLimit(req);
+    const { id } = await context.params;
+
     const state = await enqueueCollaboratorSelfWrite(
       getWriteQueue(),
       context.auth.userId,

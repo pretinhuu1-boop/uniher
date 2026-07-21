@@ -3,6 +3,7 @@ import { expect, test, type APIRequestContext, type APIResponse } from '@playwri
 
 import playwrightDbSafety from '../playwright-db-safety.cjs';
 import { extractAccessTokenFromSetCookie, expectPrivateResponse } from './helpers/auth';
+import { communityApiErrorResponse } from '../../src/lib/community/api';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const PASSWORD = 'Admin@2026';
@@ -141,6 +142,14 @@ async function expectError(response: APIResponse, status: number, code: string) 
 
 test.describe.configure({ mode: 'serial' });
 
+test('maps unexpected community API errors to a safe 500 response', async () => {
+  const response = communityApiErrorResponse(new Error('community-secret-sentinel'));
+  expect(response.status).toBe(500);
+  const payload = await response.json();
+  expect(payload).toMatchObject({ status: 500, code: 'INTERNAL_ERROR' });
+  expect(JSON.stringify(payload)).not.toContain('community-secret-sentinel');
+});
+
 test.describe('collaborator company community feed', () => {
   test.beforeAll(async ({ request }) => {
     cleanupCommunityFixtures();
@@ -233,6 +242,33 @@ test.describe('collaborator company community feed', () => {
     }), 422, 'COMMUNITY_CURSOR_INVALID');
   });
 
+  test('rejects repeated community query keys instead of accepting the last value', async ({ request }) => {
+    const validFeedCursor = Buffer.from(JSON.stringify([
+      '2026-07-20T12:00:00.000Z',
+      '2026-07-20T11:00:00.000Z',
+      ids.postA,
+    ])).toString('base64url');
+    const validSupporterCursor = Buffer.from(JSON.stringify([
+      '2026-07-20T12:00:00.000Z',
+      '1',
+    ])).toString('base64url');
+    const paths = [
+      '/api/collaborator/feed?topic=segredo&topic=pausas',
+      '/api/collaborator/feed?limit=31&limit=20',
+      `/api/collaborator/feed?cursor=bad&cursor=${validFeedCursor}`,
+      '/api/collaborator/saved?limit=31&limit=20',
+      `/api/collaborator/saved?cursor=bad&cursor=${validFeedCursor}`,
+      `/api/collaborator/feed/${ids.postA}/supporters?limit=21&limit=20`,
+      `/api/collaborator/feed/${ids.postA}/supporters?cursor=bad&cursor=${validSupporterCursor}`,
+    ];
+
+    for (const path of paths) {
+      await expectError(await request.get(path, {
+        headers: authHeaders(tokens.collaboratorA),
+      }), 422, 'COMMUNITY_QUERY_INVALID');
+    }
+  });
+
   test('blocks company A from company B post relations by ID', async ({ request }) => {
     const options = { headers: authHeaders(tokens.collaboratorA) };
     await expectError(await request.post(`/api/collaborator/feed/${ids.postB}/support`, options), 404, 'POST_NOT_FOUND');
@@ -323,5 +359,24 @@ test.describe('collaborator company community feed', () => {
     await expectError(await request.get(`/api/collaborator/feed/${ids.postA}/supporters?cursor=bad`, {
       headers: authHeaders(tokens.collaboratorA),
     }), 422, 'COMMUNITY_CURSOR_INVALID');
+  });
+
+  test('rate-limits collaborator community writes with a stable private 429', async ({ request }) => {
+    const headers = {
+      ...authHeaders(tokens.collaboratorA),
+      'x-forwarded-for': '198.51.100.77',
+    };
+    for (let index = 0; index < 30; index += 1) {
+      const relation = index % 2 === 0 ? 'support' : 'save';
+      const response = await request.post(`/api/collaborator/feed/${ids.postA}/${relation}`, {
+        headers,
+      });
+      expect(response.status(), `write ${index + 1}: ${await response.text()}`).toBe(200);
+    }
+
+    const limited = await request.delete(`/api/collaborator/feed/${ids.postA}/save`, { headers });
+    expect(limited.status(), await limited.text()).toBe(429);
+    expectPrivateResponse(limited);
+    expect(await limited.json()).toMatchObject({ status: 429, code: 'RATE_LIMIT' });
   });
 });

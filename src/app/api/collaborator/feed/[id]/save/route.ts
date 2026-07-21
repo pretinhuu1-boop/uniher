@@ -16,13 +16,13 @@ import { saveCommunityPost, unsaveCommunityPost } from '@/services/community.ser
 type SaveAction = typeof saveCommunityPost;
 
 async function mutateSave(req: NextRequest, context: AuthContext, action: SaveAction) {
-  await initDb();
-  const capabilityError = requireCollaboratorCapability(context, getReadDb());
-  if (capabilityError) return capabilityError;
-  await checkWriteRateLimit(req);
-  const { id } = await context.params;
-
   try {
+    await initDb();
+    const capabilityError = requireCollaboratorCapability(context, getReadDb());
+    if (capabilityError) return capabilityError;
+    await checkWriteRateLimit(req);
+    const { id } = await context.params;
+
     const state = await enqueueCollaboratorSelfWrite(
       getWriteQueue(),
       context.auth.userId,

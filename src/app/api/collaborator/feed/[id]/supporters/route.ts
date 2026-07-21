@@ -13,13 +13,13 @@ import { createCommunityRepository } from '@/repositories/community.repository';
 import { getCommunitySupporters } from '@/services/community.service';
 
 export const GET = withAuth(async (req: NextRequest, context: AuthContext) => {
-  await initDb();
-  const db = getReadDb();
-  const capabilityError = requireCollaboratorCapability(context, db);
-  if (capabilityError) return capabilityError;
-  const { id } = await context.params;
-
   try {
+    await initDb();
+    const db = getReadDb();
+    const capabilityError = requireCollaboratorCapability(context, db);
+    if (capabilityError) return capabilityError;
+    const { id } = await context.params;
+
     const repository = createCommunityRepository(db);
     return NextResponse.json(
       getCommunitySupporters(communityActor(context), repository, id, communityQuery(req)),

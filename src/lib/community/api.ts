@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 
 import { CollaboratorSelfWriteError, hasCollaboratorSelfCapability } from '@/lib/auth/collaborator-self';
 import type { AuthContext } from '@/lib/auth/middleware';
+import { AppError, handleApiError } from '@/lib/errors';
 import type Database from 'better-sqlite3';
 import { CommunityServiceError, type CommunityActor } from '@/services/community.service';
 
@@ -23,9 +24,15 @@ export function requireCollaboratorCapability(
 
 export function communityQuery(req: NextRequest, omitted: readonly string[] = []): Record<string, string> {
   const omittedKeys = new Set(omitted);
-  return Object.fromEntries(
-    Array.from(req.nextUrl.searchParams.entries()).filter(([key]) => !omittedKeys.has(key)),
-  );
+  const query: Record<string, string> = {};
+  for (const [key, value] of req.nextUrl.searchParams.entries()) {
+    if (omittedKeys.has(key)) continue;
+    if (Object.hasOwn(query, key)) {
+      throw new AppError('Invalid community query', 422, 'COMMUNITY_QUERY_INVALID');
+    }
+    query[key] = value;
+  }
+  return query;
 }
 
 export function communityApiErrorResponse(error: unknown): NextResponse {
@@ -50,5 +57,5 @@ export function communityApiErrorResponse(error: unknown): NextResponse {
       { status: 422 },
     );
   }
-  throw error;
+  return handleApiError(error);
 }
