@@ -70,5 +70,6 @@ export default defineConfig({
     { name: 'visual-ux', testMatch: 'visual-ux.spec.ts', use: { headless: true } },
     { name: 'mobile-shell', testMatch: 'mobile-collaborator-shell.spec.ts', use: { headless: true } },
     { name: 'community-feed', testMatch: 'community-feed.spec.ts', use: { headless: true, serviceWorkers: 'block' } },
+    { name: 'community-feed-ui', testMatch: 'community-feed-ui.spec.ts', use: { headless: true, serviceWorkers: 'block' } },
   ],
 });

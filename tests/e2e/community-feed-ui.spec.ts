@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+import path from 'node:path';
+import playwrightDbSafety from '../playwright-db-safety.cjs';
 import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 test.use({
@@ -45,6 +47,56 @@ const sleepPost = {
   bodyText: 'Reduza estímulos e reserve alguns minutos para desacelerar.',
   topic: 'sono',
 } as const;
+
+type Bounds = { x: number; y: number; width: number; height: number };
+
+function overlaps(first: Bounds, second: Bounds): boolean {
+  return first.x < second.x + second.width
+    && first.x + first.width > second.x
+    && first.y < second.y + second.height
+    && first.y + first.height > second.y;
+}
+
+async function expectTextContrast(page: Page, selectors: string[], minimum = 4.5) {
+  const results = await page.locator(selectors.join(',')).evaluateAll((elements) => {
+    const parseColor = (value: string) => {
+      const channels = value.match(/[\d.]+/g)?.map(Number) ?? [];
+      return { red: channels[0] ?? 0, green: channels[1] ?? 0, blue: channels[2] ?? 0, alpha: channels[3] ?? 1 };
+    };
+    const luminance = ({ red, green, blue }: { red: number; green: number; blue: number }) => {
+      const channels = [red, green, blue].map((channel) => {
+        const normalized = channel / 255;
+        return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const backgroundFor = (element: Element) => {
+      let current: Element | null = element;
+      while (current) {
+        const color = parseColor(getComputedStyle(current).backgroundColor);
+        if (color.alpha > 0) return color;
+        current = current.parentElement;
+      }
+      return { red: 255, green: 255, blue: 255, alpha: 1 };
+    };
+
+    return elements.filter((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }).map((element) => {
+      const foreground = parseColor(getComputedStyle(element).color);
+      const background = backgroundFor(element);
+      const brighter = Math.max(luminance(foreground), luminance(background));
+      const darker = Math.min(luminance(foreground), luminance(background));
+      return { label: element.textContent?.trim() || element.tagName, ratio: (brighter + 0.05) / (darker + 0.05) };
+    });
+  });
+
+  expect(results.length).toBeGreaterThan(0);
+  for (const result of results) {
+    expect(result.ratio, `${result.label} contrast ratio`).toBeGreaterThanOrEqual(minimum);
+  }
+}
 
 async function mockCommunityUi(page: Page) {
   await page.route('**/api/company', (route) => route.fulfill({
@@ -102,19 +154,23 @@ async function mockCommunityUi(page: Page) {
 test.describe('Collaborator community feed UI', () => {
   test.describe.configure({ mode: 'serial' });
   let collaboratorToken = '';
+  let adminToken = '';
+  let companyId = '';
+  let safeDatabasePath = '';
 
   test.beforeAll(async ({ request }) => {
+    safeDatabasePath = playwrightDbSafety.assertCommunityFeedFixtureEnvironment(process.env);
     const suffix = `${Date.now()}-${randomUUID().slice(0, 8)}`;
     const adminLogin = await request.post('/api/auth/login', {
       data: { email: 'admin@uniher.com.br', password: 'Admin@2026' },
     });
     expect(adminLogin.ok(), await adminLogin.text()).toBeTruthy();
-    const adminToken = extractAccessTokenFromSetCookie(adminLogin);
+    adminToken = extractAccessTokenFromSetCookie(adminLogin);
 
     const companyResponse = await request.post('/api/admin/companies', {
       headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: {
-        name: `Community UI ${suffix}`,
+        name: `Community Feed E2E UI ${suffix}`,
         cnpj: `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-14),
         sector: 'Community UI QA',
         plan: 'trial',
@@ -122,9 +178,9 @@ test.describe('Collaborator community feed UI', () => {
     });
     const companyBody = await companyResponse.text();
     expect(companyResponse.ok(), companyBody).toBeTruthy();
-    const companyId = (JSON.parse(companyBody) as { company: { id: string } }).company.id;
+    companyId = (JSON.parse(companyBody) as { company: { id: string } }).company.id;
 
-    const email = `community-ui-${suffix}@empresa.com`;
+    const email = `community-feed-test-ui-${suffix}@local.invalid`;
     const password = 'CommunityUi@2026';
     const userResponse = await request.post('/api/admin/users', {
       headers: { Cookie: `uniher-access-token=${adminToken}` },
@@ -151,6 +207,14 @@ test.describe('Collaborator community feed UI', () => {
     expect(tourResponse.ok(), await tourResponse.text()).toBeTruthy();
   });
 
+  test.afterAll(async ({ request }) => {
+    if (!companyId || !adminToken) return;
+    const cleanupResponse = await request.delete(`/api/admin/companies/${encodeURIComponent(companyId)}`, {
+      headers: { Cookie: `uniher-access-token=${adminToken}` },
+    });
+    expect(cleanupResponse.ok(), await cleanupResponse.text()).toBeTruthy();
+  });
+
   for (const viewport of viewports) {
     test.describe(viewport.name, () => {
       test.use({ viewport: { width: viewport.width, height: viewport.height } });
@@ -158,6 +222,7 @@ test.describe('Collaborator community feed UI', () => {
       test('renders the real feed contract without overflow or identity leakage', async ({ page, baseURL }, testInfo) => {
         test.setTimeout(60_000);
         expect(baseURL).toBeTruthy();
+        expect(path.basename(safeDatabasePath)).toBe('uniher-playwright.db');
         await page.context().addCookies([{
           name: 'uniher-access-token',
           value: collaboratorToken,
@@ -170,10 +235,50 @@ test.describe('Collaborator community feed UI', () => {
         await expect(page.getByRole('heading', { name: 'Conteúdos da sua empresa' })).toBeVisible();
         await expect(page.locator('article').first().getByText('Aurora Trabalho')).toBeVisible();
         await expect(page.getByRole('tab')).toHaveCount(5);
-        await expect(page.getByRole('tab', { name: 'Para você' })).toHaveAttribute('aria-selected', 'true');
+        const firstTab = page.getByRole('tab', { name: 'Para você' });
+        await expect(firstTab).toHaveAttribute('aria-selected', 'true');
+        await firstTab.click();
+        await page.keyboard.press('ArrowLeft');
+        await expect(page.getByRole('tab', { name: 'Movimento' })).toBeFocused();
+        await expect(page.getByRole('tab', { name: 'Movimento' })).toHaveAttribute('aria-selected', 'true');
+        await page.keyboard.press('ArrowRight');
+        await expect(firstTab).toBeFocused();
+        await expect(firstTab).toHaveAttribute('aria-selected', 'true');
+        await page.keyboard.press('End');
+        await expect(page.getByRole('tab', { name: 'Movimento' })).toBeFocused();
+        await page.keyboard.press('Home');
+        await expect(firstTab).toBeFocused();
+        await expect(firstTab).toHaveAttribute('aria-selected', 'true');
         await expect(page.getByText('<strong>Respire por alguns instantes.</strong>')).toBeVisible();
         await expect(page.locator('article strong')).toHaveCount(0);
         await expect(page.getByRole('region', { name: 'Apoiadoras com nome autorizado' })).toHaveCount(0);
+
+        const mainHeading = page.getByRole('heading', { name: 'Conteúdos da sua empresa' });
+        const sidebar = page.locator('aside').first();
+        if (viewport.width <= 768) {
+          const topbar = page.locator('header').first();
+          const [headingBounds, topbarBounds] = await Promise.all([mainHeading.boundingBox(), topbar.boundingBox()]);
+          expect(headingBounds).not.toBeNull();
+          expect(topbarBounds).not.toBeNull();
+          expect(overlaps(headingBounds!, topbarBounds!)).toBe(false);
+
+          await page.getByRole('button', { name: 'Abrir navegação' }).click();
+          const drawer = page.getByRole('dialog', { name: 'Navegação' });
+          const [drawerBounds, coveredHeadingBounds] = await Promise.all([drawer.boundingBox(), mainHeading.boundingBox()]);
+          expect(drawerBounds).not.toBeNull();
+          expect(coveredHeadingBounds).not.toBeNull();
+          expect(overlaps(drawerBounds!, coveredHeadingBounds!)).toBe(true);
+          await expect(page.locator('#main-content').locator('..')).toHaveAttribute('inert', '');
+          expect(drawerBounds!.x).toBeGreaterThanOrEqual(0);
+          expect(drawerBounds!.x + drawerBounds!.width).toBeLessThanOrEqual(viewport.width);
+          await page.getByRole('button', { name: 'Fechar navegação' }).click();
+          await expect(drawer).toBeHidden();
+        } else {
+          const [headingBounds, sidebarBounds] = await Promise.all([mainHeading.boundingBox(), sidebar.boundingBox()]);
+          expect(headingBounds).not.toBeNull();
+          expect(sidebarBounds).not.toBeNull();
+          expect(overlaps(headingBounds!, sidebarBounds!)).toBe(false);
+        }
 
         await page.getByRole('button', { name: 'Ver apoiadoras' }).click();
         const supportersRegion = page.getByRole('region', { name: 'Apoiadoras com nome autorizado' });
@@ -196,6 +301,13 @@ test.describe('Collaborator community feed UI', () => {
         await expect(page.getByRole('heading', { name: sleepPost.title })).toBeVisible();
         await expect(page.getByRole('heading', { name: postA.title })).toHaveCount(0);
 
+        await expectTextContrast(page, [
+          '[role="tab"][aria-selected="true"]',
+          '#community-feed-panel article h2',
+          '#community-feed-panel article p[class*="text-[var(--platform-ink)]"]',
+          '#community-feed-panel article button[aria-pressed]',
+        ]);
+
         const tabsAndActions = page.locator('[role="tab"], article button');
         const targetsAreLargeEnough = await tabsAndActions.evaluateAll((elements) => elements.every((element) => {
           const rect = element.getBoundingClientRect();
@@ -204,8 +316,11 @@ test.describe('Collaborator community feed UI', () => {
         expect(targetsAreLargeEnough).toBe(true);
 
         const activeTab = page.getByRole('tab', { name: 'Sono' });
-        await activeTab.focus();
+        await activeTab.click();
+        await page.keyboard.press('ArrowRight');
+        await page.keyboard.press('ArrowLeft');
         await expect(activeTab).toBeFocused();
+        await expect(activeTab).toHaveAttribute('aria-selected', 'true');
         const transitionDuration = await activeTab.evaluate((element) => getComputedStyle(element).transitionDuration);
         expect(Number.parseFloat(transitionDuration)).toBeLessThanOrEqual(0.001);
 
@@ -218,7 +333,14 @@ test.describe('Collaborator community feed UI', () => {
         expect(widths.document).toBeLessThanOrEqual(widths.viewport);
 
         if (viewport.width <= 768) {
-          await expect(page.getByRole('navigation', { name: 'Navegação mobile' })).toBeVisible();
+          const mobileNav = page.getByRole('navigation', { name: 'Navegação mobile' });
+          await expect(mobileNav).toBeVisible();
+          const endOfFeed = page.getByText('Você chegou ao fim das publicações.');
+          await endOfFeed.evaluate((element) => element.scrollIntoView({ block: 'end' }));
+          const [endBounds, navBounds] = await Promise.all([endOfFeed.boundingBox(), mobileNav.boundingBox()]);
+          expect(endBounds).not.toBeNull();
+          expect(navBounds).not.toBeNull();
+          expect(overlaps(endBounds!, navBounds!)).toBe(false);
         } else {
           await expect(page.getByRole('navigation', { name: 'Navegação mobile' })).toBeHidden();
         }

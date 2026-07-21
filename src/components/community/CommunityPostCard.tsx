@@ -54,6 +54,7 @@ export function CommunityPostCard({
   const [supportersCursor, setSupportersCursor] = useState<string | null | undefined>(undefined);
   const [supportersLoading, setSupportersLoading] = useState(false);
   const [supportersError, setSupportersError] = useState('');
+  const supportersOpenRef = useRef(false);
   const supportersRequestEpochRef = useRef(0);
 
   async function runAction(action: () => Promise<unknown>, setPending: (pending: boolean) => void) {
@@ -68,8 +69,7 @@ export function CommunityPostCard({
     }
   }
 
-  async function fetchSupporters(cursor?: string) {
-    const requestEpoch = supportersRequestEpochRef.current;
+  async function fetchSupporters(cursor?: string, requestEpoch = supportersRequestEpochRef.current) {
     setSupportersLoading(true);
     setSupportersError('');
     try {
@@ -86,17 +86,38 @@ export function CommunityPostCard({
   }
 
   function openSupporters() {
+    supportersOpenRef.current = true;
     setSupportersOpen(true);
     if (supportersCursor === undefined) void fetchSupporters();
   }
 
-  function closeSupporters() {
+  function invalidateSupporters() {
     supportersRequestEpochRef.current += 1;
-    setSupportersOpen(false);
     setSupporters([]);
     setSupportersCursor(undefined);
     setSupportersError('');
     setSupportersLoading(false);
+    return supportersRequestEpochRef.current;
+  }
+
+  function closeSupporters() {
+    supportersOpenRef.current = false;
+    invalidateSupporters();
+    setSupportersOpen(false);
+  }
+
+  async function runSupportAction() {
+    setSupportPending(true);
+    setActionError('');
+    try {
+      await (item.supportedByMe ? onUnsupport(item.id) : onSupport(item.id));
+      const refreshEpoch = invalidateSupporters();
+      if (supportersOpenRef.current) void fetchSupporters(undefined, refreshEpoch);
+    } catch {
+      setActionError('Não foi possível concluir a ação. Tente novamente.');
+    } finally {
+      setSupportPending(false);
+    }
   }
 
   const anonymousCount = supportersCursor === null ? Math.max(0, item.supportCount - supporters.length) : null;
@@ -130,7 +151,7 @@ export function CommunityPostCard({
         <div className="mt-5 grid grid-cols-2 border-y border-[var(--platform-line)]">
           <button
             type="button"
-            onClick={() => void runAction(() => item.supportedByMe ? onUnsupport(item.id) : onSupport(item.id), setSupportPending)}
+            onClick={() => void runSupportAction()}
             disabled={supportPending || savePending}
             aria-pressed={item.supportedByMe}
             className="inline-flex min-h-11 items-center justify-center gap-2 border-r border-[var(--platform-line)] px-3 py-2 text-sm font-semibold text-[var(--platform-positive)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--platform-action)] disabled:cursor-not-allowed disabled:opacity-50"

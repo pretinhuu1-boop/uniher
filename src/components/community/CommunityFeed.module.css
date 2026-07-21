@@ -21,3 +21,9 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+@media (max-width: 768px) {
+  .feedRoot [role='status'] {
+    scroll-margin-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+}

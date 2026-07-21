@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
 import type { CommunityTopic } from '@/types/community';
 import styles from './CommunityFeed.module.css';
 
@@ -26,22 +26,36 @@ export function topicForCommunityTab(tab: CommunityFeedTab): CommunityTopic | un
 }
 
 export function CommunityTopicTabs({ activeTab, disabled = false, onChange }: CommunityTopicTabsProps) {
-  const activeTabRef = useRef<HTMLButtonElement>(null);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
-    activeTabRef.current?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
+    const activeIndex = tabs.findIndex((tab) => tab.value === activeTab);
+    tabRefs.current[activeIndex]?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
   }, [activeTab]);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) {
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = tabs.length - 1;
+    if (nextIndex === null) return;
+
+    event.preventDefault();
+    tabRefs.current[nextIndex]?.focus();
+    onChange(tabs[nextIndex].value);
+  }
 
   return (
     <div className={styles.topicScroller}>
       <div className="flex min-w-max border-b border-[var(--platform-line)]" role="tablist" aria-label="Temas da comunidade">
-        {tabs.map((tab) => {
+        {tabs.map((tab, index) => {
           const selected = activeTab === tab.value;
           return (
             <button
               key={tab.value}
               id={`community-tab-${tab.value}`}
-              ref={selected ? activeTabRef : undefined}
+              ref={(node) => { tabRefs.current[index] = node; }}
               type="button"
               role="tab"
               aria-selected={selected}
@@ -49,6 +63,7 @@ export function CommunityTopicTabs({ activeTab, disabled = false, onChange }: Co
               tabIndex={selected ? 0 : -1}
               disabled={disabled}
               onClick={() => onChange(tab.value)}
+              onKeyDown={(event) => handleKeyDown(event, index)}
               className={`min-h-11 min-w-[7rem] border-b-2 px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--platform-action)] disabled:cursor-not-allowed disabled:opacity-50 ${selected
                 ? 'border-[var(--platform-action)] text-[var(--platform-action-strong)]'
                 : 'border-transparent text-[var(--platform-muted)] hover:text-[var(--platform-ink)]'}`}

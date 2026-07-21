@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommunityFeedItem } from '@/types/community';
 
@@ -76,6 +77,35 @@ describe('CommunityTopicTabs', () => {
     scrollIntoView.mockClear();
     view.rerender(<CommunityTopicTabs activeTab="sono" onChange={onChange} />);
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'center' });
+  });
+
+  it('uses roving focus with wrap, Home and End while keeping selection coherent', () => {
+    function ControlledTabs() {
+      const [activeTab, setActiveTab] = useState<'for-you' | 'all' | 'pausas' | 'sono' | 'movimento'>('for-you');
+      return <CommunityTopicTabs activeTab={activeTab} onChange={setActiveTab} />;
+    }
+
+    render(<ControlledTabs />);
+    const tabs = screen.getAllByRole('tab') as HTMLButtonElement[];
+    tabs[0].focus();
+
+    fireEvent.keyDown(tabs[0], { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(tabs[4]);
+    expect(tabs[4].getAttribute('aria-selected')).toBe('true');
+    expect(tabs[4].tabIndex).toBe(0);
+    expect(tabs[0].tabIndex).toBe(-1);
+
+    fireEvent.keyDown(tabs[4], { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(tabs[0]);
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+
+    fireEvent.keyDown(tabs[0], { key: 'End' });
+    expect(document.activeElement).toBe(tabs[4]);
+    expect(tabs[4].getAttribute('aria-selected')).toBe('true');
+
+    fireEvent.keyDown(tabs[4], { key: 'Home' });
+    expect(document.activeElement).toBe(tabs[0]);
+    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
   });
 });
 
@@ -164,6 +194,87 @@ describe('CommunityPostCard', () => {
 
     await waitFor(() => expect(loadSupporters).toHaveBeenCalledTimes(2));
     expect(screen.queryByText('Nome revogado')).toBeNull();
+  });
+
+  it('refreshes an open disclosure after support changes so a removed name disappears', async () => {
+    const loadSupporters = vi.fn()
+      .mockResolvedValueOnce({ names: ['Meu nome', 'Ana'], nextCursor: null })
+      .mockResolvedValueOnce({ names: ['Ana'], nextCursor: null });
+    render(
+      <CommunityPostCard
+        item={post}
+        brand={{ name: 'Empresa Real', logoUrl: null }}
+        onSupport={vi.fn().mockResolvedValue(undefined)}
+        onUnsupport={vi.fn()}
+        onSave={vi.fn()}
+        onUnsave={vi.fn()}
+        loadSupporters={loadSupporters}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver apoiadoras' }));
+    expect(await screen.findByText('Meu nome')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Apoiar' }));
+
+    await waitFor(() => expect(loadSupporters).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByText('Meu nome')).toBeNull());
+    expect(screen.getByText('Ana')).toBeTruthy();
+  });
+
+  it('never restores stale names when an older disclosure response loses a support race', async () => {
+    let resolveStale: ((response: { names: string[]; nextCursor: null }) => void) | undefined;
+    const staleRequest = new Promise<{ names: string[]; nextCursor: null }>((resolve) => { resolveStale = resolve; });
+    const loadSupporters = vi.fn()
+      .mockReturnValueOnce(staleRequest)
+      .mockResolvedValueOnce({ names: ['Nome atual'], nextCursor: null });
+    render(
+      <CommunityPostCard
+        item={post}
+        brand={{ name: 'Empresa Real', logoUrl: null }}
+        onSupport={vi.fn().mockResolvedValue(undefined)}
+        onUnsupport={vi.fn()}
+        onSave={vi.fn()}
+        onUnsave={vi.fn()}
+        loadSupporters={loadSupporters}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver apoiadoras' }));
+    await waitFor(() => expect(loadSupporters).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: 'Apoiar' }));
+    expect(await screen.findByText('Nome atual')).toBeTruthy();
+
+    await act(async () => {
+      resolveStale?.({ names: ['Nome antigo'], nextCursor: null });
+      await staleRequest;
+    });
+    expect(screen.queryByText('Nome antigo')).toBeNull();
+    expect(screen.getByText('Nome atual')).toBeTruthy();
+  });
+
+  it('does not refetch names after a pending support action is closed', async () => {
+    let resolveSupport: (() => void) | undefined;
+    const onSupport = vi.fn(() => new Promise<void>((resolve) => { resolveSupport = resolve; }));
+    const loadSupporters = vi.fn().mockResolvedValue({ names: ['Ana'], nextCursor: null });
+    render(
+      <CommunityPostCard
+        item={post}
+        brand={{ name: 'Empresa Real', logoUrl: null }}
+        onSupport={onSupport}
+        onUnsupport={vi.fn()}
+        onSave={vi.fn()}
+        onUnsave={vi.fn()}
+        loadSupporters={loadSupporters}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver apoiadoras' }));
+    expect(await screen.findByText('Ana')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Apoiar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar lista de apoiadoras' }));
+    await act(async () => { resolveSupport?.(); });
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Apoiar' }) as HTMLButtonElement).disabled).toBe(false));
+    expect(loadSupporters).toHaveBeenCalledTimes(1);
   });
 });
 
