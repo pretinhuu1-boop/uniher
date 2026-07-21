@@ -10,6 +10,7 @@ export const NAVIGATION_ICONS = [
   'departamentos',
   'semaforo',
   'campanhas',
+  'community',
   'objetivos',
   'desafios',
   'liga',
@@ -46,6 +47,12 @@ const NAVIGATION = {
           label: 'Visão geral',
           icon: 'companies',
           description: 'Exceções, empresas e integridade da plataforma',
+        },
+        {
+          href: '/comunidade/gerenciar',
+          label: 'Gerenciar comunidade',
+          icon: 'community',
+          description: 'Conteúdos editoriais das comunidades das empresas',
         },
         {
           href: '/analytics-emails',
@@ -105,6 +112,12 @@ const NAVIGATION = {
           label: 'Campanhas',
           icon: 'campanhas',
           description: 'Planejar e acompanhar campanhas',
+        },
+        {
+          href: '/comunidade/gerenciar',
+          label: 'Gerenciar comunidade',
+          icon: 'community',
+          description: 'Publicar e organizar conteúdos da comunidade',
         },
         {
           href: '/objetivos',
@@ -190,6 +203,12 @@ const NAVIGATION = {
           label: 'Hoje',
           icon: 'dashboard',
           description: 'Seu foco e suas próximas ações',
+        },
+        {
+          href: '/comunidade',
+          label: 'Comunidade',
+          icon: 'community',
+          description: 'Conteúdos editoriais da sua empresa',
         },
         {
           href: '/semaforo',

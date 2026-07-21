@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ImgHTMLAttributes } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { UserRole } from '@/types/platform';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -14,7 +15,8 @@ const mocks = vi.hoisted(() => ({
     companyId: 'company-a' as string | undefined,
     name: 'Liderança comum',
     email: 'leader@example.test',
-    role: 'lideranca' as const,
+    role: 'lideranca' as UserRole,
+    isMasterAdmin: false,
     also_collaborator: 0,
     level: 0,
     points: 0,
@@ -54,6 +56,8 @@ describe('Sidebar persisted collaborator capability', () => {
     mocks.swrKeys.length = 0;
     mocks.hasUser = true;
     mocks.user.id = 'leadership-common';
+    mocks.user.role = 'lideranca';
+    mocks.user.isMasterAdmin = false;
     mocks.user.also_collaborator = 0;
     mocks.user.companyId = 'company-a';
     Object.defineProperty(window, 'matchMedia', {
@@ -78,13 +82,42 @@ describe('Sidebar persisted collaborator capability', () => {
   });
 
   it('renders Agenda only in the personal view for a persisted dual-role user', async () => {
+    mocks.user.role = 'rh';
     mocks.user.also_collaborator = 1;
     sessionStorage.setItem('uniher-view-mode', 'colaboradora');
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     await waitFor(() => expect(screen.queryByRole('link', { name: /Minha agenda/i })).not.toBeNull());
+    expect(screen.queryByRole('link', { name: /^Comunidade$/i })).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /Gerenciar comunidade/i })).toBeNull();
     expect(screen.queryByRole('link', { name: /Visão geral/i })).toBeNull();
+  });
+
+  it('keeps community management in the RH view for a dual-role user', () => {
+    mocks.user.role = 'rh';
+    mocks.user.also_collaborator = 1;
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    expect(screen.queryByRole('link', { name: /Gerenciar comunidade/i })).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /^Comunidade$/i })).toBeNull();
+  });
+
+  it.each([
+    { label: 'collaborator', role: 'colaboradora' as const, isMasterAdmin: false, feed: true, manage: false },
+    { label: 'RH', role: 'rh' as const, isMasterAdmin: false, feed: false, manage: true },
+    { label: 'company admin', role: 'admin' as const, isMasterAdmin: false, feed: false, manage: true },
+    { label: 'master admin', role: 'admin' as const, isMasterAdmin: true, feed: false, manage: true },
+    { label: 'leadership', role: 'lideranca' as const, isMasterAdmin: false, feed: false, manage: false },
+  ])('renders the desktop community links for $label only', ({ role, isMasterAdmin, feed, manage }) => {
+    mocks.user.role = role;
+    mocks.user.isMasterAdmin = isMasterAdmin;
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    expect(screen.queryByRole('link', { name: /^Comunidade$/i }) !== null).toBe(feed);
+    expect(screen.queryByRole('link', { name: /Gerenciar comunidade/i }) !== null).toBe(manage);
   });
 
   it('clears protected report caches before switching the persisted view', async () => {

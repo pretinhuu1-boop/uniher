@@ -2,6 +2,7 @@
 
 import { useId } from 'react';
 import Link from 'next/link';
+import { MessagesSquare } from 'lucide-react';
 import type { NavigationIcon } from './navigation';
 import styles from './Sidebar.module.css';
 
@@ -30,6 +31,7 @@ const ICONS = {
       <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18" /><path d="M8 2v4" /><path d="M16 2v4" />
     </svg>
   ),
+  community: <MessagesSquare />,
   desafios: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />

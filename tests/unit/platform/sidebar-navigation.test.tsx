@@ -42,6 +42,12 @@ describe('Sidebar navigation rendering', () => {
     }))).toThrowError('Unsupported navigation icon: unsupported');
   });
 
+  it('renders the dedicated Lucide community icon', () => {
+    const html = renderToStaticMarkup(createElement(NavIcon, { name: 'community' }));
+
+    expect(html).toContain('lucide-messages-square');
+  });
+
   it('renders labeled sections and lists with segment-aware active state', () => {
     const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
       groups: TEST_GROUPS,

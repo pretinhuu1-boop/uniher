@@ -24,6 +24,12 @@ const EXPECTED_NAVIGATION = {
           description: 'Exceções, empresas e integridade da plataforma',
         },
         {
+          href: '/comunidade/gerenciar',
+          label: 'Gerenciar comunidade',
+          icon: 'community',
+          description: 'Conteúdos editoriais das comunidades das empresas',
+        },
+        {
           href: '/analytics-emails',
           label: 'Analytics global',
           icon: 'analytics',
@@ -81,6 +87,12 @@ const EXPECTED_NAVIGATION = {
           label: 'Campanhas',
           icon: 'campanhas',
           description: 'Planejar e acompanhar campanhas',
+        },
+        {
+          href: '/comunidade/gerenciar',
+          label: 'Gerenciar comunidade',
+          icon: 'community',
+          description: 'Publicar e organizar conteúdos da comunidade',
         },
         {
           href: '/objetivos',
@@ -168,6 +180,12 @@ const EXPECTED_NAVIGATION = {
           description: 'Seu foco e suas próximas ações',
         },
         {
+          href: '/comunidade',
+          label: 'Comunidade',
+          icon: 'community',
+          description: 'Conteúdos editoriais da sua empresa',
+        },
+        {
           href: '/semaforo',
           label: 'Meu semáforo',
           icon: 'semaforo',
@@ -237,6 +255,7 @@ const ADMIN_DENIED_ROUTES = [
   '/company-profile',
   '/gamificacao-config',
   '/convites',
+  '/comunidade',
 ] as const;
 
 describe('platform navigation', () => {
@@ -251,6 +270,20 @@ describe('platform navigation', () => {
   it('keeps admin navigation free from non-admin destinations', () => {
     const adminRoutes = getNavigationForRole('admin').flatMap((group) => group.items.map((item) => item.href));
     expect(adminRoutes.filter((route) => ADMIN_DENIED_ROUTES.includes(route as typeof ADMIN_DENIED_ROUTES[number]))).toEqual([]);
+  });
+
+  it('applies the community role boundary to every navigation table', () => {
+    const routesFor = (role: UserRole) => getNavigationForRole(role)
+      .flatMap((group) => group.items.map((item) => item.href));
+
+    expect(routesFor('colaboradora')).toContain('/comunidade');
+    expect(routesFor('colaboradora')).not.toContain('/comunidade/gerenciar');
+    expect(routesFor('rh')).toContain('/comunidade/gerenciar');
+    expect(routesFor('rh')).not.toContain('/comunidade');
+    expect(routesFor('admin')).toContain('/comunidade/gerenciar');
+    expect(routesFor('admin')).not.toContain('/comunidade');
+    expect(routesFor('lideranca')).not.toContain('/comunidade');
+    expect(routesFor('lideranca')).not.toContain('/comunidade/gerenciar');
   });
 
   it.each(['rh', 'lideranca'] as const)('keeps %s navigation free from personal Agenda', (role) => {
