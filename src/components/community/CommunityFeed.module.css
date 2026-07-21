@@ -1,0 +1,23 @@
+.feedRoot {
+  min-width: 0;
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.topicScroller {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedRoot *,
+  .feedRoot *::before,
+  .feedRoot *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
