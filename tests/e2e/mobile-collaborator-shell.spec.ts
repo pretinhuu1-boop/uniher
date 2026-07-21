@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 test.describe('Mobile collaborator shell', () => {
@@ -30,7 +31,7 @@ test.describe('Mobile collaborator shell', () => {
   test('renders four destinations and preserves the mobile viewport', async ({ page, request }, testInfo) => {
     test.setTimeout(60_000);
 
-    const suffix = Date.now().toString().slice(-8);
+    const suffix = `${Date.now()}-${randomUUID().slice(0, 8)}`;
     const uniqueCnpj = `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-18);
     const adminLogin = await request.post('/api/auth/login', {
       data: { email: 'admin@uniher.com.br', password: 'Admin@2026' },
