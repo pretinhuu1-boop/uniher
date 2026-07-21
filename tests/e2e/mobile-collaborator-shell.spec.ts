@@ -25,8 +25,11 @@ test.describe('Mobile collaborator shell', () => {
     }]);
 
     await page.goto('/configuracoes');
-    await expect(page.getByRole('navigation', { name: 'Navegacao mobile' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Navegação mobile' })).toHaveCount(0);
     await expect(page.locator('main#main-content')).toHaveCSS('padding-bottom', '48px');
+
+    await page.goto('/comunidade');
+    await expect(page.getByRole('heading', { name: 'Comunidade indisponível para este perfil' })).toBeVisible();
   });
 
   test('renders four destinations and preserves the mobile viewport', async ({ page, request }, testInfo) => {
@@ -92,7 +95,7 @@ test.describe('Mobile collaborator shell', () => {
     }]);
 
     await page.goto('/colaboradora');
-    const mobileNav = page.getByRole('navigation', { name: 'Navegacao mobile' });
+    const mobileNav = page.getByRole('navigation', { name: 'Navegação mobile' });
     await expect(mobileNav).toBeVisible();
     await expect(mobileNav.getByRole('link', { name: 'Hoje' })).toHaveAttribute('aria-current', 'page');
     await expect(mobileNav.getByRole('link', { name: 'Comunidade' })).toBeVisible();
@@ -101,7 +104,8 @@ test.describe('Mobile collaborator shell', () => {
 
     await mobileNav.getByRole('link', { name: 'Comunidade' }).click();
     await expect(page).toHaveURL(/\/comunidade$/);
-    await expect(page.getByRole('heading', { name: 'Um espaco seguro para a sua empresa' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Um espaço seguro para a sua empresa' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'A comunidade ainda não foi ativada' })).toBeVisible();
 
     await mobileNav.getByRole('link', { name: 'Jornada' }).click();
     await expect(page).toHaveURL(/\/colaboradora\?focus=journey$/);

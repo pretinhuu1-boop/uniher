@@ -26,7 +26,7 @@ export default function MobileBottomNav() {
   const activeKey = getActiveKey(pathname, searchParams.get('focus'));
 
   return (
-    <nav className={styles.mobileBottomNav} aria-label="Navegacao mobile">
+    <nav className={styles.mobileBottomNav} aria-label="Navegação mobile">
       {MOBILE_NAV_ITEMS.map(({ href, label, icon: Icon, key }) => {
         const isActive = key === activeKey;
 
