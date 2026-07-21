@@ -99,7 +99,7 @@ async function expectTextContrast(page: Page, selectors: string[], minimum = 4.5
 }
 
 async function mockCommunityUi(page: Page) {
-  await page.route('**/api/company', (route) => route.fulfill({
+  await page.route('**/api/collaborator/company', (route) => route.fulfill({
     json: {
       company: {
         id: 'community-ui-company',
@@ -171,6 +171,7 @@ test.describe('Collaborator community feed UI', () => {
       headers: { Cookie: `uniher-access-token=${adminToken}` },
       data: {
         name: `Community Feed E2E UI ${suffix}`,
+        trade_name: 'Aurora Trabalho',
         cnpj: `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-14),
         sector: 'Community UI QA',
         plan: 'trial',
@@ -231,7 +232,11 @@ test.describe('Collaborator community feed UI', () => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await mockCommunityUi(page);
 
+        const companyIdentityRequest = page.waitForRequest((request) => (
+          new URL(request.url()).pathname === '/api/collaborator/company'
+        ));
         await page.goto('/comunidade');
+        await companyIdentityRequest;
         await expect(page.getByRole('heading', { name: 'Conteúdos da sua empresa' })).toBeVisible();
         await expect(page.locator('article').first().getByText('Aurora Trabalho')).toBeVisible();
         await expect(page.getByRole('tab')).toHaveCount(5);

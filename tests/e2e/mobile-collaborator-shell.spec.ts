@@ -25,10 +25,12 @@ test.describe('Mobile collaborator shell', () => {
     }]);
 
     await page.goto('/configuracoes');
+    await expect(page.getByRole('heading', { name: 'Configurações', exact: true })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Navegação mobile' })).toHaveCount(0);
     await expect(page.locator('main#main-content')).toHaveCSS('padding-bottom', '48px');
 
-    await page.goto('/comunidade');
+    await page.goto('/comunidade', { waitUntil: 'commit' });
+    await expect(page).toHaveURL(/\/comunidade$/);
     await expect(page.getByRole('heading', { name: 'Comunidade indisponível para este perfil' })).toBeVisible();
   });
 
