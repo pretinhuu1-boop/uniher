@@ -131,6 +131,18 @@ test.describe('Mobile collaborator shell', () => {
       const journeyTitle = page.locator('#journey-title');
       await expect(journeyTitle).toBeVisible();
       await expect(journeyTitle).toBeInViewport();
+      const journeyTitleBounds = await journeyTitle.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, bottom: rect.bottom };
+      });
+      const mobileTopbarBottom = await page.locator('header').first().evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { bottom: rect.bottom, height: rect.height };
+      });
+      expect(mobileTopbarBottom.height).toBeGreaterThan(0);
+      expect(journeyTitleBounds.top).toBeGreaterThanOrEqual(mobileTopbarBottom.bottom);
+      const mobileBottomNavTop = await mobileNav.evaluate((element) => element.getBoundingClientRect().top);
+      expect(journeyTitleBounds.bottom).toBeLessThanOrEqual(mobileBottomNavTop);
     } finally {
       releaseCollaboratorResponse();
       await page.unroute('**/api/collaborator');

@@ -142,7 +142,10 @@ export default function CollaboratorHomePage() {
     if (searchParams.get('focus') !== 'journey' || isLoading) return;
 
     const frame = window.requestAnimationFrame(() => {
-      document.getElementById('journey-title')?.scrollIntoView({ block: 'start' });
+      const journeyTitle = document.getElementById('journey-title');
+      if (!journeyTitle) return;
+
+      journeyTitle.scrollIntoView({ block: 'center', inline: 'nearest' });
     });
 
     return () => window.cancelAnimationFrame(frame);
@@ -209,7 +212,13 @@ export default function CollaboratorHomePage() {
 
       <section aria-labelledby="journey-title" className="overflow-hidden rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
         <div className="border-b border-[var(--platform-line)] px-4 py-5 sm:px-5">
-          <h2 id="journey-title" className="font-display text-2xl font-semibold text-[var(--platform-ink)]">Minha jornada</h2>
+          <h2
+            id="journey-title"
+            className="font-display text-2xl font-semibold text-[var(--platform-ink)]"
+            style={{ scrollMarginTop: '80px' }}
+          >
+            Minha jornada
+          </h2>
           <p className="mt-1 text-sm text-[var(--platform-muted)]">Siga os próximos passos para cuidar de você e da sua saúde.</p>
         </div>
         <ol className="divide-y divide-[var(--platform-line)]">
