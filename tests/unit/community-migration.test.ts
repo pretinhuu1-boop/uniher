@@ -2,6 +2,12 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
+import {
+  decodeFeedCursor,
+  decodeSupporterCursor,
+  encodeFeedCursor,
+  encodeSupporterCursor,
+} from '@/lib/community/cursor';
 import { applyMigration } from '@/lib/db/migrations/runner';
 import {
   COMMUNITY_TOPICS,
@@ -250,6 +256,40 @@ describe('migration 054 company community feed', () => {
     expect(() => db.prepare(`
       INSERT INTO community_post_saves (post_id, user_id) VALUES ('post-1', 'member-1')
     `).run()).toThrow();
+  });
+
+  it('uses strict ISO UTC defaults for post, support and save timestamps', () => {
+    const db = createDatabase();
+    applyMigration(db, migrationName, fs.readFileSync(migrationPath, 'utf8'));
+    insertPost(db);
+    db.exec(`
+      INSERT INTO community_post_supports (post_id, user_id) VALUES ('post-1', 'member-1');
+      INSERT INTO community_post_saves (post_id, user_id) VALUES ('post-1', 'member-1');
+    `);
+
+    const post = db.prepare(`
+      SELECT id, published_at, created_at, updated_at FROM community_posts WHERE id = 'post-1'
+    `).get() as { id: string; published_at: string; created_at: string; updated_at: string };
+    const support = db.prepare(`
+      SELECT rowid AS support_row_id, created_at FROM community_post_supports WHERE post_id = 'post-1'
+    `).get() as { support_row_id: number; created_at: string };
+    const save = db.prepare(`
+      SELECT created_at FROM community_post_saves WHERE post_id = 'post-1'
+    `).get() as { created_at: string };
+    const strictIsoUtc = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+    for (const timestamp of [post.created_at, post.updated_at, support.created_at, save.created_at]) {
+      expect(timestamp).toMatch(strictIsoUtc);
+    }
+    expect(decodeFeedCursor(encodeFeedCursor([
+      post.published_at,
+      post.created_at,
+      post.id,
+    ]))).toEqual([post.published_at, post.created_at, post.id]);
+    expect(decodeSupporterCursor(encodeSupporterCursor([
+      support.created_at,
+      String(support.support_row_id),
+    ]))).toEqual([support.created_at, String(support.support_row_id)]);
   });
 
   it('cascades supports and saves when a post is deleted', () => {

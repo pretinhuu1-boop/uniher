@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS community_posts (
   expires_at TEXT,
   created_by TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   updated_by TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   deleted_at TEXT,
   CHECK(status <> 'published' OR published_at IS NOT NULL)
 );
@@ -21,14 +21,14 @@ CREATE TABLE IF NOT EXISTS community_posts (
 CREATE TABLE IF NOT EXISTS community_post_supports (
   post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   PRIMARY KEY (post_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS community_post_saves (
   post_id TEXT NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   PRIMARY KEY (post_id, user_id)
 );
 

@@ -265,6 +265,30 @@ describe('community support and save repository behavior', () => {
 });
 
 describe('community supporter repository behavior', () => {
+  it('decodes and paginates supports inserted with migration timestamp defaults', () => {
+    const db = createDatabase();
+    insertPost(db, { id: 'post-a' });
+    db.exec(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value) VALUES
+        ('actor-a', 'privacy_community_supporter_name', '1'),
+        ('member-a', 'privacy_community_supporter_name', '1');
+      INSERT INTO community_post_supports (post_id, user_id) VALUES
+        ('post-a', 'actor-a'),
+        ('post-a', 'member-a');
+    `);
+    const repository = repo(db);
+
+    const first = getCommunitySupporters(actorA, repository, 'post-a', { limit: 1 }, NOW);
+    expect(decodeSupporterCursor(first.nextCursor!)).toEqual([
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      expect.stringMatching(/^[1-9]\d*$/),
+    ]);
+    const second = getCommunitySupporters(actorA, repository, 'post-a', { limit: 1, cursor: first.nextCursor! }, NOW);
+
+    expect([...first.names, ...second.names].sort()).toEqual(['Ana', 'Maria']);
+    expect(second.nextCursor).toBeNull();
+  });
+
   it('emits a strict ISO rowid cursor for repository-created supports', () => {
     const db = createDatabase();
     insertPost(db, { id: 'post-a' });
