@@ -241,10 +241,7 @@ test.describe('Master Admin — Visual UX', () => {
   test('Tab Admin Master — lista visível', async () => {
     await masterTabButton(page, 'Admin Master').click();
     await expect(page.getByRole('heading', { name: 'Admins Master', exact: true })).toBeVisible();
-    // Verify admin list has at least one entry (the admin@uniher.com.br user)
-    // The row may be off-screen; check count instead of visibility
-    const adminEmailCount = await page.locator('text=admin@uniher.com.br').count();
-    expect(adminEmailCount).toBeGreaterThanOrEqual(1);
+    await expect(page.getByRole('row', { name: /admin@uniher\.com\.br/ })).toBeVisible();
   });
 
   test('Tab Sistema — identidade visual', async () => {
