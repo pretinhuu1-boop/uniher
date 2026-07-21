@@ -135,7 +135,7 @@ The images are art-direction references only. They must not be shipped as raster
 - Existing collaborator navigation remains intact.
 - Desktop and mobile screenshots are captured from the real implementation at representative dimensions.
 - Keyboard focus, reduced motion, contrast, loading, error, unavailable, and completed states pass independent review.
-- The feature is not promoted as real NR-1 integration until the Yavix blockers documented in `INTEGRACAO_YAVIX_NR1.md` are resolved.
+- The feature is not promoted as real NR-1 integration until the Yavix blockers documented in `docs/INTEGRACAO_YAVIX_NR1.md` are resolved.
 
 ## 7. Decision
 
@@ -185,7 +185,7 @@ The preview requires the explicit build-time flag `NEXT_PUBLIC_UNIHER_NR1_PREVIE
 
 ### 8.4 Remaining gate
 
-The feature is ready as a controlled front-end preview. It must not be promoted to real NR-1 integration until the blockers in `INTEGRACAO_YAVIX_NR1.md` are resolved and independently reviewed.
+The feature is ready as a controlled front-end preview. It must not be promoted to real NR-1 integration until the blockers in `docs/INTEGRACAO_YAVIX_NR1.md` are resolved and independently reviewed.
 
 ## 9. Individual mobile screens audit and next implementation map
 
@@ -245,11 +245,11 @@ Current code map:
 
 The visual design is approved and the collaborator mobile shell is implemented. The next work must remain split into independently reviewable waves:
 
-1. `Wave A - Mobile shell`: **PASS WITH FOLLOW-UP / IMPLEMENTADA**. `AppLayout` exposes a conditional responsive bottom-nav contract for collaborator sessions, preserves the drawer/sidebar fallback, and maps `Hoje`, `Comunidade`, `Jornada`, and `Perfil` to authenticated destinations. The `/comunidade` destination is an explicit loading/denied/empty adapter until the real feed contract is green.
+1. `Wave A - Mobile shell`: **PASS WITH FOLLOW-UP / IMPLEMENTADA**. `AppLayout` exposes a conditional responsive bottom-nav contract for collaborator sessions, preserves the drawer/sidebar fallback, and maps `Hoje`, `Comunidade`, `Jornada`, and `Perfil` to authenticated destinations. The `/comunidade` destination is a contained, functionally disabled adapter until the feed contract is green.
 2. `Wave B - Community read-only`: add a typed curated-feed service/API, topic filtering, `Apoiar`, private `Salvar`, aggregate counts, and opt-in supporter names. Keep comments, composer, ranking, and public health responses out of scope.
 3. `Wave C - Profile privacy`: extend `/configuracoes` or extract a shared settings surface for saved items, content preferences, notifications, and the explicit supporter-name consent. Define schema, default, revocation, retention, and audit behavior before implementation.
 4. `Wave D - Placeholder repair`: resolve `/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, and `/liga` in that order, only after each data/privacy contract is approved. The legacy gamification containment is not evidence of a completed module.
-5. `NR-1 gate`: keep `/avaliacao-nr1` as a controlled preview until the Yavix and legal gates in `INTEGRACAO_YAVIX_NR1.md` pass independent review.
+5. `NR-1 gate`: keep `/avaliacao-nr1` as a controlled preview until the Yavix and legal gates in `docs/INTEGRACAO_YAVIX_NR1.md` pass independent review.
 
 ### 9.5 Task 5 final gate
 
@@ -259,4 +259,4 @@ The visual design is approved and the collaborator mobile shell is implemented. 
 - Findings P1/P2/P3: CORRECTED. Conditional AppLayout spacing, unique mobile fixture IDs, and serial fixture execution are verified in the current shell.
 - The five placeholder screens (`/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, `/liga`) and the real company-scoped community feed remain outside this round.
 
-**Decision:** the four images pass as visual direction with the corrections above. They do not prove feature implementation. The next coding target is the shared mobile shell, followed by the read-only community contract. The company-scoped feed plan is documented in `docs/superpowers/plans/2026-07-20-uniher-company-community-feed.md`; generated logos, portraits, illustrations, and approximate text will be replaced by canonical UniHER code assets and approved data.
+**Decision:** the four images pass as visual direction with the corrections above. They do not prove feature implementation. O próximo coding target é o contrato company-scoped do feed; o mobile shell está implementado. The company-scoped feed plan is documented in `docs/superpowers/plans/2026-07-20-uniher-company-community-feed.md`; generated logos, portraits, illustrations, and approximate text will be replaced by canonical UniHER code assets and approved data.

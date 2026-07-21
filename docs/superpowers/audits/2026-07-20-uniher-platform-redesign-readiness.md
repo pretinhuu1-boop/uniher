@@ -73,6 +73,7 @@ The next implementation wave can start from the current Wave 3 worktree and shou
 - `git diff --check`: PASS.
 - Findings P1/P2/P3: CORRECTED. The mobile bottom-nav spacing is conditional in `AppLayout`, fixture uniqueness uses `randomUUID`, and the shared mobile-shell describe is serial.
 - Scope boundary: the five placeholder screens and the real company-scoped feed remain outside this round.
+- Documentation closure: this audit, the NR-1 visual spec, and the three relevant plans are versioned together; the plans were included without content changes.
 
 ## Placeholder repair queue
 
