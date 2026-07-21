@@ -52,7 +52,7 @@ export async function loadAllEditorialCompanies(
 ): Promise<EditorialCompany[]> {
   const companiesById = new Map<string, EditorialCompany>();
   let loaded = 0;
-  let total = 0;
+  let expectedTotal: number | null = null;
 
   do {
     throwIfAborted(signal);
@@ -73,14 +73,28 @@ export async function loadAllEditorialCompanies(
       throw new Error('A API retornou uma lista de empresas inválida.');
     }
 
-    total = payload.total;
-    if (payload.companies.length === 0 && loaded < total) {
+    if (expectedTotal === null) {
+      expectedTotal = payload.total;
+    } else if (payload.total !== expectedTotal) {
+      throw new Error('A paginação de empresas mudou durante o carregamento.');
+    }
+
+    if (payload.companies.length === 0 && loaded < expectedTotal) {
       throw new Error('A paginação de empresas terminou antes do total informado.');
     }
 
-    for (const company of payload.companies) companiesById.set(company.id, company);
+    for (const company of payload.companies) {
+      if (companiesById.has(company.id)) {
+        throw new Error('A paginação de empresas retornou IDs duplicados.');
+      }
+      companiesById.set(company.id, company);
+    }
     loaded += payload.companies.length;
-  } while (loaded < total);
+  } while (loaded < (expectedTotal ?? 0));
+
+  if (companiesById.size !== expectedTotal) {
+    throw new Error('A paginação de empresas retornou uma contagem inconsistente.');
+  }
 
   return [...companiesById.values()];
 }
