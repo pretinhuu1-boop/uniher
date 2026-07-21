@@ -2,6 +2,27 @@ import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
+function assertMobileShellFixtureHostIsLoopback(): void {
+  const configuredBaseUrl = process.env.BASE_URL
+    ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? '3100'}`;
+  let hostname: string;
+
+  try {
+    hostname = new URL(configuredBaseUrl).hostname.toLowerCase();
+  } catch {
+    throw new Error(`[mobile-shell] BASE_URL inválida; fixtures mutáveis bloqueadas: ${configuredBaseUrl}`);
+  }
+
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(hostname)) {
+    throw new Error(
+      `[mobile-shell] Fixtures mutáveis bloqueadas para host não-loopback: ${hostname}. `
+      + 'Execute este projeto somente em localhost, 127.0.0.1 ou [::1].',
+    );
+  }
+}
+
+assertMobileShellFixtureHostIsLoopback();
+
 test.describe('Mobile collaborator shell', () => {
   test.describe.configure({ mode: 'serial' });
   test.use({ viewport: { width: 375, height: 812 }, serviceWorkers: 'block' });
