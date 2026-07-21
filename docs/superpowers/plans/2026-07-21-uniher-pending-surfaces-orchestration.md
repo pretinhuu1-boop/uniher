@@ -108,10 +108,13 @@ This wave creates infrastructure only. It does not expose `/objetivos`, `/desafi
 ```ts
 export const ELIGIBLE_PARTICIPATION_EVENTS = [
   'content_completed',
-  'objective_progress_recorded',
+  'objective_started',
+  'objective_progressed',
   'objective_completed',
   'challenge_joined',
+  'challenge_progressed',
   'challenge_completed',
+  'challenge_left',
 ] as const;
 
 export const FORBIDDEN_PARTICIPATION_SOURCES = [
@@ -126,7 +129,7 @@ export const FORBIDDEN_PARTICIPATION_SOURCES = [
 ] as const;
 ```
 
-The database row must contain `id`, `event_key`, `company_id`, `user_id`, `event_type`, `source_domain`, `source_id`, `eligibility_version`, and `occurred_at`. `event_key` is unique and makes retries idempotent. Event metadata must be allowlisted JSON and must reject free text, health values, answers, scores, mood, department, email, and role.
+The database row must contain `id`, `event_key`, `mutation_id`, `company_id`, `user_id`, `event_type`, `source_domain`, `source_id`, `eligibility_version`, and `occurred_at`. `mutation_id` is immutable per domain mutation: a retry reuses it, while every new progress mutation receives a new value. `event_key` includes `mutation_id`, is unique, and therefore deduplicates a retry without collapsing valid repeated progress. Event metadata must be allowlisted JSON and must reject free text, health values, answers, scores, mood, department, email, and role.
 
 **Execution steps:**
 

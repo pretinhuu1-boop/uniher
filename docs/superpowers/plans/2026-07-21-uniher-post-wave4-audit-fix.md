@@ -35,7 +35,7 @@ be reactivated to make a placeholder look functional.
 | F-04 | P2 | FIXED | `health-score.repository.ts` still exports personal and company readers. | All operational readers fail closed; DSAR-only SQL remains separate. |
 | F-05 | P1 | FIXED | Authenticated API/permission docs describe legacy Liga/objective/reward contracts as live. | Docs and OpenAPI now match containment runtime. |
 | F-06 | P3 | FIXED | Semaforo error boundary has incorrect copy and collaborator redirect. | Copy corrected; return points to `/colaboradora`. |
-| F-07 | P1 | MANUAL PACKET READY | Wave 5 lacks approved retention, erasure/pseudonymization and audit policy. | Decision packet published; no migration until approval. |
+| F-07 | P1 | MANUAL PACKET READY | Wave 5 lacks approved retention, erasure and audit policy. | Decision packet published; no migration until approval. |
 | F-08 | P1 | AUTO AFTER F-07 | Wave 5 omits DSAR, deterministic event keys and transaction-safe producer contracts. | Add these to the Wave 5 spec and implementation write set. |
 | F-09 | P1 | FIXED | OpenAPI advertises contained legacy badge/challenge/objective APIs as operational. | Parity regression covers methods and `410` contracts. |
 | F-10 | P2 | FIXED | Legacy quarantine omits objective/challenge tables and active writers/counters remain. | Migration 055, seed and operational counter containment completed. |

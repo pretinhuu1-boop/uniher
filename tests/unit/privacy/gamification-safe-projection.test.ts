@@ -701,6 +701,8 @@ describe('safe authenticated projections', () => {
       'src/app/(platform)/configuracoes/page.tsx',
     ].map(read).join('\n');
     expect(reachablePages).not.toMatch(/week_points|points_spent|xp_reward|pontos totais|subir de nível|ranking semanal|exibir no ranking/i);
+    const collaboratorHome = read('src/app/(platform)/colaboradora/page.tsx');
+    expect(collaboratorHome).not.toMatch(/streakDays|achievementCount|Sequência atual|Conquistas/);
     const adminSource = read('src/app/(platform)/admin/page.tsx');
     expect(adminSource).not.toContain("activeTab === 'Badges'");
     expect(adminSource).not.toMatch(/<span>Nível \{u\.level\}|u\.points\.toLocaleString/);

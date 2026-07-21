@@ -37,8 +37,6 @@ interface CollaboratorHomeData {
   examsPercent?: number;
   examsTotal?: number;
   contentViewed?: number;
-  streakDays?: number;
-  achievementCount?: number;
 }
 
 const actionLinkClass =
@@ -203,9 +201,7 @@ export default function CollaboratorHomePage() {
       <SummaryBand
         label="Resumo da jornada"
         items={[
-          { label: 'Sequência atual', value: data?.streakDays ?? 0, detail: 'dias' },
           { label: 'Conteúdos vistos', value: data?.contentViewed ?? 0 },
-          { label: 'Conquistas', value: data?.achievementCount ?? 0 },
           { label: 'Exames em dia', value: data?.examsPercent ?? 0, detail: '%' },
         ]}
       />

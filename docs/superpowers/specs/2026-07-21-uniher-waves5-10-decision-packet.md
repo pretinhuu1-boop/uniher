@@ -13,8 +13,10 @@ achievement, Semaforo or Liga data model is activated by this packet.
 - Keep no free-form metadata in the first release.
 - Retain an event only while it is necessary for an active objective, challenge
   or achievement plus an approved expiry window.
-- On fulfilled account erasure, delete or irreversibly pseudonymize every event
-  linked to the user in the same operation.
+- On fulfilled account erasure, hard-delete every event linked to the user in
+  the same operation. If legal requires a pseudonymized exception, it must use
+  a keyed HMAC with a per-user key that is destroyed or rekeyed on erasure;
+  plain deterministic hashes such as SHA-256 are forbidden for this purpose.
 - Keep only a count-only erasure receipt with actor, company, event count and
   timestamp. The receipt must not retain the removed user ID, source ID or event
   key.
@@ -23,7 +25,8 @@ achievement, Semaforo or Liga data model is activated by this packet.
 **Approval required**
 
 - [ ] DPO/legal chooses the expiry window.
-- [ ] DPO/legal chooses deletion or irreversible pseudonymization.
+- [ ] DPO/legal approves hard deletion or documents the keyed-HMAC exception
+  and its key-destruction procedure.
 - [ ] DPO/legal approves the count-only audit receipt and its retention window.
 - [ ] Product names the operational owner that fulfills deletion requests.
 
@@ -45,10 +48,14 @@ No migration 056 may be created until all four items are approved.
 | `challenge_left` | `company_challenge` | Append-only reversal created by Wave 7 |
 
 `event_key` is a versioned SHA-256 digest derived on the server from event
-version, company, user, event type, source domain and immutable source ID. Each
-producer uses a dedicated internal method; no generic public `recordEvent`
-method is allowed. Insert and domain mutation share one `IMMEDIATE`
-transaction. A unique `event_key` makes retries idempotent.
+version, company, user, event type, source domain, immutable source ID and an
+immutable `mutation_id`. A retry reuses the same `mutation_id`; every new
+progress mutation receives a new one, so idempotency never collapses valid
+progress. Each producer uses a dedicated internal method; no generic public
+`recordEvent` method is allowed. Insert and domain mutation share one
+`IMMEDIATE` transaction. A unique `event_key` makes only the same mutation
+retry idempotent. This digest is deleted with the event and must never be used
+as the pseudonymization mechanism described in Decision A.
 
 Achievement evaluation is deterministic over non-revoked eligible events.
 Revocation creates a versioned tombstone with a reason code and count-only audit
@@ -125,4 +132,3 @@ Required choices:
 
 No Liga route, navigation item or legacy writer may be activated before all
 choices are approved and Waves 5 and 8 have passed.
-

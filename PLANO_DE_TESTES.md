@@ -94,7 +94,7 @@
 - [ ] Registro via `/hr-onboarding` (nome, email, senha, empresa)
 - [ ] Redirect para dashboard após registro
 - [ ] Se RH novo → redirect para `/onboarding-rh`
-- [ ] Onboarding mostra 5 passos com tempo estimado
+- [ ] Onboarding mostra 4 passos com tempo estimado
 - [ ] "Comece aqui" no passo 1
 - [ ] Progresso atualiza conforme completa passos
 

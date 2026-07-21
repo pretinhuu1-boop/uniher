@@ -365,6 +365,11 @@ describe('Semáforo privacy containment', () => {
     expect(semaforoPage).toContain('description={SEMAFORO_REVIEW_STATE.message}');
     expect(semaforoPage).not.toMatch(/useSWR|fetch\s*\(|history|dimension|score|recorded_at|reminder|green|yellow|red|filter|useSearchParams|Modal|Input/i);
 
+    const semaforoError = read('src/app/(platform)/semaforo/error.tsx');
+    expect(semaforoError).toContain('Algo deu errado ao carregar o semáforo.');
+    expect(semaforoError).toContain('href="/colaboradora"');
+    expect(semaforoError).toContain('Voltar à minha jornada');
+
     const configurations = read('src/app/(platform)/configuracoes/page.tsx');
     expect(configurations).not.toMatch(/update_semaforo/i);
 
