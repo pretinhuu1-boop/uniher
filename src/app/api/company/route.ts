@@ -83,9 +83,12 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
     }
 
     const now = new Date().toISOString();
+    const requestIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('x-real-ip')?.trim()
+      || null;
     const updated = await getWriteQueue().enqueue((db) => db.transaction(() => {
       const actor = db.prepare(`
-        SELECT id, company_id, role
+        SELECT id, company_id, email, role
         FROM users
         WHERE id = ?
           AND deleted_at IS NULL
@@ -94,6 +97,7 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
       `).get(context.auth.userId) as {
         id: string;
         company_id: string | null;
+        email: string;
         role: string;
       } | undefined;
       if (!actor || !['rh', 'admin'].includes(actor.role) || actor.role !== context.auth.role) {
@@ -131,12 +135,45 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
       }
 
       if (parsed.data.feedCompanyEnabled !== undefined) {
-        db.prepare(`
-          INSERT INTO company_settings (id, company_id, setting_key, setting_value, updated_at)
-          VALUES (lower(hex(randomblob(16))), ?, 'feed_company_enabled', ?, ?)
-          ON CONFLICT(company_id, setting_key)
-          DO UPDATE SET setting_value = excluded.setting_value, updated_at = excluded.updated_at
-        `).run(actor.company_id, parsed.data.feedCompanyEnabled ? '1' : '0', now);
+        const currentSetting = db.prepare(`
+          SELECT setting_value
+          FROM company_settings
+          WHERE company_id = ? AND setting_key = 'feed_company_enabled'
+          LIMIT 1
+        `).get(actor.company_id) as { setting_value: string } | undefined;
+        const previousFeedEnabled = currentSetting?.setting_value === '1';
+        const newFeedEnabled = parsed.data.feedCompanyEnabled;
+
+        if (previousFeedEnabled !== newFeedEnabled) {
+          db.prepare(`
+            INSERT INTO company_settings (id, company_id, setting_key, setting_value, updated_at)
+            VALUES (lower(hex(randomblob(16))), ?, 'feed_company_enabled', ?, ?)
+            ON CONFLICT(company_id, setting_key)
+            DO UPDATE SET setting_value = excluded.setting_value, updated_at = excluded.updated_at
+          `).run(actor.company_id, newFeedEnabled ? '1' : '0', now);
+          db.prepare(`
+            INSERT INTO audit_logs (
+              id, actor_id, actor_email, actor_role, action, entity_type,
+              entity_id, details, ip, created_at
+            ) VALUES (
+              lower(hex(randomblob(16))), ?, ?, ?,
+              'company_community_feed_setting_update', 'company_setting', ?, ?, ?, ?
+            )
+          `).run(
+            actor.id,
+            actor.email,
+            actor.role,
+            actor.company_id,
+            JSON.stringify({
+              companyId: actor.company_id,
+              previous: previousFeedEnabled,
+              new: newFeedEnabled,
+              timestamp: now,
+            }),
+            requestIp,
+            now,
+          );
+        }
       }
 
       return db.prepare('SELECT * FROM companies WHERE id = ?').get(actor.company_id) as CompanyRow;

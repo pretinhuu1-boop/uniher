@@ -284,6 +284,9 @@ function transitionAction(
   current: CommunityPostStatus,
   target: CommunityPostStatus,
 ): 'update' | 'publish' | 'archive' {
+  if (current === 'archived') {
+    throw new AppError('Archived community posts are terminal', 409, 'COMMUNITY_TRANSITION_INVALID');
+  }
   if (current === target) return 'update';
   if (current === 'draft' && target === 'published') return 'publish';
   if (current === 'published' && target === 'archived') return 'archive';

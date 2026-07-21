@@ -760,12 +760,26 @@ test.describe('company community feed', () => {
     expect((await archived.json()).post.status).toBe('archived');
     await expectError(await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
       ...rhA,
+      data: { title: 'Arquivado nao pode mais ser editado' },
+    }), 409, 'COMMUNITY_TRANSITION_INVALID');
+    await expectError(await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
+      data: { status: 'archived' },
+    }), 409, 'COMMUNITY_TRANSITION_INVALID');
+    await expectError(await request.patch(`/api/rh/community/posts/${editorialDraftId}`, {
+      ...rhA,
       data: { status: 'published' },
     }), 409, 'COMMUNITY_TRANSITION_INVALID');
   });
 
   test('defaults a missing company feed setting off, blocks publish, and isolates switch writes', async ({ request }) => {
-    const rhDisabled = { headers: authHeaders(tokens.rhDisabled) };
+    const requestIp = '198.51.100.77';
+    const rhDisabled = {
+      headers: {
+        ...authHeaders(tokens.rhDisabled),
+        'x-forwarded-for': `${requestIp}, 10.0.0.7`,
+      },
+    };
     const managementList = await request.get('/api/rh/community/posts', rhDisabled);
     expect(managementList.status(), await managementList.text()).toBe(200);
     expect(await managementList.json()).toMatchObject({
@@ -794,6 +808,7 @@ test.describe('company community feed', () => {
     });
     expect(enabled.status(), await enabled.text()).toBe(200);
 
+    let firstSettingUpdatedAt = '';
     const db = openPlaywrightDatabase();
     try {
       const ownSetting = db.prepare(`
@@ -802,12 +817,66 @@ test.describe('company community feed', () => {
       `).get(ids.companyDisabled) as { setting_value: string; updated_at: string };
       expect(ownSetting.setting_value).toBe('1');
       expect(ownSetting.updated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      firstSettingUpdatedAt = ownSetting.updated_at;
       expect((db.prepare(`
         SELECT setting_value FROM company_settings
         WHERE company_id = ? AND setting_key = 'feed_company_enabled'
       `).get(ids.companyB) as { setting_value: string }).setting_value).toBe('1');
     } finally {
       db.close();
+    }
+
+    const unchanged = await request.patch('/api/company', {
+      ...rhDisabled,
+      data: { feedCompanyEnabled: true },
+    });
+    expect(unchanged.status(), await unchanged.text()).toBe(200);
+
+    const receiptDb = openPlaywrightDatabase();
+    try {
+      const unchangedSetting = receiptDb.prepare(`
+        SELECT setting_value, updated_at FROM company_settings
+        WHERE company_id = ? AND setting_key = 'feed_company_enabled'
+      `).get(ids.companyDisabled) as { setting_value: string; updated_at: string };
+      expect(unchangedSetting).toEqual({ setting_value: '1', updated_at: firstSettingUpdatedAt });
+
+      const receipts = receiptDb.prepare(`
+        SELECT actor_id, actor_email, actor_role, action, entity_type, entity_id,
+               details, ip, created_at
+        FROM audit_logs
+        WHERE action = 'company_community_feed_setting_update' AND entity_id = ?
+        ORDER BY created_at ASC, rowid ASC
+      `).all(ids.companyDisabled) as Array<{
+        actor_id: string;
+        actor_email: string;
+        actor_role: string;
+        action: string;
+        entity_type: string;
+        entity_id: string;
+        details: string;
+        ip: string;
+        created_at: string;
+      }>;
+      expect(receipts).toHaveLength(1);
+      expect(receipts[0]).toMatchObject({
+        actor_id: ids.rhDisabled,
+        actor_email: emails.rhDisabled,
+        actor_role: 'rh',
+        action: 'company_community_feed_setting_update',
+        entity_type: 'company_setting',
+        entity_id: ids.companyDisabled,
+        ip: requestIp,
+      });
+      expect(receipts[0].created_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(JSON.parse(receipts[0].details)).toEqual({
+        companyId: ids.companyDisabled,
+        previous: false,
+        new: true,
+        timestamp: receipts[0].created_at,
+      });
+      expect(receipts[0].details).not.toMatch(/body|content|summary|title/i);
+    } finally {
+      receiptDb.close();
     }
 
     const published = await request.patch(`/api/rh/community/posts/${disabledDraftId}`, {
