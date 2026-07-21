@@ -151,6 +151,16 @@ describe('Semáforo privacy containment', () => {
       await expect(operation()).rejects.toBeInstanceOf(SemaforoContainmentError);
       expect(runtime.dbAccesses).toBe(accesses);
     }
+
+    for (const operation of [
+      () => healthScores.getLatestHealthScores('user-1'),
+      () => healthScores.getHealthScoreHistory('user-1', 'Sono'),
+      () => healthScores.getCompanyHealthOverview('company-1'),
+    ]) {
+      const accesses = runtime.dbAccesses;
+      expect(operation).toThrow(SemaforoContainmentError);
+      expect(runtime.dbAccesses).toBe(accesses);
+    }
   });
 
   it('keeps quiz completion, check-in and exam creation while preserving health_scores exactly', async () => {
