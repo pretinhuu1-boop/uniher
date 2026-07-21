@@ -23,6 +23,19 @@ const migrationPath = path.join(
 );
 
 type SchemaRow = { name: string; sql: string };
+type PostFixture = {
+  id: string;
+  company_id: string;
+  title: string;
+  summary: string;
+  body_text: string;
+  topic: string;
+  read_time_minutes: number;
+  status: string;
+  published_at: string | null;
+  created_by: string;
+  updated_by: string;
+};
 
 function createDatabase(): Database.Database {
   const db = new Database(':memory:');
@@ -44,8 +57,9 @@ function createDatabase(): Database.Database {
 
     INSERT INTO companies (id) VALUES ('company-default'), ('company-enabled');
     INSERT INTO users (id) VALUES ('author-1'), ('member-1');
-    INSERT INTO company_settings (id, company_id, setting_key, setting_value)
-    VALUES ('existing-feed-setting', 'company-enabled', 'feed_company_enabled', '1');
+    INSERT INTO company_settings (id, company_id, setting_key, setting_value) VALUES
+      ('existing-feed-setting', 'company-enabled', 'feed_company_enabled', '1'),
+      ('community-feed-company-enabled-company-default', 'company-enabled', 'unrelated_setting', 'keep-me');
     INSERT INTO gamification_config (id, enabled) VALUES ('gamification-canary', 1);
     INSERT INTO health_scores (id, score) VALUES ('health-canary', 87);
   `);
@@ -61,14 +75,47 @@ function legacySchema(db: Database.Database): SchemaRow[] {
   `).all() as SchemaRow[];
 }
 
-function insertPost(db: Database.Database, id = 'post-1'): void {
+function indexColumns(
+  db: Database.Database,
+  indexName: string,
+): Array<{ name: string; desc: number }> {
+  const rows = db.prepare(`PRAGMA index_xinfo('${indexName}')`).all() as Array<{
+    name: string | null;
+    desc: number;
+    key: number;
+  }>;
+  return rows
+    .filter((row): row is { name: string; desc: number; key: number } => row.key === 1 && row.name !== null)
+    .map(({ name, desc }) => ({ name, desc }));
+}
+
+function insertPost(
+  db: Database.Database,
+  overrides: Partial<PostFixture> = {},
+): void {
+  const post: PostFixture = {
+    id: 'post-1',
+    company_id: 'company-default',
+    title: 'Pausas conscientes',
+    summary: 'Uma pausa breve para recuperar o foco.',
+    body_text: 'Conteudo editorial com orientacoes praticas.',
+    topic: 'pausas',
+    read_time_minutes: 5,
+    status: 'published',
+    published_at: '2026-07-21T12:00:00.000Z',
+    created_by: 'author-1',
+    updated_by: 'author-1',
+    ...overrides,
+  };
   db.prepare(`
     INSERT INTO community_posts (
-      id, company_id, title, summary, body_text, topic, status,
+      id, company_id, title, summary, body_text, topic, read_time_minutes, status,
       published_at, created_by, updated_by
-    ) VALUES (?, 'company-default', 'Pausas conscientes', 'Resumo', 'Conteudo', 'pausas',
-      'published', '2026-07-21T12:00:00.000Z', 'author-1', 'author-1')
-  `).run(id);
+    ) VALUES (
+      @id, @company_id, @title, @summary, @body_text, @topic, @read_time_minutes, @status,
+      @published_at, @created_by, @updated_by
+    )
+  `).run(post);
 }
 
 afterEach(() => {
@@ -137,6 +184,21 @@ describe('migration 054 company community feed', () => {
       'idx_community_saves_user',
       'idx_community_supports_post',
     ]);
+    expect(indexColumns(db, 'idx_community_posts_company_status')).toEqual([
+      { name: 'company_id', desc: 0 },
+      { name: 'status', desc: 0 },
+      { name: 'published_at', desc: 1 },
+      { name: 'created_at', desc: 1 },
+      { name: 'id', desc: 1 },
+    ]);
+    expect(indexColumns(db, 'idx_community_posts_company_topic')).toEqual([
+      { name: 'company_id', desc: 0 },
+      { name: 'topic', desc: 0 },
+      { name: 'status', desc: 0 },
+      { name: 'published_at', desc: 1 },
+      { name: 'created_at', desc: 1 },
+      { name: 'id', desc: 1 },
+    ]);
 
     const settings = db.prepare(`
       SELECT company_id, setting_value FROM company_settings
@@ -147,6 +209,21 @@ describe('migration 054 company community feed', () => {
       { company_id: 'company-default', setting_value: '0' },
       { company_id: 'company-enabled', setting_value: '1' },
     ]);
+    expect(db.prepare(`
+      SELECT id, setting_value FROM company_settings
+      WHERE company_id = 'company-default' AND setting_key = 'feed_company_enabled'
+    `).get()).toEqual({
+      id: expect.stringMatching(/^[0-9a-f]{32}$/),
+      setting_value: '0',
+    });
+    expect(db.prepare(`
+      SELECT company_id, setting_key, setting_value FROM company_settings
+      WHERE id = 'community-feed-company-enabled-company-default'
+    `).get()).toEqual({
+      company_id: 'company-enabled',
+      setting_key: 'unrelated_setting',
+      setting_value: 'keep-me',
+    });
 
     expect(legacySchema(db)).toEqual(beforeLegacySchema);
     expect(db.prepare('SELECT * FROM gamification_config').all()).toEqual(beforeGamification);
@@ -158,14 +235,7 @@ describe('migration 054 company community feed', () => {
     applyMigration(db, migrationName, fs.readFileSync(migrationPath, 'utf8'));
     insertPost(db);
 
-    expect(() => db.prepare(`
-      INSERT INTO community_posts (
-        id, company_id, title, summary, body_text, topic, status, created_by, updated_by
-      ) VALUES (
-        'invalid-post', 'company-default', 'Titulo', 'Resumo', 'Conteudo', 'geral',
-        'invalid', 'author-1', 'author-1'
-      )
-    `).run()).toThrow();
+    expect(() => insertPost(db, { id: 'invalid-post', status: 'invalid' })).toThrow();
 
     db.prepare(`
       INSERT INTO community_post_supports (post_id, user_id) VALUES ('post-1', 'member-1')
@@ -194,5 +264,59 @@ describe('migration 054 company community feed', () => {
 
     expect(db.prepare('SELECT * FROM community_post_supports').all()).toEqual([]);
     expect(db.prepare('SELECT * FROM community_post_saves').all()).toEqual([]);
+  });
+
+  it('restricts physical deletion of a referenced author', () => {
+    const db = createDatabase();
+    applyMigration(db, migrationName, fs.readFileSync(migrationPath, 'utf8'));
+    insertPost(db);
+
+    const authorForeignKeys = (db.prepare(`PRAGMA foreign_key_list('community_posts')`).all() as Array<{
+      from: string;
+      table: string;
+      on_delete: string;
+    }>)
+      .filter((row) => row.from === 'created_by' || row.from === 'updated_by')
+      .map(({ from, table, on_delete }) => ({ from, table, on_delete }))
+      .sort((left, right) => left.from.localeCompare(right.from));
+    expect(authorForeignKeys).toEqual([
+      { from: 'created_by', table: 'users', on_delete: 'RESTRICT' },
+      { from: 'updated_by', table: 'users', on_delete: 'RESTRICT' },
+    ]);
+    expect(() => db.prepare("DELETE FROM users WHERE id = 'author-1'").run()).toThrow();
+    expect(db.prepare("SELECT id FROM users WHERE id = 'author-1'").get()).toEqual({ id: 'author-1' });
+  });
+
+  it('cascades posts, supports and saves when a company is deleted', () => {
+    const db = createDatabase();
+    applyMigration(db, migrationName, fs.readFileSync(migrationPath, 'utf8'));
+    insertPost(db);
+    db.exec(`
+      INSERT INTO community_post_supports (post_id, user_id) VALUES ('post-1', 'member-1');
+      INSERT INTO community_post_saves (post_id, user_id) VALUES ('post-1', 'member-1');
+      DELETE FROM companies WHERE id = 'company-default';
+    `);
+
+    expect(db.prepare('SELECT * FROM community_posts').all()).toEqual([]);
+    expect(db.prepare('SELECT * FROM community_post_supports').all()).toEqual([]);
+    expect(db.prepare('SELECT * FROM community_post_saves').all()).toEqual([]);
+  });
+
+  it.each<Array<[string, Partial<PostFixture>]>>([
+    ['an unknown topic', { topic: 'unknown' }],
+    ['a read time below 1', { read_time_minutes: 0 }],
+    ['a read time above 60', { read_time_minutes: 61 }],
+    ['a trimmed title shorter than 3 characters', { title: '  ok  ' }],
+    ['a trimmed title longer than 120 characters', { title: `  ${'x'.repeat(121)}  ` }],
+    ['a trimmed summary shorter than 10 characters', { summary: '  123456789  ' }],
+    ['a trimmed summary longer than 240 characters', { summary: `  ${'x'.repeat(241)}  ` }],
+    ['a body shorter than 20 characters', { body_text: 'x'.repeat(19) }],
+    ['a body longer than 8000 characters', { body_text: 'x'.repeat(8001) }],
+    ['a published post without published_at', { status: 'published', published_at: null }],
+  ])('rejects %s', (_case, overrides) => {
+    const db = createDatabase();
+    applyMigration(db, migrationName, fs.readFileSync(migrationPath, 'utf8'));
+
+    expect(() => insertPost(db, overrides)).toThrow();
   });
 });
