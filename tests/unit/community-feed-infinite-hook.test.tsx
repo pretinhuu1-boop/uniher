@@ -87,11 +87,18 @@ describe('paginated collaborator feed auth boundary', () => {
       await result.current.save('post-a');
     });
 
-    expect(mocks.globalMutate).toHaveBeenCalledTimes(1);
+    expect(mocks.globalMutate).toHaveBeenCalledTimes(2);
     const predicate = mocks.globalMutate.mock.calls[0][0] as (key: unknown) => boolean;
     expect(predicate(buildCollaboratorSavedKey(['user-b', 'company-b', 'rh', 0]))).toBe(true);
     expect(predicate(buildCollaboratorSavedKey(['user-b', 'company-b', 'admin', 1]))).toBe(true);
     expect(predicate(buildCollaboratorSavedKey(['user-a', 'company-b', 'colaboradora', 1]))).toBe(false);
     expect(predicate(buildCollaboratorSavedKey(['user-b', 'company-a', 'colaboradora', 1]))).toBe(false);
+    expect(mocks.globalMutate.mock.calls[0].slice(1)).toEqual([
+      undefined,
+      { revalidate: false },
+    ]);
+    expect(mocks.globalMutate.mock.calls[1]).toEqual([
+      buildCollaboratorSavedKey(['user-b', 'company-b', 'colaboradora', 1]),
+    ]);
   });
 });

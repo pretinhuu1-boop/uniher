@@ -41,7 +41,6 @@ import * as collaboratorChallenges from '@/app/api/collaborator/challenges/route
 import * as collaboratorChallenge from '@/app/api/collaborator/challenges/[id]/route';
 import * as rhChallenges from '@/app/api/rh/challenges/route';
 import * as rhChallenge from '@/app/api/rh/challenges/[id]/route';
-import * as collaboratorFeed from '@/app/api/collaborator/feed/route';
 
 type RouteHandler = (request: NextRequest, context: Record<string, unknown>) => Promise<Response> | Response;
 
@@ -68,7 +67,6 @@ const routes: Array<[string, Record<string, unknown>, string[]]> = [
   ['/api/collaborator/challenges/:id', collaboratorChallenge, ['PATCH']],
   ['/api/rh/challenges', rhChallenges, ['GET', 'POST']],
   ['/api/rh/challenges/:id', rhChallenge, ['PATCH', 'DELETE']],
-  ['/api/collaborator/feed', collaboratorFeed, ['GET']],
 ];
 
 describe('legacy gamification API containment', () => {

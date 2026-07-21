@@ -199,12 +199,15 @@ export function useCollaboratorFeed() {
   const changeSave = async (id: string, method: 'POST' | 'DELETE') => {
     const encodedId = encodeURIComponent(id);
     const state = await mutateCommunity<SaveState>(`/api/collaborator/feed/${encodedId}/save`, method);
-    await Promise.all([
-      mutateCache(COLLABORATOR_FEED_KEY),
-      savedSessionKey
-        ? mutateCache((key) => isCollaboratorSavedCacheKeyForIdentity(key, savedSessionKey))
-        : Promise.resolve(),
-    ]);
+    await mutateCache(COLLABORATOR_FEED_KEY);
+    if (savedSessionKey) {
+      await mutateCache(
+        (key) => isCollaboratorSavedCacheKeyForIdentity(key, savedSessionKey),
+        undefined,
+        { revalidate: false },
+      );
+      await mutateCache(buildCollaboratorSavedKey(savedSessionKey));
+    }
     return state;
   };
 
@@ -306,7 +309,12 @@ export function useCollaboratorCommunityFeed(topic?: CommunityTopic) {
       { revalidate: false },
     );
     if (savedSessionKey) {
-      await mutateCache((key) => isCollaboratorSavedCacheKeyForIdentity(key, savedSessionKey));
+      await mutateCache(
+        (key) => isCollaboratorSavedCacheKeyForIdentity(key, savedSessionKey),
+        undefined,
+        { revalidate: false },
+      );
+      await mutateCache(buildCollaboratorSavedKey(savedSessionKey));
     }
     return state;
   };

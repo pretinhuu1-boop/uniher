@@ -247,7 +247,42 @@ describe('profile saved community items', () => {
     await waitFor(() => expect(screen.queryByText(postA.title)).toBeNull());
     expect(saved.mutate).toHaveBeenCalledWith(undefined, { revalidate: false });
     expect(screen.queryByRole('button', { name: 'Carregar mais itens salvos' })).toBeNull();
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Sessão expirada ou acesso alterado. Entre novamente',
+    );
+    expect(screen.queryByText('Você ainda não salvou conteúdos da comunidade.')).toBeNull();
+  });
+
+  it('keeps authorization loss visible until a successful retry returns a valid private page', async () => {
+    saved.items = [postA];
+    saved.nextCursor = 'private-cursor';
+    saved.mutate
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('still unauthorized'))
+      .mockResolvedValueOnce({ items: [postB], nextCursor: null });
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/post-a/save') && init?.method === 'DELETE') {
+        return Promise.resolve(jsonResponse({ error: 'unauthorized' }, 401));
+      }
+      return Promise.resolve(baseResponse(url));
+    }));
+    render(<ConfiguracoesPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: `Remover ${postA.title} dos salvos` }));
+    const retry = await screen.findByRole('button', { name: 'Tentar carregar itens salvos novamente' });
+
+    fireEvent.click(retry);
+    await waitFor(() => expect(saved.mutate).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Sessão expirada ou acesso alterado. Entre novamente',
+    );
+    expect(screen.queryByText('Você ainda não salvou conteúdos da comunidade.')).toBeNull();
+
+    fireEvent.click(retry);
+    expect(await screen.findByText(postB.title)).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
+    await waitFor(() => expect(screen.queryByText(postA.title)).toBeNull());
   });
 
   it('serializes a same-tick DELETE before pagination and cross-disables controls', async () => {

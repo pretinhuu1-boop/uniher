@@ -142,6 +142,9 @@ export default function ConfiguracoesPage() {
   const [savedNextCursor, setSavedNextCursor] = useState<string | null>(null);
   const [savedLoadingMore, setSavedLoadingMore] = useState(false);
   const [savedRemovingId, setSavedRemovingId] = useState<string | null>(null);
+  const [savedAuthorizationLost, setSavedAuthorizationLost] = useState(false);
+  const [savedAuthorizationRetrying, setSavedAuthorizationRetrying] = useState(false);
+  const savedAuthorizationLostRef = useRef(false);
   const [savedFeedback, setSavedFeedback] = useState<{
     kind: 'success' | 'error';
     message: string;
@@ -312,6 +315,9 @@ export default function ConfiguracoesPage() {
     setSavedItemsSessionId(collaboratorSessionId);
     setSavedLoadingMore(false);
     setSavedRemovingId(null);
+    savedAuthorizationLostRef.current = false;
+    setSavedAuthorizationLost(false);
+    setSavedAuthorizationRetrying(false);
     setSavedFeedback(null);
 
     return () => {
@@ -323,7 +329,7 @@ export default function ConfiguracoesPage() {
   }, [collaboratorSessionId]);
 
   useEffect(() => {
-    if (!canUseCollaboratorCommunity) return;
+    if (!canUseCollaboratorCommunity || savedAuthorizationLostRef.current) return;
     setSavedItems(saved.items);
     setSavedNextCursor(saved.nextCursor);
     setSavedItemsSessionId(collaboratorSessionId);
@@ -549,6 +555,9 @@ export default function ConfiguracoesPage() {
     setSavedItems([]);
     setSavedNextCursor(null);
     setSavedItemsSessionId(sessionId);
+    savedAuthorizationLostRef.current = true;
+    setSavedAuthorizationLost(true);
+    setSavedAuthorizationRetrying(false);
     setSavedFeedback(null);
     setSavedLoadingMore(false);
     setSavedRemovingId(null);
@@ -556,6 +565,44 @@ export default function ConfiguracoesPage() {
       await saved.mutate(undefined, { revalidate: false });
     } catch {
       // Local private state is already purged; cache cleanup is best effort.
+    }
+  }
+
+  async function handleRetrySavedAuthorization() {
+    if (
+      !savedAuthorizationLost
+      || savedAuthorizationRetrying
+      || savedOperationLockRef.current
+      || !collaboratorSessionId
+    ) return;
+    const lock = Symbol('saved-authorization-retry');
+    savedOperationLockRef.current = lock;
+    const sessionId = collaboratorSessionId;
+    const generation = ++savedOperationGenerationRef.current;
+    setSavedAuthorizationRetrying(true);
+    try {
+      const refreshedPage = await saved.mutate();
+      if (
+        savedOperationGenerationRef.current !== generation
+        || currentSavedSessionRef.current !== sessionId
+      ) return;
+      if (!isSavedItemsPage(refreshedPage)) throw new Error('Invalid saved retry page');
+      setSavedItems(refreshedPage.items);
+      setSavedNextCursor(refreshedPage.nextCursor);
+      setSavedItemsSessionId(sessionId);
+      savedAuthorizationLostRef.current = false;
+      setSavedAuthorizationLost(false);
+    } catch {
+      // Authorization loss remains visible until a valid private page is returned.
+    } finally {
+      if (
+        savedOperationLockRef.current === lock
+        && savedOperationGenerationRef.current === generation
+        && currentSavedSessionRef.current === sessionId
+      ) {
+        savedOperationLockRef.current = null;
+        setSavedAuthorizationRetrying(false);
+      }
     }
   }
 
@@ -945,7 +992,23 @@ export default function ConfiguracoesPage() {
           <p className={styles.sectionDesc}>
             Conteúdos guardados aqui são privados e visíveis somente para você.
           </p>
-          {saved.isLoading ? (
+          {savedAuthorizationLost ? (
+            <div className={styles.stateBlock}>
+              <p className={styles.errorMessage} role="alert">
+                Sessão expirada ou acesso alterado. Entre novamente para continuar.
+              </p>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                disabled={savedAuthorizationRetrying}
+                onClick={() => void handleRetrySavedAuthorization()}
+              >
+                {savedAuthorizationRetrying
+                  ? 'Verificando acesso...'
+                  : 'Tentar carregar itens salvos novamente'}
+              </button>
+            </div>
+          ) : saved.isLoading ? (
             <p className={styles.stateMessage} role="status" aria-live="polite">
               Carregando itens salvos...
             </p>
@@ -991,7 +1054,7 @@ export default function ConfiguracoesPage() {
               ))}
             </ul>
           )}
-          {visibleSavedNextCursor && !saved.isLoading && !saved.error && (
+          {visibleSavedNextCursor && !savedAuthorizationLost && !saved.isLoading && !saved.error && (
             <div className={styles.savedActions}>
               <button
                 type="button"
