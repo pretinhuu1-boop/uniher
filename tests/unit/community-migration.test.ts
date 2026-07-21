@@ -302,7 +302,7 @@ describe('migration 054 company community feed', () => {
     expect(db.prepare('SELECT * FROM community_post_saves').all()).toEqual([]);
   });
 
-  it.each<Array<[string, Partial<PostFixture>]>>([
+  it.each<[string, Partial<PostFixture>]>([
     ['an unknown topic', { topic: 'unknown' }],
     ['a read time below 1', { read_time_minutes: 0 }],
     ['a read time above 60', { read_time_minutes: 61 }],
