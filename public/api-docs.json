@@ -172,6 +172,25 @@
           "reward": { "type": "string" }
         }
       },
+      "CollaboratorCompanyIdentity": {
+        "type": "object",
+        "required": ["id", "name", "trade_name", "logo_url"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "trade_name": { "type": "string", "nullable": true },
+          "logo_url": { "type": "string", "nullable": true }
+        },
+        "additionalProperties": false
+      },
+      "CollaboratorCompanyIdentityResponse": {
+        "type": "object",
+        "required": ["company"],
+        "properties": {
+          "company": { "$ref": "#/components/schemas/CollaboratorCompanyIdentity" }
+        },
+        "additionalProperties": false
+      },
       "CommunitySettings": {
         "type": "object",
         "required": ["companyFeedEnabled"],
@@ -1404,6 +1423,23 @@
         "security": [{ "cookieAuth": [] }],
         "responses": {
           "200": { "description": "Perfil atualizado" }
+        }
+      }
+    },
+    "/collaborator/company": {
+      "get": {
+        "tags": ["Comunidade - Colaboradora"],
+        "summary": "Obter identidade mínima da empresa autenticada",
+        "description": "Projeção exclusiva da UI colaboradora. Não aceita companyId: deriva o tenant da sessão e revalida no banco usuário ativo/aprovado, papel autenticado igual ao persistido, capacidade atual de colaboradora e empresa ativa/não excluída. Retorna somente id, name, trade_name e logo_url. Todas as respostas são private/no-store e variam por Cookie. A rota ativa não emite 410.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Identidade mínima da empresa autenticada",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CollaboratorCompanyIdentityResponse" } } }
+          },
+          "401": { "description": "Sessão ausente, revogada, inválida ou expirada" },
+          "403": { "description": "Ator, papel, capacidade ou tenant incoerente (COLLABORATOR_CAPABILITY_REQUIRED)" },
+          "404": { "description": "Empresa inexistente, inativa ou excluída (COMPANY_NOT_FOUND)" }
         }
       }
     },

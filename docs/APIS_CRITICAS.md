@@ -85,6 +85,7 @@ Todas as respostas autenticadas usam `Cache-Control: private, no-store` e `Vary:
 
 | Rota | Contrato runtime |
 | --- | --- |
+| `GET /api/collaborator/company` | Identidade mínima da empresa autenticada para a UI colaboradora. Retorna somente `{ company: { id, name, trade_name, logo_url } }`; não expõe CNPJ, plano, contatos, cores, estatísticas ou settings. |
 | `GET /api/collaborator/feed` | Feed publicado da empresa autenticada. Aceita `scope=company`, `topic`, `limit` de 1 a 30 e cursor opaco. Retorna `{ items, nextCursor, scope: "company", settings: { companyFeedEnabled } }`. |
 | `GET /api/collaborator/saved` | Somente itens salvos pelo próprio usuário no tenant atual. Aceita `limit` de 1 a 30 e cursor opaco. Tem a mesma forma do feed. |
 | `POST/DELETE /api/collaborator/feed/[id]/support` | Apoia/remove apoio do próprio usuário e retorna `{ supportCount, supportedByMe }`. Repetições são idempotentes. |
@@ -92,6 +93,8 @@ Todas as respostas autenticadas usam `Cache-Control: private, no-store` e `Vary:
 | `GET /api/collaborator/feed/[id]/supporters` | Retorna `{ names, nextCursor }`, com `limit` de 1 a 20. Só inclui nomes de membros ativos com consentimento atual. |
 
 O feed aceita apenas os tópicos `pausas`, `sono`, `movimento`, `cuidado` e `geral`. Cursores são opacos e não devem ser construídos pelo cliente. Chaves repetidas de filtros/cursor/limit e parâmetros extras falham fechados; qualquer `scope` diferente de `company` é rejeitado. Quando `feed_company_enabled` está ausente ou diferente de `1`, feed e salvos retornam lista vazia com `companyFeedEnabled: false`; apoio, salvamento e consulta de apoiadoras são bloqueados.
+
+`GET /api/collaborator/company` não aceita `companyId`: o tenant vem da sessão e deve coincidir com `users.company_id`. A leitura revalida em uma transação o usuário ativo, aprovado e não bloqueado, a igualdade do papel persistido com o papel autenticado, a capacidade atual (`role = colaboradora` ou `also_collaborator = 1`) e a empresa ativa/não excluída. A allowlist exata da projeção é `id`, `name`, `trade_name` e `logo_url`. O middleware retorna `401` para sessão ausente, revogada, inválida ou expirada; ator, papel, capability ou tenant incoerente retorna `403 COLLABORATOR_CAPABILITY_REQUIRED`; empresa ausente, inativa ou excluída retorna `404 COMPANY_NOT_FOUND`. A rota ativa não emite `410` no contrato atual.
 
 Erros de domínio estáveis:
 
