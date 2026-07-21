@@ -104,8 +104,8 @@ test.describe('Mobile collaborator shell', () => {
 
     await mobileNav.getByRole('link', { name: 'Comunidade' }).click();
     await expect(page).toHaveURL(/\/comunidade$/);
-    await expect(page.getByRole('heading', { name: 'Um espaço seguro para a sua empresa' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'A comunidade ainda não foi ativada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Conteúdos da sua empresa' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Comunidade desativada pela empresa' })).toBeVisible();
 
     await mobileNav.getByRole('link', { name: 'Jornada' }).click();
     await expect(page).toHaveURL(/\/colaboradora\?focus=journey$/);
