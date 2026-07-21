@@ -79,12 +79,12 @@ The next implementation wave can start from the current Wave 3 worktree and shou
 
 The following routes are still partial and must be handled as a separate product wave. They must not be made to look complete with invented metrics or by reconnecting quarantined gamification endpoints:
 
-| Priority | Route | Current state | Next gate |
+| Lane | Route | Current state | Next gate |
 |---|---|---|---|
-| 1 | `/semaforo` | Neutral review state; legacy health-derived data is contained | Define the collaborator-safe personal status contract, copy, consent, and data source before UI implementation |
-| 2 | `/objetivos` | Placeholder | Define personal objective lifecycle, ownership, progress source, and empty/loading/error states; no points or ranking by default |
-| 3 | `/desafios` | Placeholder | Define company-curated challenge content and completion semantics; keep health responses private |
-| 4 | `/conquistas` | Placeholder | Define a non-sensitive achievement ledger and privacy boundary before exposing history or badges |
-| 5 | `/liga` | Placeholder | Remains blocked until eligibility, cohort, ranking, anti-exposure, and consent rules are approved; do not ship a ranking facade |
+| After eligible ledger | `/objetivos` | Placeholder | Define personal objective lifecycle, ownership, progress source, and empty/loading/error states; no points or ranking by default |
+| After eligible ledger | `/desafios` | Placeholder | Define company-curated challenge content and completion semantics; keep health responses private |
+| After objectives/challenges | `/conquistas` | Placeholder | Define private achievements over the eligible ledger; do not expose legacy badges or holder counts |
+| Independent decision gate | `/semaforo` | Neutral review state; legacy health-derived data is contained | Define the collaborator-safe self-report contract, copy, consent, retention, deletion, and data source before UI implementation |
+| Last / blocked | `/liga` | Placeholder | Remains blocked until eligibility, cohort, ranking, anti-exposure, and consent rules are approved; do not ship a ranking facade |
 
-The execution order is intentional: semaforo establishes the personal-status boundary, objectives and challenges establish safe activity primitives, conquistas can consume a reviewed ledger, and liga is last because it has the highest privacy and policy risk.
+The original queue has been refined by `../plans/2026-07-21-uniher-pending-surfaces-orchestration.md`: Community ships independently; a new eligible-participation ledger precedes Objetivos, Desafios, and Conquistas; Semaforo proceeds as a separate self-care domain after its product/privacy gate; Liga remains last because it has the highest privacy and policy risk.
