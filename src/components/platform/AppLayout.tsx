@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { ScrollToTop } from '@/components/ui/ScrollToTop';
 import ReminderPopup from './ReminderPopup';
 import AuthLoadingScreen from './AuthLoadingScreen';
 import MobileTopbar from './MobileTopbar';
-import MobileBottomNav from './MobileBottomNav';
+import MobileBottomNav, { isCommunityManagementPath } from './MobileBottomNav';
 import styles from './AppLayout.module.css';
 
 interface AppLayoutProps {
@@ -19,7 +20,9 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const { isLoading, user } = useAuth();
-  const showCollaboratorMobileNav = user?.role === 'colaboradora' || Boolean(user?.also_collaborator);
+  const pathname = usePathname();
+  const hasCollaboratorCapability = user?.role === 'colaboradora' || Boolean(user?.also_collaborator);
+  const showCollaboratorMobileNav = hasCollaboratorCapability && !isCommunityManagementPath(pathname);
 
   const closeNavigation = useCallback(() => {
     setSidebarOpen(false);

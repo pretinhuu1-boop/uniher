@@ -12,7 +12,12 @@ const MOBILE_NAV_ITEMS = [
   { href: '/configuracoes', label: 'Perfil', icon: UserRound, key: 'profile' },
 ] as const;
 
+export function isCommunityManagementPath(pathname: string | null | undefined): boolean {
+  return pathname === '/comunidade/gerenciar' || pathname?.startsWith('/comunidade/gerenciar/') === true;
+}
+
 function getActiveKey(pathname: string, focus: string | null) {
+  if (isCommunityManagementPath(pathname)) return null;
   if (pathname === '/comunidade' || pathname.startsWith('/comunidade/')) return 'community';
   if (pathname === '/configuracoes' || pathname.startsWith('/configuracoes/')) return 'profile';
   if (pathname === '/avaliacao-nr1' || focus === 'journey') return 'journey';
