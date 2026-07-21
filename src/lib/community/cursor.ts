@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const nonEmptyString = z.string().trim().min(1);
-const isoTimestamp = z.iso.datetime({ offset: true });
+const isoTimestamp = z.iso.datetime({ offset: true }).refine((value) => value.endsWith('Z'));
 const positiveCanonicalInteger = z.string().regex(/^[1-9]\d*$/);
 const feedCursorSchema = z.tuple([isoTimestamp, isoTimestamp, nonEmptyString]);
 const supporterCursorSchema = z.tuple([isoTimestamp, positiveCanonicalInteger]);

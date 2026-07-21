@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { applyMigration } from '@/lib/db/migrations/runner';
-import { decodeSupporterCursor } from '@/lib/community/cursor';
+import { decodeFeedCursor, decodeSupporterCursor } from '@/lib/community/cursor';
 import { createCommunityRepository } from '@/repositories/community.repository';
 import {
   addCommunityPostSupport,
@@ -144,12 +144,15 @@ describe('community feed repository behavior', () => {
     const first = getCommunityFeed(actorA, repository, { limit: 2 }, NOW);
     const second = getCommunityFeed(actorA, repository, { limit: 2, cursor: first.nextCursor! }, NOW);
     const third = getCommunityFeed(actorA, repository, { limit: 2, cursor: second.nextCursor! }, NOW);
+    const decodedCursor = decodeFeedCursor(first.nextCursor!);
 
     expect(first.items.map((item) => item.id)).toEqual(['post-5', 'post-4']);
     expect(second.items.map((item) => item.id)).toEqual(['post-3', 'post-2']);
     expect(third.items.map((item) => item.id)).toEqual(['post-1']);
     expect(new Set([...first.items, ...second.items, ...third.items].map((item) => item.id)).size).toBe(5);
     expect(third.nextCursor).toBeNull();
+    expect(decodedCursor[0]).toMatch(/Z$/);
+    expect(decodedCursor[1]).toMatch(/Z$/);
   });
 
   it('filters by an allowed topic', () => {
@@ -325,6 +328,7 @@ describe('community supporter repository behavior', () => {
     expect(second.names).toEqual(['Ana']);
     expect(second.nextCursor).toBeNull();
     expect(decodedCursor[1]).toMatch(/^[1-9]\d*$/);
+    expect(decodedCursor[0]).toMatch(/Z$/);
     expect(decodedCursor).not.toContain('member-a');
     expect(decodedCursor).not.toContain('actor-a');
   });

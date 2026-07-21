@@ -32,7 +32,9 @@ const localImagePathSchema = z.string().refine((value) => {
 
   return false;
 }, 'Image path must be a safe local absolute path');
-const optionalIsoDateSchema = z.iso.datetime({ offset: true }).nullable().optional();
+const canonicalUtcDateSchema = z.iso.datetime({ offset: true })
+  .transform((value) => new Date(value).toISOString());
+const optionalIsoDateSchema = canonicalUtcDateSchema.nullable().optional();
 
 export const communityFeedQuerySchema = z.object({
   topic: z.enum(COMMUNITY_TOPICS).optional(),

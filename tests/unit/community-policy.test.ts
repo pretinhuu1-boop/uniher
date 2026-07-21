@@ -176,6 +176,34 @@ describe('community schemas and cursor policy', () => {
     expect(communityPostPatchSchema.safeParse({ title: 'Novo titulo' }).success).toBe(true);
   });
 
+  it('canonicalizes create and patch editorial timestamps to equivalent UTC', () => {
+    const base = {
+      title: 'Titulo seguro',
+      summary: 'Resumo suficientemente longo.',
+      bodyText: 'Corpo suficientemente longo para publicacao.',
+      topic: 'cuidado',
+      readTimeMinutes: 5,
+      status: 'published',
+    } as const;
+    const created = communityPostCreateSchema.parse({
+      ...base,
+      publishedAt: '2026-07-21T10:00:00+03:00',
+      expiresAt: '2026-07-22T10:00:00+03:00',
+    });
+    const patched = communityPostPatchSchema.parse({
+      publishedAt: '2026-07-21T10:00:00+03:00',
+      expiresAt: '2026-07-22T10:00:00+03:00',
+    });
+
+    expect(created.publishedAt).toBe('2026-07-21T07:00:00.000Z');
+    expect(created.expiresAt).toBe('2026-07-22T07:00:00.000Z');
+    expect(patched.publishedAt).toBe('2026-07-21T07:00:00.000Z');
+    expect(patched.expiresAt).toBe('2026-07-22T07:00:00.000Z');
+    expect(communityPostPatchSchema.parse({
+      publishedAt: '2026-07-21T10:00:00.123Z',
+    }).publishedAt).toBe('2026-07-21T10:00:00.123Z');
+  });
+
   it('round-trips canonical cursors and rejects malformed or non-canonical encodings', () => {
     const feedTuple = ['2026-07-20T10:00:00.000Z', '2026-07-20T09:00:00.000Z', 'post-a'] as const;
     const supporterTuple = ['2026-07-20T08:00:00.000Z', '42'] as const;
@@ -191,6 +219,17 @@ describe('community schemas and cursor policy', () => {
     expect(() => decodeFeedCursor(rawCursor(['not-a-date', feedTuple[1], 'post-a']))).toThrow();
     expect(() => decodeFeedCursor(rawCursor([feedTuple[0], '2026-07-20', 'post-a']))).toThrow();
     expect(() => decodeSupporterCursor(rawCursor(['not-a-date', '42']))).toThrow();
+    expect(() => decodeFeedCursor(rawCursor([
+      '2026-07-21T10:00:00+03:00',
+      feedTuple[1],
+      'post-a',
+    ]))).toThrow();
+    expect(() => decodeFeedCursor(rawCursor([
+      feedTuple[0],
+      '2026-07-21T10:00:00-04:00',
+      'post-a',
+    ]))).toThrow();
+    expect(() => decodeSupporterCursor(rawCursor(['2026-07-21T10:00:00+03:00', '42']))).toThrow();
     for (const invalidRowId of ['0', '01', '-1', '1.0', 'actor-a']) {
       expect(() => decodeSupporterCursor(rawCursor([supporterTuple[0], invalidRowId]))).toThrow();
     }
