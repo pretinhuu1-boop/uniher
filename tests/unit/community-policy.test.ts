@@ -119,12 +119,24 @@ describe('community schemas and cursor policy', () => {
     '/community//image.webp',
     '/%2e%2e/secret.png',
     '/%2E%2e/secret.png',
+    '/community%2fsecret.webp',
+    '/community%5csecret.webp',
+    '/%252e%252e/secret.png',
+    '/%252525252e%252525252e/secret.png',
+    '/community/bad%.webp',
+    '/community/bad%2.webp',
+    '/community/bad%GG.webp',
+    '/community/bad%C3%28.webp',
     '/https://cdn.example.test/image.png',
     '/javascript:alert(1)',
     '/data:text/plain,x',
     '/community\\image.webp',
     'javascript:alert(1)',
     'data:image/png;base64,abc',
+    ...(['http:', 'https:', 'javascript:', 'data:'] as const).flatMap((protocol) => [
+      `/community/${encodeURIComponent(protocol)}payload.webp`,
+      `/community/${encodeURIComponent(encodeURIComponent(protocol))}payload.webp`,
+    ]),
   ])('rejects unsafe local image path %s', (imagePath) => {
     expect(communityPostCreateSchema.safeParse({
       title: 'Titulo seguro',
@@ -135,6 +147,18 @@ describe('community schemas and cursor policy', () => {
       imagePath,
       status: 'draft',
     }).success).toBe(false);
+  });
+
+  it('accepts a legitimate percent-encoded UTF-8 local image path', () => {
+    expect(communityPostCreateSchema.safeParse({
+      title: 'Titulo seguro',
+      summary: 'Resumo suficientemente longo.',
+      bodyText: 'Corpo suficientemente longo para publicacao.',
+      topic: 'cuidado',
+      readTimeMinutes: 5,
+      imagePath: '/community/sa%C3%BAde.webp',
+      status: 'draft',
+    }).success).toBe(true);
   });
 
   it('accepts null or one-slash local paths and requires non-empty patches', () => {
