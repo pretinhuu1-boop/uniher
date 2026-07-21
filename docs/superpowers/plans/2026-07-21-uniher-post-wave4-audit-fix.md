@@ -29,18 +29,18 @@ be reactivated to make a placeholder look functional.
 
 | ID | Severity | Class | Finding | Correction and gate |
 | --- | --- | --- | --- | --- |
-| F-01 | P0 | AUTO | NR-1 completion writes legacy points, level, activity, badges and notifications and celebrates XP. | Remove the producer and UI reward; prove zero mutation. |
-| F-02 | P1 | AUTO | RH/leadership expose Semaforo; RH exposes personal objectives and Liga; collaborator exposes Liga. | Remove gated destinations and add deny-list tests. |
+| F-01 | P0 | FIXED | NR-1 completion writes legacy points, level, activity, badges and notifications and celebrates XP. | Removed producer/UI reward; regression proves containment. |
+| F-02 | P1 | FIXED | RH/leadership expose Semaforo; RH exposes personal objectives and Liga; collaborator exposes Liga. | Removed gated destinations and added deny-list tests. |
 | F-03 | P1 | OUT OF SCOPE | Public landing JSON-LD mentions Liga/Semaforo. | Do not edit in this mission; public and email surfaces are protected. |
-| F-04 | P2 | AUTO | `health-score.repository.ts` still exports personal and company readers. | Make every operational reader fail closed; preserve DSAR-only SQL elsewhere. |
-| F-05 | P1 | AUTO | Authenticated API/permission docs describe legacy Liga/objective/reward contracts as live. | Align docs and OpenAPI with containment runtime. |
-| F-06 | P3 | AUTO | Semaforo error boundary has incorrect copy and collaborator redirect. | Correct copy and return to `/colaboradora`. |
-| F-07 | P1 | MANUAL | Wave 5 lacks approved retention, erasure/pseudonymization and audit policy. | Produce a decision packet; no migration until approval. |
+| F-04 | P2 | FIXED | `health-score.repository.ts` still exports personal and company readers. | All operational readers fail closed; DSAR-only SQL remains separate. |
+| F-05 | P1 | FIXED | Authenticated API/permission docs describe legacy Liga/objective/reward contracts as live. | Docs and OpenAPI now match containment runtime. |
+| F-06 | P3 | FIXED | Semaforo error boundary has incorrect copy and collaborator redirect. | Copy corrected; return points to `/colaboradora`. |
+| F-07 | P1 | MANUAL PACKET READY | Wave 5 lacks approved retention, erasure/pseudonymization and audit policy. | Decision packet published; no migration until approval. |
 | F-08 | P1 | AUTO AFTER F-07 | Wave 5 omits DSAR, deterministic event keys and transaction-safe producer contracts. | Add these to the Wave 5 spec and implementation write set. |
-| F-09 | P1 | AUTO | OpenAPI advertises contained legacy badge/challenge/objective APIs as operational. | Add parity regression and document `410` contracts. |
-| F-10 | P2 | AUTO | Legacy quarantine omits objective/challenge tables and active writers/counters remain. | Extend containment without deleting preservation/DSAR data. |
-| F-11 | P2 | MANUAL | Challenge leave/revocation and achievement revocation lifecycle are underspecified. | Decide versioned reversal semantics before migrations 058/059. |
-| F-12 | P2 | MANUAL | Approved catalogs, units, bounds and completion rules are unspecified. | Freeze textual contracts before Waves 6-8 implementation. |
+| F-09 | P1 | FIXED | OpenAPI advertises contained legacy badge/challenge/objective APIs as operational. | Parity regression covers methods and `410` contracts. |
+| F-10 | P2 | FIXED | Legacy quarantine omits objective/challenge tables and active writers/counters remain. | Migration 055, seed and operational counter containment completed. |
+| F-11 | P2 | MANUAL PACKET READY | Challenge leave/revocation and achievement revocation lifecycle are underspecified. | Recommended versioned reversals await approval. |
+| F-12 | P2 | MANUAL PACKET READY | Approved catalogs, units, bounds and completion rules are unspecified. | Recommended textual contracts await approval. |
 
 ## Execution order
 
