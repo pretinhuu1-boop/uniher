@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  COLLABORATOR_SAVED_KEY,
   buildCollaboratorFeedKey,
+  buildCollaboratorSavedKey,
   mergeCommunityFeedPages,
 } from '@/hooks/useCollaborator';
 import type { CommunityFeedItem, CommunityFeedResponse } from '@/types/community';
@@ -45,5 +47,21 @@ describe('collaborator feed pagination helpers', () => {
       page([item('a'), item('b')], 'cursor-b'),
       page([item('b'), item('c')], null),
     ]).map(({ id }) => id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('keeps saved identity in the SWR tuple without sending it as query parameters', () => {
+    expect(buildCollaboratorSavedKey([
+      'user-a',
+      'company-a',
+      'rh',
+      1,
+    ])).toEqual([
+      COLLABORATOR_SAVED_KEY,
+      'user-a',
+      'company-a',
+      'rh',
+      1,
+    ]);
+    expect(COLLABORATOR_SAVED_KEY).toBe('/api/collaborator/saved?limit=20');
   });
 });

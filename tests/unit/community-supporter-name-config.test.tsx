@@ -10,7 +10,8 @@ const auth = vi.hoisted(() => ({
     id: 'user-a',
     companyId: 'company-a',
     role: 'colaboradora',
-  },
+    also_collaborator: 0,
+  } as { id: string; companyId: string; role: string; also_collaborator: number },
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -58,7 +59,9 @@ function initialResponse(url: string, supporterNameValue: '0' | '1' = '0'): Resp
 }
 
 beforeEach(() => {
-  auth.user = { id: 'user-a', companyId: 'company-a', role: 'colaboradora' };
+  auth.user = {
+    id: 'user-a', companyId: 'company-a', role: 'colaboradora', also_collaborator: 0,
+  };
 });
 
 afterEach(() => {
@@ -125,7 +128,9 @@ describe('supporter-name privacy toggle', () => {
     const toggle = await screen.findByRole('checkbox', { name: 'Mostrar meu nome ao apoiar' });
     expect((toggle as HTMLInputElement).disabled).toBe(true);
 
-    auth.user = { id: 'user-b', companyId: 'company-b', role: 'colaboradora' };
+    auth.user = {
+      id: 'user-b', companyId: 'company-b', role: 'colaboradora', also_collaborator: 0,
+    };
     view.rerender(<ConfiguracoesPage />);
     await waitFor(() => expect(preferenceReads).toBe(2));
     expect(firstSignal?.aborted).toBe(true);
@@ -199,6 +204,52 @@ describe('supporter-name privacy toggle', () => {
     expect(error.textContent).toContain('configuração anterior foi restaurada');
     expect((toggle as HTMLInputElement).checked).toBe(true);
     expect((toggle as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it.each([
+    ['success', 200, '0'],
+    ['failure', 500, '1'],
+  ] as const)('ignores stale PATCH %s after the authenticated session changes', async (_case, status, aValue) => {
+    let resolvePatch: ((response: Response) => void) | undefined;
+    const pendingPatch = new Promise<Response>((resolve) => { resolvePatch = resolve; });
+    let patchSignal: AbortSignal | undefined;
+    const fetcher = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/users/me/preferences' && init?.method === 'PATCH') {
+        patchSignal = init.signal ?? undefined;
+        return pendingPatch;
+      }
+      if (url === '/api/users/me/preferences') {
+        return Promise.resolve(initialResponse(url, auth.user.id === 'user-a' ? aValue : '0'));
+      }
+      return Promise.resolve(initialResponse(url));
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const view = render(<ConfiguracoesPage />);
+    const toggle = await screen.findByRole('checkbox', { name: 'Mostrar meu nome ao apoiar' });
+    await waitFor(() => expect((toggle as HTMLInputElement).disabled).toBe(false));
+
+    fireEvent.click(toggle);
+    expect((toggle as HTMLInputElement).disabled).toBe(true);
+    auth.user = {
+      id: 'user-b', companyId: 'company-b', role: 'colaboradora', also_collaborator: 0,
+    };
+    view.rerender(<ConfiguracoesPage />);
+
+    await waitFor(() => {
+      expect((toggle as HTMLInputElement).checked).toBe(false);
+      expect((toggle as HTMLInputElement).disabled).toBe(false);
+    });
+    expect(patchSignal?.aborted).toBe(true);
+
+    await act(async () => {
+      resolvePatch?.(jsonResponse(status === 200 ? { success: true } : { error: 'stale' }, status));
+      await pendingPatch;
+    });
+
+    expect((toggle as HTMLInputElement).checked).toBe(false);
+    expect((toggle as HTMLInputElement).disabled).toBe(false);
+    expect(screen.queryByText(/Preferência salva|configuração anterior foi restaurada/i)).toBeNull();
   });
 
   it('provides a 44px touch target and visible keyboard focus by CSS contract', () => {

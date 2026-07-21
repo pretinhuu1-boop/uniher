@@ -8,6 +8,24 @@ import type { CommunityFeedItem, CommunityFeedResponse, CommunityTopic } from '@
 export const COLLABORATOR_FEED_KEY = '/api/collaborator/feed?scope=company&limit=20';
 export const COLLABORATOR_SAVED_KEY = '/api/collaborator/saved?limit=20';
 
+export type CollaboratorSavedSessionKey = readonly [
+  userId: string,
+  companyId: string | null,
+  role: string,
+  capability: 0 | 1,
+];
+
+export type CollaboratorSavedCacheKey = readonly [
+  typeof COLLABORATOR_SAVED_KEY,
+  ...CollaboratorSavedSessionKey,
+];
+
+export function buildCollaboratorSavedKey(
+  sessionKey: CollaboratorSavedSessionKey,
+): CollaboratorSavedCacheKey {
+  return [COLLABORATOR_SAVED_KEY, ...sessionKey];
+}
+
 class CollaboratorApiError extends Error {
   constructor(
     public readonly status: number,
@@ -47,6 +65,19 @@ async function mutateCommunity<T>(path: string, method: 'POST' | 'DELETE'): Prom
 function isAuthorizationError(error: unknown): error is { status: 401 | 403 } {
   if (typeof error !== 'object' || error === null || !('status' in error)) return false;
   return error.status === 401 || error.status === 403;
+}
+
+function getSavedSessionKey(
+  user: ReturnType<typeof useAuth>['user'],
+): CollaboratorSavedSessionKey | null {
+  if (!user) return null;
+  const canUseCollaboratorCommunity = user.role === 'colaboradora' || user.also_collaborator === 1;
+  return [
+    user.id,
+    user.companyId ?? null,
+    user.role,
+    canUseCollaboratorCommunity ? 1 : 0,
+  ];
 }
 
 export function buildCollaboratorFeedKey(topic?: CommunityTopic, cursor?: string | null): string {
@@ -134,7 +165,9 @@ export function useNotifications() {
 }
 
 export function useCollaboratorFeed() {
+  const { user } = useAuth();
   const { mutate: mutateCache } = useSWRConfig();
+  const savedSessionKey = getSavedSessionKey(user);
   const { data, error, isLoading, mutate } = useCommunityResponse(
     COLLABORATOR_FEED_KEY,
     {
@@ -155,7 +188,7 @@ export function useCollaboratorFeed() {
     const state = await mutateCommunity<SaveState>(`/api/collaborator/feed/${encodedId}/save`, method);
     await Promise.all([
       mutateCache(COLLABORATOR_FEED_KEY),
-      mutateCache(COLLABORATOR_SAVED_KEY),
+      savedSessionKey ? mutateCache(buildCollaboratorSavedKey(savedSessionKey)) : Promise.resolve(),
     ]);
     return state;
   };
@@ -202,6 +235,7 @@ export function useCollaboratorCommunityFeed(topic?: CommunityTopic) {
   const cacheScope = user
     ? JSON.stringify([user.id, user.companyId ?? null, user.role])
     : 'unauthenticated';
+  const savedSessionKey = getSavedSessionKey(user);
   const getKey = useCallback((pageIndex: number, previousPage: CommunityFeedResponse | null) => {
     if (previousPage && !previousPage.nextCursor) return null;
     return [
@@ -256,7 +290,7 @@ export function useCollaboratorCommunityFeed(topic?: CommunityTopic) {
       (current) => patchCommunityFeedPages(current, id, state),
       { revalidate: false },
     );
-    await mutateCache(COLLABORATOR_SAVED_KEY);
+    if (savedSessionKey) await mutateCache(buildCollaboratorSavedKey(savedSessionKey));
     return state;
   };
 
@@ -287,18 +321,33 @@ export function useCollaboratorCommunityFeed(topic?: CommunityTopic) {
   };
 }
 
-export function useCollaboratorSaved() {
-  const { data, error, isLoading, mutate } = useCommunityResponse(
-    COLLABORATOR_SAVED_KEY,
+export function useCollaboratorSaved({
+  sessionKey,
+  enabled,
+}: {
+  sessionKey: CollaboratorSavedSessionKey | null;
+  enabled: boolean;
+}) {
+  const key = enabled && sessionKey ? buildCollaboratorSavedKey(sessionKey) : null;
+  const response = useSWR<CommunityFeedResponse, CollaboratorApiError>(
+    key,
+    (cacheKey) => getFetcher<CommunityFeedResponse>(cacheKey[0]),
     { revalidateOnFocus: false },
   );
+  const authorizationError = isAuthorizationError(response.error);
+
+  useEffect(() => {
+    if (authorizationError) void response.mutate(undefined, { revalidate: false });
+  }, [authorizationError, response.mutate]);
+
+  const data = authorizationError ? undefined : response.data;
 
   return {
     items: data?.items ?? [],
     nextCursor: data?.nextCursor ?? null,
     settings: data?.settings ?? { companyFeedEnabled: false },
-    error,
-    isLoading,
-    mutate,
+    error: response.error,
+    isLoading: enabled ? response.isLoading : false,
+    mutate: response.mutate,
   };
 }

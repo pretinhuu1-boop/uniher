@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -45,11 +45,14 @@ vi.mock('swr', () => ({
 }));
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
-    user: { id: 'user-b', companyId: 'company-b', role: 'colaboradora' },
+    user: { id: 'user-b', companyId: 'company-b', role: 'colaboradora', also_collaborator: 0 },
   }),
 }));
 
-import { useCollaboratorCommunityFeed } from '@/hooks/useCollaborator';
+import {
+  buildCollaboratorSavedKey,
+  useCollaboratorCommunityFeed,
+} from '@/hooks/useCollaborator';
 
 describe('paginated collaborator feed auth boundary', () => {
   beforeEach(() => {
@@ -58,7 +61,10 @@ describe('paginated collaborator feed auth boundary', () => {
     mocks.globalMutate.mockReset().mockResolvedValue(undefined);
     mocks.setSize.mockReset().mockResolvedValue(undefined);
   });
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
 
   it.each([401, 403])('masks and purges cached pages after a %s response', async (status) => {
     mocks.error = Object.assign(new Error('authorization boundary'), { status });
@@ -68,5 +74,24 @@ describe('paginated collaborator feed auth boundary', () => {
     expect(result.current.items).toEqual([]);
     expect(result.current.settings).toEqual({ companyFeedEnabled: false });
     await waitFor(() => expect(mocks.infiniteMutate).toHaveBeenCalledWith(undefined, { revalidate: false }));
+  });
+
+  it('invalidates only the current session saved tuple after a feed save', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ savedByMe: true }),
+      { status: 200 },
+    )));
+    const { result } = renderHook(() => useCollaboratorCommunityFeed());
+
+    await act(async () => {
+      await result.current.save('post-a');
+    });
+
+    expect(mocks.globalMutate).toHaveBeenCalledWith(buildCollaboratorSavedKey([
+      'user-b',
+      'company-b',
+      'colaboradora',
+      1,
+    ]));
   });
 });

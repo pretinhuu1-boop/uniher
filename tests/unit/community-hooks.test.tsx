@@ -11,21 +11,39 @@ const mocks = vi.hoisted(() => ({
   globalMutate: vi.fn(),
   feedState: { data: undefined as unknown, error: undefined as unknown, isLoading: false },
   savedState: { data: undefined as unknown, error: undefined as unknown, isLoading: false },
+  swrKeys: [] as unknown[],
+  user: {
+    id: 'user-a',
+    companyId: 'company-a',
+    role: 'colaboradora',
+    also_collaborator: 0,
+  },
 }));
 
 vi.mock('swr', () => ({
-  default: (key: string) => key.includes('/saved')
-    ? { ...mocks.savedState, mutate: mocks.savedMutate }
-    : { ...mocks.feedState, mutate: mocks.feedMutate },
+  default: (key: unknown) => {
+    mocks.swrKeys.push(key);
+    const url = Array.isArray(key) ? key[0] : key;
+    return typeof url === 'string' && url.includes('/saved')
+      ? { ...mocks.savedState, mutate: mocks.savedMutate }
+      : { ...mocks.feedState, mutate: mocks.feedMutate };
+  },
   useSWRConfig: () => ({ mutate: mocks.globalMutate }),
+}));
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: mocks.user }),
 }));
 
 import {
   COLLABORATOR_FEED_KEY,
   COLLABORATOR_SAVED_KEY,
+  buildCollaboratorSavedKey,
   useCollaboratorFeed,
   useCollaboratorSaved,
 } from '@/hooks/useCollaborator';
+
+const sessionA = ['user-a', 'company-a', 'colaboradora', 1] as const;
+const sessionB = ['user-b', 'company-b', 'colaboradora', 1] as const;
 
 const feedData: CommunityFeedResponse = {
   items: [{
@@ -59,6 +77,7 @@ describe('collaborator community SWR lifecycle', () => {
     mocks.feedMutate.mockReset().mockResolvedValue(undefined);
     mocks.savedMutate.mockReset().mockResolvedValue(undefined);
     mocks.globalMutate.mockReset().mockResolvedValue(undefined);
+    mocks.swrKeys = [];
   });
 
   afterEach(() => {
@@ -68,7 +87,7 @@ describe('collaborator community SWR lifecycle', () => {
 
   it.each([
     ['feed', 401, useCollaboratorFeed, mocks.feedState, mocks.feedMutate],
-    ['saved', 403, useCollaboratorSaved, mocks.savedState, mocks.savedMutate],
+    ['saved', 403, () => useCollaboratorSaved({ sessionKey: sessionA, enabled: true }), mocks.savedState, mocks.savedMutate],
   ] as const)('masks and purges stale %s data after a %s error', async (_name, status, hook, state, mutate) => {
     const error = authError(status);
     state.error = error;
@@ -81,6 +100,39 @@ describe('collaborator community SWR lifecycle', () => {
     expect(result.current.error).toBe(error);
     await waitFor(() => expect(mutate).toHaveBeenCalledWith(undefined, { revalidate: false }));
     expect(mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses a capability-scoped tuple key and disables saved fetching without capability', () => {
+    const { rerender } = renderHook(
+      ({ enabled }) => useCollaboratorSaved({ sessionKey: sessionA, enabled }),
+      { initialProps: { enabled: true } },
+    );
+
+    expect(mocks.swrKeys.at(-1)).toEqual([
+      COLLABORATOR_SAVED_KEY,
+      'user-a',
+      'company-a',
+      'colaboradora',
+      1,
+    ]);
+
+    rerender({ enabled: false });
+    expect(mocks.swrKeys.at(-1)).toBeNull();
+  });
+
+  it('never exposes saved data from session A after switching to session B', () => {
+    mocks.savedState.data = feedData;
+    const { result, rerender } = renderHook(
+      ({ sessionKey }) => useCollaboratorSaved({ sessionKey, enabled: true }),
+      { initialProps: { sessionKey: sessionA as typeof sessionA | typeof sessionB } },
+    );
+    expect(result.current.items[0]?.id).toBe('post-a');
+
+    mocks.savedState.data = undefined;
+    rerender({ sessionKey: sessionB });
+
+    expect(result.current.items).toEqual([]);
+    expect(mocks.swrKeys.at(-1)).toEqual(buildCollaboratorSavedKey(sessionB));
   });
 
   it('encodes mutation IDs and invalidates both feed and saved after save changes', async () => {
@@ -106,9 +158,9 @@ describe('collaborator community SWR lifecycle', () => {
     );
     expect(mocks.globalMutate.mock.calls).toEqual([
       [COLLABORATOR_FEED_KEY],
-      [COLLABORATOR_SAVED_KEY],
+      [buildCollaboratorSavedKey(sessionA)],
       [COLLABORATOR_FEED_KEY],
-      [COLLABORATOR_SAVED_KEY],
+      [buildCollaboratorSavedKey(sessionA)],
     ]);
   });
 

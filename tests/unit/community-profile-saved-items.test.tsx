@@ -9,16 +9,29 @@ const saved = vi.hoisted(() => ({
   error: null as Error | null,
   isLoading: false,
   mutate: vi.fn(async () => undefined),
+  options: null as null | { sessionKey: readonly unknown[] | null; enabled: boolean },
+}));
+
+const auth = vi.hoisted(() => ({
+  user: {
+    id: 'user-a',
+    companyId: 'company-a',
+    role: 'colaboradora',
+    also_collaborator: 0,
+  } as { id: string; companyId: string; role: string; also_collaborator: number },
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
-    user: { id: 'user-a', companyId: 'company-a', role: 'colaboradora' },
+    user: auth.user,
     isLoading: false,
   }),
 }));
 vi.mock('@/hooks/useCollaborator', () => ({
-  useCollaboratorSaved: () => saved,
+  useCollaboratorSaved: (options: { sessionKey: readonly unknown[] | null; enabled: boolean }) => {
+    saved.options = options;
+    return saved;
+  },
 }));
 
 import ConfiguracoesPage from '@/app/(platform)/configuracoes/page';
@@ -42,6 +55,11 @@ const postB = {
   id: 'post-b',
   title: 'Sono com mais regularidade',
   topic: 'sono',
+};
+const postASecondPage = {
+  ...postA,
+  id: 'post-a-second-page',
+  title: 'Conteúdo tardio da sessão A',
 };
 
 function jsonResponse(body: object, status = 200): Response {
@@ -72,6 +90,13 @@ beforeEach(() => {
   saved.error = null;
   saved.isLoading = false;
   saved.mutate = vi.fn(async () => undefined);
+  saved.options = null;
+  auth.user = {
+    id: 'user-a',
+    companyId: 'company-a',
+    role: 'colaboradora',
+    also_collaborator: 0,
+  };
 });
 
 afterEach(() => {
@@ -80,6 +105,52 @@ afterEach(() => {
 });
 
 describe('profile saved community items', () => {
+  it('enables saved profile only for collaborator capability and scopes the hook identity', () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) =>
+      Promise.resolve(baseResponse(String(input)))));
+    auth.user = {
+      id: 'rh-a',
+      companyId: 'company-a',
+      role: 'rh',
+      also_collaborator: 0,
+    };
+    const view = render(<ConfiguracoesPage />);
+
+    expect(screen.queryByRole('heading', { name: 'Itens salvos' })).toBeNull();
+    expect(saved.options).toEqual({
+      sessionKey: ['rh-a', 'company-a', 'rh', 0],
+      enabled: false,
+    });
+
+    auth.user = { ...auth.user, also_collaborator: 1 };
+    view.rerender(<ConfiguracoesPage />);
+    expect(screen.getByRole('heading', { name: 'Itens salvos' })).toBeTruthy();
+    expect(saved.options).toEqual({
+      sessionKey: ['rh-a', 'company-a', 'rh', 1],
+      enabled: true,
+    });
+  });
+
+  it('clears session A saved items immediately when session B becomes active', async () => {
+    saved.items = [postA];
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) =>
+      Promise.resolve(baseResponse(String(input)))));
+    const view = render(<ConfiguracoesPage />);
+    expect(await screen.findByText(postA.title)).toBeTruthy();
+
+    auth.user = {
+      id: 'user-b',
+      companyId: 'company-b',
+      role: 'colaboradora',
+      also_collaborator: 0,
+    };
+    saved.items = [];
+    view.rerender(<ConfiguracoesPage />);
+
+    expect(screen.queryByText(postA.title)).toBeNull();
+    expect(saved.options?.sessionKey).toEqual(['user-b', 'company-b', 'colaboradora', 1]);
+  });
+
   it('renders loading, error/retry, empty states and the privacy boundary declaration', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) =>
       Promise.resolve(baseResponse(String(input)))));
@@ -147,5 +218,90 @@ describe('profile saved community items', () => {
 
     expect(await screen.findByText(postB.title)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Carregar mais itens salvos' })).toBeNull();
+  });
+
+  it('aborts and ignores a session A page that resolves after switching to B', async () => {
+    saved.items = [postA];
+    saved.nextCursor = 'cursor-a';
+    let resolvePage: ((response: Response) => void) | undefined;
+    const pendingPage = new Promise<Response>((resolve) => { resolvePage = resolve; });
+    let pageSignal: AbortSignal | undefined;
+    const fetcher = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/collaborator/saved?limit=20&cursor=')) {
+        pageSignal = init?.signal ?? undefined;
+        return pendingPage;
+      }
+      return Promise.resolve(baseResponse(url));
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const view = render(<ConfiguracoesPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Carregar mais itens salvos' }));
+
+    auth.user = {
+      id: 'user-b', companyId: 'company-b', role: 'colaboradora', also_collaborator: 0,
+    };
+    saved.items = [postB];
+    saved.nextCursor = null;
+    view.rerender(<ConfiguracoesPage />);
+    expect(pageSignal?.aborted).toBe(true);
+
+    resolvePage?.(jsonResponse({ items: [postASecondPage], nextCursor: null }));
+    await pendingPage;
+    await waitFor(() => expect(screen.getByText(postB.title)).toBeTruthy());
+    expect(screen.queryByText(postASecondPage.title)).toBeNull();
+    expect(screen.queryByText(postA.title)).toBeNull();
+  });
+
+  it('ignores a session A removal response after switching to B', async () => {
+    saved.items = [postA];
+    let resolveDelete: ((response: Response) => void) | undefined;
+    const pendingDelete = new Promise<Response>((resolve) => { resolveDelete = resolve; });
+    let deleteSignal: AbortSignal | undefined;
+    const fetcher = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/post-a/save') && init?.method === 'DELETE') {
+        deleteSignal = init.signal ?? undefined;
+        return pendingDelete;
+      }
+      return Promise.resolve(baseResponse(url));
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const view = render(<ConfiguracoesPage />);
+    fireEvent.click(await screen.findByRole('button', { name: `Remover ${postA.title} dos salvos` }));
+
+    auth.user = {
+      id: 'user-b', companyId: 'company-b', role: 'colaboradora', also_collaborator: 0,
+    };
+    saved.items = [postB];
+    view.rerender(<ConfiguracoesPage />);
+    expect(deleteSignal?.aborted).toBe(true);
+
+    resolveDelete?.(jsonResponse({ savedByMe: false }));
+    await pendingDelete;
+    await waitFor(() => expect(screen.getByText(postB.title)).toBeTruthy());
+    expect(screen.queryByText(postA.title)).toBeNull();
+    expect(screen.queryByText(/removido dos salvos/i)).toBeNull();
+  });
+
+  it('keeps authoritative removal successful when cache revalidation fails', async () => {
+    saved.items = [postA];
+    saved.mutate = vi.fn(async () => { throw new Error('revalidation failed'); });
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/post-a/save') && init?.method === 'DELETE') {
+        return Promise.resolve(jsonResponse({ savedByMe: false }));
+      }
+      return Promise.resolve(baseResponse(url));
+    }));
+    render(<ConfiguracoesPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: `Remover ${postA.title} dos salvos` }));
+
+    await waitFor(() => expect(screen.queryByText(postA.title)).toBeNull());
+    const section = screen.getByRole('heading', { name: 'Itens salvos' }).parentElement;
+    expect(section).not.toBeNull();
+    expect(within(section!).getByRole('status').textContent).toContain('removido dos salvos');
+    expect(within(section!).queryByRole('alert')).toBeNull();
   });
 });
