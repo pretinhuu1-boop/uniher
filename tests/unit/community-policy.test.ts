@@ -358,6 +358,35 @@ describe('community access and privacy policy', () => {
     expect(listSupporters).not.toHaveBeenCalled();
   });
 
+  it('uses the same service time snapshot across supporter visibility checks', () => {
+    const db = createDatabase();
+    enableFeed(db);
+    insertPost(db);
+    db.exec(`
+      UPDATE community_posts
+      SET expires_at = '2026-07-21T12:00:00.500Z'
+      WHERE id = 'post-a';
+      INSERT INTO community_post_supports (post_id, user_id, created_at)
+      VALUES ('post-a', 'support-nick', '2026-07-20T08:00:00.000Z');
+      INSERT INTO user_preferences (user_id, pref_key, pref_value)
+      VALUES ('support-nick', 'privacy_community_supporter_name', '1');
+    `);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-21T12:00:01.000Z'));
+
+    try {
+      expect(getCommunitySupporters(
+        { userId: 'actor-a', companyId: 'company-a' },
+        createCommunityRepository(db),
+        'post-a',
+        {},
+        NOW,
+      )).toEqual({ names: ['Cacau'], nextCursor: null });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('projects feed cards without forbidden privacy fields', () => {
     const db = createDatabase();
     enableFeed(db);

@@ -193,6 +193,7 @@ export function getCommunitySupporters(
     companyId,
     cursor: query.cursor ? decodeSupporterCursor(query.cursor) : undefined,
     limit: query.limit,
+    now,
   });
   return {
     names: page.names,
