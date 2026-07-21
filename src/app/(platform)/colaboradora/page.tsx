@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import useSWR from 'swr';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   BookOpen,
@@ -129,12 +130,23 @@ function Nr1JourneyRow({ state }: { state: Nr1PreviewState }) {
 }
 
 export default function CollaboratorHomePage() {
+  const searchParams = useSearchParams();
   const { data, isLoading } = useSWR<CollaboratorHomeData>('/api/collaborator', fetcher);
   const { data: streak, mutate: refreshStreak } = useSWR<{ checkedInToday?: boolean }>('/api/gamification/streak-status', fetcher);
   const { data: missionData, mutate: refreshMissions } = useSWR<{ missions?: SafeMission[] }>('/api/gamification/daily-missions', fetcher);
   const [checkingIn, setCheckingIn] = useState(false);
   const [note, setNote] = useState('');
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('focus') !== 'journey' || isLoading) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('journey-title')?.scrollIntoView({ block: 'start' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [isLoading, searchParams]);
 
   if (isLoading) {
     return (
