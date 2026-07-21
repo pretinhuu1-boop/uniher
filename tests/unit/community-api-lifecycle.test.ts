@@ -48,6 +48,23 @@ describe('authenticated community write rate limiting', () => {
     }
     await expect(checkWriteRateLimit(request)).rejects.toBeInstanceOf(RateLimitError);
   });
+
+  it('keeps forged IP keys isolated from authenticated user buckets', async () => {
+    const victim = `rate-user-victim-${Date.now()}`;
+    const forgedRequest = requestFrom(`user:${victim}`);
+
+    for (let index = 0; index < 30; index += 1) {
+      await expect(checkWriteRateLimit(forgedRequest)).resolves.toBeUndefined();
+    }
+    await expect(checkWriteRateLimit(forgedRequest)).rejects.toBeInstanceOf(RateLimitError);
+
+    for (let index = 0; index < 30; index += 1) {
+      await expect(checkWriteRateLimit(requestFrom('192.0.2.202'), victim))
+        .resolves.toBeUndefined();
+    }
+    await expect(checkWriteRateLimit(requestFrom('192.0.2.203'), victim))
+      .rejects.toBeInstanceOf(RateLimitError);
+  });
 });
 
 describe('collaborator community read snapshot', () => {
