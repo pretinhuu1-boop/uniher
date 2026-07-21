@@ -109,6 +109,134 @@
           "current": { "type": "number" },
           "reward": { "type": "string" }
         }
+      },
+      "CommunitySettings": {
+        "type": "object",
+        "required": ["companyFeedEnabled"],
+        "properties": {
+          "companyFeedEnabled": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      },
+      "CommunityFeedItem": {
+        "type": "object",
+        "required": ["id", "title", "summary", "bodyText", "topic", "readTimeMinutes", "imagePath", "publishedAt", "supportCount", "supportedByMe", "savedByMe"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "summary": { "type": "string" },
+          "bodyText": { "type": "string", "description": "Texto simples; HTML não é aceito na gestão editorial." },
+          "topic": { "type": "string", "enum": ["pausas", "sono", "movimento", "cuidado", "geral"] },
+          "readTimeMinutes": { "type": "integer", "minimum": 1, "maximum": 60 },
+          "imagePath": { "type": "string", "nullable": true },
+          "publishedAt": { "type": "string", "format": "date-time" },
+          "supportCount": { "type": "integer", "minimum": 0 },
+          "supportedByMe": { "type": "boolean" },
+          "savedByMe": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "CommunityFeedResponse": {
+        "type": "object",
+        "required": ["items", "nextCursor", "scope", "settings"],
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/CommunityFeedItem" } },
+          "nextCursor": { "type": "string", "nullable": true, "description": "Cursor opaco retornado pelo servidor." },
+          "scope": { "type": "string", "enum": ["company"] },
+          "settings": { "$ref": "#/components/schemas/CommunitySettings" }
+        },
+        "additionalProperties": false
+      },
+      "CommunitySupportState": {
+        "type": "object",
+        "required": ["supportCount", "supportedByMe"],
+        "properties": {
+          "supportCount": { "type": "integer", "minimum": 0 },
+          "supportedByMe": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "CommunitySaveState": {
+        "type": "object",
+        "required": ["savedByMe"],
+        "properties": { "savedByMe": { "type": "boolean" } },
+        "additionalProperties": false
+      },
+      "CommunitySupportersResponse": {
+        "type": "object",
+        "required": ["names", "nextCursor"],
+        "properties": {
+          "names": { "type": "array", "items": { "type": "string" }, "description": "Somente nomes com consentimento atual; nenhum identificador é retornado." },
+          "nextCursor": { "type": "string", "nullable": true, "description": "Cursor opaco retornado pelo servidor." }
+        },
+        "additionalProperties": false
+      },
+      "CommunityEditorialPost": {
+        "type": "object",
+        "required": ["id", "title", "summary", "bodyText", "topic", "readTimeMinutes", "imagePath", "status", "publishedAt", "expiresAt", "createdAt", "updatedAt"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string", "minLength": 3, "maxLength": 120 },
+          "summary": { "type": "string", "minLength": 10, "maxLength": 240 },
+          "bodyText": { "type": "string", "minLength": 20, "maxLength": 8000 },
+          "topic": { "type": "string", "enum": ["pausas", "sono", "movimento", "cuidado", "geral"] },
+          "readTimeMinutes": { "type": "integer", "minimum": 1, "maximum": 60 },
+          "imagePath": { "type": "string", "nullable": true, "description": "Caminho absoluto local validado; URLs externas não são aceitas." },
+          "status": { "type": "string", "enum": ["draft", "published", "archived"] },
+          "publishedAt": { "type": "string", "format": "date-time", "nullable": true, "description": "Definido uma única vez pelo servidor na publicação." },
+          "expiresAt": { "type": "string", "format": "date-time", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      },
+      "CommunityEditorialPostResponse": {
+        "type": "object",
+        "required": ["post"],
+        "properties": { "post": { "$ref": "#/components/schemas/CommunityEditorialPost" } },
+        "additionalProperties": false
+      },
+      "CommunityEditorialListResponse": {
+        "type": "object",
+        "required": ["companyId", "status", "items", "settings"],
+        "properties": {
+          "companyId": { "type": "string" },
+          "status": { "type": "string", "enum": ["draft", "published", "archived"], "nullable": true },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/CommunityEditorialPost" } },
+          "settings": { "$ref": "#/components/schemas/CommunitySettings" }
+        },
+        "additionalProperties": false
+      },
+      "CommunityEditorialCreateRequest": {
+        "type": "object",
+        "required": ["title", "summary", "bodyText", "topic", "readTimeMinutes", "status"],
+        "properties": {
+          "companyId": { "type": "string", "description": "Obrigatório apenas para Admin Master; proibido para RH/admin de empresa." },
+          "title": { "type": "string", "minLength": 3, "maxLength": 120 },
+          "summary": { "type": "string", "minLength": 10, "maxLength": 240 },
+          "bodyText": { "type": "string", "minLength": 20, "maxLength": 8000 },
+          "topic": { "type": "string", "enum": ["pausas", "sono", "movimento", "cuidado", "geral"] },
+          "readTimeMinutes": { "type": "integer", "minimum": 1, "maximum": 60 },
+          "imagePath": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["draft", "published"], "description": "Criação direta como archived é rejeitada." },
+          "expiresAt": { "type": "string", "format": "date-time", "nullable": true }
+        },
+        "additionalProperties": false
+      },
+      "CommunityEditorialPatchRequest": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "title": { "type": "string", "minLength": 3, "maxLength": 120 },
+          "summary": { "type": "string", "minLength": 10, "maxLength": 240 },
+          "bodyText": { "type": "string", "minLength": 20, "maxLength": 8000 },
+          "topic": { "type": "string", "enum": ["pausas", "sono", "movimento", "cuidado", "geral"] },
+          "readTimeMinutes": { "type": "integer", "minimum": 1, "maximum": 60 },
+          "imagePath": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["draft", "published", "archived"] },
+          "expiresAt": { "type": "string", "format": "date-time", "nullable": true }
+        },
+        "additionalProperties": false
       }
     }
   },
@@ -1217,21 +1345,292 @@
         }
       }
     },
+    "/collaborator/feed": {
+      "get": {
+        "tags": ["Comunidade - Colaboradora"],
+        "summary": "Listar feed publicado da empresa autenticada",
+        "description": "Requer capacidade persistida de colaboradora. O tenant é derivado da sessão e revalidado no banco; companyId não é aceito. Resposta privada/no-store. Feed desligado retorna 200 com items vazio e companyFeedEnabled=false.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [
+          { "name": "scope", "in": "query", "schema": { "type": "string", "enum": ["company"] } },
+          { "name": "topic", "in": "query", "schema": { "type": "string", "enum": ["pausas", "sono", "movimento", "cuidado", "geral"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 30, "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" }, "description": "Cursor opaco retornado por nextCursor." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página do feed",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunityFeedResponse" } } }
+          },
+          "400": { "description": "Empresa ausente (COMPANY_REQUIRED)" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Capacidade ou associação negada (COLLABORATOR_CAPABILITY_REQUIRED ou MEMBERSHIP_DENIED)" },
+          "422": { "description": "Scope, query ou cursor inválido (COMMUNITY_SCOPE_UNSUPPORTED, COMMUNITY_QUERY_INVALID ou COMMUNITY_CURSOR_INVALID)" }
+        }
+      }
+    },
+    "/collaborator/saved": {
+      "get": {
+        "tags": ["Comunidade - Colaboradora"],
+        "summary": "Listar itens salvos pelo próprio usuário",
+        "description": "Recurso privado por usuário e empresa, com tenant derivado da sessão e resposta private/no-store. Feed desligado retorna lista vazia.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 30, "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" }, "description": "Cursor opaco retornado por nextCursor." }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página privada de itens salvos",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunityFeedResponse" } } }
+          },
+          "400": { "description": "Empresa ausente (COMPANY_REQUIRED)" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Capacidade ou associação negada (COLLABORATOR_CAPABILITY_REQUIRED ou MEMBERSHIP_DENIED)" },
+          "422": { "description": "Query ou cursor inválido (COMMUNITY_QUERY_INVALID ou COMMUNITY_CURSOR_INVALID)" }
+        }
+      }
+    },
+    "/collaborator/feed/{id}/support": {
+      "post": {
+        "tags": ["Comunidade - Colaboradora"],
+        "summary": "Apoiar post",
+        "description": "Idempotente, sem corpo. Revalida capacidade, associação, empresa, feed e post na fila de escrita; resposta private/no-store.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Estado agregado do apoio", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySupportState" } } } },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Capacidade/associação negada ou feed desligado (COLLABORATOR_CAPABILITY_REQUIRED, MEMBERSHIP_DENIED ou FEED_DISABLED)" },
+          "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
+          "429": { "description": "Rate limit autenticado excedido (RATE_LIMIT)" }
+        }
+      },
+      "delete": {
+        "tags": ["Comunidade - Colaboradora"],
+        "summary": "Remover apoio",
+        "description": "Idempotente, sem corpo e restrito ao próprio usuário. Mantém o agregado coerente e usa resposta private/no-store.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Estado agregado do apoio", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySupportState" } } } },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Capacidade/associação negada ou feed desligado" },
+          "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
+          "429": { "description": "Rate limit autenticado excedido (RATE_LIMIT)" }
+        }
+      }
+    },
+    "/collaborator/feed/{id}/save": {
+      "post": {
+        "tags": ["Comunidade - Colaboradora"],
+        "summary": "Salvar post privadamente",
+        "description": "Idempotente, sem corpo e restrito ao próprio usuário/tenant. Revalida autorização dentro da transação de escrita; resposta private/no-store.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Estado privado do salvamento", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySaveState" } } } },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Capacidade/associação negada ou feed desligado" },
+          "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
+          "429": { "description": "Rate limit autenticado excedido (RATE_LIMIT)" }
+        }
+      },
+      "delete": {
+        "tags": ["Comunidade - Colaboradora"],
+        "summary": "Remover post dos salvos",
+        "description": "Idempotente, sem corpo e restrito ao próprio usuário/tenant; resposta private/no-store.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Estado privado do salvamento", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySaveState" } } } },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Capacidade/associação negada ou feed desligado" },
+          "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
+          "429": { "description": "Rate limit autenticado excedido (RATE_LIMIT)" }
+        }
+      }
+    },
+    "/collaborator/feed/{id}/supporters": {
+      "get": {
+        "tags": ["Comunidade - Colaboradora"],
+        "summary": "Listar nomes consentidos de apoiadoras",
+        "description": "Retorna apenas nomes de membros ativos do tenant com privacy_community_supporter_name=1. Revogação é observada na próxima consulta sem apagar apoio ou reduzir o agregado. Resposta private/no-store.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 20, "default": 20 } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" }, "description": "Cursor opaco retornado por nextCursor." }
+        ],
+        "responses": {
+          "200": { "description": "Nomes consentidos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunitySupportersResponse" } } } },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Capacidade/associação negada ou feed desligado" },
+          "404": { "description": "Post não visível no tenant (POST_NOT_FOUND)" },
+          "422": { "description": "Query ou cursor inválido (COMMUNITY_QUERY_INVALID ou COMMUNITY_CURSOR_INVALID)" }
+        }
+      }
+    },
+    "/rh/community/posts": {
+      "get": {
+        "tags": ["Comunidade - Gestão editorial"],
+        "summary": "Listar posts editoriais do tenant",
+        "description": "Requer role rh/admin persistido. RH/admin de empresa usa a própria empresa; somente isMasterAdmin=true pode e deve escolher companyId explícito. Resposta private/no-store.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [
+          { "name": "companyId", "in": "query", "schema": { "type": "string" }, "description": "Obrigatório para Admin Master e proibido para gestores de empresa." },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["draft", "published", "archived"] } }
+        ],
+        "responses": {
+          "200": { "description": "Lista e setting do tenant resolvido", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunityEditorialListResponse" } } } },
+          "400": { "description": "Seleção obrigatória ausente (COMPANY_REQUIRED)" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Papel/ator/alvo explícito proibido (EDITORIAL_ACTOR_FORBIDDEN ou COMPANY_TARGET_FORBIDDEN)" },
+          "404": { "description": "Empresa inexistente, inativa ou excluída (COMPANY_NOT_FOUND)" },
+          "422": { "description": "Query inválida (COMMUNITY_QUERY_INVALID)" }
+        }
+      },
+      "post": {
+        "tags": ["Comunidade - Gestão editorial"],
+        "summary": "Criar post editorial",
+        "description": "Cria draft ou published em texto simples. Publicação exige feed ligado e publishedAt é UTC canônico definido pelo servidor. Escrita enfileirada, transacional, auditada e rate-limited.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunityEditorialCreateRequest" } } } },
+        "responses": {
+          "201": { "description": "Post criado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunityEditorialPostResponse" } } } },
+          "400": { "description": "Seleção obrigatória ausente (COMPANY_REQUIRED)" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Ator ou alvo proibido" },
+          "404": { "description": "Empresa inválida (COMPANY_NOT_FOUND)" },
+          "409": { "description": "Feed desligado ou status inicial inválido (FEED_DISABLED ou COMMUNITY_TRANSITION_INVALID)" },
+          "422": { "description": "Corpo inválido (COMMUNITY_POST_INVALID)" },
+          "429": { "description": "Rate limit autenticado excedido (RATE_LIMIT)" }
+        }
+      }
+    },
+    "/rh/community/posts/{id}": {
+      "get": {
+        "tags": ["Comunidade - Gestão editorial"],
+        "summary": "Ler post editorial no tenant resolvido",
+        "description": "Seleciona por id e company_id, sempre com deleted_at nulo. Master informa companyId na query; gestores usam a empresa persistida.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "companyId", "in": "query", "schema": { "type": "string" }, "description": "Obrigatório para Admin Master e proibido para gestores de empresa." }
+        ],
+        "responses": {
+          "200": { "description": "DTO editorial seguro", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunityEditorialPostResponse" } } } },
+          "400": { "description": "Seleção obrigatória ausente (COMPANY_REQUIRED)" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Ator ou alvo proibido" },
+          "404": { "description": "Empresa ou post não encontrado (COMPANY_NOT_FOUND ou COMMUNITY_POST_NOT_FOUND)" },
+          "422": { "description": "Query inválida (COMMUNITY_QUERY_INVALID)" }
+        }
+      },
+      "patch": {
+        "tags": ["Comunidade - Gestão editorial"],
+        "summary": "Editar, publicar ou arquivar post editorial",
+        "description": "Permite edição no mesmo status e apenas draft -> published -> archived. Archived é terminal e qualquer PATCH posterior retorna conflito. Arquivamento é status; não existe hard delete.",
+        "security": [{ "cookieAuth": [] }, { "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "companyId", "in": "query", "schema": { "type": "string" }, "description": "Obrigatório para Admin Master e proibido para gestores de empresa." }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunityEditorialPatchRequest" } } } },
+        "responses": {
+          "200": { "description": "Post atualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommunityEditorialPostResponse" } } } },
+          "400": { "description": "Seleção obrigatória ausente (COMPANY_REQUIRED)" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Ator ou alvo proibido" },
+          "404": { "description": "Empresa ou post não encontrado (COMPANY_NOT_FOUND ou COMMUNITY_POST_NOT_FOUND)" },
+          "409": { "description": "Feed desligado na publicação ou transição inválida/terminal (FEED_DISABLED ou COMMUNITY_TRANSITION_INVALID)" },
+          "422": { "description": "Query ou corpo inválido (COMMUNITY_QUERY_INVALID ou COMMUNITY_POST_INVALID)" },
+          "429": { "description": "Rate limit autenticado excedido (RATE_LIMIT)" }
+        }
+      }
+    },
     "/users/me/preferences": {
       "get": {
         "tags": ["Perfil do Usuário"],
-        "summary": "Preferências do usuário",
+        "summary": "Preferências do próprio usuário",
+        "description": "Resposta privada/no-store. privacy_community_supporter_name é sempre retornada e assume \"0\" quando ausente.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Preferências atuais" }
+          "200": {
+            "description": "Preferências atuais do ator autenticado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["preferences"],
+                  "properties": {
+                    "preferences": {
+                      "type": "object",
+                      "properties": {
+                        "privacy_community_supporter_name": { "type": "string", "enum": ["0", "1"], "default": "0" }
+                      },
+                      "additionalProperties": { "type": "string" }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": { "description": "Sessão ausente, revogada ou expirada" }
         }
       },
-      "put": {
+      "patch": {
         "tags": ["Perfil do Usuário"],
         "summary": "Atualizar preferências",
+        "description": "Atualiza apenas o próprio usuário. Para consentimento de nome, aceita somente \"0\"/\"1\"; mudança real é auditada na mesma transação e repetição é idempotente. O receipt não contém os valores.",
         "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["preferences"],
+                "properties": {
+                  "preferences": {
+                    "type": "object",
+                    "properties": {
+                      "notif_badges": { "type": "string" },
+                      "notif_campaigns": { "type": "string" },
+                      "notif_challenges": { "type": "string" },
+                      "notif_email": { "type": "string" },
+                      "first_access_tour_completed": { "type": "string" },
+                      "privacy_ranking": { "type": "string", "description": "Permanece sob privacy review e não é persistida por este contrato." },
+                      "privacy_profile": { "type": "string" },
+                      "privacy_analytics": { "type": "string" },
+                      "privacy_community_supporter_name": { "type": "string", "enum": ["0", "1"] }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
         "responses": {
-          "200": { "description": "Preferências atualizadas" }
+          "200": {
+            "description": "Preferências atualizadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success"],
+                  "properties": { "success": { "type": "boolean", "enum": [true] } },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": { "description": "Chave ou valor inválido" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Ator persistido inválido (PREFERENCE_ACTOR_FORBIDDEN)" }
         }
       }
     },
@@ -1257,9 +1656,49 @@
       "get": {
         "tags": ["Empresa"],
         "summary": "Dados da empresa do usuário",
+        "description": "Deriva a empresa do usuário persistido. company.feed_company_enabled é booleano e assume false quando o setting não existe. Resposta privada/no-store.",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Dados da empresa" }
+          "200": { "description": "Dados da empresa, incluindo company.feed_company_enabled" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "404": { "description": "Empresa não encontrada" }
+        }
+      },
+      "patch": {
+        "tags": ["Empresa"],
+        "summary": "Atualizar perfil e switch do feed da empresa autenticada",
+        "description": "Somente RH/admin ativos da própria empresa. Não aceita companyId. Mudança real de feedCompanyEnabled é serializada e auditada; repetição não duplica receipt.",
+        "security": [{ "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+                  "tradeName": { "type": "string", "maxLength": 100 },
+                  "sector": { "type": "string", "maxLength": 100 },
+                  "logoUrl": { "type": "string", "format": "uri", "nullable": true },
+                  "primaryColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "nullable": true },
+                  "secondaryColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "nullable": true },
+                  "contactName": { "type": "string", "maxLength": 100 },
+                  "contactEmail": { "type": "string", "format": "email" },
+                  "contactPhone": { "type": "string", "maxLength": 30 },
+                  "feedCompanyEnabled": { "type": "boolean" }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Empresa atualizada" },
+          "401": { "description": "Sessão ausente, revogada ou expirada" },
+          "403": { "description": "Papel não permitido (FORBIDDEN)" },
+          "404": { "description": "Empresa autenticada inválida ou inativa (COMPANY_NOT_FOUND)" },
+          "422": { "description": "Corpo inválido (COMPANY_UPDATE_INVALID)" },
+          "429": { "description": "Rate limit autenticado excedido (RATE_LIMIT)" }
         }
       }
     },

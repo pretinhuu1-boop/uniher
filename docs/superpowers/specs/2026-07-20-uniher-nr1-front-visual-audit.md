@@ -1,6 +1,6 @@
 # UniHER NR-1 Front Preview - Visual Audit and Implementation Target
 
-**Status:** NR-1 preview and collaborator mobile shell implemented in isolated Wave 3 worktree; CommunityPage is a contained adapter, while the real company feed and placeholder modules remain pending
+**Status:** NR-1 preview remains controlled; the company-scoped Community feed and editorial management are **FUNCTIONAL** after API, tenant, privacy, unit, E2E, responsive, and cleanup gates. The five placeholder modules remain pending.
 
 **Date:** 2026-07-20
 
@@ -145,7 +145,7 @@ The images are art-direction references only. They must not be shipped as raster
 
 **Implementation location:** dedicated collaborator Wave 3 worktree branched from the validated Editorial Operational foundation.
 
-**Current status:** controlled NR-1 preview, conditional collaborator mobile shell, and the CommunityPage containment adapter are implemented in the dedicated worktree. The company-scoped feed is still planned, and the five placeholder routes remain a separate gated wave.
+**Current status:** controlled NR-1 preview, conditional collaborator mobile shell, company-scoped Community feed, RH/admin editorial management, supporter consent, and private saved items are implemented in the dedicated worktree. Community is FUNCTIONAL under the evidence in section 9.5. The five placeholder routes remain a separate gated wave.
 
 ## 8. Implementation and validation record
 
@@ -237,26 +237,29 @@ Current code map:
 - `src/components/platform/navigation.ts`: existing role navigation contract. Any `Comunidade` or bottom-nav addition must be deliberate and role-scoped, not inferred from the image.
 - `src/app/(platform)/configuracoes/page.tsx`: existing profile, notification, and privacy settings. Use this as the initial `Perfil` destination instead of creating a duplicate profile route.
 - `src/app/(platform)/avaliacao-nr1/page.tsx`: controlled NR-1 preview route and current scaffold boundary.
-- `src/app/(platform)/comunidade/page.tsx`: client-side containment adapter with `loading`, `denied`, and collaborator-only `empty` states; it is not yet the generated community feed.
-- `src/app/api/collaborator/feed/route.ts`: remains an authenticated privacy-review response. It is not a feed data contract and cannot support the generated community screen.
-- `src/services/collaborator.service.ts` and `src/types/platform.ts`: current collaborator data include streak/content/achievement/exam fields, but not weekly check-in aggregates, journey start state, community posts, reactions, saves, or opt-in supporter names.
+- `src/app/(platform)/comunidade/page.tsx` and `src/components/community/*`: functional collaborator/dual-role feed with loading, denied, disabled, empty, error/retry, filtered list, cursor pagination, support, private save, and consent-based supporter states.
+- `src/app/(platform)/comunidade/gerenciar/page.tsx`: functional RH/admin editorial workspace. RH/admin uses the authenticated company; Admin Master must select an active company explicitly before any read or write.
+- `src/app/api/collaborator/feed/route.ts`, `/api/collaborator/saved`, and the support/save/supporters child routes: active company-scoped API contract with persisted membership/capability validation and private/no-store responses.
+- `src/app/api/rh/community/posts` and `/api/rh/community/posts/[id]`: active editorial list/create/read/patch contract with terminal archive lifecycle, transactional audit receipts, and no hard delete.
+- `src/app/(platform)/configuracoes/page.tsx`: functional default-off supporter-name consent and private saved-items profile surface. Check-ins, semaforo, and NR-1 answers remain outside Community.
 
 ### 9.4 Next implementation waves
 
 The visual design is approved and the collaborator mobile shell is implemented. The next work must remain split into independently reviewable waves:
 
-1. `Wave A - Mobile shell`: **PASS WITH FOLLOW-UP / IMPLEMENTADA**. `AppLayout` exposes a conditional responsive bottom-nav contract for collaborator sessions, preserves the drawer/sidebar fallback, and maps `Hoje`, `Comunidade`, `Jornada`, and `Perfil` to authenticated destinations. The `/comunidade` destination is a contained, functionally disabled adapter until the feed contract is green.
-2. `Wave B - Community read-only`: add a typed curated-feed service/API, topic filtering, `Apoiar`, private `Salvar`, aggregate counts, and opt-in supporter names. Keep comments, composer, ranking, and public health responses out of scope.
-3. `Wave C - Profile privacy`: extend `/configuracoes` or extract a shared settings surface for saved items, content preferences, notifications, and the explicit supporter-name consent. Define schema, default, revocation, retention, and audit behavior before implementation.
+1. `Wave A - Mobile shell`: **PASS / IMPLEMENTADA**. `AppLayout` exposes a conditional responsive bottom-nav contract for collaborator sessions, preserves the drawer/sidebar fallback, and maps `Hoje`, `Comunidade`, `Jornada`, and `Perfil` to authenticated destinations.
+2. `Wave B - Community read-only`: **FUNCTIONAL**. Typed company feed, topic filtering, `Apoiar`, private `Salvar`, aggregate counts, cursor pagination, and opt-in supporter names are implemented. Comments, composer, ranking, and public health responses remain out of scope.
+3. `Wave C - Profile privacy`: **FUNCTIONAL**. `/configuracoes` exposes default-off supporter-name consent, immediate revocation, private saved items, session-isolated cache, and accessible authorization-loss recovery.
 4. `Wave D - Placeholder repair`: resolve `/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, and `/liga` in that order, only after each data/privacy contract is approved. The legacy gamification containment is not evidence of a completed module.
 5. `NR-1 gate`: keep `/avaliacao-nr1` as a controlled preview until the Yavix and legal gates in `docs/INTEGRACAO_YAVIX_NR1.md` pass independent review.
 
-### 9.5 Task 5 final gate
+### 9.5 Community functional gate
 
-- `npm run test:unit`: PASS, 29 files / 278 tests.
-- `npm run build`: PASS, with the known NFT tracing warning from Turbopack.
-- `cd tests; npx playwright test --project=mobile-shell --config=playwright.config.ts`: PASS, 2 passed in 1 worker; no overflow, real Journey focus, Admin denied, and clean teardown.
-- Findings P1/P2/P3: CORRECTED. Conditional AppLayout spacing, unique mobile fixture IDs, and serial fixture execution are verified in the current shell.
-- The five placeholder screens (`/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, `/liga`) and the real company-scoped community feed remain outside this round.
+- Full unit suite: **PASS, 435/435** tests.
+- Community E2E: **PASS, 29/29** tests, covering auth, tenant isolation, disabled default-off behavior, idempotent support/save, consent and revocation, editorial lifecycle, switch/audit receipts, persisted actor changes, browser management, and explicit master company selection.
+- Responsive browser evidence: **PASS** at `375x812`, `390x844`, `768x1024`, and `1440x900`, with the real Community feed/management states and no root overflow or shell overlap.
+- Cleanup: **PASS**; community fixture teardown completed without leaving test users, companies, posts, relations, settings, preferences, or audit receipts in the test database.
+- Contract source: [2026-07-20-uniher-company-community-feed.md](../plans/2026-07-20-uniher-company-community-feed.md).
+- The five placeholder screens (`/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, `/liga`) remain pending according to the master plan. Community becoming functional does not promote those modules.
 
-**Decision:** the four images pass as visual direction with the corrections above. They do not prove feature implementation. O próximo coding target é o contrato company-scoped do feed; o mobile shell está implementado. The company-scoped feed plan is documented in `docs/superpowers/plans/2026-07-20-uniher-company-community-feed.md`; generated logos, portraits, illustrations, and approximate text will be replaced by canonical UniHER code assets and approved data.
+**Decision:** Community moves from containment to **FUNCTIONAL** only on the evidence above. The four approved images remain visual direction, not runtime assets or proof by themselves. Canonical UniHER branding, real company/user assets, approved content media, existing icons, and implemented accessibility states always prevail over generated logos, portraits, illustrations, approximate copy, or decorative placeholders.
