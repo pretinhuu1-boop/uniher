@@ -17,10 +17,17 @@ const VALID_KEYS = [
 ] as const;
 
 const PatchSchema = z.object({
-  preferences: z.record(
-    z.enum(VALID_KEYS),
-    z.string()
-  ),
+  preferences: z.record(z.string(), z.string()).superRefine((preferences, ctx) => {
+    for (const key of Object.keys(preferences)) {
+      if (!VALID_KEYS.includes(key as (typeof VALID_KEYS)[number])) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Preferencia nao suportada: ${key}`,
+          path: [key],
+        });
+      }
+    }
+  }),
 });
 
 export const GET = withAuth(async (_req: NextRequest, context) => {
