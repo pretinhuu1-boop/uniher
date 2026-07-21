@@ -23,6 +23,7 @@ export default async function globalTeardown() {
       "email LIKE 'rh-admin-%'",
       "email LIKE 'colab-seg-%'",
       "email LIKE 'api-test-%'",
+      "email LIKE 'mobile-%'",
     ];
     const where = testPatterns.join(' OR ');
 
@@ -45,7 +46,7 @@ export default async function globalTeardown() {
 
     // Clean test companies
     const testCompanies = db.prepare(
-      "SELECT id FROM companies WHERE name LIKE 'Empresa RH%' OR name LIKE 'Empresa Colab%' OR name LIKE 'Empresa Int%' OR name LIKE 'Empresa Seg%'"
+      "SELECT id FROM companies WHERE name LIKE 'Empresa RH%' OR name LIKE 'Empresa Colab%' OR name LIKE 'Empresa Int%' OR name LIKE 'Empresa Seg%' OR name LIKE 'Empresa Mobile%'"
     ).all() as { id: string }[];
 
     for (const c of testCompanies) {

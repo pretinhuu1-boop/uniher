@@ -68,5 +68,6 @@ export default defineConfig({
     { name: 'integrado', testMatch: 'integrado.spec.ts' },
     { name: 'seguranca', testMatch: 'seguranca.spec.ts' },
     { name: 'visual-ux', testMatch: 'visual-ux.spec.ts', use: { headless: true } },
+    { name: 'mobile-shell', testMatch: 'mobile-collaborator-shell.spec.ts', use: { headless: true } },
   ],
 });
