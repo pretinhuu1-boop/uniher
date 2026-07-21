@@ -12,11 +12,13 @@
 
 ## 1. Current truth and scope
 
-Baseline: branch `codex/uniher-wave3-collaborator-nr1`, commit `4916f1a`.
+Baseline original: branch `codex/uniher-wave3-collaborator-nr1`, commit `4916f1a`.
+
+**Atualizacao de 2026-07-21:** Wave 4 foi promovida no commit `d90147f`. O estado executivo e o calendario passam a ser governados por `2026-07-21-uniher-final-delivery-roadmap.md`; este documento continua como contrato tecnico canonico das Waves 5-10.
 
 | Surface | Current behavior | Real dependency | Promotion state |
 |---|---|---|---|
-| `/comunidade` | Collaborator-only containment adapter | Company-scoped editorial feed | Ready to implement |
+| `/comunidade` | Company-scoped editorial feed | Operacao e regressao continua | Promovida na Wave 4 |
 | `/objetivos` | Neutral legacy-gamification review state | Eligible participation ledger plus self-owned goal contract | Waiting for ledger |
 | `/desafios` | Neutral legacy-gamification review state | Eligible ledger plus company-curated catalog | Waiting for ledger |
 | `/conquistas` | Neutral legacy-gamification review state | Eligible ledger plus safe achievement definitions | Waiting for Objectives/Challenges contracts |
@@ -278,7 +280,7 @@ For visual routes, add focused Playwright coverage at `375x812`, `390x844`, `768
 
 | Wave | Start condition | Completion evidence | Status |
 |---|---|---|---|
-| 4 Community | Current branch green | Feed tests, screenshots, tenant/privacy review, scorecard | Ready |
+| 4 Community | Current branch green | Feed tests, screenshots, tenant/privacy review, scorecard | PASS / promovida em `d90147f` |
 | 5 Eligible ledger | Community repository contract stable or disjoint coordinator slot available | Eligibility tests, quarantine regression, spec/plan review | Queued |
 | 6 Objectives | Wave 5 promoted | Self-only objective tests and visual evidence | Waiting |
 | 7 Challenges | Wave 5 promoted | Catalog/tenant/aggregate tests and visual evidence | Waiting |
@@ -288,7 +290,7 @@ For visual routes, add focused Playwright coverage at `375x812`, `390x844`, `768
 
 ## 14. First execution slice
 
-Execute Wave 4 from the existing Community child plan. In parallel only at the documentation level, prepare the Wave 5 eligible-ledger spec for review. Do not open mutable code for Waves 5-10 until Community's migration and shared preference/company-setting edits are integrated and reviewed.
+Execute Wave 5 a partir do contrato de ledger elegivel, somente depois das decisoes de retencao, exclusao, DSAR e auditoria. Wave 4 nao deve ser reexecutada; mantenha apenas sua regressao. Nao abra codigo mutavel de Waves 6-10 antes do gate da dependencia imediatamente anterior.
 
 ## Self-review
 
