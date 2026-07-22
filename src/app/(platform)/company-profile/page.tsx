@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 interface CompanyData {
@@ -51,9 +52,11 @@ function formatDate(iso: string): string {
 }
 
 export default function CompanyProfilePage() {
+  const { user, isLoading: authLoading } = useAuth();
   const [company, setCompany] = useState<CompanyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [adminWithoutCompany, setAdminWithoutCompany] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -76,6 +79,18 @@ export default function CompanyProfilePage() {
 
   // Fetch company data
   useEffect(() => {
+    if (authLoading) return;
+    if (user?.role === 'admin' && !user.companyId) {
+      setAdminWithoutCompany(true);
+      setCompany(null);
+      setError('');
+      setLoading(false);
+      return;
+    }
+
+    setAdminWithoutCompany(false);
+    setLoading(true);
+    setError('');
     fetch('/api/company')
       .then(r => {
         if (!r.ok) throw new Error('not_found');
@@ -95,7 +110,7 @@ export default function CompanyProfilePage() {
       })
       .catch(() => setError('Empresa nao encontrada. Verifique se sua conta esta vinculada a uma empresa.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user?.companyId, user?.role]);
 
   const startEditing = () => {
     setSnap({ companyName, tradeName, cnpj, sector, contactName, contactEmail, contactPhone, feedCompanyEnabled });
@@ -183,6 +198,26 @@ export default function CompanyProfilePage() {
         <div className="text-center space-y-3 animate-pulse">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-100" />
           <p className="text-sm text-uni-text-400 font-medium">Carregando dados da empresa...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (adminWithoutCompany) {
+    return (
+      <div className="min-h-screen bg-cream-50 p-6 md:p-10 flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 border border-border-1 shadow-sm max-w-md text-center space-y-4">
+          <span className="text-4xl">UN</span>
+          <h2 className="text-lg font-bold text-uni-text-900">Perfil por empresa</h2>
+          <p className="text-sm text-uni-text-500">
+            Sua conta master nao esta vinculada a uma empresa especifica. Use o painel UniHER para selecionar ou gerenciar empresas.
+          </p>
+          <a
+            href="/admin"
+            className="inline-flex items-center justify-center rounded-xl bg-gold-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-gold-700"
+          >
+            Voltar ao painel
+          </a>
         </div>
       </div>
     );
