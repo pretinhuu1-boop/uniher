@@ -70,6 +70,7 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
   const { name, password } = parsed.data;
   const passwordHash = await hashPassword(password);
   const userId = nanoid();
+  const alsoCollaborator = invite.role === 'lideranca' ? 1 : 0;
 
   // Check if email already exists
   const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(invite.email);
@@ -81,9 +82,9 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
   try {
     await wq.enqueue((db) => {
       db.prepare(`
-        INSERT INTO users (id, name, email, password_hash, role, company_id, department_id, league, approved, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'bronze', 0, datetime('now'), datetime('now'))
-      `).run(userId, name, invite.email, passwordHash, invite.role, invite.company_id, invite.department_id || null);
+        INSERT INTO users (id, name, email, password_hash, role, company_id, department_id, league, approved, also_collaborator, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'bronze', 0, ?, datetime('now'), datetime('now'))
+      `).run(userId, name, invite.email, passwordHash, invite.role, invite.company_id, invite.department_id || null, alsoCollaborator);
 
       db.prepare(`
         INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
