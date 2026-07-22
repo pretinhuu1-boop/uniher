@@ -1,255 +1,172 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useCollaboratorBadges, useCollaboratorHome } from '@/hooks/useCollaborator';
-import styles from './conquistas.module.css';
-import { cn } from '@/lib/utils';
+import { Award, CheckCircle2, Lock, ShieldCheck, Sparkles } from 'lucide-react';
+import useSWR from 'swr';
+import { FeedbackState } from '@/components/ui/FeedbackState';
+import PageHeader from '@/components/platform/PageHeader';
+import { SummaryBand } from '@/components/platform/SummaryBand';
+import { useAuth } from '@/hooks/useAuth';
+import type { PrivateAchievementView } from '@/types/achievements';
 
-type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
-
-const RARITY_CONFIG: Record<Rarity, { label: string; bg: string; border: string; glow: string; badge: string }> = {
-  common:    { label: 'Comum',     bg: 'bg-gray-50',    border: 'border-gray-200',   glow: '',                           badge: 'bg-gray-100 text-gray-600' },
-  rare:      { label: 'Raro',      bg: 'bg-blue-50',    border: 'border-blue-200',   glow: 'shadow-blue-100',            badge: 'bg-blue-100 text-blue-700' },
-  epic:      { label: 'Épico',     bg: 'bg-violet-50',  border: 'border-violet-200', glow: 'shadow-violet-100',          badge: 'bg-violet-100 text-violet-700' },
-  legendary: { label: 'Lendário',  bg: 'bg-amber-50',   border: 'border-amber-200',  glow: 'shadow-amber-200 shadow-md', badge: 'bg-amber-100 text-amber-700' },
+type AchievementsPayload = {
+  achievements: PrivateAchievementView[];
+  error?: string;
 };
 
-const BADGE_REQUIREMENTS: Record<string, string> = {
-  badge_iniciante:  'Faça seu primeiro check-in ou complete um desafio.',
-  badge_streak7:    'Mantenha uma sequência de 7 dias consecutivos.',
-  badge_preventiva: 'Registre 3 exames de saúde concluídos.',
-  badge_streak30:   'Mantenha uma sequência de 30 dias consecutivos.',
-  badge_mestra:     'Alcance o nível 10 na plataforma.',
-  badge_maratonista:'Complete 50 desafios.',
-  badge_equilibrio: 'Atinja pontuação ≥ 7 em todas as 6 dimensões de saúde.',
-  default:          'Continue participando das campanhas e completando desafios.',
+const fetcher = async (url: string): Promise<AchievementsPayload> => {
+  const response = await fetch(url);
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error ?? 'Nao foi possivel carregar suas conquistas');
+  return payload;
 };
+
+function statusLabel(status: PrivateAchievementView['status']): string {
+  if (status === 'earned') return 'Conquistada';
+  if (status === 'revoked') return 'Revogada';
+  return 'Bloqueada';
+}
 
 export default function ConquistasPage() {
-  const { badges } = useCollaboratorBadges();
-  const { data } = useCollaboratorHome();
-  const [expandedBadge, setExpandedBadge] = useState<string | null>(null);
-  const [sharedBadge, setSharedBadge] = useState<string | null>(null);
-  const [newlyUnlocked, setNewlyUnlocked] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
+  const { user, isLoading: authLoading } = useAuth();
+  const canUseAchievements = user?.role === 'colaboradora' || user?.also_collaborator === 1;
+  const { data, error, isLoading } = useSWR<AchievementsPayload>(
+    canUseAchievements ? '/api/collaborator/achievements' : null,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
 
-  const badgeList = badges as any[];
-  const unlockedCount = badgeList.filter(b => b.unlockedAt || b.unlocked).length;
-  const completionPct = badgeList.length > 0 ? Math.round((unlockedCount / badgeList.length) * 100) : 0;
+  const achievements = data?.achievements ?? [];
+  const earned = achievements.filter((achievement) => achievement.status === 'earned');
+  const locked = achievements.filter((achievement) => achievement.status === 'in_progress');
+  const revoked = achievements.filter((achievement) => achievement.status === 'revoked');
 
-  // Track newly unlocked badges (just unlocked in this session)
-  useEffect(() => {
-    const prev = new Set(JSON.parse(sessionStorage.getItem('knownBadges') || '[]'));
-    const current = new Set(badgeList.filter(b => b.unlockedAt || b.unlocked).map((b: any) => b.id));
-    const fresh = new Set([...current].filter(id => !prev.has(id)));
-    if (fresh.size > 0) setNewlyUnlocked(fresh);
-    sessionStorage.setItem('knownBadges', JSON.stringify([...current]));
-  }, [badges]);
+  if (authLoading || isLoading) {
+    return (
+      <FeedbackState
+        kind="loading"
+        title="Carregando conquistas"
+        description="Estamos sincronizando apenas seus eventos elegiveis."
+      />
+    );
+  }
 
-  const filteredBadges = badgeList.filter(b => {
-    const isUnlocked = !!(b.unlockedAt || b.unlocked);
-    if (filter === 'unlocked') return isUnlocked;
-    if (filter === 'locked') return !isUnlocked;
-    return true;
-  });
+  if (!canUseAchievements) {
+    return (
+      <FeedbackState
+        kind="denied"
+        title="Conquistas indisponiveis"
+        description="Este perfil nao possui acesso persistido a experiencia de colaboradora."
+      />
+    );
+  }
 
-  const stats = [
-    { label: 'Badges conquistados', value: `${unlockedCount}/${badgeList.length}`, icon: '🏆' },
-    { label: 'Progresso geral', value: `${completionPct}%`, icon: '📈' },
-    { label: 'Dias de sequência', value: (data as any)?.streakDays ?? 0, icon: '🔥' },
-    { label: 'Pontos totais', value: ((data as any)?.points ?? 0).toLocaleString('pt-BR'), icon: '⭐' },
-  ];
+  if (error) {
+    return (
+      <FeedbackState
+        kind="error"
+        title="Nao foi possivel abrir conquistas"
+        description={error.message}
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 font-body animate-fadeIn">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-display font-bold text-uni-text-900">Conquistas</h1>
-        <p className="text-uni-text-500 mt-1">Desbloqueie badges completando atividades e mantendo sua sequência.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        context="Conquistas"
+        title="Minhas conquistas"
+        description="Veja marcos privados derivados somente de objetivos e desafios elegiveis."
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(s => (
-          <div key={s.label} className="bg-white border border-border-1 rounded-2xl p-5 shadow-sm">
-            <div className="text-2xl mb-2">{s.icon}</div>
-            <div className="text-2xl font-display font-bold text-uni-text-900">{s.value}</div>
-            <div className="text-xs font-bold text-uni-text-500 mt-1">{s.label}</div>
-          </div>
-        ))}
-      </div>
+      <SummaryBand
+        label="Resumo privado"
+        items={[
+          { label: 'Conquistadas', value: earned.length },
+          { label: 'Bloqueadas', value: locked.length },
+          { label: 'Revogadas', value: revoked.length },
+        ]}
+      />
 
-      {/* Overall Progress */}
-      <div className="bg-white border border-border-1 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <span className="font-bold text-uni-text-900">Coleção Completa</span>
-          <span className="text-sm font-bold text-rose-500">{unlockedCount} de {badgeList.length}</span>
-        </div>
-        <div className="h-3 bg-cream-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-700"
-               style={{ width: `${completionPct}%` }} />
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs text-uni-text-400">{completionPct}% concluído</span>
-          <div className="flex items-center gap-3 text-xs">
-            {(['common', 'rare', 'epic', 'legendary'] as Rarity[]).map(r => (
-              <span key={r} className={cn("px-2 py-0.5 rounded-full font-bold", RARITY_CONFIG[r].badge)}>{RARITY_CONFIG[r].label}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Newly Unlocked banner */}
-      {newlyUnlocked.size > 0 && (
-        <div className="bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-2xl p-5 shadow-lg">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🎉</span>
-            <div>
-              <div className="font-bold text-lg">Badge Desbloqueado!</div>
-              <div className="text-rose-100 text-sm">
-                {[...newlyUnlocked].map(id => badgeList.find((b: any) => b.id === id)?.name).filter(Boolean).join(', ')}
-              </div>
+      <section aria-labelledby="achievements-privacy-title" className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+        <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+              <Award size={24} strokeWidth={1.8} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase text-[var(--platform-action-strong)]">
+                Wave 8 ativa
+              </p>
+              <h2 id="achievements-privacy-title" className="mt-2 text-xl font-semibold text-[var(--platform-ink)]">
+                Privadas, deterministicas e sem badge legado
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">
+                As conquistas nascem apenas de eventos elegiveis nao revogados. Nao ha raridade, ranking, compartilhamento publico ou contagem de titulares.
+              </p>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Filter */}
-      <div className="flex gap-2">
-        {(['all', 'unlocked', 'locked'] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={cn(
-              "px-4 py-2 rounded-xl text-sm font-bold transition-all",
-              filter === f
-                ? "bg-rose-500 text-white shadow-sm"
-                : "bg-white border border-border-1 text-uni-text-600 hover:border-rose-300"
-            )}
-          >
-            {f === 'all' ? 'Todos' : f === 'unlocked' ? '✅ Desbloqueados' : '🔒 Bloqueados'}
-          </button>
-        ))}
-      </div>
+        <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[color-mix(in_srgb,var(--platform-positive)_10%,var(--platform-surface))] p-5 sm:p-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--platform-ink)]">
+            <ShieldCheck size={19} aria-hidden="true" />
+            Contrato seguro
+          </h2>
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--platform-muted)]">
+            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Somente objetivos e desafios elegiveis.</span></li>
+            <li className="flex gap-3"><Lock size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Visivel apenas para voce e para DSAR.</span></li>
+            <li className="flex gap-3"><Sparkles size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Sem pontos, raridade, ranking ou compartilhamento.</span></li>
+          </ul>
+        </div>
+      </section>
 
-      {/* Badge Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredBadges.map((badge: any) => {
-          const isUnlocked = !!(badge.unlockedAt || badge.unlocked);
-          const isNew = newlyUnlocked.has(badge.id);
-          const isExpanded = expandedBadge === badge.id;
-          const rarity = (badge.rarity || 'common') as Rarity;
-          const rc = RARITY_CONFIG[rarity];
+      <section aria-labelledby="achievement-list-title" className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
+        <div className="border-b border-[var(--platform-line)] px-5 py-4 sm:px-6">
+          <h2 id="achievement-list-title" className="text-lg font-semibold text-[var(--platform-ink)]">
+            Marcos privados
+          </h2>
+          <p className="mt-1 text-sm text-[var(--platform-muted)]">
+            Os estados sao recalculados a partir do ledger elegivel.
+          </p>
+        </div>
 
-          return (
-            <div
-              key={badge.id}
-              onClick={() => setExpandedBadge(isExpanded ? null : badge.id)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedBadge(isExpanded ? null : badge.id); } }}
-              className={cn(
-                "relative border-2 rounded-2xl p-5 cursor-pointer transition-all select-none",
-                isUnlocked
-                  ? `${rc.bg} ${rc.border} ${rc.glow} hover:scale-[1.02]`
-                  : "bg-gray-50 border-gray-100 opacity-60 grayscale hover:opacity-70",
-                isNew && "ring-2 ring-rose-400 ring-offset-2 animate-pulse",
-              )}
-            >
-              {/* Newly unlocked ribbon */}
-              {isNew && (
-                <div className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">NOVO!</div>
-              )}
-
-              <div className="flex items-start gap-4">
-                {/* Badge icon */}
-                <div className={cn(
-                  "w-14 h-14 rounded-xl flex items-center justify-center text-3xl flex-shrink-0 border-2",
-                  isUnlocked ? `${rc.bg} ${rc.border}` : "bg-gray-100 border-gray-200",
-                  rarity === 'legendary' && isUnlocked && "shadow-lg shadow-amber-200"
-                )}>
-                  <span className={isUnlocked ? '' : 'grayscale opacity-50'}>{badge.icon}</span>
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-uni-text-900">{badge.name}</h3>
-                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", rc.badge)}>{rc.label}</span>
-                    {rarity === 'legendary' && <span className="text-xs">✨</span>}
-                  </div>
-                  <p className="text-xs text-uni-text-500 mt-1 line-clamp-2">{badge.description}</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">⭐ {badge.points} pts</span>
-                    {isUnlocked && badge.unlockedAt && (
-                      <span className="text-[10px] text-uni-text-400" suppressHydrationWarning>
-                        {new Date(badge.unlockedAt).toLocaleDateString('pt-BR')}
-                      </span>
-                    )}
-                    {!isUnlocked && (
-                      <span className="text-[10px] text-gray-400 flex items-center gap-1">🔒 Bloqueado</span>
-                    )}
-                  </div>
-                </div>
-
-                <span className="text-uni-text-300 text-lg flex-shrink-0 mt-1">{isExpanded ? '▴' : '▾'}</span>
-              </div>
-
-              {/* Expanded content */}
-              {isExpanded && (
-                <div className="mt-4 pt-4 border-t border-gray-200 space-y-3 animate-fadeIn">
-                  <p className="text-sm text-uni-text-600">
-                    {isUnlocked ? badge.description : (BADGE_REQUIREMENTS[badge.id] || BADGE_REQUIREMENTS.default)}
-                  </p>
-                  {!isUnlocked && (
-                    <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl p-3">
-                      <span className="text-amber-500 flex-shrink-0">💡</span>
-                      <p className="text-xs text-amber-700">
-                        {BADGE_REQUIREMENTS[badge.id] || BADGE_REQUIREMENTS.default}
-                      </p>
+        {achievements.length === 0 ? (
+          <div className="p-5 sm:p-6">
+            <FeedbackState
+              kind="empty"
+              title="Nenhuma conquista disponivel"
+              description="O catalogo privado ainda nao foi sincronizado."
+            />
+          </div>
+        ) : (
+          <div className="grid gap-4 p-5 sm:p-6 lg:grid-cols-2">
+            {achievements.map((achievement) => {
+              const isEarned = achievement.status === 'earned';
+              return (
+                <article key={achievement.id} className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5">
+                  <div className="flex items-start gap-4">
+                    <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-[var(--platform-radius-control)] ${isEarned ? 'bg-[var(--platform-action)] text-white' : 'bg-[var(--platform-group)] text-[var(--platform-muted)]'}`}>
+                      {isEarned ? <CheckCircle2 size={21} aria-hidden="true" /> : <Lock size={21} aria-hidden="true" />}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-[var(--platform-ink)]">{achievement.achievement.title}</h3>
+                        <span className="rounded-full border border-[var(--platform-line)] px-2 py-0.5 text-xs font-medium text-[var(--platform-muted)]">
+                          {statusLabel(achievement.status)}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">{achievement.achievement.description}</p>
+                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--platform-group)]" aria-label={`Progresso ${achievement.progress}%`}>
+                        <div className="h-full rounded-full bg-[var(--platform-action)]" style={{ width: `${achievement.progress}%` }} />
+                      </div>
                     </div>
-                  )}
-                  {isUnlocked && (
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const text = `Conquistei o badge "${badge.name}" na UniHER!`;
-                        const url = window.location.origin;
-                        try {
-                          if (navigator.share) {
-                            await navigator.share({ title: text, text, url });
-                          } else {
-                            const waUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
-                            window.open(waUrl, '_blank');
-                          }
-                          setSharedBadge(badge.id);
-                          setTimeout(() => setSharedBadge(null), 2000);
-                        } catch { /* user cancelled share */ }
-                      }}
-                      className={cn(
-                        "text-xs font-bold px-4 py-2 rounded-xl transition-all",
-                        sharedBadge === badge.id
-                          ? "bg-emerald-500 text-white"
-                          : "bg-white border border-rose-300 text-rose-500 hover:bg-rose-50"
-                      )}
-                    >
-                      {sharedBadge === badge.id ? '✓ Compartilhado!' : '↗ Compartilhar conquista'}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {filteredBadges.length === 0 && (
-        <div className="text-center py-16 space-y-2">
-          <span className="text-5xl block">🏆</span>
-          <p className="font-bold text-uni-text-700">Nenhum badge encontrado</p>
-          <p className="text-sm text-uni-text-400">Complete desafios e check-ins diários para desbloquear seu primeiro badge!</p>
-        </div>
-      )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

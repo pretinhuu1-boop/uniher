@@ -1,15 +1,8 @@
 import { NextResponse } from 'next/server';
-import { initDb } from '@/lib/db/init';
 import { withAuth } from '@/lib/auth/middleware';
-import { handleApiError } from '@/lib/errors';
-import * as collabService from '@/services/collaborator.service';
+import { SEMAFORO_PRIVATE_HEADERS, SEMAFORO_REVIEW_STATE } from '@/lib/semaforo/containment';
 
-export const GET = withAuth(async (_req, { auth }) => {
-  try {
-    await initDb();
-    const data = collabService.getCollaboratorSemaforo(auth.userId);
-    return NextResponse.json(data);
-  } catch (error) {
-    return handleApiError(error);
-  }
-});
+export const GET = withAuth(async () => NextResponse.json(
+  SEMAFORO_REVIEW_STATE,
+  { headers: SEMAFORO_PRIVATE_HEADERS },
+));

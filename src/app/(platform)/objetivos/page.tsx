@@ -1,468 +1,323 @@
 'use client';
 
-import { useState } from 'react';
-import useSWR, { mutate as globalMutate } from 'swr';
+import { Archive, Check, CircleGauge, ListChecks, PenLine, Plus, ShieldCheck } from 'lucide-react';
+import useSWR from 'swr';
+import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { FeedbackState } from '@/components/ui/FeedbackState';
+import PageHeader from '@/components/platform/PageHeader';
+import { SummaryBand } from '@/components/platform/SummaryBand';
 import { useAuth } from '@/hooks/useAuth';
+import type { PersonalObjectiveTemplate, PersonalObjectiveView } from '@/types/objectives';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
-
-const TYPE_LABELS: Record<string, string> = {
-  weekly: '📅 Semanal',
-  goal: '🎯 Meta',
-  campaign: '🚀 Campanha',
+type ObjectivesPayload = {
+  templates: PersonalObjectiveTemplate[];
+  objectives: PersonalObjectiveView[];
+  error?: string;
 };
 
-const TARGET_LABELS: Record<string, string> = {
-  points: 'Pontos acumulados',
-  missions: 'Missões concluídas',
-  level: 'Nível alcançado',
-  streak: 'Dias seguidos',
-  challenges: 'Desafios concluídos',
-  campaign_join: 'Participar da campanha',
-  campaign_complete: 'Completar campanha',
+const fetcher = async (url: string): Promise<ObjectivesPayload> => {
+  const response = await fetch(url);
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error ?? 'Nao foi possivel carregar seus objetivos');
+  return payload;
 };
 
-const REWARD_LABELS: Record<string, string> = {
-  points: '💎 Pontos',
-  badge: '🏅 Badge',
-  custom: '🎁 Recompensa especial',
-};
-
-interface Objective {
-  id: string;
-  title: string;
-  description: string | null;
-  type: 'weekly' | 'goal' | 'campaign';
-  target_type: string;
-  target_value: number;
-  campaign_id: string | null;
-  campaign_name?: string;
-  reward_type: string;
-  reward_points: number;
-  reward_badge_id: string | null;
-  reward_badge_name?: string;
-  reward_custom: string | null;
-  starts_at: string | null;
-  ends_at: string | null;
-  is_active: number;
-  // progress
-  current_value?: number;
-  completed?: number;
-  reward_claimed?: number;
-  week_key?: string;
+function statusLabel(status: PersonalObjectiveView['status']): string {
+  if (status === 'completed') return 'Concluido';
+  if (status === 'archived') return 'Arquivado';
+  return 'Em andamento';
 }
 
-function progressPercent(obj: Objective): number {
-  if (!obj.target_value) return 0;
-  return Math.min(100, Math.round(((obj.current_value ?? 0) / obj.target_value) * 100));
+function nextProgress(progress: number): number {
+  if (progress < 25) return 25;
+  if (progress < 50) return 50;
+  if (progress < 75) return 75;
+  return 100;
 }
 
-// ─── Colaboradora view ────────────────────────────────────────────────────────
-function ColaboradoraView() {
-  const { data, isLoading, mutate } = useSWR<{ objectives: Objective[] }>('/api/objectives', fetcher);
-  const [claiming, setClaiming] = useState<string | null>(null);
-  const [toast, setToast] = useState('');
+export default function ObjetivosPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const canUseObjectives = user?.role === 'colaboradora' || user?.also_collaborator === 1;
+  const { data, error, isLoading, mutate } = useSWR<ObjectivesPayload>(
+    canUseObjectives ? '/api/collaborator/objectives' : null,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
 
-  async function claim(obj: Objective) {
-    setClaiming(obj.id);
-    const res = await fetch(`/api/objectives/${obj.id}/claim`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ week_key: obj.week_key }),
-    });
-    const json = await res.json();
-    setClaiming(null);
-    if (res.ok) {
-      let msg = '🎉 Recompensa resgatada!';
-      if (json.reward_type === 'points') msg += ` +${json.reward_points} pontos`;
-      else if (json.reward_type === 'badge') msg += ` Badge "${json.reward_badge_name}" desbloqueado!`;
-      else if (json.reward_custom) msg += ` ${json.reward_custom}`;
-      setToast(msg);
-      mutate();
-      setTimeout(() => setToast(''), 5000);
-    } else {
-      setToast(json.error ?? 'Erro ao resgatar');
-      setTimeout(() => setToast(''), 4000);
+  const objectives = data?.objectives ?? [];
+  const activeObjectives = objectives.filter((objective) => objective.status === 'active');
+  const completedObjectives = objectives.filter((objective) => objective.status === 'completed');
+  const activeTemplateKeys = new Set(activeObjectives.map((objective) => objective.template_key));
+  const availableTemplates = (data?.templates ?? []).filter((template) => !activeTemplateKeys.has(template.key));
+
+  const averageProgress = useMemo(() => {
+    if (activeObjectives.length === 0) return 0;
+    return Math.round(activeObjectives.reduce((sum, objective) => sum + objective.progress, 0) / activeObjectives.length);
+  }, [activeObjectives]);
+
+  async function runAction(key: string, action: () => Promise<Response>, successMessage: string) {
+    setBusyKey(key);
+    setMessage('');
+    try {
+      const response = await action();
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(payload.error ?? 'Nao foi possivel atualizar o objetivo.');
+        return;
+      }
+      setMessage(successMessage);
+      await mutate();
+    } catch {
+      setMessage('Nao foi possivel conectar agora.');
+    } finally {
+      setBusyKey(null);
     }
   }
 
-  const objectives = data?.objectives ?? [];
-  const active = objectives.filter(o => !o.completed);
-  const done = objectives.filter(o => o.completed);
-
-  return (
-    <div style={{ padding: '24px 16px', maxWidth: 720, margin: '0 auto' }}>
-      {toast && (
-        <div style={{
-          position: 'fixed', top: 20, right: 20, zIndex: 9999,
-          background: '#1a0a00', color: '#fdf6f0', borderRadius: 12,
-          padding: '14px 20px', fontWeight: 600, boxShadow: '0 8px 32px rgba(0,0,0,.3)',
-          border: '1px solid rgba(244,63,94,.3)', maxWidth: 360,
-        }}>{toast}</div>
-      )}
-
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a0a00', marginBottom: 4 }}>Objetivos & Recompensas</h1>
-      <p style={{ color: '#888', fontSize: 14, marginBottom: 24 }}>Complete os objetivos e resgate suas recompensas</p>
-
-      {isLoading && <p style={{ color: '#aaa', textAlign: 'center', padding: 40 }}>Carregando...</p>}
-
-      {!isLoading && objectives.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#aaa' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🎯</div>
-          <p>Nenhum objetivo ativo no momento.</p>
-          <p style={{ fontSize: 13 }}>Aguarde sua empresa configurar novos objetivos!</p>
-        </div>
-      )}
-
-      {active.length > 0 && (
-        <>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#F43F5E', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Em andamento</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-            {active.map(obj => <ObjectiveCard key={obj.id} obj={obj} onClaim={claim} claiming={claiming} />)}
-          </div>
-        </>
-      )}
-
-      {done.length > 0 && (
-        <>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#22c55e', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Concluídos</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {done.map(obj => <ObjectiveCard key={obj.id} obj={obj} onClaim={claim} claiming={claiming} />)}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function ObjectiveCard({ obj, onClaim, claiming }: { obj: Objective; onClaim: (o: Objective) => void; claiming: string | null }) {
-  const pct = progressPercent(obj);
-  const canClaim = obj.completed && !obj.reward_claimed;
-
-  return (
-    <div style={{
-      background: '#fff',
-      borderRadius: 16,
-      padding: '18px 20px',
-      border: obj.completed ? '2px solid #22c55e' : '1px solid #f0e6e6',
-      boxShadow: '0 2px 12px rgba(0,0,0,.04)',
-      opacity: obj.reward_claimed ? 0.7 : 1,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
-            <span style={{
-              fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-              background: '#fff0f3', color: '#F43F5E', textTransform: 'uppercase', letterSpacing: 0.5
-            }}>{TYPE_LABELS[obj.type]}</span>
-            {obj.reward_claimed && <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>✓ Resgatado</span>}
-          </div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a0a00', margin: 0 }}>{obj.title}</h3>
-          {obj.description && <p style={{ fontSize: 13, color: '#888', margin: '4px 0 0' }}>{obj.description}</p>}
-        </div>
-        <div style={{ textAlign: 'right', minWidth: 80 }}>
-          <RewardBadge obj={obj} />
-        </div>
-      </div>
-
-      <div style={{ marginTop: 14 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', marginBottom: 6 }}>
-          <span>{TARGET_LABELS[obj.target_type] ?? obj.target_type}</span>
-          <span style={{ fontWeight: 700, color: '#1a0a00' }}>
-            {obj.current_value ?? 0} / {obj.target_value}
-          </span>
-        </div>
-        <div style={{ background: '#f5f5f5', borderRadius: 8, height: 8, overflow: 'hidden' }}>
-          <div style={{
-            height: '100%', borderRadius: 8,
-            background: obj.completed ? '#22c55e' : 'linear-gradient(90deg, #F43F5E, #fb923c)',
-            width: `${pct}%`,
-            transition: 'width 0.5s ease',
-          }} />
-        </div>
-      </div>
-
-      {obj.ends_at && (
-        <p style={{ fontSize: 11, color: '#aaa', marginTop: 8, margin: '8px 0 0' }}>
-          Encerra em {new Date(obj.ends_at).toLocaleDateString('pt-BR')}
-        </p>
-      )}
-
-      {canClaim && (
-        <button
-          onClick={() => onClaim(obj)}
-          disabled={claiming === obj.id}
-          style={{
-            marginTop: 14, width: '100%', padding: '10px 0',
-            background: 'linear-gradient(135deg, #F43F5E, #fb923c)',
-            color: '#fff', border: 'none', borderRadius: 10, fontSize: 14,
-            fontWeight: 700, cursor: 'pointer',
-          }}
-        >
-          {claiming === obj.id ? 'Resgatando...' : '🎁 Resgatar Recompensa'}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function RewardBadge({ obj }: { obj: Objective }) {
-  if (obj.reward_type === 'points') {
-    return (
-      <div style={{ background: '#fff7ed', borderRadius: 10, padding: '6px 10px', textAlign: 'center' }}>
-        <div style={{ fontSize: 18 }}>💎</div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: '#f97316' }}>+{obj.reward_points}</div>
-        <div style={{ fontSize: 10, color: '#aaa' }}>pts</div>
-      </div>
+  function startObjective(templateKey: string) {
+    return runAction(
+      `start:${templateKey}`,
+      () => fetch('/api/collaborator/objectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateKey }),
+      }),
+      'Objetivo iniciado.',
     );
   }
-  if (obj.reward_type === 'badge') {
-    return (
-      <div style={{ background: '#fdf4ff', borderRadius: 10, padding: '6px 10px', textAlign: 'center' }}>
-        <div style={{ fontSize: 18 }}>🏅</div>
-        <div style={{ fontSize: 10, color: '#a855f7', fontWeight: 600 }}>Badge</div>
-      </div>
+
+  function updateObjective(objective: PersonalObjectiveView, body: Record<string, unknown>, successMessage: string) {
+    return runAction(
+      `${body.action}:${objective.id}`,
+      () => fetch(`/api/collaborator/objectives/${objective.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+      successMessage,
     );
   }
-  return (
-    <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '6px 10px', textAlign: 'center' }}>
-      <div style={{ fontSize: 18 }}>🎁</div>
-      <div style={{ fontSize: 10, color: '#22c55e', fontWeight: 600 }}>Especial</div>
-    </div>
-  );
-}
 
-// ─── RH / Admin view ─────────────────────────────────────────────────────────
-const EMPTY_FORM = {
-  title: '',
-  description: '',
-  type: 'goal' as 'weekly' | 'goal' | 'campaign',
-  target_type: 'missions' as string,
-  target_value: 10,
-  campaign_id: '',
-  reward_type: 'points' as 'points' | 'badge' | 'custom',
-  reward_points: 100,
-  reward_badge_id: '',
-  reward_custom: '',
-  starts_at: '',
-  ends_at: '',
-};
-
-function RHView() {
-  const { data, isLoading, mutate } = useSWR<{ objectives: Objective[] }>('/api/rh/objectives', fetcher);
-  const { data: campaigns } = useSWR<{ campaigns: { id: string; name: string }[] }>('/api/campaigns', fetcher);
-  const { data: badges } = useSWR<{ badges: { id: string; name: string }[] }>('/api/badges', fetcher);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [showForm, setShowForm] = useState(false);
-
-  function set<K extends keyof typeof EMPTY_FORM>(k: K, v: (typeof EMPTY_FORM)[K]) {
-    setForm(f => ({ ...f, [k]: v }));
+  if (authLoading || isLoading) {
+    return (
+      <FeedbackState
+        kind="loading"
+        title="Carregando seus objetivos"
+        description="Estamos preparando apenas os registros visiveis para voce."
+      />
+    );
   }
 
-  async function save() {
-    setSaving(true);
-    setError('');
-    const body: Record<string, unknown> = {
-      title: form.title, description: form.description || undefined,
-      type: form.type, target_type: form.target_type, target_value: Number(form.target_value),
-      reward_type: form.reward_type,
-    };
-    if (form.type === 'campaign') body.campaign_id = form.campaign_id;
-    if (form.reward_type === 'points') body.reward_points = Number(form.reward_points);
-    if (form.reward_type === 'badge') body.reward_badge_id = form.reward_badge_id;
-    if (form.reward_type === 'custom') body.reward_custom = form.reward_custom;
-    if (form.starts_at) body.starts_at = new Date(form.starts_at).toISOString();
-    if (form.ends_at) body.ends_at = new Date(form.ends_at).toISOString();
-
-    const res = await fetch('/api/rh/objectives', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    setSaving(false);
-    if (res.ok) {
-      setForm(EMPTY_FORM);
-      setShowForm(false);
-      mutate();
-    } else {
-      const j = await res.json();
-      setError(typeof j.error === 'string' ? j.error : 'Erro ao criar objetivo');
-    }
+  if (!canUseObjectives) {
+    return (
+      <FeedbackState
+        kind="denied"
+        title="Objetivos pessoais indisponiveis"
+        description="Este perfil nao possui acesso persistido a experiencia de colaboradora."
+      />
+    );
   }
 
-  async function deleteObj(id: string) {
-    if (!confirm('Desativar este objetivo?')) return;
-    await fetch(`/api/rh/objectives/${id}`, { method: 'DELETE' });
-    mutate();
+  if (error) {
+    return (
+      <FeedbackState
+        kind="error"
+        title="Nao foi possivel abrir objetivos"
+        description={error.message}
+      />
+    );
   }
-
-  const objectives = data?.objectives ?? [];
 
   return (
-    <div style={{ padding: '24px 16px', maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a0a00', margin: 0 }}>Objetivos & Recompensas</h1>
-          <p style={{ color: '#888', fontSize: 14, margin: '4px 0 0' }}>Crie objetivos motivadores para sua equipe</p>
-        </div>
-        <button
-          onClick={() => setShowForm(s => !s)}
-          style={{
-            background: 'linear-gradient(135deg, #F43F5E, #fb923c)',
-            color: '#fff', border: 'none', borderRadius: 10,
-            padding: '10px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-          }}
-        >
-          {showForm ? '✕ Cancelar' : '+ Novo Objetivo'}
-        </button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        context="Minha jornada"
+        title="Objetivos pessoais"
+        description="Escolha compromissos simples, registre progresso de forma deliberada e mantenha tudo privado."
+      />
 
-      {showForm && (
-        <div style={{ background: '#fff', borderRadius: 16, padding: 24, border: '1px solid #f0e6e6', marginBottom: 28, boxShadow: '0 4px 20px rgba(0,0,0,.06)' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a0a00', marginTop: 0, marginBottom: 20 }}>Novo Objetivo</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-            <FormField label="Título *">
-              <input value={form.title} onChange={e => set('title', e.target.value)} placeholder="Ex: 7 missões esta semana" style={inputStyle} />
-            </FormField>
-            <FormField label="Tipo">
-              <select value={form.type} onChange={e => set('type', e.target.value as typeof form.type)} style={inputStyle}>
-                <option value="weekly">📅 Semanal (reseta toda semana)</option>
-                <option value="goal">🎯 Meta única</option>
-                <option value="campaign">🚀 Por campanha</option>
-              </select>
-            </FormField>
-            <FormField label="O que medir">
-              <select value={form.target_type} onChange={e => set('target_type', e.target.value)} style={inputStyle}>
-                <option value="missions">Missões concluídas</option>
-                <option value="points">Pontos acumulados</option>
-                <option value="level">Nível alcançado</option>
-                <option value="streak">Dias seguidos</option>
-                <option value="challenges">Desafios concluídos</option>
-                {form.type === 'campaign' && <option value="campaign_join">Participar da campanha</option>}
-                {form.type === 'campaign' && <option value="campaign_complete">Completar campanha</option>}
-              </select>
-            </FormField>
-            <FormField label={`Meta (${TARGET_LABELS[form.target_type] ?? form.target_type})`}>
-              <input type="number" min={1} value={form.target_value} onChange={e => set('target_value', Number(e.target.value))} style={inputStyle} />
-            </FormField>
-            {form.type === 'campaign' && (
-              <FormField label="Campanha vinculada">
-                <select value={form.campaign_id} onChange={e => set('campaign_id', e.target.value)} style={inputStyle}>
-                  <option value="">Selecione...</option>
-                  {campaigns?.campaigns?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </FormField>
-            )}
-            <FormField label="Tipo de recompensa">
-              <select value={form.reward_type} onChange={e => set('reward_type', e.target.value as typeof form.reward_type)} style={inputStyle}>
-                <option value="points">💎 Pontos</option>
-                <option value="badge">🏅 Badge</option>
-                <option value="custom">🎁 Recompensa especial</option>
-              </select>
-            </FormField>
-            {form.reward_type === 'points' && (
-              <FormField label="Quantidade de pontos">
-                <input type="number" min={1} value={form.reward_points} onChange={e => set('reward_points', Number(e.target.value))} style={inputStyle} />
-              </FormField>
-            )}
-            {form.reward_type === 'badge' && (
-              <FormField label="Badge">
-                <select value={form.reward_badge_id} onChange={e => set('reward_badge_id', e.target.value)} style={inputStyle}>
-                  <option value="">Selecione um badge...</option>
-                  {badges?.badges?.map((b: { id: string; name: string }) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </FormField>
-            )}
-            {form.reward_type === 'custom' && (
-              <FormField label="Descrição da recompensa">
-                <input value={form.reward_custom} onChange={e => set('reward_custom', e.target.value)} placeholder="Ex: Vale folga, brinde, voucher..." style={inputStyle} />
-              </FormField>
-            )}
-            <FormField label="Início (opcional)">
-              <input type="datetime-local" value={form.starts_at} onChange={e => set('starts_at', e.target.value)} style={inputStyle} />
-            </FormField>
-            <FormField label="Encerramento (opcional)">
-              <input type="datetime-local" value={form.ends_at} onChange={e => set('ends_at', e.target.value)} style={inputStyle} />
-            </FormField>
-          </div>
-          <FormField label="Descrição (opcional)">
-            <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2} placeholder="Explique o objetivo para a equipe..." style={{ ...inputStyle, resize: 'vertical' }} />
-          </FormField>
-          {error && <p style={{ color: '#F43F5E', fontSize: 13, marginTop: 8 }}>{error}</p>}
-          <button
-            onClick={save}
-            disabled={saving || !form.title}
-            style={{
-              marginTop: 16, background: 'linear-gradient(135deg, #F43F5E, #fb923c)',
-              color: '#fff', border: 'none', borderRadius: 10,
-              padding: '11px 28px', fontSize: 14, fontWeight: 700,
-              cursor: saving || !form.title ? 'not-allowed' : 'pointer',
-              opacity: saving || !form.title ? 0.6 : 1,
-            }}
-          >
-            {saving ? 'Salvando...' : '✓ Criar Objetivo'}
-          </button>
+      <SummaryBand
+        label="Resumo privado"
+        items={[
+          { label: 'Em andamento', value: activeObjectives.length },
+          { label: 'Concluidos', value: completedObjectives.length },
+          { label: 'Progresso medio', value: averageProgress, detail: '%' },
+        ]}
+      />
+
+      {message && (
+        <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] px-4 py-3 text-sm text-[var(--platform-ink)]">
+          {message}
         </div>
       )}
 
-      {isLoading && <p style={{ color: '#aaa', textAlign: 'center', padding: 40 }}>Carregando...</p>}
-
-      {!isLoading && objectives.length === 0 && !showForm && (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#aaa' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🎯</div>
-          <p>Nenhum objetivo criado ainda.</p>
-          <p style={{ fontSize: 13 }}>Crie objetivos para motivar sua equipe!</p>
-        </div>
-      )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {objectives.map(obj => (
-          <div key={obj.id} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', border: '1px solid #f0e6e6', boxShadow: '0 2px 8px rgba(0,0,0,.03)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#fff0f3', color: '#F43F5E' }}>{TYPE_LABELS[obj.type]}</span>
-                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#666' }}>{REWARD_LABELS[obj.reward_type]}</span>
-                </div>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1a0a00' }}>{obj.title}</h3>
-                {obj.description && <p style={{ margin: '4px 0 0', fontSize: 13, color: '#888' }}>{obj.description}</p>}
-                <p style={{ margin: '6px 0 0', fontSize: 12, color: '#aaa' }}>
-                  Meta: {obj.target_value} {TARGET_LABELS[obj.target_type]}
-                  {obj.reward_type === 'points' && ` · Recompensa: ${obj.reward_points} pts`}
-                  {obj.reward_type === 'custom' && ` · ${obj.reward_custom}`}
-                  {obj.reward_type === 'badge' && ` · Badge: ${obj.reward_badge_name ?? '—'}`}
-                </p>
-              </div>
-              <button
-                onClick={() => deleteObj(obj.id)}
-                style={{ background: 'none', border: '1px solid #fecaca', color: '#ef4444', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
-              >Desativar</button>
+      <section
+        aria-labelledby="objective-privacy-title"
+        className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]"
+      >
+        <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+              <ShieldCheck size={24} strokeWidth={1.8} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase text-[var(--platform-action-strong)]">
+                Wave 6 ativa
+              </p>
+              <h2 id="objective-privacy-title" className="mt-2 text-xl font-semibold text-[var(--platform-ink)]">
+                Privado, voluntario e sem pontuacao
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">
+                A pagina usa somente objetivos iniciados pela propria colaboradora. RH, lideranca, ranking e tabelas legadas nao entram neste fluxo.
+              </p>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+
+        <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[color-mix(in_srgb,var(--platform-positive)_10%,var(--platform-surface))] p-5 sm:p-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--platform-ink)]">
+            <ListChecks size={19} aria-hidden="true" />
+            Contrato seguro
+          </h2>
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--platform-muted)]">
+            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Catalogo aprovado, sem texto livre sensivel.</span></li>
+            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Eventos elegiveis gravados apenas pelo servidor.</span></li>
+            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Sem pontos, badges, comparacao ou ranking.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="objective-active-title"
+        className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]"
+      >
+        <div className="border-b border-[var(--platform-line)] px-5 py-4 sm:px-6">
+          <h2 id="objective-active-title" className="text-lg font-semibold text-[var(--platform-ink)]">
+            Meus objetivos
+          </h2>
+          <p className="mt-1 text-sm text-[var(--platform-muted)]">
+            Atualize em passos claros. Concluir encerra o objetivo; arquivar remove da rotina sem expor historico.
+          </p>
+        </div>
+
+        {objectives.length === 0 ? (
+          <div className="p-5 sm:p-6">
+            <FeedbackState
+              kind="empty"
+              title="Nenhum objetivo iniciado"
+              description="Escolha uma opcao do catalogo para comecar."
+            />
+          </div>
+        ) : (
+          <div className="divide-y divide-[var(--platform-line)]">
+            {objectives.map((objective) => {
+              const next = nextProgress(objective.progress);
+              const isActive = objective.status === 'active';
+              return (
+                <article key={objective.id} className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-[var(--platform-ink)]">{objective.template.title}</h3>
+                      <span className="rounded-full border border-[var(--platform-line)] px-2 py-0.5 text-xs font-medium text-[var(--platform-muted)]">
+                        {statusLabel(objective.status)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">{objective.template.description}</p>
+                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--platform-group)]" aria-label={`Progresso ${objective.progress}%`}>
+                      <div className="h-full rounded-full bg-[var(--platform-action)]" style={{ width: `${objective.progress}%` }} />
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-[var(--platform-muted)]">{objective.progress}% registrado</p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 lg:justify-end">
+                    {isActive && objective.progress < 100 && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        isLoading={busyKey === `progress:${objective.id}`}
+                        onClick={() => updateObjective(objective, { action: 'progress', progress: next }, `Progresso atualizado para ${next}%.`)}
+                      >
+                        <CircleGauge size={16} aria-hidden="true" />
+                        Avancar
+                      </Button>
+                    )}
+                    {isActive && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        isLoading={busyKey === `complete:${objective.id}`}
+                        onClick={() => updateObjective(objective, { action: 'complete' }, 'Objetivo concluido.')}
+                      >
+                        <Check size={16} aria-hidden="true" />
+                        Concluir
+                      </Button>
+                    )}
+                    {isActive && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        isLoading={busyKey === `archive:${objective.id}`}
+                        onClick={() => updateObjective(objective, { action: 'archive' }, 'Objetivo arquivado.')}
+                      >
+                        <Archive size={16} aria-hidden="true" />
+                        Arquivar
+                      </Button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section aria-labelledby="objective-catalog-title" className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
+        <div className="border-b border-[var(--platform-line)] px-5 py-4 sm:px-6">
+          <h2 id="objective-catalog-title" className="text-lg font-semibold text-[var(--platform-ink)]">
+            Catalogo aprovado
+          </h2>
+          <p className="mt-1 text-sm text-[var(--platform-muted)]">
+            Opcoes neutras para iniciar sem escrever informacoes sensiveis.
+          </p>
+        </div>
+        <div className="grid gap-4 p-5 sm:p-6 lg:grid-cols-3">
+          {availableTemplates.map((template) => (
+            <article key={template.key} className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+                <PenLine size={19} aria-hidden="true" />
+              </div>
+              <h3 className="mt-4 font-semibold text-[var(--platform-ink)]">{template.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">{template.description}</p>
+              <p className="mt-3 text-xs font-semibold uppercase text-[var(--platform-action-strong)]">{template.cadence}</p>
+              <Button
+                type="button"
+                className="mt-4 w-full"
+                variant="secondary"
+                size="sm"
+                isLoading={busyKey === `start:${template.key}`}
+                onClick={() => startObjective(template.key)}
+              >
+                <Plus size={16} aria-hidden="true" />
+                Iniciar
+              </Button>
+            </article>
+          ))}
+          {availableTemplates.length === 0 && (
+            <div className="lg:col-span-3">
+              <FeedbackState
+                kind="empty"
+                title="Catalogo ja esta em uso"
+                description="Arquive ou conclua um objetivo antes de iniciar outra opcao igual."
+              />
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
-}
-
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={{ fontSize: 12, fontWeight: 600, color: '#666', display: 'block', marginBottom: 5 }}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb',
-  borderRadius: 8, fontSize: 14, background: '#fafafa',
-  boxSizing: 'border-box',
-};
-
-// ─── Main export ──────────────────────────────────────────────────────────────
-export default function ObjetivosPage() {
-  const { user } = useAuth();
-  const isRH = user?.role === 'rh' || user?.role === 'admin' || user?.role === 'lideranca';
-
-  if (!user) return null;
-  return isRH ? <RHView /> : <ColaboradoraView />;
 }

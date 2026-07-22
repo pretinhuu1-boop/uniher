@@ -8,7 +8,7 @@ export async function POST() {
   try {
     await initDb();
     const result = await refresh();
-    const response = NextResponse.json({ accessToken: result.accessToken });
+    const response = NextResponse.json({ success: true });
     return setAuthCookiesOnResponse(response, result.accessToken, result.refreshToken);
   } catch (error) {
     return handleApiError(error);

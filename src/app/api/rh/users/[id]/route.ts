@@ -8,6 +8,10 @@ import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { logAudit } from '@/lib/audit';
 import { checkAdminRateLimit } from '@/lib/security/rate-limit';
+import { createAchievementsRepository } from '@/repositories/achievements.repository';
+import { createChallengesRepository } from '@/repositories/challenges.repository';
+import { createObjectivesRepository } from '@/repositories/objectives.repository';
+import { createParticipationRepository } from '@/repositories/participation.repository';
 import { z } from 'zod';
 
 const PatchSchema = z.object({
@@ -177,7 +181,28 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         return NextResponse.json({ error: 'Não é possível remover este usuário' }, { status: 403 });
       }
       await wq.enqueue((db) => {
-        db.prepare("UPDATE users SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(userId);
+        const removeUser = db.transaction(() => {
+          createAchievementsRepository(db).hardDeleteUserAchievementsInCurrentTransaction({
+            userId,
+            companyId,
+          });
+          createChallengesRepository(db).hardDeleteUserChallengesInCurrentTransaction({
+            userId,
+            companyId,
+          });
+          createObjectivesRepository(db).hardDeleteUserObjectivesInCurrentTransaction({
+            userId,
+            companyId,
+          });
+          createParticipationRepository(db).hardDeleteUserEventsInCurrentTransaction({
+            userId,
+            companyId,
+            actorId: context.auth.userId,
+            erasedAt: new Date().toISOString(),
+          });
+          db.prepare("UPDATE users SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(userId);
+        });
+        removeUser.immediate();
       });
       await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'user_delete', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: { soft: true }, ip });
       break;

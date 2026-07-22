@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb } from '@/lib/db';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 export const GET = withMasterAdmin(async (_req: NextRequest, context) => {
   const params = await context.params;
@@ -8,7 +9,7 @@ export const GET = withMasterAdmin(async (_req: NextRequest, context) => {
 
   const db = getReadDb();
   const users = db.prepare(`
-    SELECT u.id, u.name, u.email, u.role, u.level, u.points, u.streak,
+    SELECT u.id, u.name, u.email, u.role,
            u.blocked, u.last_active, u.created_at,
            d.name AS department_name
     FROM users u
@@ -17,5 +18,5 @@ export const GET = withMasterAdmin(async (_req: NextRequest, context) => {
     ORDER BY u.created_at DESC
   `).all(companyId);
 
-  return NextResponse.json({ users });
+  return NextResponse.json(toSafeUserProjection({ users }));
 });

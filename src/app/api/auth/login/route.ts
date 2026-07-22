@@ -5,6 +5,8 @@ import { loginSchema } from '@/lib/validation/schemas';
 import { checkAuthRateLimit, recordFailedAuth } from '@/lib/security/rate-limit';
 import { handleApiError, UnauthorizedError } from '@/lib/errors';
 import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
+import { getReadDb } from '@/lib/db';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 export async function POST(req: Request) {
   try {
@@ -16,9 +18,18 @@ export async function POST(req: Request) {
 
     try {
       const result = await login(input);
+      const prefRow = getReadDb()
+        .prepare("SELECT pref_value FROM user_preferences WHERE user_id = ? AND pref_key = 'first_access_tour_completed'")
+        .get(result.user.id) as { pref_value?: string } | undefined;
+      const firstAccessTourCompleted =
+        prefRow?.pref_value === '1' || (!prefRow && result.user.must_change_password !== 1);
       const response = NextResponse.json({
-        user: result.user,
-        accessToken: result.accessToken,
+        user: toSafeUserProjection({
+          ...result.user,
+          isMasterAdmin: result.user.is_master_admin === 1,
+          mustChangePassword: result.user.must_change_password === 1,
+          firstAccessTourCompleted,
+        }),
       });
       return setAuthCookiesOnResponse(response, result.accessToken, result.refreshToken);
     } catch (authError) {

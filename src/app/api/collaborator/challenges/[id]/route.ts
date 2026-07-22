@@ -1,51 +1,69 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withAuth, type AuthContext } from '@/lib/auth/middleware';
+import { enqueueCollaboratorSelfWrite } from '@/lib/auth/collaborator-self';
+import { getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
-import { withAuth } from '@/lib/auth/middleware';
-import { handleApiError, NotFoundError } from '@/lib/errors';
-import { updateProgressSchema } from '@/lib/validation/schemas';
-import * as challengeRepo from '@/repositories/challenge.repository';
-import { addPoints } from '@/services/gamification.service';
+import {
+  challengeApiErrorResponse,
+  resolveCompanyChallengeActor,
+} from '@/lib/challenges/api';
+import { createChallengesRepository } from '@/repositories/challenges.repository';
+import { createParticipationRepository } from '@/repositories/participation.repository';
+import { createCompanyChallengesService } from '@/services/company-challenges.service';
 
-// PATCH /api/collaborator/challenges/[id] - atualizar progresso
-export const PATCH = withAuth(async (req, { auth, params }) => {
+const patchSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('progress'),
+    progress: z.number().int().min(0).max(100),
+  }).strict(),
+  z.object({
+    action: z.literal('complete'),
+  }).strict(),
+  z.object({
+    action: z.literal('leave'),
+  }).strict(),
+]);
+
+export const PATCH = withAuth(async (req: NextRequest, context: AuthContext) => {
   try {
     await initDb();
-    const { id: challengeId } = await params;
-
-    const body = await req.json();
-    const input = updateProgressSchema.parse(body);
-
-    const existing = challengeRepo.getUserChallenge(auth.userId, challengeId);
-    if (!existing) {
-      throw new NotFoundError('Desafio não encontrado');
+    const params = await context.params;
+    const body = await req.json().catch(() => null);
+    const parsed = patchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Dados invalidos', details: parsed.error.issues }, { status: 400 });
     }
 
-    const newProgress = (existing.progress ?? 0) + (input.increment ?? 1);
-    const isCompleted = newProgress >= (existing.total_steps ?? 1);
+    const writeQueue = getWriteQueue();
+    const challenge = await enqueueCollaboratorSelfWrite(writeQueue, context.auth.userId, (database) => {
+      const actor = resolveCompanyChallengeActor(database, context.auth.userId);
+      const service = createCompanyChallengesService(
+        createChallengesRepository(database),
+        createParticipationRepository(database),
+      );
 
-    const updated = await challengeRepo.updateUserChallenge(
-      auth.userId,
-      challengeId,
-      {
-        progress: newProgress,
-        status: isCompleted ? 'completed' : 'active',
-        ...(isCompleted ? { completedAt: new Date().toISOString() } : {}),
+      if (parsed.data.action === 'progress') {
+        return service.progress({
+          actor,
+          challengeId: params.id,
+          progress: parsed.data.progress,
+        });
       }
-    );
-
-    // Se completou agora (era active, agora completed)
-    if (existing.status === 'active' && updated.status === 'completed') {
-      await addPoints(auth.userId, updated.points, 'challenge', challengeId);
-    }
-
-    return NextResponse.json({
-      id: updated.id,
-      progress: updated.progress,
-      total: updated.total_steps,
-      status: updated.status,
-      completedAt: updated.completed_at,
+      if (parsed.data.action === 'complete') {
+        return service.complete({
+          actor,
+          challengeId: params.id,
+        });
+      }
+      return service.leave({
+        actor,
+        challengeId: params.id,
+      });
     });
+
+    return NextResponse.json({ challenge });
   } catch (error) {
-    return handleApiError(error);
+    return challengeApiErrorResponse(error);
   }
 });

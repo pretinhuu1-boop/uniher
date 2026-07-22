@@ -139,10 +139,10 @@ export async function recordFailedAuth(req: Request, email?: string): Promise<vo
   }
 }
 
-export async function checkWriteRateLimit(req: Request): Promise<void> {
-  const ip = getClientIp(req);
+export async function checkWriteRateLimit(req: Request, trustedSubject?: string): Promise<void> {
+  const key = trustedSubject ? `user:${trustedSubject}` : `ip:${getClientIp(req)}`;
   try {
-    await writeLimiter.consume(ip);
+    await writeLimiter.consume(key);
   } catch {
     throw new RateLimitError();
   }

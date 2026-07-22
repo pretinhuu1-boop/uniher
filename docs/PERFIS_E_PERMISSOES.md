@@ -21,14 +21,15 @@ Pontos centrais:
 - acesso às rotas globais de `/api/admin/*`
 - pode enviar alertas amplos
 - pode gerenciar admins master
+- em `/comunidade/gerenciar`, deve selecionar explicitamente uma empresa ativa; `role = admin` sem `isMasterAdmin === true` não recebe escopo global
 
 Arquivos centrais:
 
-- [src/lib/auth/middleware.ts](C:/Users/User/projetoss/uniher/src/lib/auth/middleware.ts)
-- [src/lib/auth/jwt.ts](C:/Users/User/projetoss/uniher/src/lib/auth/jwt.ts)
-- [src/app/api/admin/users/route.ts](C:/Users/User/projetoss/uniher/src/app/api/admin/users/route.ts)
-- [src/app/api/admin/users/[id]/route.ts](C:/Users/User/projetoss/uniher/src/app/api/admin/users/[id]/route.ts)
-- [src/lib/db/migrations/046_add_is_master_admin_to_users.sql](C:/Users/User/projetoss/uniher/src/lib/db/migrations/046_add_is_master_admin_to_users.sql)
+- [src/lib/auth/middleware.ts](../src/lib/auth/middleware.ts)
+- [src/lib/auth/jwt.ts](../src/lib/auth/jwt.ts)
+- [src/app/api/admin/users/route.ts](../src/app/api/admin/users/route.ts)
+- [src/app/api/admin/users/[id]/route.ts](../src/app/api/admin/users/%5Bid%5D/route.ts)
+- [src/lib/db/migrations/046_add_is_master_admin_to_users.sql](../src/lib/db/migrations/046_add_is_master_admin_to_users.sql)
 
 ### Admin Empresa / RH
 
@@ -38,9 +39,9 @@ Escopo:
 - gestão de departamentos
 - colaboradoras
 - campanhas
-- ligas
-- desafios
-- lições e gamificação da empresa
+- lições da empresa
+- gestão editorial em `/comunidade/gerenciar`
+- switch do feed da própria empresa em `/company-profile`
 
 Não deve:
 
@@ -50,8 +51,8 @@ Não deve:
 
 Arquivos centrais:
 
-- [src/app/api/admin/alerts/send/route.ts](C:/Users/User/projetoss/uniher/src/app/api/admin/alerts/send/route.ts)
-- [src/app/api/departments/route.ts](C:/Users/User/projetoss/uniher/src/app/api/departments/route.ts)
+- [src/app/api/admin/alerts/send/route.ts](../src/app/api/admin/alerts/send/route.ts)
+- [src/app/api/departments/route.ts](../src/app/api/departments/route.ts)
 
 ### Liderança
 
@@ -76,10 +77,36 @@ Escopo:
 - agenda
 - semáforo
 
+Objetivos pessoais, desafios v2 e conquistas privadas permanecem em preparação.
+Liga não aparece na navegação de nenhum perfil. RH e liderança não recebem
+acesso a Semáforo pessoal ou agregado durante a revisão de privacidade.
+
 Não deve:
 
 - ver telas administrativas
 - executar mutações administrativas
+
+Pode acessar `/comunidade` e executar apenas as relações próprias de apoio e salvamento. Uma pessoa com outro papel e `also_collaborator = 1` recebe a mesma capacidade colaboradora sem ganhar permissão editorial adicional.
+
+## Matriz da comunidade
+
+| Superfície | Colaboradora | Dual-role (`also_collaborator = 1`) | RH/Admin empresa | Admin Master |
+| --- | --- | --- | --- | --- |
+| `/comunidade` e feed da empresa | Sim | Sim | Somente se também tiver capacidade colaboradora | Somente se também tiver capacidade colaboradora |
+| Apoiar e salvar | Próprio usuário | Próprio usuário | Não por papel de gestão | Não por papel master |
+| `/configuracoes` - consentimento de nome | Próprio usuário | Próprio usuário | Próprio usuário | Próprio usuário |
+| `/configuracoes` - itens salvos | Próprio usuário | Próprio usuário | Somente se também tiver capacidade colaboradora | Somente se também tiver capacidade colaboradora |
+| `/comunidade/gerenciar` | Não | Conforme papel RH/admin | Empresa persistida do ator | Empresa ativa selecionada explicitamente |
+| `/company-profile` - switch do feed | Não | Conforme papel RH/admin | Somente empresa autenticada | Somente empresa autenticada nesta rota |
+
+Regras de tenant:
+
+- o cliente não envia `companyId` para feed, salvos, apoio ou apoiadoras;
+- o consentimento `Mostrar meu nome ao apoiar` pertence ao próprio usuário e aparece para todo perfil autenticado; somente a seção de itens salvos é capability-gated;
+- RH/admin de empresa não pode listar, ler ou alterar posts de outra empresa;
+- apenas master persistido pode usar `companyId` na gestão editorial, sem inferência de alvo;
+- empresa ausente, inativa, excluída ou divergente faz a operação falhar fechada;
+- a permissão do token não basta para escrita: ator, papel e empresa são revalidados na mesma transação.
 
 ## Regras de segurança
 
@@ -87,6 +114,7 @@ Não deve:
 - esconder link no menu ajuda UX, mas a proteção real fica na API e middleware
 - rotas administrativas devem validar papel e escopo
 - `Admin Master` é explícito, não apenas `role = admin`
+- salvos e consentimento de nome são recursos privados do próprio usuário; apoio permanece agregado mesmo após revogação do nome
 
 ## Fluxo recomendado para novas features
 

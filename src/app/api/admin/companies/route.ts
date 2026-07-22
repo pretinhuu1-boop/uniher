@@ -31,7 +31,7 @@ export const GET = withMasterAdmin(async (req: NextRequest) => {
       (SELECT COUNT(*) FROM departments d WHERE d.company_id = c.id) AS department_count
     FROM companies c
     WHERE c.deleted_at IS NULL
-    ORDER BY c.created_at DESC
+    ORDER BY c.created_at DESC, c.id DESC
     LIMIT ? OFFSET ?
   `).all(limit, offset);
 

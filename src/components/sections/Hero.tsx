@@ -21,13 +21,13 @@ export default function Hero({ onQuizOpen }: HeroProps) {
 
             {/* Headline */}
             <h1 className={styles.headline}>
-              O <em>Duolingo</em> da Saúde Feminina{' '}
+              Cuidado contínuo para a Saúde Feminina{' '}
               <span className={styles.gold}>no Trabalho</span>
             </h1>
 
             {/* Subtitle */}
             <p className={styles.subtitle}>
-              Plataforma gamificada que transforma o cuidado com a saúde da
+              Plataforma preventiva que transforma orientações de saúde da
               mulher em hábitos diários — reduzindo absenteísmo, aumentando
               engajamento e gerando ROI mensurável para sua empresa.
             </p>

@@ -2,12 +2,12 @@ import styles from './Marquee.module.css';
 
 const items = [
   'Saúde Feminina Preventiva',
-  'Gamificação Corporativa',
+  'Jornadas de Cuidado',
   'ROI Mensurável',
   'Dashboard RH em Tempo Real',
   'Semáforo de Saúde',
   'Relatórios Automáticos',
-  'Ranking por Departamento',
+  'Indicadores Agregados',
   'Missões Colaborativas',
   'Outubro Rosa · Novembro Azul',
   'IA Personalizada',

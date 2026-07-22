@@ -12,8 +12,6 @@ export const GET = withMasterAdmin(async (_req: NextRequest) => {
 
   const companies = (db.prepare('SELECT COUNT(*) as count FROM companies').get() as { count: number }).count;
   const users = (db.prepare('SELECT COUNT(*) as count FROM users WHERE role != ?').get('admin') as { count: number }).count;
-  const challenges = (db.prepare('SELECT COUNT(*) as count FROM challenges').get() as { count: number }).count;
-  const badges = (db.prepare('SELECT COUNT(*) as count FROM badges').get() as { count: number }).count;
   const campaigns = (db.prepare('SELECT COUNT(*) as count FROM campaigns WHERE status = ?').get('active') as { count: number }).count;
   const notifications = (db.prepare('SELECT COUNT(*) as count FROM notifications').get() as { count: number }).count;
 
@@ -117,8 +115,6 @@ export const GET = withMasterAdmin(async (_req: NextRequest) => {
   return NextResponse.json({
     companies,
     users,
-    challenges,
-    badges,
     campaigns,
     notifications,
     db_size_kb: Math.round(dbSizeBytes / 1024),

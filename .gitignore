@@ -3,6 +3,7 @@
 # test results
 tests/results/
 tests/report/
+tests/.playwright-data/
 
 # dependencies
 /node_modules
@@ -45,9 +46,15 @@ yarn-error.log*
 
 # presentation artifacts
 *.pptx
+apresentacao-cliente.html
+apresentacao-cliente-v2.html
+apresentacao-uniher-unificada.html
+uniher_apresentacao.html
+Apresentação Uniher.html
 
 # temp
 /tmp/
+.worktrees/
 para_teste.txt
 AI_HANDOFF.local.md
 

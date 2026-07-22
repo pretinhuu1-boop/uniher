@@ -37,10 +37,9 @@
 - [ ] Admin master sem empresa vinculada (company_id = null)
 - [ ] Listar admins master
 
-### Painel — Badges
-- [ ] Criar badge (nome, descrição, ícone, pontos, raridade)
-- [ ] Editar badge
-- [ ] Listar badges com contagem de holders
+### Painel — Conquistas legadas
+- [ ] APIs de badges respondem `410 privacy_review`
+- [ ] Nenhum CRUD, pontos, raridade ou contagem de holders aparece como operacional
 
 ### Painel — Sistema
 - [ ] Stats: DB size, uptime, memória, CPU cores
@@ -95,7 +94,7 @@
 - [ ] Registro via `/hr-onboarding` (nome, email, senha, empresa)
 - [ ] Redirect para dashboard após registro
 - [ ] Se RH novo → redirect para `/onboarding-rh`
-- [ ] Onboarding mostra 5 passos com tempo estimado
+- [ ] Onboarding mostra 4 passos com tempo estimado
 - [ ] "Comece aqui" no passo 1
 - [ ] Progresso atualiza conforme completa passos
 
@@ -135,9 +134,8 @@
 
 ### Desafios
 - [ ] Acessar `/desafios/gerenciar`
-- [ ] Criar desafio para a empresa
-- [ ] Ver desafios padrão da plataforma
-- [ ] Editar/deletar apenas desafios da própria empresa
+- [ ] Ver estado de preparação neutro
+- [ ] APIs legadas respondem `410 privacy_review` sem mutação
 
 ### Campanhas
 - [ ] Criar campanha (nome, mês, cor)
@@ -145,13 +143,12 @@
 - [ ] Só vê campanhas da própria empresa
 
 ### Objetivos
-- [ ] Criar objetivo para a empresa
-- [ ] Vincular a campanha
-- [ ] Definir recompensa (pontos, badge, custom)
+- [ ] Link de gestão RH não aparece
+- [ ] APIs legadas respondem `410 privacy_review` sem reward claim
 
 ### Ligas
-- [ ] Gerenciar ligas customizadas
-- [ ] Criar liga (opt-in, departamento, empresa)
+- [ ] Links de Liga não aparecem em nenhum perfil
+- [ ] APIs legadas respondem `410 privacy_review`
 
 ### Company Profile
 - [ ] Editar nome, CNPJ, setor, contato
@@ -204,25 +201,17 @@
 
 ### Home (`/colaboradora`)
 - [ ] **Check-in hero card no topo** — botão grande e visível
-- [ ] Check-in funcional → XP ganho + streak atualizado
-- [ ] Barra de XP diário progride
 - [ ] Não permite double check-in (botão desativa)
-- [ ] Stats cards (exames, conteúdo, campanhas, streak)
+- [ ] Stats cards não expõem pontos, XP, ranking, badges ou streak
 - [ ] Exams % mostra dado real (ou "—" se sem dados)
 - [ ] Daily missions listadas
 - [ ] Completar missão → feedback visual
-- [ ] Challenges ativos com barra de progresso
-- [ ] Incrementar progresso → atualiza
-- [ ] Badges desbloqueados visíveis
 - [ ] Botão de pânico (WhatsApp para contato de emergência)
-- [ ] Liga: rank + liga atual
 - [ ] **Toast de erro visível** quando API falha
 
 ### Desafios (`/desafios`)
-- [ ] Listar desafios ativos, completados, disponíveis
-- [ ] Criar desafio pessoal
-- [ ] Registrar progresso
-- [ ] Empty state orientador se sem desafios
+- [ ] Exibir estado de preparação neutro
+- [ ] Não ler ou gravar `challenges`/`user_challenges` legados
 
 ### Campanhas (`/campanhas`)
 - [ ] Ver campanhas disponíveis
@@ -232,29 +221,21 @@
 - [ ] Empty state orientador
 
 ### Conquistas (`/conquistas`)
-- [ ] Listar badges (desbloqueados + bloqueados)
-- [ ] Filtro: todos, desbloqueados, bloqueados
-- [ ] Progresso geral (%)
-- [ ] **Share → Web Share API** ou fallback WhatsApp
-- [ ] Empty state orientador
+- [ ] Exibir estado de preparação neutro
+- [ ] Não mostrar pontos, raridade, holders ou compartilhamento
 
 ### Liga (`/liga`)
-- [ ] **Banner explicativo** (dismissível, salva no localStorage)
-- [ ] Leaderboard com posição atual destacada
-- [ ] Selecionar entre ligas
-- [ ] Ligas customizadas visíveis
-- [ ] Paginação no leaderboard
+- [ ] Link não aparece na navegação
+- [ ] APIs respondem `410 privacy_review`
 
 ### Semáforo (`/semaforo`)
-- [ ] **Legenda de cores** no topo (verde/amarelo/vermelho)
-- [ ] 6 dimensões com score
-- [ ] **Dica acionável** por dimensão baseada no score
-- [ ] Histórico real (não mockado)
-- [ ] "Agendar lembrete" → salva preferência real
+- [ ] Colaboradora vê somente estado neutro de revisão
+- [ ] RH e liderança não veem link de Semáforo
+- [ ] APIs não leem nem gravam `health_scores`
 
 ### Notificações (`/notificacoes`)
 - [ ] Listar notificações
-- [ ] **Filtro por tipo** (todas, badges, campanhas, desafios, sistema, segurança)
+- [ ] Filtros não prometem badges/desafios legados como eventos novos
 - [ ] Marcar como lida
 - [ ] Deletar
 - [ ] Contagem por filtro
@@ -307,13 +288,13 @@
 9. [ ] Colaboradora 1 aceita convite → cria conta → pending approval
 10. [ ] RH aprova colaboradora 1
 11. [ ] Colaboradora 1 loga → faz quiz → resultado do arquétipo
-12. [ ] Colaboradora 1 faz check-in diário → ganha XP
-13. [ ] Colaboradora 1 inicia desafio → registra progresso
+12. [ ] Colaboradora 1 faz check-in sem gerar XP, ranking ou badge
+13. [ ] Colaboradora abre objetivos/desafios/conquistas e vê estados neutros
 14. [ ] RH cria campanha → colaboradora vê e participa
-15. [ ] Colaboradora desbloqueia badge → notificação aparece
-16. [ ] Colaboradora compartilha badge via WhatsApp
-17. [ ] RH vê analytics → dados refletem ações da colaboradora
-18. [ ] RH vê histórico → pontos por departamento corretos
+15. [ ] RH publica conteúdo na comunidade da empresa
+16. [ ] Colaboradora apoia e salva conteúdo dentro do tenant
+17. [ ] RH vê analytics autorizados sem progresso pessoal novo
+18. [ ] Rotas legadas permanecem `410` após todo o fluxo
 19. [ ] Admin master vê auditoria → todas as ações logadas
 20. [ ] Admin master faz backup do banco → arquivo criado
 

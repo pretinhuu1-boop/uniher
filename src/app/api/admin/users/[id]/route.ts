@@ -5,6 +5,10 @@ import { z } from 'zod';
 import { hashPassword } from '@/lib/auth/password';
 import { nanoid } from 'nanoid';
 import { logAudit } from '@/lib/audit';
+import { createAchievementsRepository } from '@/repositories/achievements.repository';
+import { createChallengesRepository } from '@/repositories/challenges.repository';
+import { createObjectivesRepository } from '@/repositories/objectives.repository';
+import { createParticipationRepository } from '@/repositories/participation.repository';
 
 const schema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('block') }),
@@ -149,12 +153,35 @@ export const DELETE = withMasterAdmin(async (req: NextRequest, context) => {
   const params = await context.params;
   const { id: userId } = params;
   const db = getReadDb();
-  const targetUser = db.prepare('SELECT name, email FROM users WHERE id = ? AND deleted_at IS NULL').get(userId) as { name: string; email: string } | undefined;
+  const targetUser = db.prepare('SELECT name, email, company_id FROM users WHERE id = ? AND deleted_at IS NULL').get(userId) as { name: string; email: string; company_id: string | null } | undefined;
   if (!targetUser) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
 
   const writeQueue = getWriteQueue();
   await writeQueue.enqueue((d) => {
-    d.prepare("UPDATE users SET deleted_at = datetime('now') WHERE id = ?").run(userId);
+    const removeUser = d.transaction(() => {
+      if (targetUser.company_id) {
+        createAchievementsRepository(d).hardDeleteUserAchievementsInCurrentTransaction({
+          userId,
+          companyId: targetUser.company_id,
+        });
+        createChallengesRepository(d).hardDeleteUserChallengesInCurrentTransaction({
+          userId,
+          companyId: targetUser.company_id,
+        });
+        createObjectivesRepository(d).hardDeleteUserObjectivesInCurrentTransaction({
+          userId,
+          companyId: targetUser.company_id,
+        });
+        createParticipationRepository(d).hardDeleteUserEventsInCurrentTransaction({
+          userId,
+          companyId: targetUser.company_id,
+          actorId: context.auth.userId,
+          erasedAt: new Date().toISOString(),
+        });
+      }
+      d.prepare("UPDATE users SET deleted_at = datetime('now') WHERE id = ?").run(userId);
+    });
+    removeUser.immediate();
   });
   await logAudit({
     actorId: context.auth.userId,

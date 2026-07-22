@@ -35,12 +35,12 @@ export const QUESTIONS: QuizQuestion[] = [
   {
     type: 'single',
     question: 'O que te faz agir de verdade?',
-    subtitle: 'Sua resposta define como o UniHER vai te desafiar',
+    subtitle: 'Sua resposta ajuda o UniHER a personalizar seu plano',
     options: [
-      { label: 'Competição', description: 'Me motivo superando colegas no ranking' },
+      { label: 'Progresso acompanhado', description: 'Me motivo vendo minha própria evolução com clareza' },
       { label: 'Equipe', description: 'Rendo muito mais junto com outras pessoas' },
-      { label: 'Metas pessoais', description: 'Meu maior rival sou eu mesma de ontem' },
-      { label: 'Recompensas', description: 'Badges, pontos e prêmios me motivam muito' },
+      { label: 'Metas pessoais', description: 'Me motivo cumprindo compromissos que escolhi para mim' },
+      { label: 'Orientação prática', description: 'Lembretes e próximos passos claros me ajudam a agir' },
     ],
   },
   {

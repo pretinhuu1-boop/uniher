@@ -12,7 +12,6 @@ export default function Footer() {
         <div className={styles.links}>
           <a href="#profiles">Perfis</a>
           <a href="#howitworks">Como funciona</a>
-          <a href="#gamification">Gamificação</a>
           <a href="#roi">Para RH</a>
           <a href="#campanhas">Campanhas</a>
           <a href="#ciencia">Ciência</a>

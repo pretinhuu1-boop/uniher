@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useCollaboratorSaved } from '@/hooks/useCollaborator';
+import type { CollaboratorSavedSessionKey } from '@/hooks/useCollaborator';
+import type { CommunityFeedItem, CommunityTopic } from '@/types/community';
 import styles from './config.module.css';
 
 const MISSION_LABELS: Record<string, string> = {
-  check_in: 'Check-in Diário',
-  drink_water: 'Hidratação',
-  complete_challenge: 'Desafios',
-  update_semaforo: 'Semáforo de Saúde',
   read_content: 'Leitura de Conteúdo',
-  share_badge: 'Compartilhar Badge',
 };
 
 interface TogglePref {
@@ -20,30 +19,85 @@ interface TogglePref {
 }
 
 const NOTIFICATION_PREFS: TogglePref[] = [
-  { id: 'badges', label: 'Novos badges', description: 'Notificar quando desbloquear um badge', defaultOn: true },
   { id: 'campaigns', label: 'Campanhas', description: 'Notificar sobre novas campanhas e atualizacoes', defaultOn: true },
-  { id: 'challenges', label: 'Desafios', description: 'Lembrar sobre desafios ativos e prazos', defaultOn: true },
   { id: 'email', label: 'Resumo por e-mail', description: 'Receber resumo semanal por e-mail', defaultOn: false },
 ];
 
 const PRIVACY_PREFS: TogglePref[] = [
-  { id: 'ranking', label: 'Exibir no ranking', description: 'Seu departamento aparece no ranking geral', defaultOn: true },
   { id: 'profile', label: 'Perfil visivel', description: 'Outros colaboradoras podem ver seu perfil', defaultOn: true },
   { id: 'analytics', label: 'Dados anonimizados', description: 'Permitir uso de dados anonimizados para melhoria', defaultOn: true },
+  {
+    id: 'communitySupporterName',
+    label: 'Mostrar meu nome ao apoiar',
+    description: 'Desativada por padrão. Aplica-se somente a futuras visualizações de quem apoiou uma publicação.',
+    defaultOn: false,
+  },
 ];
 
 /** Maps toggle id -> API pref_key */
 const TOGGLE_KEY_MAP: Record<string, string> = {
-  badges: 'notif_badges',
   campaigns: 'notif_campaigns',
-  challenges: 'notif_challenges',
   email: 'notif_email',
-  ranking: 'privacy_ranking',
   profile: 'privacy_profile',
   analytics: 'privacy_analytics',
+  communitySupporterName: 'privacy_community_supporter_name',
 };
 
+const COMMUNITY_TOPIC_LABELS: Record<CommunityTopic, string> = {
+  pausas: 'Pausas',
+  sono: 'Sono',
+  movimento: 'Movimento',
+  cuidado: 'Cuidado',
+  geral: 'Geral',
+};
+
+type PreferencesLoadState = 'loading' | 'ready' | 'error';
+
+function isValidPreferencesPayload(payload: unknown): payload is {
+  preferences: Record<string, '0' | '1'>;
+} {
+  if (!payload || typeof payload !== 'object' || !('preferences' in payload)) return false;
+  const preferences = (payload as { preferences?: unknown }).preferences;
+  if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)) return false;
+  const supporterName = (preferences as Record<string, unknown>).privacy_community_supporter_name;
+  return supporterName === '0' || supporterName === '1';
+}
+
+function isSavedItemsPage(payload: unknown): payload is {
+  items: CommunityFeedItem[];
+  nextCursor: string | null;
+} {
+  if (!payload || typeof payload !== 'object') return false;
+  const page = payload as { items?: unknown; nextCursor?: unknown };
+  return Array.isArray(page.items)
+    && (page.nextCursor === null || typeof page.nextCursor === 'string');
+}
+
+function isAuthorizationStatus(status: number): status is 401 | 403 {
+  return status === 401 || status === 403;
+}
+
 export default function ConfiguracoesPage() {
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const canUseCollaboratorCommunity = Boolean(
+    authUser && (authUser.role === 'colaboradora' || authUser.also_collaborator === 1),
+  );
+  const collaboratorSavedSessionKey: CollaboratorSavedSessionKey | null = authUser
+    ? [
+        authUser.id,
+        authUser.companyId ?? null,
+        authUser.role,
+        canUseCollaboratorCommunity ? 1 : 0,
+      ]
+    : null;
+  const collaboratorSessionId = collaboratorSavedSessionKey
+    ? JSON.stringify(collaboratorSavedSessionKey)
+    : null;
+  const saved = useCollaboratorSaved({
+    sessionKey: collaboratorSavedSessionKey,
+    enabled: !authLoading && canUseCollaboratorCommunity,
+  });
+  const preferenceSessionKey = collaboratorSessionId;
   const [nome, setNome] = useState('');
   const [nickname, setNickname] = useState('');
   const [emailVal, setEmailVal] = useState('');
@@ -71,7 +125,39 @@ export default function ConfiguracoesPage() {
     });
     return initial;
   });
-  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [preferencesLoadState, setPreferencesLoadState] = useState<PreferencesLoadState>('loading');
+  const [preferencesReloadKey, setPreferencesReloadKey] = useState(0);
+  const preferenceGenerationRef = useRef(0);
+  const currentPreferenceSessionRef = useRef(preferenceSessionKey);
+  currentPreferenceSessionRef.current = preferenceSessionKey;
+  const supporterWriteGenerationRef = useRef(0);
+  const supporterWriteControllerRef = useRef<AbortController | null>(null);
+  const [supporterNameSaving, setSupporterNameSaving] = useState(false);
+  const [supporterNameFeedback, setSupporterNameFeedback] = useState<{
+    kind: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const [savedItems, setSavedItems] = useState<CommunityFeedItem[]>([]);
+  const [savedItemsSessionId, setSavedItemsSessionId] = useState<string | null>(null);
+  const [savedNextCursor, setSavedNextCursor] = useState<string | null>(null);
+  const [savedLoadingMore, setSavedLoadingMore] = useState(false);
+  const [savedRemovingId, setSavedRemovingId] = useState<string | null>(null);
+  const [savedAuthorizationLost, setSavedAuthorizationLost] = useState(false);
+  const [savedAuthorizationRetrying, setSavedAuthorizationRetrying] = useState(false);
+  const savedAuthorizationLostRef = useRef(false);
+  const [savedFeedback, setSavedFeedback] = useState<{
+    kind: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const savedItemsSnapshot = JSON.stringify(saved.items);
+  const currentSavedSessionRef = useRef(collaboratorSessionId);
+  currentSavedSessionRef.current = collaboratorSessionId;
+  const savedOperationGenerationRef = useRef(0);
+  const savedOperationControllersRef = useRef(new Set<AbortController>());
+  const savedOperationLockRef = useRef<symbol | null>(null);
+  const hasCurrentSavedState = savedItemsSessionId === collaboratorSessionId;
+  const visibleSavedItems = hasCurrentSavedState ? savedItems : [];
+  const visibleSavedNextCursor = hasCurrentSavedState ? savedNextCursor : null;
 
   // Archetype
   const [archetype, setArchetype] = useState<{ name: string; key: string; description: string; assignedAt: string } | null>(null);
@@ -86,7 +172,7 @@ export default function ConfiguracoesPage() {
   // Reminder preferences
   const [reminderTimes, setReminderTimes] = useState<string[]>(['08:00', '18:00']);
   const [missionReminders, setMissionReminders] = useState<Record<string, boolean>>({
-    check_in: true, drink_water: true, complete_challenge: true, update_semaforo: true,
+    read_content: true,
   });
   const [browserEnabled, setBrowserEnabled] = useState(false);
   const [browserSupported, setBrowserSupported] = useState(false);
@@ -156,32 +242,104 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  // Load notification/privacy toggle preferences from API
+  // Preference state is scoped to the current authenticated session.
   useEffect(() => {
-    fetch('/api/users/me/preferences')
-      .then(r => r.json())
-      .then(({ preferences }) => {
-        if (preferences && typeof preferences === 'object') {
-          setToggles(prev => {
-            const updated = { ...prev };
-            // Reverse map: pref_key -> toggle id
-            const reverseMap: Record<string, string> = {};
-            for (const [toggleId, prefKey] of Object.entries(TOGGLE_KEY_MAP)) {
-              reverseMap[prefKey] = toggleId;
-            }
-            for (const [key, value] of Object.entries(preferences)) {
-              const toggleId = reverseMap[key];
-              if (toggleId) {
-                updated[toggleId] = value === '1';
-              }
-            }
-            return updated;
-          });
-        }
-        setPrefsLoaded(true);
-      })
-      .catch(() => setPrefsLoaded(true));
-  }, []);
+    const generation = ++preferenceGenerationRef.current;
+    const controller = new AbortController();
+    setPreferencesLoadState('loading');
+    setSupporterNameFeedback(null);
+
+    if (authLoading) {
+      return () => controller.abort();
+    }
+    if (!preferenceSessionKey) {
+      setPreferencesLoadState('error');
+      return () => controller.abort();
+    }
+
+    async function loadPreferences() {
+      try {
+        const response = await fetch('/api/users/me/preferences', { signal: controller.signal });
+        if (!response.ok) throw new Error('Preference load failed');
+        const payload: unknown = await response.json();
+        if (!isValidPreferencesPayload(payload)) throw new Error('Invalid preference payload');
+        if (controller.signal.aborted || preferenceGenerationRef.current !== generation) return;
+
+        setToggles(prev => {
+          const updated = { ...prev };
+          const reverseMap = Object.fromEntries(
+            Object.entries(TOGGLE_KEY_MAP).map(([toggleId, prefKey]) => [prefKey, toggleId]),
+          );
+          for (const [key, value] of Object.entries(payload.preferences)) {
+            const toggleId = reverseMap[key];
+            if (toggleId && (value === '0' || value === '1')) updated[toggleId] = value === '1';
+          }
+          return updated;
+        });
+        setPreferencesLoadState('ready');
+      } catch (error) {
+        if (controller.signal.aborted || preferenceGenerationRef.current !== generation) return;
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setPreferencesLoadState('error');
+      }
+    }
+
+    void loadPreferences();
+    return () => {
+      controller.abort();
+      if (preferenceGenerationRef.current === generation) preferenceGenerationRef.current += 1;
+    };
+  }, [authLoading, preferenceSessionKey, preferencesReloadKey]);
+
+  useEffect(() => {
+    supporterWriteGenerationRef.current += 1;
+    supporterWriteControllerRef.current?.abort();
+    supporterWriteControllerRef.current = null;
+    setSupporterNameSaving(false);
+    setSupporterNameFeedback(null);
+
+    return () => {
+      supporterWriteGenerationRef.current += 1;
+      supporterWriteControllerRef.current?.abort();
+      supporterWriteControllerRef.current = null;
+    };
+  }, [preferenceSessionKey]);
+
+  useEffect(() => {
+    savedOperationGenerationRef.current += 1;
+    for (const controller of savedOperationControllersRef.current) controller.abort();
+    savedOperationControllersRef.current.clear();
+    savedOperationLockRef.current = null;
+    setSavedItems([]);
+    setSavedNextCursor(null);
+    setSavedItemsSessionId(collaboratorSessionId);
+    setSavedLoadingMore(false);
+    setSavedRemovingId(null);
+    savedAuthorizationLostRef.current = false;
+    setSavedAuthorizationLost(false);
+    setSavedAuthorizationRetrying(false);
+    setSavedFeedback(null);
+
+    return () => {
+      savedOperationGenerationRef.current += 1;
+      for (const controller of savedOperationControllersRef.current) controller.abort();
+      savedOperationControllersRef.current.clear();
+      savedOperationLockRef.current = null;
+    };
+  }, [collaboratorSessionId]);
+
+  useEffect(() => {
+    if (!canUseCollaboratorCommunity || savedAuthorizationLostRef.current) return;
+    setSavedItems(saved.items);
+    setSavedNextCursor(saved.nextCursor);
+    setSavedItemsSessionId(collaboratorSessionId);
+    setSavedFeedback(null);
+  }, [
+    canUseCollaboratorCommunity,
+    collaboratorSessionId,
+    saved.nextCursor,
+    savedItemsSnapshot,
+  ]);
 
   useEffect(() => {
     setBrowserSupported('Notification' in window && 'serviceWorker' in navigator);
@@ -318,7 +476,60 @@ export default function ConfiguracoesPage() {
       .catch(() => {});
   }, []);
 
+  async function handleSupporterNameToggle() {
+    if (preferencesLoadState !== 'ready' || supporterNameSaving || !preferenceSessionKey) return;
+    const id = 'communitySupporterName';
+    const previousValue = toggles[id];
+    const newValue = !previousValue;
+    const sessionKey = preferenceSessionKey;
+    const generation = ++supporterWriteGenerationRef.current;
+    supporterWriteControllerRef.current?.abort();
+    const controller = new AbortController();
+    supporterWriteControllerRef.current = controller;
+    const isCurrent = () => (
+      !controller.signal.aborted
+      && supporterWriteGenerationRef.current === generation
+      && currentPreferenceSessionRef.current === sessionKey
+    );
+    setToggles(prev => ({ ...prev, [id]: newValue }));
+    setSupporterNameSaving(true);
+    setSupporterNameFeedback(null);
+
+    try {
+      const response = await fetch('/api/users/me/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preferences: { privacy_community_supporter_name: newValue ? '1' : '0' },
+        }),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error('Preference update failed');
+      if (!isCurrent()) return;
+      setSupporterNameFeedback({ kind: 'success', message: 'Preferência salva.' });
+    } catch {
+      if (!isCurrent()) return;
+      setToggles(prev => ({ ...prev, [id]: previousValue }));
+      setSupporterNameFeedback({
+        kind: 'error',
+        message: 'Não foi possível salvar. A configuração anterior foi restaurada.',
+      });
+    } finally {
+      if (isCurrent()) {
+        setSupporterNameSaving(false);
+        if (supporterWriteControllerRef.current === controller) {
+          supporterWriteControllerRef.current = null;
+        }
+      }
+    }
+  }
+
   const handleToggle = (id: string) => {
+    if (preferencesLoadState !== 'ready') return;
+    if (id === 'communitySupporterName') {
+      void handleSupporterNameToggle();
+      return;
+    }
     const newValue = !toggles[id];
     setToggles(prev => ({ ...prev, [id]: newValue }));
 
@@ -334,6 +545,176 @@ export default function ConfiguracoesPage() {
       });
     }
   };
+
+  async function purgeSavedAuthorizationBoundary(sessionId: string) {
+    if (currentSavedSessionRef.current !== sessionId) return;
+    savedOperationGenerationRef.current += 1;
+    for (const controller of savedOperationControllersRef.current) controller.abort();
+    savedOperationControllersRef.current.clear();
+    savedOperationLockRef.current = null;
+    setSavedItems([]);
+    setSavedNextCursor(null);
+    setSavedItemsSessionId(sessionId);
+    savedAuthorizationLostRef.current = true;
+    setSavedAuthorizationLost(true);
+    setSavedAuthorizationRetrying(false);
+    setSavedFeedback(null);
+    setSavedLoadingMore(false);
+    setSavedRemovingId(null);
+    try {
+      await saved.mutate(undefined, { revalidate: false });
+    } catch {
+      // Local private state is already purged; cache cleanup is best effort.
+    }
+  }
+
+  async function handleRetrySavedAuthorization() {
+    if (
+      !savedAuthorizationLost
+      || savedAuthorizationRetrying
+      || savedOperationLockRef.current
+      || !collaboratorSessionId
+    ) return;
+    const lock = Symbol('saved-authorization-retry');
+    savedOperationLockRef.current = lock;
+    const sessionId = collaboratorSessionId;
+    const generation = ++savedOperationGenerationRef.current;
+    setSavedAuthorizationRetrying(true);
+    try {
+      const refreshedPage = await saved.mutate();
+      if (
+        savedOperationGenerationRef.current !== generation
+        || currentSavedSessionRef.current !== sessionId
+      ) return;
+      if (!isSavedItemsPage(refreshedPage)) throw new Error('Invalid saved retry page');
+      setSavedItems(refreshedPage.items);
+      setSavedNextCursor(refreshedPage.nextCursor);
+      setSavedItemsSessionId(sessionId);
+      savedAuthorizationLostRef.current = false;
+      setSavedAuthorizationLost(false);
+    } catch {
+      // Authorization loss remains visible until a valid private page is returned.
+    } finally {
+      if (
+        savedOperationLockRef.current === lock
+        && savedOperationGenerationRef.current === generation
+        && currentSavedSessionRef.current === sessionId
+      ) {
+        savedOperationLockRef.current = null;
+        setSavedAuthorizationRetrying(false);
+      }
+    }
+  }
+
+  async function handleRemoveSaved(item: CommunityFeedItem) {
+    if (savedOperationLockRef.current || !collaboratorSessionId || !canUseCollaboratorCommunity) return;
+    const lock = Symbol('saved-delete');
+    savedOperationLockRef.current = lock;
+    for (const pendingController of savedOperationControllersRef.current) pendingController.abort();
+    savedOperationControllersRef.current.clear();
+    const sessionId = collaboratorSessionId;
+    const generation = ++savedOperationGenerationRef.current;
+    const controller = new AbortController();
+    savedOperationControllersRef.current.add(controller);
+    const isCurrent = () => (
+      !controller.signal.aborted
+      && savedOperationGenerationRef.current === generation
+      && currentSavedSessionRef.current === sessionId
+    );
+    setSavedRemovingId(item.id);
+    setSavedFeedback(null);
+    try {
+      const response = await fetch(`/api/collaborator/feed/${encodeURIComponent(item.id)}/save`, {
+        method: 'DELETE',
+        signal: controller.signal,
+      });
+      if (isAuthorizationStatus(response.status)) {
+        await purgeSavedAuthorizationBoundary(sessionId);
+        return;
+      }
+      if (!response.ok) throw new Error('Saved item removal failed');
+      if (!isCurrent()) return;
+      setSavedItems(current => current.filter(candidate => candidate.id !== item.id));
+      setSavedNextCursor(null);
+      setSavedFeedback({ kind: 'success', message: `${item.title} removido dos salvos.` });
+      try {
+        const refreshedPage = await saved.mutate();
+        if (!isCurrent()) return;
+        if (!isSavedItemsPage(refreshedPage)) throw new Error('Saved revalidation returned no page');
+        setSavedItems(refreshedPage.items);
+        setSavedNextCursor(refreshedPage.nextCursor);
+      } catch {
+        if (!isCurrent()) return;
+        setSavedNextCursor(null);
+        setSavedFeedback({
+          kind: 'success',
+          message: `${item.title} removido dos salvos. A lista será atualizada novamente.`,
+        });
+      }
+    } catch {
+      if (!isCurrent()) return;
+      setSavedFeedback({
+        kind: 'error',
+        message: 'Não foi possível remover este item dos salvos. Tente novamente.',
+      });
+    } finally {
+      savedOperationControllersRef.current.delete(controller);
+      if (savedOperationLockRef.current === lock) {
+        savedOperationLockRef.current = null;
+        if (isCurrent()) setSavedRemovingId(null);
+      }
+    }
+  }
+
+  async function handleLoadMoreSaved() {
+    if (!visibleSavedNextCursor || savedOperationLockRef.current || !collaboratorSessionId) return;
+    const lock = Symbol('saved-page');
+    savedOperationLockRef.current = lock;
+    const cursor = visibleSavedNextCursor;
+    const sessionId = collaboratorSessionId;
+    const generation = ++savedOperationGenerationRef.current;
+    const controller = new AbortController();
+    savedOperationControllersRef.current.add(controller);
+    const isCurrent = () => (
+      !controller.signal.aborted
+      && savedOperationGenerationRef.current === generation
+      && currentSavedSessionRef.current === sessionId
+    );
+    setSavedLoadingMore(true);
+    setSavedFeedback(null);
+    try {
+      const response = await fetch(
+        `/api/collaborator/saved?limit=20&cursor=${encodeURIComponent(cursor)}`,
+        { signal: controller.signal },
+      );
+      if (isAuthorizationStatus(response.status)) {
+        await purgeSavedAuthorizationBoundary(sessionId);
+        return;
+      }
+      if (!response.ok) throw new Error('Saved items page failed');
+      const payload: unknown = await response.json();
+      if (!isSavedItemsPage(payload)) throw new Error('Invalid saved items page');
+      if (!isCurrent()) return;
+      setSavedItems(current => {
+        const byId = new Map(current.map(item => [item.id, item]));
+        for (const item of payload.items) byId.set(item.id, item);
+        return [...byId.values()];
+      });
+      setSavedNextCursor(payload.nextCursor);
+    } catch {
+      if (!isCurrent()) return;
+      setSavedFeedback({
+        kind: 'error',
+        message: 'Não foi possível carregar mais itens salvos. Tente novamente.',
+      });
+    } finally {
+      savedOperationControllersRef.current.delete(controller);
+      if (savedOperationLockRef.current === lock) {
+        savedOperationLockRef.current = null;
+        if (isCurrent()) setSavedLoadingMore(false);
+      }
+    }
+  }
 
   async function handleSaveProfile() {
     setSaveLabel('Salvando...');
@@ -402,23 +783,45 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  const renderToggle = (pref: TogglePref) => (
-    <div key={pref.id} className={styles.toggleRow}>
-      <div className={styles.toggleInfo}>
-        <span className={styles.toggleLabel}>{pref.label}</span>
-        <span className={styles.toggleDesc}>{pref.description}</span>
+  const renderToggle = (pref: TogglePref) => {
+    const isSupporterName = pref.id === 'communitySupporterName';
+    const descriptionId = `preference-${pref.id}-description`;
+    const feedbackId = `preference-${pref.id}-feedback`;
+    const feedbackMessage = supporterNameSaving
+      ? 'Salvando preferência...'
+      : supporterNameFeedback?.message;
+
+    return (
+      <div key={pref.id} className={styles.toggleRow}>
+        <div className={styles.toggleInfo}>
+          <span className={styles.toggleLabel}>{pref.label}</span>
+          <span id={descriptionId} className={styles.toggleDesc}>{pref.description}</span>
+          {isSupporterName && feedbackMessage && (
+            <span
+              id={feedbackId}
+              className={styles.toggleDesc}
+              role={supporterNameFeedback?.kind === 'error' ? 'alert' : 'status'}
+              aria-live={supporterNameFeedback?.kind === 'error' ? 'assertive' : 'polite'}
+            >
+              {feedbackMessage}
+            </span>
+          )}
+        </div>
+        <label className={styles.toggle}>
+          <input
+            type="checkbox"
+            className={styles.toggleInput}
+            aria-label={pref.label}
+            aria-describedby={`${descriptionId}${isSupporterName && feedbackMessage ? ` ${feedbackId}` : ''}`}
+            checked={toggles[pref.id]}
+            disabled={preferencesLoadState !== 'ready' || (isSupporterName && supporterNameSaving)}
+            onChange={() => handleToggle(pref.id)}
+          />
+          <span className={styles.toggleSlider} />
+        </label>
       </div>
-      <label className={styles.toggle}>
-        <input
-          type="checkbox"
-          className={styles.toggleInput}
-          checked={toggles[pref.id]}
-          onChange={() => handleToggle(pref.id)}
-        />
-        <span className={styles.toggleSlider} />
-      </label>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className={styles.page}>
@@ -555,10 +958,125 @@ export default function ConfiguracoesPage() {
         {/* Privacidade */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Privacidade</h2>
+          {preferencesLoadState === 'loading' && (
+            <p className={styles.stateMessage} role="status" aria-live="polite">
+              Carregando preferências...
+            </p>
+          )}
+          {preferencesLoadState === 'error' && (
+            <div className={styles.stateBlock}>
+              <p className={styles.errorMessage} role="alert">
+                Não foi possível carregar suas preferências. Os controles permanecem desativados.
+              </p>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                onClick={() => setPreferencesReloadKey(current => current + 1)}
+              >
+                Tentar carregar preferências novamente
+              </button>
+            </div>
+          )}
           <div className={styles.toggleList}>
             {PRIVACY_PREFS.map(renderToggle)}
           </div>
+          <p className={styles.privacyBoundary}>
+            Check-ins, semáforo e respostas da NR-1 nunca entram na comunidade.
+          </p>
         </div>
+
+        {/* Itens salvos */}
+        {canUseCollaboratorCommunity && (
+          <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Itens salvos</h2>
+          <p className={styles.sectionDesc}>
+            Conteúdos guardados aqui são privados e visíveis somente para você.
+          </p>
+          {savedAuthorizationLost ? (
+            <div className={styles.stateBlock}>
+              <p className={styles.errorMessage} role="alert">
+                Sessão expirada ou acesso alterado. Entre novamente para continuar.
+              </p>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                disabled={savedAuthorizationRetrying}
+                onClick={() => void handleRetrySavedAuthorization()}
+              >
+                {savedAuthorizationRetrying
+                  ? 'Verificando acesso...'
+                  : 'Tentar carregar itens salvos novamente'}
+              </button>
+            </div>
+          ) : saved.isLoading ? (
+            <p className={styles.stateMessage} role="status" aria-live="polite">
+              Carregando itens salvos...
+            </p>
+          ) : saved.error ? (
+            <div className={styles.stateBlock}>
+              <p className={styles.errorMessage} role="alert">
+                Não foi possível carregar seus itens salvos.
+              </p>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                onClick={() => {
+                  setSavedFeedback(null);
+                  void saved.mutate();
+                }}
+              >
+                Tentar carregar itens salvos novamente
+              </button>
+            </div>
+          ) : visibleSavedItems.length === 0 ? (
+            <p className={styles.stateMessage}>Você ainda não salvou conteúdos da comunidade.</p>
+          ) : (
+            <ul className={styles.savedList}>
+              {visibleSavedItems.map(item => (
+                <li key={item.id} className={styles.savedItem}>
+                  <div className={styles.savedItemCopy}>
+                    <span className={styles.savedItemMeta}>
+                      {COMMUNITY_TOPIC_LABELS[item.topic]} · {item.readTimeMinutes} min
+                    </span>
+                    <h3 className={styles.savedItemTitle}>{item.title}</h3>
+                    <p className={styles.savedItemSummary}>{item.summary}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.savedRemoveButton}
+                    aria-label={`Remover ${item.title} dos salvos`}
+                    disabled={savedRemovingId !== null || savedLoadingMore}
+                    onClick={() => void handleRemoveSaved(item)}
+                  >
+                    {savedRemovingId === item.id ? 'Removendo...' : 'Remover'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {visibleSavedNextCursor && !savedAuthorizationLost && !saved.isLoading && !saved.error && (
+            <div className={styles.savedActions}>
+              <button
+                type="button"
+                className={styles.inlineAction}
+                disabled={savedLoadingMore || savedRemovingId !== null}
+                onClick={() => void handleLoadMoreSaved()}
+              >
+                {savedLoadingMore ? 'Carregando...' : 'Carregar mais itens salvos'}
+              </button>
+            </div>
+          )}
+          {savedFeedback && (
+            <p
+              className={savedFeedback.kind === 'error' ? styles.errorMessage : styles.stateMessage}
+              role={savedFeedback.kind === 'error' ? 'alert' : 'status'}
+              aria-live={savedFeedback.kind === 'error' ? 'assertive' : 'polite'}
+            >
+              {savedFeedback.message}
+            </p>
+          )}
+          </div>
+        )}
 
         {/* Lembretes */}
         <div className={styles.section}>

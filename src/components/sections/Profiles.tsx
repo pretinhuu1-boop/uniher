@@ -80,11 +80,11 @@ const profiles = [
     iconText: 'var(--green-600)',
     title: 'Colaboradora',
     description:
-      'Jornada personalizada com missões diárias, gamificação e acompanhamento contínuo da sua saúde.',
+      'Jornada personalizada com conteúdos diários e acompanhamento privado e contínuo da sua saúde.',
     features: [
       'Quiz de perfil + plano personalizado',
-      'Missões diárias com streaks',
-      'Badges, níveis e conquistas',
+      'Conteúdos diários de cuidado',
+      'Progresso individual e privado',
       'Radar de saúde atualizado',
       'Conteúdo curado por especialistas',
     ],

@@ -1,1037 +1,286 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useCollaboratorHome, useCollaboratorBadges, useCollaboratorChallenges, useNotifications, useDailyMissions, useCollaboratorFeed } from '@/hooks/useCollaborator';
-import useSWR from 'swr';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useEffect, useState, type ReactNode } from 'react';
+import useSWR from 'swr';
+import { useSearchParams } from 'next/navigation';
+import {
+  ArrowRight,
+  BookOpen,
+  Check,
+  ClipboardCheck,
+  LockKeyhole,
+  ShieldCheck,
+} from 'lucide-react';
 import DailyLesson from '@/components/gamification/DailyLesson';
-import HeartsDisplay from '@/components/gamification/HeartsDisplay';
-import JourneyMap from '@/components/gamification/JourneyMap';
-import RewardsShop from '@/components/gamification/RewardsShop';
-import StreakFire from '@/components/gamification/StreakFire';
-import LeagueNotification from '@/components/gamification/LeagueNotification';
+import { FeedbackState } from '@/components/ui/FeedbackState';
+import { Button } from '@/components/ui/Button';
+import PageHeader from '@/components/platform/PageHeader';
+import { SummaryBand } from '@/components/platform/SummaryBand';
+import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
+import { getNr1PreviewState, type Nr1PreviewState } from '@/lib/nr1/preview-state';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
-interface StreakStatus {
-  streak: number; freezes: number; checkedInToday: boolean;
-  dailyXpEarned: number; dailyXpGoal: number; points: number; level: number;
-  levelInfo: { level: number; currentXP: number; nextLevelXP: number };
-}
-
-interface DailyMission {
-  id: string; title: string; description: string; xp: number;
-  category: string; action: string; completed: boolean;
-}
-
-interface LeagueStatus {
-  currentLeague: string; rank: number; weekPoints: number;
-  totalInLeague: number; promoteZone: boolean; relegateZone: boolean;
-  meta: { label: string; color: string; icon: string };
-}
-
-type FeedScope = 'company' | 'group';
-
-interface FeedItem {
+interface SafeMission {
   id: string;
-  createdAt: string;
-  userName: string;
-  message: string;
-  icon: string;
-  isSelf: boolean;
+  title: string;
+  description: string;
+  action: 'read_content';
+  completed: boolean;
 }
 
-export default function ColaboradoraPage() {
-  const router = useRouter();
-  const [feedScope, setFeedScope] = useState<FeedScope>('company');
-  const { data } = useCollaboratorHome();
-  const { badges: allBadges } = useCollaboratorBadges();
-  const { challenges } = useCollaboratorChallenges();
-  const { notifications } = useNotifications();
-  const { missions: swrMissions, mutate: mutateMissions } = useDailyMissions();
-  const {
-    items: socialFeed,
-    settings: feedSettings,
-    scope: effectiveFeedScope,
-    isLoading: feedLoading,
-    mutate: mutateFeed
-  } = useCollaboratorFeed(feedScope);
-  const { data: heartsData } = useSWR('/api/gamification/hearts', fetcher, { revalidateOnFocus: false });
+interface CollaboratorHomeData {
+  greeting?: string;
+  userName?: string;
+  date?: string;
+  examsPercent?: number;
+  examsTotal?: number;
+  contentViewed?: number;
+}
 
-  // Redirect to quiz if no health scores exist (first access)
-  const [quizChecked, setQuizChecked] = useState(false);
-  useEffect(() => {
-    fetch('/api/collaborator/semaforo').then(r => r.json()).then(d => {
-      const scores = d?.semaforo || d || [];
-      // Don't redirect if user is viewing as collaborator (multi-role)
-      const isViewMode = typeof window !== 'undefined' && sessionStorage.getItem('uniher-view-mode') === 'colaboradora';
-      const skipQuiz = typeof window !== 'undefined' && sessionStorage.getItem('uniher-skip-quiz') === '1';
+const actionLinkClass =
+  'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[var(--platform-radius-control)] border border-[var(--platform-action)] px-4 py-2 text-sm font-semibold text-[var(--platform-action-strong)] transition-colors duration-[var(--platform-duration-fast)] hover:bg-[var(--platform-group)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)] focus-visible:ring-offset-2';
 
-      if (Array.isArray(scores) && scores.length === 0 && !quizChecked && !isViewMode && !skipQuiz) {
-        router.push('/welcome-colaboradora');
-      }
-      if (Array.isArray(scores) && scores.length > 0 && typeof window !== 'undefined') {
-        sessionStorage.removeItem('uniher-skip-quiz');
-      }
+const disabledActionClass =
+  'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] px-4 py-2 text-sm font-semibold text-[var(--platform-muted)]';
 
-      setQuizChecked(true);
-    }).catch(() => setQuizChecked(true));
-  }, [router, quizChecked]);
+const nr1PreviewState = getNr1PreviewState({
+  previewEnabled: process.env.NEXT_PUBLIC_UNIHER_NR1_PREVIEW === '1',
+  entitled: process.env.NEXT_PUBLIC_UNIHER_NR1_ENTITLEMENT !== '0',
+  realIntegration: false,
+});
 
-  useEffect(() => {
-    if (feedScope === 'company' && feedSettings && !feedSettings.companyFeedEnabled) {
-      setFeedScope('group');
-    }
-  }, [feedScope, feedSettings]);
+function JourneyRow({
+  step,
+  icon,
+  title,
+  description,
+  children,
+  action,
+}: {
+  step: number;
+  icon: ReactNode;
+  title: ReactNode;
+  description: string;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <li className="grid gap-4 px-4 py-5 sm:grid-cols-[2rem_2.75rem_minmax(0,1fr)_auto] sm:items-center sm:px-5">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--platform-positive)] text-sm font-semibold text-[var(--platform-shell-text)]">
+        {step}
+      </span>
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--platform-group)] text-[var(--platform-positive)]" aria-hidden="true">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-semibold text-[var(--platform-ink)]">{title}</h3>
+        </div>
+        <p className="mt-1 max-w-2xl text-sm text-[var(--platform-muted)]">{description}</p>
+        {children}
+      </div>
+      {action && <div className="hidden sm:block sm:justify-self-end">{action}</div>}
+    </li>
+  );
+}
 
-  const unreadNotification = (notifications || []).find((n: any) => !n.read && n.type === 'badge');
-  const [showToast, setShowToast] = useState(false);
-  const [checkingIn, setCheckingIn] = useState(false);
-  const [challengeProgress, setChallengeProgress] = useState<Record<string, number>>({});
-  const [challengeFeedback, setChallengeFeedback] = useState<string | null>(null);
-  const [panicContact, setPanicContact] = useState<{ name: string; phone: string } | null>(null);
-  const [showPanicConfirm, setShowPanicConfirm] = useState(false);
-  const [streakStatus, setStreakStatus] = useState<StreakStatus | null>(null);
-  const [dailyMissions, setDailyMissions] = useState<DailyMission[]>([]);
-  const [leagueStatus, setLeagueStatus] = useState<LeagueStatus | null>(null);
-  const [leagueNotif, setLeagueNotif] = useState<{ show: boolean; type: 'overtaken' | 'overtook' | 'promotion' | 'demotion'; name?: string } | null>(null);
-  const [missionFeedback, setMissionFeedback] = useState<string | null>(null);
-  const [levelUpBurst, setLevelUpBurst] = useState(false);
-  const [activeMission, setActiveMission] = useState<DailyMission | null>(null);
-  const [missionPayload, setMissionPayload] = useState<{ mood?: string; glasses?: number; challengeId?: string; badgeId?: string; note?: string; confirmed?: boolean }>({});
-  const [missionSubmitting, setMissionSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  function showError(msg: string) {
-    setErrorMsg(msg);
-    setTimeout(() => setErrorMsg(null), 4000);
-  }
-
-  useEffect(() => {
-    fetch('/api/users/me')
-      .then(r => r.json())
-      .then(({ user }) => {
-        if (user?.emergency_contact_name && user?.emergency_contact_phone) {
-          setPanicContact({ name: user.emergency_contact_name, phone: user.emergency_contact_phone });
-        }
-      })
-      .catch(() => {});
-
-    // Load gamification data (daily missions handled by SWR hook)
-    fetch('/api/gamification/streak-status').then(r => r.json()).then(setStreakStatus).catch(() => {});
-    fetch('/api/gamification/league').then(r => r.json()).then(d => {
-      const status = d.status;
-      if (!status) return;
-      setLeagueStatus(status);
-      // Detect rank changes since last visit
-      const prevRankKey = 'uniher-league-rank';
-      const prevLeagueKey = 'uniher-league-name';
-      const prevRank = parseInt(sessionStorage.getItem(prevRankKey) || '0', 10);
-      const prevLeague = sessionStorage.getItem(prevLeagueKey) || '';
-      if (prevRank > 0) {
-        if (status.currentLeague !== prevLeague && prevLeague) {
-          const promoted = status.rank < prevRank || status.currentLeague > prevLeague;
-          setLeagueNotif({ show: true, type: promoted ? 'promotion' : 'demotion' });
-        } else if (status.rank > prevRank) {
-          setLeagueNotif({ show: true, type: 'overtaken' });
-        } else if (status.rank < prevRank) {
-          setLeagueNotif({ show: true, type: 'overtook' });
-        }
-      }
-      sessionStorage.setItem(prevRankKey, String(status.rank));
-      sessionStorage.setItem(prevLeagueKey, status.currentLeague || '');
-    }).catch(() => {});
-  }, []);
-
-  // Sync SWR missions into local state
-  const missionsKey = JSON.stringify((swrMissions || []).map((m: any) => m.id + ':' + m.completed));
-  useEffect(() => {
-    if (swrMissions.length > 0) setDailyMissions(swrMissions);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [missionsKey]);
-
-  const challengesKey = JSON.stringify((challenges || []).map((c: any) => c.id + ':' + (c.progress ?? 0)));
-  useEffect(() => {
-    const map: Record<string, number> = {};
-    (challenges || []).forEach((c: any) => { map[c.id] = c.progress ?? 0; });
-    setChallengeProgress(map);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [challengesKey]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowToast(true), 1200);
-    return () => clearTimeout(t);
-  }, []);
-
-  const unlockedBadges = (allBadges || []).filter((b: any) => b.unlockedAt);
-  const lockedBadges = (allBadges || []).filter((b: any) => !b.unlockedAt);
-  const activeChallenges = (challenges || []).filter((c: any) => c.status === 'active');
-
-  const totalForLevel = (data?.points ?? 0) + (data?.pointsNextLevel ?? 0);
-  const progressPercent = totalForLevel > 0 ? Math.round(((data?.points ?? 0) / totalForLevel) * 100) : 0;
-
-  const { mutate: mutateHome } = useCollaboratorHome();
-  const { mutate: mutateChallenges } = useCollaboratorChallenges();
-
-  async function handleChallengeIncrement(id: string, total: number) {
-    const cur = challengeProgress[id] ?? 0;
-    if (cur >= total) return;
-
-    setChallengeFeedback(id);
-    
-    try {
-      await fetch(`/api/collaborator/challenges/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ increment: 1 })
-      });
-      
-      // Optimistic update
-      setChallengeProgress(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
-      mutateHome(); 
-      mutateChallenges();
-    } catch {
-      showError('Erro ao registrar progresso. Tente novamente.');
-    } finally {
-      setTimeout(() => setChallengeFeedback(null), 2000);
-    }
-  }
-
-  async function handleCheckIn() {
-    if (checkingIn || streakStatus?.checkedInToday) return;
-    setCheckingIn(true);
-    try {
-      const res = await fetch('/api/gamification/check-in', { method: 'POST' });
-      const result = await res.json();
-      // Update streakStatus from API response to be single source of truth
-      fetch('/api/gamification/streak-status').then(r => r.json()).then(setStreakStatus).catch(() => {});
-      if (result.leveledUp) { setLevelUpBurst(true); setTimeout(() => setLevelUpBurst(false), 3000); }
-      mutateMissions();
-      mutateHome();
-    } catch {
-      setCheckingIn(false);
-      showError('Erro ao registrar check-in. Tente novamente.');
-    }
-  }
-
-  function openMissionModal(mission: DailyMission) {
-    setActiveMission(mission);
-    setMissionPayload({});
-    setMissionSubmitting(false);
-  }
-
-  function formatFeedDate(value: string): string {
-    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
-    const date = new Date(normalized);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  async function submitMission() {
-    if (!activeMission || missionSubmitting) return;
-    setMissionSubmitting(true);
-    try {
-      const res = await fetch(`/api/gamification/daily-missions/${activeMission.id}/complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(missionPayload),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setDailyMissions(prev => prev.map(m => m.id === activeMission.id ? { ...m, completed: true } : m));
-        setActiveMission(null);
-        if (result.leveledUp) { setLevelUpBurst(true); setTimeout(() => setLevelUpBurst(false), 3000); }
-        fetch('/api/gamification/streak-status').then(r => r.json()).then(setStreakStatus).catch(() => {});
-        mutateMissions();
-        mutateChallenges();
-        mutateHome();
-        mutateFeed();
-      }
-    } catch {
-      showError('Erro ao completar missão. Tente novamente.');
-    } finally {
-      setMissionSubmitting(false);
-    }
-  }
-
-  function handlePanic() {
-    if (!panicContact) return;
-    const msg = encodeURIComponent(
-      `🆘 Preciso de ajuda! Estou passando por um momento difícil agora. Por favor, entre em contato comigo o quanto antes.`
-    );
-    const phone = panicContact.phone.replace(/\D/g, '');
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-    setShowPanicConfirm(false);
-  }
-
-  const isCheckedIn = checkingIn || (streakStatus?.checkedInToday ?? false);
-  const dailyXpPct = streakStatus ? Math.min(100, Math.round((streakStatus.dailyXpEarned / streakStatus.dailyXpGoal) * 100)) : 0;
-  const levelXpPct = streakStatus?.levelInfo ? Math.round((streakStatus.levelInfo.currentXP / streakStatus.levelInfo.nextLevelXP) * 100) : 0;
-
-  const statCards = data ? [
-    { key: 'exams', icon: '📈', value: data.examsTotal > 0 ? `${data.examsPercent}%` : '—', label: 'Exames em Dia', sub: data.examsTotal > 0 ? `${Math.round((data.examsPercent / 100) * data.examsTotal)}/${data.examsTotal}` : 'Nenhum exame', color: 'bg-rose-50 text-rose-500' },
-    { key: 'content', icon: '📖', value: `${data.contentViewed}`, label: 'Conteúdos Vistos', sub: 'Este mês', color: 'bg-violet-50 text-violet-500' },
-    { key: 'campaigns', icon: '📅', value: `${data.campaignsActive}`, label: 'Campanhas', sub: `de ${data.campaignsTotal || 4}`, color: 'bg-amber-50 text-amber-500' },
-    { key: 'streak', icon: '🔥', value: `${data.streakDays}`, label: 'Dias de Streak', sub: '\u00A0', color: 'bg-orange-50 text-orange-500' },
-  ] : [];
+function Nr1JourneyRow({ state }: { state: Nr1PreviewState }) {
+  const available = state === 'preview_available';
+  const stateLabel = state === 'contract_required' ? 'Acesso controlado' : 'Acesso controlado';
+  const actionLabel = available ? 'Abrir prévia' : 'Prévia indisponível';
 
   return (
-    <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 font-body animate-fadeIn">
-
-      {/* ── League Notification ── */}
-      {leagueNotif?.show && (
-        <LeagueNotification
-          show={leagueNotif.show}
-          type={leagueNotif.type}
-          name={leagueNotif.name}
-          onClose={() => setLeagueNotif(null)}
-        />
-      )}
-
-      {/* ── Error Toast ── */}
-      {errorMsg && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] bg-red-500 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-bold animate-slideDown">
-          {errorMsg}
-        </div>
-      )}
-
-      {/* ── Daily Check-in Hero — always first ── */}
-      <div className="bg-gradient-to-r from-rose-500 to-rose-400 rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold font-display">Check-in Diário</h2>
-            <p className="text-sm opacity-90 mt-1">
-              {isCheckedIn ? 'Você já fez check-in hoje!' : 'Registre sua presença e ganhe XP!'}
-            </p>
-            {!isCheckedIn && <p className="text-xs opacity-75 mt-1">Sequência: {streakStatus?.streak ?? 0} dias</p>}
-          </div>
-          <button
-            onClick={handleCheckIn}
-            disabled={isCheckedIn || checkingIn}
-            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
-              isCheckedIn ? 'bg-white/20 cursor-default' : 'bg-white text-rose-500 hover:scale-105 shadow-md'
-            }`}
-          >
-            {checkingIn ? '...' : isCheckedIn ? 'Feito' : 'Check-in'}
+    <JourneyRow
+      step={2}
+      icon={<ClipboardCheck size={21} strokeWidth={1.7} />}
+      title={
+        <span className="inline-flex flex-wrap items-center gap-2">
+          <span>Avaliação NR-1</span>
+          <LockKeyhole size={17} aria-label="Acesso controlado" />
+          <span className="rounded-full border border-[var(--platform-positive)] px-2 py-0.5 text-xs font-medium text-[var(--platform-positive)]">
+            {stateLabel}
+          </span>
+        </span>
+      }
+      description="Prévia da avaliação psicossocial."
+    >
+      <div className="mt-3 flex flex-col gap-3 border-l-2 border-[var(--platform-group)] pl-3 sm:flex-row sm:items-center sm:justify-between">
+        <p id="nr1-preview-note" className="flex min-w-0 items-start gap-2 text-xs text-[var(--platform-muted)]">
+          <ShieldCheck size={16} className="mt-0.5 shrink-0 text-[var(--platform-positive)]" aria-hidden="true" />
+          <span>Esta prévia não gera laudo ou comprovação de conformidade.</span>
+        </p>
+        {available ? (
+          <Link href="/avaliacao-nr1" className={`${actionLinkClass} shrink-0`} aria-describedby="nr1-preview-note">
+            {actionLabel}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        ) : (
+          <button type="button" className={`${disabledActionClass} shrink-0`} disabled aria-describedby="nr1-preview-note">
+            <LockKeyhole size={16} aria-hidden="true" />
+            {actionLabel}
           </button>
-        </div>
-        <div className="mt-4 bg-white/20 rounded-full h-2">
-          <div className="bg-white rounded-full h-2 transition-all" style={{width: `${Math.min(dailyXpPct, 100)}%`}} />
-        </div>
-        <p className="text-xs opacity-75 mt-1">{streakStatus?.dailyXpEarned ?? 0}/{streakStatus?.dailyXpGoal ?? 20} XP hoje</p>
+        )}
       </div>
+    </JourneyRow>
+  );
+}
 
-      {/* ── Daily Lesson (Lição do Dia) ── */}
+export default function CollaboratorHomePage() {
+  const searchParams = useSearchParams();
+  const { data, isLoading } = useSWR<CollaboratorHomeData>('/api/collaborator', fetcher);
+  const { data: streak, mutate: refreshStreak } = useSWR<{ checkedInToday?: boolean }>('/api/gamification/streak-status', fetcher);
+  const { data: missionData, mutate: refreshMissions } = useSWR<{ missions?: SafeMission[] }>('/api/gamification/daily-missions', fetcher);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [note, setNote] = useState('');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('focus') !== 'journey' || isLoading) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const journeyTitle = document.getElementById('journey-title');
+      if (!journeyTitle) return;
+
+      journeyTitle.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [isLoading, searchParams]);
+
+  if (isLoading) {
+    return (
+      <FeedbackState
+        kind="loading"
+        title="Carregando sua jornada"
+        description="Estamos preparando seu conteúdo e seus registros pessoais."
+      />
+    );
+  }
+
+  const checkIn = async () => {
+    setCheckingIn(true);
+    setMessage('');
+    const response = await fetch('/api/gamification/check-in', { method: 'POST' });
+    setMessage(response.ok ? 'Presença registrada.' : 'Seu check-in já foi registrado hoje.');
+    await refreshStreak();
+    setCheckingIn(false);
+  };
+
+  const completeReading = async (mission: SafeMission) => {
+    const response = await fetch(`/api/gamification/daily-missions/${mission.id}/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+    });
+    setMessage(response.ok ? 'Progresso educativo registrado.' : 'Descreva o conteúdo lido com pelo menos 20 caracteres.');
+    if (response.ok) {
+      setNote('');
+      await refreshMissions();
+    }
+  };
+
+  const missions = missionData?.missions ?? [];
+  const checkInLabel = streak?.checkedInToday ? 'Check-in registrado' : 'Fazer check-in';
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        context="Jornada"
+        title={`${data?.greeting ?? 'Olá'}, ${data?.userName ?? ''}`}
+        description="Cada pequeno passo é cuidado que transforma."
+        primaryAction={(
+          <Button type="button" onClick={checkIn} disabled={checkingIn || streak?.checkedInToday} isLoading={checkingIn}>
+            <Check size={17} aria-hidden="true" />
+            {checkInLabel}
+          </Button>
+        )}
+      />
+
+      <SummaryBand
+        label="Resumo da jornada"
+        items={[
+          { label: 'Conteúdos vistos', value: data?.contentViewed ?? 0 },
+          { label: 'Exames em dia', value: data?.examsPercent ?? 0, detail: '%' },
+        ]}
+      />
+
+      <section aria-labelledby="journey-title" className="overflow-hidden rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
+        <div className="border-b border-[var(--platform-line)] px-4 py-5 sm:px-5">
+          <h2
+            id="journey-title"
+            className="font-display text-2xl font-semibold text-[var(--platform-ink)]"
+            style={{ scrollMarginTop: '80px' }}
+          >
+            Minha jornada
+          </h2>
+          <p className="mt-1 text-sm text-[var(--platform-muted)]">Siga os próximos passos para cuidar de você e da sua saúde.</p>
+        </div>
+        <ol className="divide-y divide-[var(--platform-line)]">
+          <JourneyRow
+            step={1}
+            icon={<ClipboardCheck size={21} strokeWidth={1.7} />}
+            title="Check-in de hoje"
+            description={streak?.checkedInToday ? 'Seu registro de hoje está completo.' : 'Registre como você está se sentindo hoje.'}
+            action={(
+              <Button type="button" size="sm" onClick={checkIn} disabled={checkingIn || streak?.checkedInToday} isLoading={checkingIn}>
+                {checkInLabel}
+              </Button>
+            )}
+          >
+            <div className="mt-3 sm:hidden">
+              <Button type="button" size="sm" onClick={checkIn} disabled={checkingIn || streak?.checkedInToday} isLoading={checkingIn}>
+                {checkInLabel}
+              </Button>
+            </div>
+          </JourneyRow>
+          <Nr1JourneyRow state={nr1PreviewState} />
+          <JourneyRow
+            step={3}
+            icon={<BookOpen size={21} strokeWidth={1.7} />}
+            title="Conteúdos recomendados"
+            description="Acesse conteúdos selecionados para o seu bem-estar e desenvolvimento."
+          />
+        </ol>
+      </section>
+
+      <FeedbackState
+        kind="denied"
+        title="Pontuação e classificação em revisão"
+        description={LEGACY_GAMIFICATION_STATE.message}
+      />
+
       <DailyLesson />
 
-      {/* ── Greeting Header ── */}
-      <section className="relative bg-gradient-to-br from-rose-400 via-rose-500 to-pink-600 rounded-2xl p-8 text-white overflow-hidden shadow-xl shadow-rose/20">
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Confetti dots */}
-          {['top-8 left-20 w-3 h-3 bg-yellow-300', 'top-12 right-32 w-2 h-2 bg-green-300', 'top-4 right-16 w-4 h-4 bg-blue-300 rotate-45',
-            'bottom-8 left-32 w-3 h-3 bg-purple-300', 'bottom-4 right-20 w-2 h-2 bg-pink-200'].map((cls, i) => (
-            <div key={i} className={`absolute ${cls} rounded-sm opacity-70 animate-float`} style={{ animationDelay: `${i * 0.3}s` }} />
-          ))}
-        </div>
-
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-rose-100 text-sm font-medium mb-1" suppressHydrationWarning>📅 {data?.date ?? ''}</p>
-            <h1 className="text-3xl md:text-4xl font-display font-bold" suppressHydrationWarning>{data?.greeting ?? 'Olá'}, <span className="text-yellow-200">{data?.userName ?? ''}</span> 👋</h1>
-            {data?.healthAlert && (
-              <a href="/semaforo" className="mt-2 inline-flex items-center gap-2 text-white/90 text-sm bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 hover:bg-white/20 transition-colors">
-                <span className="w-2 h-2 rounded-full bg-orange-300 animate-pulse" />
-                {data.healthAlert} →
-              </a>
-            )}
-          </div>
-          <button
-            onClick={handleCheckIn}
-            disabled={isCheckedIn}
-            className={cn(
-              "flex-shrink-0 px-6 py-3 rounded-xl font-bold text-sm transition-all",
-              isCheckedIn
-                ? "bg-white/20 text-white cursor-default"
-                : "bg-white text-rose-500 hover:shadow-lg hover:scale-105 active:scale-95"
-            )}
-          >
-            {isCheckedIn ? '✔ Check-in feito!' : '⭐ Fazer Check-in'}
-          </button>
-        </div>
-      </section>
-
-      {/* ── KPI Stats ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(card => (
-          <div key={card.key} className="bg-white rounded-2xl p-5 border border-border-1 shadow-sm hover:shadow-md transition-shadow">
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-3", card.color)}>
-              {card.icon}
+      <section className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5">
+        <h2 className="text-lg font-semibold text-[var(--platform-ink)]">Leitura educativa</h2>
+        {missions.length === 0 ? (
+          <p className="mt-2 text-sm text-[var(--platform-muted)]">Nenhuma leitura pendente hoje.</p>
+        ) : missions.map((mission) => (
+          <div key={mission.id} className="mt-3 space-y-3">
+            <div>
+              <h3 className="font-medium text-[var(--platform-ink)]">{mission.title}</h3>
+              <p className="text-sm text-[var(--platform-muted)]">{mission.description}</p>
             </div>
-            <div className="text-2xl font-display font-bold text-uni-text-900">{card.value}</div>
-            <div className="text-xs font-bold text-uni-text-600 mt-1">{card.label}</div>
-            <div className="text-[10px] text-uni-text-400 mt-0.5">{card.sub}</div>
+            {!mission.completed && (
+              <>
+                <textarea
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder="Conte brevemente o que você leu"
+                  className="min-h-24 w-full rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-3 text-sm text-[var(--platform-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)]"
+                />
+                <Button type="button" variant="outline" onClick={() => completeReading(mission)}>
+                  Registrar leitura
+                </Button>
+              </>
+            )}
           </div>
         ))}
-      </div>
-
-      {/* ── Level Bar ── */}
-      <section className="bg-white rounded-2xl p-6 border border-border-1 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-xl">⭐</div>
-            <div>
-              <span className="font-bold text-uni-text-900 text-lg">Nível {data?.level ?? 0}</span>
-              <span className="ml-2 text-xs bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">{(data?.points ?? 0).toLocaleString('pt-BR')} pts</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <HeartsDisplay
-              hearts={heartsData?.hearts ?? 5}
-              maxHearts={heartsData?.maxHearts ?? 5}
-              enabled={heartsData?.enabled ?? false}
-            />
-            {unlockedBadges.slice(0, 3).map((b: any) => (
-              <span key={b.id} title={b.name} className="text-lg cursor-default">{b.icon}</span>
-            ))}
-            <span className="text-xs font-bold text-uni-text-400">🏆 {data?.achievementCount ?? 0} conquistas</span>
-          </div>
-        </div>
-        <div className="w-full h-2.5 bg-cream-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-[11px] text-uni-text-400">{data?.pointsNextLevel ?? 0} pts para o próximo nível</p>
-          {(() => {
-            const streak = streakStatus?.streak ?? 0;
-            const level = data?.level ?? 0;
-            const unlockedBadgeIds = new Set((allBadges || []).filter((b: any) => b.unlocked || b.unlockedAt).map((b: any) => b.id));
-            if (!unlockedBadgeIds.has('badge_streak7') && streak > 0) {
-              return <p className="text-[11px] text-rose-400 font-semibold">🔥 {7 - Math.min(streak, 7)} dias para Badge Sequência 7</p>;
-            }
-            if (level < 10) {
-              return <p className="text-[11px] text-amber-500 font-semibold">⭐ Nível {10 - level} para Badge Mestra</p>;
-            }
-            if (!unlockedBadgeIds.has('badge_streak30') && streak > 0) {
-              return <p className="text-[11px] text-violet-400 font-semibold">🔥 {30 - Math.min(streak, 30)} dias para Badge Sequência 30</p>;
-            }
-            return <p className="text-[11px] text-emerald-500 font-semibold">👑 Nível elite alcançado!</p>;
-          })()}
-        </div>
       </section>
 
-      {/* ── Level Up Burst ── */}
-      {levelUpBurst && (
-        <div className="fixed inset-0 z-[60] pointer-events-none flex items-center justify-center">
-          <div className="text-center animate-bounce">
-            <div className="text-6xl mb-2">🎉</div>
-            <div className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-8 py-4 rounded-2xl font-bold text-xl shadow-2xl">
-              Level Up! Nível {streakStatus?.levelInfo?.level}!
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Gamification Row: Streak + Daily XP + League ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Streak (animated) */}
-        <div className="bg-white border border-border-1 rounded-2xl p-5 shadow-sm">
-          <StreakFire streak={streakStatus?.streak ?? 0} showAnimation={isCheckedIn} />
-          {/* Streak at risk warning */}
-          {streakStatus && !streakStatus.checkedInToday && streakStatus.streak > 0 && (
-            <div className="mt-3 flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 animate-pulse">
-              <span className="text-base">⚠️</span>
-              <p className="text-xs font-bold text-orange-700">Faça check-in para não perder sua sequência!</p>
-            </div>
-          )}
-          {streakStatus && streakStatus.checkedInToday && (
-            <div className="mt-3 flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
-              <span className="text-base">✅</span>
-              <p className="text-xs font-bold text-emerald-700">Sequência protegida hoje!</p>
-            </div>
-          )}
-          {streakStatus && streakStatus.freezes > 0 && (
-            <div className="mt-2">
-              <span className="text-xs bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-full">
-                ❄️ {streakStatus.freezes} freeze{streakStatus.freezes > 1 ? 's' : ''}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Daily XP Goal */}
-        <div className="bg-white border border-border-1 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-bold text-uni-text-900 text-sm">Meta Diária de XP</span>
-            <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full",
-              dailyXpPct >= 100 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"
-            )}>
-              {dailyXpPct >= 100 ? '✔ Completa!' : `${dailyXpPct}%`}
-            </span>
-          </div>
-          <div className="flex items-end gap-1 mb-3">
-            <span className="text-3xl font-display font-bold text-rose-500">{streakStatus?.dailyXpEarned ?? 0}</span>
-            <span className="text-sm text-uni-text-400 mb-1">/ {streakStatus?.dailyXpGoal ?? 20} XP</span>
-          </div>
-          <div className="h-3 bg-cream-100 rounded-full overflow-hidden">
-            <div
-              className={cn("h-full rounded-full transition-all duration-700", dailyXpPct >= 100 ? "bg-emerald-400" : "bg-gradient-to-r from-rose-400 to-pink-500")}
-              style={{ width: `${Math.min(100, dailyXpPct)}%` }}
-            />
-          </div>
-          <p className="text-[10px] text-uni-text-400 mt-2">
-            {dailyXpPct >= 100 ? 'Meta atingida! Continue ganhando XP.' : `Faltam ${(streakStatus?.dailyXpGoal ?? 20) - (streakStatus?.dailyXpEarned ?? 0)} XP`}
-          </p>
-        </div>
-
-        {/* League */}
-        <Link href="/liga" className="bg-white border border-border-1 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow block">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-bold text-uni-text-900 text-sm">Liga Semanal</span>
-            {leagueStatus && (
-              <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full",
-                leagueStatus.promoteZone ? "bg-emerald-50 text-emerald-600" :
-                leagueStatus.relegateZone ? "bg-red-50 text-red-500" :
-                "bg-gray-50 text-gray-500"
-              )}>
-                {leagueStatus.promoteZone ? '↑ Promoção' : leagueStatus.relegateZone ? '↓ Rebaixamento' : 'Zona Segura'}
-              </span>
-            )}
-          </div>
-          {leagueStatus ? (
-            <>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-3xl">{leagueStatus.meta.icon}</span>
-                <div>
-                  <div className="font-bold text-uni-text-900">{leagueStatus.meta.label}</div>
-                  <div className="text-xs text-uni-text-400">#{leagueStatus.rank} de {leagueStatus.totalInLeague}</div>
-                </div>
-              </div>
-              <div className="text-xs text-uni-text-500">{leagueStatus.weekPoints} pts esta semana →</div>
-            </>
-          ) : (
-            <div className="text-sm text-uni-text-400">Carregando...</div>
-          )}
-        </Link>
-      </div>
-
-      {/* ── Daily Missions ── */}
-      <section className="bg-white border border-border-1 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-lg font-bold text-uni-text-900">Missões Diárias</h2>
-            <p className="text-xs text-uni-text-400 mt-0.5">
-              {dailyMissions.filter(m => m.completed).length}/{dailyMissions.length} completadas hoje
-            </p>
-          </div>
-          <div className="flex gap-1">
-            {dailyMissions.map(m => (
-              <div key={m.id} className={cn("w-3 h-3 rounded-full", m.completed ? "bg-emerald-400" : "bg-cream-100")} />
-            ))}
-          </div>
-        </div>
-
-        {dailyMissions.length === 0 ? (
-          <p className="text-sm text-uni-text-400 text-center py-4">Faça check-in para desbloquear as missões de hoje!</p>
-        ) : (
-          <div className="space-y-3">
-            {dailyMissions.map(m => (
-              <div key={m.id} className={cn(
-                "flex items-center gap-4 p-4 rounded-xl border transition-all",
-                m.completed
-                  ? "bg-emerald-50 border-emerald-100"
-                  : "bg-cream-50 border-border-1 hover:border-rose-200"
-              )}>
-                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0",
-                  m.completed ? "bg-emerald-100" : "bg-white border border-border-1"
-                )}>
-                  {m.completed ? '✅' : m.category === 'Rotina' ? '⭐' : m.category === 'Saúde' ? '💊' : m.category === 'Desafios' ? '🏆' : '📖'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-uni-text-900 text-sm">{m.title}</div>
-                  <div className="text-xs text-uni-text-400 mt-0.5">{m.description}</div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-xs font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">+{m.xp} XP</span>
-                  {!m.completed && (
-                    <button
-                      onClick={() => openMissionModal(m)}
-                      className="text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 active:scale-95 px-3 py-1.5 rounded-lg transition-all"
-                    >
-                      Registrar
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {dailyMissions.length > 0 && dailyMissions.every(m => m.completed) && (
-          <div className="mt-4 text-center bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-xl p-4">
-            <div className="text-2xl mb-1">🎯</div>
-            <p className="font-bold text-emerald-700 text-sm">Todas as missões completadas!</p>
-            <p className="text-xs text-emerald-600 mt-0.5">Volte amanhã para novas missões</p>
-          </div>
-        )}
-      </section>
-
-      {/* ── Journey Map (Weekly Progress) ── */}
-      <section className="bg-white border border-border-1 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-3 mb-5">
-          <div>
-            <h2 className="text-lg font-bold text-uni-text-900">Feed da Comunidade</h2>
-            <p className="text-xs text-uni-text-400 mt-0.5">Conquistas e atividades recentes</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => feedSettings?.companyFeedEnabled && setFeedScope('company')}
-              disabled={!feedSettings?.companyFeedEnabled}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
-                effectiveFeedScope === 'company'
-                  ? 'bg-rose-500 text-white border-rose-500'
-                  : !feedSettings?.companyFeedEnabled
-                    ? 'bg-cream-50 text-uni-text-300 border-border-1 cursor-not-allowed'
-                    : 'bg-white text-uni-text-500 border-border-1 hover:border-rose-200'
-              )}
-            >
-              Empresa
-            </button>
-            <button
-              onClick={() => setFeedScope('group')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold border transition-all',
-                effectiveFeedScope === 'group'
-                  ? 'bg-rose-500 text-white border-rose-500'
-                  : 'bg-white text-uni-text-500 border-border-1 hover:border-rose-200'
-              )}
-            >
-              Meu grupo
-            </button>
-          </div>
-        </div>
-
-        {!feedSettings?.companyFeedEnabled && (
-          <p className="text-[11px] text-uni-text-400 mb-3">Visão da empresa inteira desativada pelo RH/Admin.</p>
-        )}
-
-        {feedLoading ? (
-          <div className="space-y-3">
-            <div className="h-14 rounded-xl bg-cream-100 animate-pulse" />
-            <div className="h-14 rounded-xl bg-cream-100 animate-pulse" />
-            <div className="h-14 rounded-xl bg-cream-100 animate-pulse" />
-          </div>
-        ) : (socialFeed as FeedItem[]).length === 0 ? (
-          <div className="text-center py-8 bg-cream-50 border border-dashed border-border-1 rounded-xl">
-            <p className="text-sm font-bold text-uni-text-700">Ainda sem atividades nesse feed</p>
-            <p className="text-xs text-uni-text-400 mt-1">Quando alguém concluir missões e desbloquear badges, o registro aparece aqui.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {(socialFeed as FeedItem[]).slice(0, 8).map((item) => (
-              <div
-                key={item.id}
-                className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl border',
-                  item.isSelf ? 'bg-rose-50 border-rose-100' : 'bg-cream-50 border-border-1'
-                )}
-              >
-                <div className="w-9 h-9 rounded-lg bg-white border border-border-1 flex items-center justify-center text-base flex-shrink-0">
-                  {item.icon}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-uni-text-700">
-                    <strong>{item.isSelf ? 'Você' : item.userName}</strong> {item.message}
-                  </p>
-                  <p className="text-[11px] text-uni-text-400 mt-0.5">{formatFeedDate(item.createdAt)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <JourneyMap />
-
-      {/* ── Engagement & Badges ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Engagement Banner */}
-        <section className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-bold text-uni-text-900">Seu Engajamento</h2>
-              <p className="text-xs text-uni-text-500">Continue assim!</p>
-            </div>
-            <Link href="/desafios" className="text-xs font-bold text-rose-500 hover:underline">Ver mais →</Link>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { value: data?.engagementStats?.streakDays ?? 0, unit: 'dias', label: 'Dias de streak', icon: '🔥' },
-              { value: `${data?.engagementStats?.openRate ?? 0}%`, unit: '', label: 'Taxa de abertura', icon: '👁' },
-              { value: data?.engagementStats?.actionsToday ?? 0, unit: '', label: 'Ações hoje', icon: '✅' },
-            ].map((m, i) => (
-              <div key={i} className="text-center bg-white/60 rounded-xl p-3">
-                <div className="text-lg mb-1">{m.icon}</div>
-                <div className="text-xl font-display font-bold text-uni-text-900">{m.value}<span className="text-xs text-uni-text-400"> {m.unit}</span></div>
-                <div className="text-[10px] text-uni-text-500 font-medium">{m.label}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Badges */}
-        <section className="bg-white border border-border-1 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-bold text-uni-text-900">Badges de Engajamento</h2>
-            <span className="text-xs text-uni-text-400">{unlockedBadges.length} de {allBadges.length} desbloqueados</span>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {allBadges.slice(0, 6).map((badge: any) => (
-              <div key={badge.id} className={cn("flex flex-col items-center gap-1 p-3 rounded-xl text-center transition-all", badge.unlockedAt ? "bg-amber-50 border border-amber-100" : "bg-gray-50 opacity-40 grayscale")}>
-                <div className="text-2xl">{badge.icon}</div>
-                <span className="text-[10px] font-bold text-uni-text-600 leading-tight">{badge.name}</span>
-                {badge.unlockedAt && <span className="text-[9px] text-amber-600">+{badge.points} pts</span>}
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      {/* ── Rewards Shop ── */}
-      <RewardsShop userPoints={data?.points ?? 0} />
-
-      {/* ── Active Challenges ── */}
-      <section>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-uni-text-900">Desafios Ativos</h2>
-          <Link href="/desafios" className="text-sm font-bold text-rose-500 hover:underline">Ver todos →</Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activeChallenges.map((ch: any) => {
-            const prog = challengeProgress[ch.id] ?? ch.progress;
-            const pct = Math.round((prog / ch.total) * 100);
-            const done = prog >= ch.total;
-            return (
-              <div key={ch.id} className="bg-white border border-border-1 rounded-2xl p-5 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-rose-400">{ch.category}</span>
-                    <h3 className="font-bold text-uni-text-900 mt-1">{ch.title}</h3>
-                    <p className="text-xs text-uni-text-500 mt-0.5">{ch.description}</p>
-                  </div>
-                  <span className="text-xs font-bold text-uni-green bg-emerald-50 px-2 py-1 rounded-full ml-3 flex-shrink-0">+{ch.points} pts</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-uni-text-400">
-                    <span>{prog}/{ch.total}</span>
-                    {ch.deadline && <span>Até {ch.deadline.split('-').reverse().join('/')}</span>}
-                  </div>
-                  <div className="h-1.5 w-full bg-cream-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-rose-400 transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleChallengeIncrement(ch.id, ch.total)}
-                  disabled={done}
-                  className={cn("mt-4 w-full py-2 rounded-xl text-sm font-bold transition-all",
-                    done ? "bg-emerald-50 text-emerald-600 cursor-default"
-                      : challengeFeedback === ch.id ? "bg-rose-100 text-rose-600"
-                        : "bg-rose-500 text-white hover:bg-rose-600 active:scale-95"
-                  )}
-                >
-                  {done ? '✔ Completo!' : challengeFeedback === ch.id ? '+1 registrado!' : 'Registrar progresso'}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── Panic Button ── */}
-      {panicContact && (
-        <section className="bg-white border border-border-1 rounded-2xl p-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="font-bold text-uni-text-900 text-sm">Precisa de ajuda agora?</h2>
-              <p className="text-xs text-uni-text-400 mt-0.5">
-                Envie uma mensagem de alerta para <strong>{panicContact.name}</strong> com um toque.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowPanicConfirm(true)}
-              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 active:scale-95 transition-all shadow-sm"
-            >
-              🆘 Botão de Pânico
-            </button>
-          </div>
-        </section>
-      )}
-
-      {!panicContact && (
-        <section className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <span className="text-2xl">🆘</span>
-            <div className="flex-1">
-              <h2 className="font-bold text-uni-text-900 text-sm">Configure seu botão de pânico</h2>
-              <p className="text-xs text-uni-text-400 mt-0.5">Cadastre um contato de confiança nas configurações para ativar o botão de pânico.</p>
-            </div>
-            <a
-              href="/configuracoes"
-              className="w-full sm:w-auto text-center px-4 py-2.5 rounded-xl bg-amber-500 text-white font-bold text-xs hover:bg-amber-600 transition-all"
-            >
-              Configurar →
-            </a>
-          </div>
-        </section>
-      )}
-
-      {/* ── Panic Confirm Modal ── */}
-      {showPanicConfirm && panicContact && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-slideUp">
-            <div className="text-center mb-4">
-              <div className="text-4xl mb-2">🆘</div>
-              <h3 className="font-bold text-uni-text-900 text-lg">Enviar alerta?</h3>
-              <p className="text-sm text-uni-text-500 mt-1">
-                Uma mensagem de emergência será enviada para <strong>{panicContact.name}</strong> ({panicContact.phone}) via WhatsApp.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowPanicConfirm(false)}
-                className="flex-1 py-2.5 rounded-xl border border-border-1 text-uni-text-600 font-bold text-sm hover:bg-cream-50 transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handlePanic}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all"
-              >
-                Enviar alerta
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Mission Registration Modal ── */}
-      {activeMission && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" onClick={() => setActiveMission(null)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-slideUp" onClick={e => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-xl">
-                {activeMission.category === 'Rotina' ? '⭐' : activeMission.category === 'Saúde' ? '💧' : activeMission.category === 'Desafios' ? '🏆' : '📖'}
-              </div>
-              <div>
-                <h3 className="font-bold text-uni-text-900">{activeMission.title}</h3>
-                <p className="text-xs text-uni-text-400">{activeMission.description}</p>
-              </div>
-              <span className="ml-auto text-xs font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">+{activeMission.xp} XP</span>
-            </div>
-
-            {/* check_in: mood selector */}
-            {activeMission.action === 'check_in' && (
-              <div>
-                <p className="text-sm font-bold text-uni-text-700 mb-3">Como você está hoje?</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { key: 'tired', emoji: '😴', label: 'Cansada' },
-                    { key: 'ok', emoji: '😐', label: 'Ok' },
-                    { key: 'good', emoji: '😊', label: 'Bem' },
-                    { key: 'great', emoji: '🔥', label: 'Ótima' },
-                  ].map(m => (
-                    <button
-                      key={m.key}
-                      onClick={() => setMissionPayload(p => ({ ...p, mood: m.key }))}
-                      className={cn(
-                        'flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all',
-                        missionPayload.mood === m.key ? 'border-rose-400 bg-rose-50' : 'border-border-1 hover:border-rose-200'
-                      )}
-                    >
-                      <span className="text-2xl">{m.emoji}</span>
-                      <span className="text-[10px] font-bold text-uni-text-600">{m.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* drink_water: glass counter */}
-            {activeMission.action === 'drink_water' && (
-              <div>
-                <p className="text-sm font-bold text-uni-text-700 mb-3">Quantos copos de água você bebeu hoje?</p>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => setMissionPayload(p => ({ ...p, glasses: n }))}
-                      className={cn(
-                        'w-11 h-11 rounded-xl border-2 font-bold text-sm transition-all flex flex-col items-center justify-center gap-0.5',
-                        (missionPayload.glasses ?? 0) >= n ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-border-1 text-uni-text-400'
-                      )}
-                    >
-                      <span className="text-base">💧</span>
-                      <span className="text-[10px]">{n}</span>
-                    </button>
-                  ))}
-                </div>
-                {(missionPayload.glasses ?? 0) > 0 && (missionPayload.glasses ?? 0) < 4 && (
-                  <p className="text-xs text-amber-600 mt-1">💡 Tente chegar em pelo menos 4 copos por dia!</p>
-                )}
-                {(missionPayload.glasses ?? 0) >= 4 && (
-                  <p className="text-xs text-emerald-600 mt-1">✔ Ótimo! Você está bem hidratada.</p>
-                )}
-              </div>
-            )}
-
-            {/* complete_challenge: pick active challenge */}
-            {activeMission.action === 'complete_challenge' && (
-              <div>
-                <p className="text-sm font-bold text-uni-text-700 mb-3">Qual desafio você avançou hoje?</p>
-                {activeChallenges.length === 0 ? (
-                  <p className="text-sm text-uni-text-400 text-center py-3">Nenhum desafio ativo. <a href="/desafios" className="text-rose-500 font-bold">Adicionar desafio →</a></p>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {activeChallenges.map((ch: any) => (
-                      <button
-                        key={ch.id}
-                        onClick={() => setMissionPayload(p => ({ ...p, challengeId: ch.id }))}
-                        className={cn(
-                          'w-full text-left p-3 rounded-xl border-2 transition-all',
-                          missionPayload.challengeId === ch.id ? 'border-rose-400 bg-rose-50' : 'border-border-1 hover:border-rose-200'
-                        )}
-                      >
-                        <div className="font-bold text-sm text-uni-text-900">{ch.title}</div>
-                        <div className="text-xs text-uni-text-400 mt-0.5">{challengeProgress[ch.id] ?? ch.progress}/{ch.total} etapas</div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* update_semaforo: must confirm via checkbox after opening page */}
-            {activeMission.action === 'update_semaforo' && (
-              <div className="space-y-3">
-                <a
-                  href="/semaforo"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-100 text-sm font-bold text-amber-700 hover:bg-amber-100 transition-colors"
-                >
-                  🚦 Abrir Semáforo de Saúde →
-                </a>
-                <label className="flex items-start gap-3 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 w-4 h-4 accent-rose-500 flex-shrink-0"
-                    checked={missionPayload.confirmed ?? false}
-                    onChange={e => setMissionPayload(p => ({ ...p, confirmed: e.target.checked }))}
-                  />
-                  <span className="text-sm text-uni-text-700">Confirmei que abri e atualizei meu Semáforo de Saúde hoje</span>
-                </label>
-              </div>
-            )}
-
-            {/* read_content: must write what was read (min 10 chars) */}
-            {activeMission.action === 'read_content' && (
-              <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-violet-50 border border-violet-100 text-sm text-violet-700">
-                  📖 Leia um artigo, conteúdo ou dica de saúde feminina e escreva sobre o que aprendeu.
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-uni-text-700 mb-1">O que você leu hoje? <span className="text-rose-500">*</span></p>
-                  <textarea
-                    className="w-full border border-border-1 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 resize-none"
-                    rows={3}
-                    placeholder="Ex: Li sobre os benefícios do sono reparador para a saúde hormonal..."
-                    value={missionPayload.note ?? ''}
-                    onChange={e => setMissionPayload(p => ({ ...p, note: e.target.value }))}
-                  />
-                  <p className="text-[11px] text-right mt-1" style={{ color: (missionPayload.note?.length ?? 0) >= 10 ? '#16a34a' : '#9ca3af' }}>
-                    {missionPayload.note?.length ?? 0}/10 mínimo
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* share_badge: must select an unlocked badge */}
-            {activeMission.action === 'share_badge' && (
-              <div>
-                <p className="text-sm font-bold text-uni-text-700 mb-3">Qual conquista você quer celebrar? <span className="text-rose-500">*</span></p>
-                {unlockedBadges.length === 0 ? (
-                  <div className="text-center py-3">
-                    <p className="text-sm text-uni-text-400 mb-2">Nenhum badge desbloqueado ainda.</p>
-                    <a href="/conquistas" className="text-rose-500 font-bold text-sm">Ver conquistas disponíveis →</a>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                    {unlockedBadges.map((b: any) => (
-                      <button
-                        key={b.id}
-                        onClick={() => setMissionPayload(p => ({ ...p, badgeId: b.id, note: b.name }))}
-                        className={cn(
-                          'flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all',
-                          missionPayload.badgeId === b.id ? 'border-amber-400 bg-amber-50' : 'border-border-1 hover:border-amber-200'
-                        )}
-                      >
-                        <span className="text-2xl">{b.icon}</span>
-                        <span className="text-[10px] font-bold text-uni-text-600 text-center leading-tight">{b.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setActiveMission(null)}
-                className="flex-1 py-2.5 rounded-xl border border-border-1 text-uni-text-600 font-bold text-sm hover:bg-cream-50 transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={submitMission}
-                disabled={
-                  missionSubmitting ||
-                  (activeMission.action === 'check_in' && !missionPayload.mood) ||
-                  (activeMission.action === 'drink_water' && !missionPayload.glasses) ||
-                  (activeMission.action === 'complete_challenge' && !missionPayload.challengeId && activeChallenges.length > 0) ||
-                  (activeMission.action === 'update_semaforo' && !missionPayload.confirmed) ||
-                  (activeMission.action === 'read_content' && (missionPayload.note?.trim().length ?? 0) < 10) ||
-                  (activeMission.action === 'share_badge' && (!missionPayload.badgeId && unlockedBadges.length > 0))
-                }
-                className="flex-1 py-2.5 rounded-xl bg-rose-500 text-white font-bold text-sm hover:bg-rose-600 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-              >
-                {missionSubmitting && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                {missionSubmitting ? 'Registrando...' : '✓ Confirmar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Notification Toast ── */}
-      {showToast && unreadNotification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-white border border-border-1 shadow-2xl rounded-2xl p-4 flex items-start gap-3 max-w-xs animate-slideUp">
-          <span className="text-2xl">🎉</span>
-          <div className="flex-grow">
-            <p className="font-bold text-uni-text-900 text-sm">{unreadNotification.title}</p>
-            <p className="text-xs text-uni-text-500 mt-0.5">🔥 {unreadNotification.message}</p>
-          </div>
-          <button onClick={() => setShowToast(false)} className="text-uni-text-400 hover:text-uni-text-900 leading-none text-xl flex-shrink-0">×</button>
-        </div>
-      )}
+      {message && <p role="status" className="text-sm text-[var(--platform-muted)]">{message}</p>}
     </div>
   );
 }

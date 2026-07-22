@@ -3,24 +3,38 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 /** ─── BADGE ─── */
-interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'primary' | 'secondary' | 'gold' | 'outline' | 'alert' | 'success';
+export type CanonicalBadgeVariant = 'neutral' | 'positive' | 'warning' | 'critical' | 'info';
+type LegacyBadgeVariant = 'primary' | 'secondary' | 'gold' | 'outline' | 'alert' | 'success';
+
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?: CanonicalBadgeVariant | LegacyBadgeVariant;
   size?: 'sm' | 'md' | 'lg';
 }
 
+const canonicalBadgeVariant: Record<LegacyBadgeVariant, CanonicalBadgeVariant> = {
+  primary: 'info',
+  secondary: 'neutral',
+  gold: 'warning',
+  outline: 'neutral',
+  alert: 'critical',
+  success: 'positive',
+};
+
 export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ className, variant = 'primary', size = 'md', ...props }, ref) => {
+  ({ className, variant = 'neutral', size = 'md', ...props }, ref) => {
+    const resolvedVariant = variant in canonicalBadgeVariant
+      ? canonicalBadgeVariant[variant as LegacyBadgeVariant]
+      : variant as CanonicalBadgeVariant;
     const variants = {
-      primary: "bg-rose-100 text-rose-700",
-      secondary: "bg-cream-200 text-uni-text-900 border-border-2",
-      gold: "bg-gold-50 text-gold-700 border border-gold-200",
-      outline: "border-2 border-border-2 text-uni-text-600",
-      alert: "bg-rose-500 text-white shadow-sm",
-      success: "bg-uni-green/10 text-uni-green border border-uni-green/20",
+      neutral: "bg-[var(--platform-group)] text-[var(--platform-ink)]",
+      positive: "border border-[var(--platform-positive)] bg-[var(--platform-surface)] text-[var(--platform-positive)]",
+      warning: "border border-[var(--platform-warning)] bg-[var(--platform-surface)] text-[var(--platform-warning)]",
+      critical: "bg-[var(--platform-critical)] text-[var(--platform-surface)]",
+      info: "bg-[var(--platform-action)] text-[var(--platform-shell)]",
     };
 
     const sizes = {
-      sm: "px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase",
+      sm: "px-2 py-0.5 text-[10px] font-bold tracking-wider",
       md: "px-3 py-1 text-xs font-semibold tracking-wide",
       lg: "px-4 py-2 text-sm font-bold tracking-tight",
     };
@@ -30,11 +44,12 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
         ref={ref}
         className={cn(
           "inline-flex items-center justify-center rounded-full transition-all duration-200",
-          variants[variant],
+          variants[resolvedVariant],
           sizes[size],
           className
         )}
         {...props}
+        data-variant={resolvedVariant}
       />
     );
   }

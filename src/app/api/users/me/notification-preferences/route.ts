@@ -4,26 +4,77 @@ import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
 
+const MissionRemindersSchema = z.object({
+  read_content: z.boolean().optional(),
+  check_in: z.boolean().optional(),
+  drink_water: z.boolean().optional(),
+  complete_challenge: z.boolean().optional(),
+}).strict();
+
+const ReminderTimeSchema = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
+const ReminderTimesSchema = z.array(ReminderTimeSchema).max(5);
+
 const PatchSchema = z.object({
-  reminder_times: z.array(z.string().regex(/^\d{2}:\d{2}$/)).max(5).optional(),
-  mission_reminders: z.record(z.string(), z.boolean()).optional(),
+  reminder_times: ReminderTimesSchema.optional(),
+  mission_reminders: MissionRemindersSchema.optional(),
   browser_enabled: z.boolean().optional(),
+}).strict();
+
+type MissionReminders = z.infer<typeof MissionRemindersSchema>;
+
+interface NotificationPreferencesRow {
+  user_id: string;
+  reminder_times: string;
+  mission_reminders: string;
+  browser_enabled: number;
+}
+
+const DEFAULT_MISSION_REMINDERS: MissionReminders = Object.freeze({
+  check_in: true,
+  drink_water: true,
+  complete_challenge: true,
 });
+const DEFAULT_REMINDER_TIMES = Object.freeze(['08:00', '18:00'] as const);
+
+function sanitizeReminderTimes(value: unknown): string[] {
+  const parsed = ReminderTimesSchema.safeParse(value);
+  return parsed.success ? parsed.data : [...DEFAULT_REMINDER_TIMES];
+}
+
+function sanitizeMissionReminders(value: unknown): MissionReminders {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
+  const record = value as Record<string, unknown>;
+  const sanitized: MissionReminders = {};
+
+  for (const key of ['read_content', 'check_in', 'drink_water', 'complete_challenge'] as const) {
+    if (typeof record[key] === 'boolean') sanitized[key] = record[key];
+  }
+
+  return sanitized;
+}
+
+function parseJson(value: string): unknown {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return undefined;
+  }
+}
 
 function getOrCreatePrefs(db: ReturnType<typeof getReadDb>, userId: string) {
-  let row = db.prepare('SELECT * FROM notification_preferences WHERE user_id = ?').get(userId) as any;
+  let row = db.prepare('SELECT * FROM notification_preferences WHERE user_id = ?').get(userId) as NotificationPreferencesRow | undefined;
   if (!row) {
     // Return defaults without inserting (insert happens on first PATCH)
     row = {
       user_id: userId,
       reminder_times: '["08:00","18:00"]',
-      mission_reminders: '{"check_in":true,"drink_water":true,"complete_challenge":true,"update_semaforo":true}',
+      mission_reminders: JSON.stringify(DEFAULT_MISSION_REMINDERS),
       browser_enabled: 0,
     };
   }
   return {
-    reminder_times: JSON.parse(row.reminder_times),
-    mission_reminders: JSON.parse(row.mission_reminders),
+    reminder_times: sanitizeReminderTimes(parseJson(row.reminder_times)),
+    mission_reminders: sanitizeMissionReminders(parseJson(row.mission_reminders)),
     browser_enabled: row.browser_enabled === 1,
   };
 }
@@ -47,7 +98,9 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
   const existing = getOrCreatePrefs(db, userId);
 
   const newTimes = reminder_times ?? existing.reminder_times;
-  const newMissions = mission_reminders ?? existing.mission_reminders;
+  const newMissions = mission_reminders
+    ? { ...existing.mission_reminders, ...mission_reminders }
+    : existing.mission_reminders;
   const newBrowser = browser_enabled !== undefined ? browser_enabled : existing.browser_enabled;
 
   const wq = getWriteQueue();

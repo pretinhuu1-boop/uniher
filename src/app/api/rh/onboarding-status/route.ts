@@ -29,13 +29,7 @@ export const GET = withRole('rh')(async (_req, context) => {
   const inviteCount = (db.prepare('SELECT COUNT(*) as cnt FROM invites WHERE company_id = ?').get(companyId) as { cnt: number }).cnt;
   const invitesDone = inviteCount > 0;
 
-  // Step 4: Challenges created
-  const challengeCount = (db.prepare(
-    "SELECT COUNT(*) as cnt FROM challenges WHERE company_id = ?"
-  ).get(companyId) as { cnt: number }).cnt;
-  const challengesDone = challengeCount > 0;
-
-  // Step 5: Company profile customized (has logo or colors)
+  // Step 4: Company profile customized (has logo or colors)
   const company = db.prepare('SELECT logo_url, primary_color, trade_name FROM companies WHERE id = ?').get(companyId) as any;
   const companyProfileDone = !!(company?.logo_url || company?.primary_color || company?.trade_name);
 
@@ -43,7 +37,6 @@ export const GET = withRole('rh')(async (_req, context) => {
     profile: profileDone,
     departments: departmentsDone,
     invites: invitesDone,
-    challenges: challengesDone,
     companyProfile: companyProfileDone,
   };
 
@@ -53,7 +46,7 @@ export const GET = withRole('rh')(async (_req, context) => {
   return NextResponse.json({
     isNewRH,
     completedCount,
-    totalSteps: 5,
+    totalSteps: 4,
     steps,
   });
 });

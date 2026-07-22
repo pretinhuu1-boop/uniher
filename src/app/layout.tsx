@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Playfair_Display, Montserrat } from 'next/font/google';
 import AuthProvider from '@/components/platform/AuthProvider';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import './globals.css';
 
@@ -186,7 +187,9 @@ export default function RootLayout({
     <html lang="pt-BR" data-scroll-behavior="smooth">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="UniHER" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         {jsonLd.map((schema, i) => (
           <script
@@ -204,6 +207,7 @@ export default function RootLayout({
           Ir para conteúdo principal
         </a>
         <ServiceWorkerRegistration />
+        <PwaInstallPrompt />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

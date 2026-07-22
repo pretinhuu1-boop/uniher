@@ -1,20 +1,14 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
-import { getStreakStatus } from '@/services/gamification.service';
-import { getLevelFromPoints } from '@/services/gamification.service';
+import { getReadDb } from '@/lib/db';
 
 export const GET = withAuth(async (_req, context) => {
-  try {
-    const userId = context.auth.userId;
-    const status = getStreakStatus(userId);
-    const levelInfo = getLevelFromPoints(status.points);
-    return NextResponse.json({ ...status, levelInfo });
-  } catch (error) {
-    console.error('[Streak] Error:', error);
-    return NextResponse.json({
-      streak: 0, freezes: 0, checkedInToday: false,
-      dailyXpEarned: 0, dailyXpGoal: 100, level: 1,
-      levelInfo: { level: 1, currentXP: 0, nextLevelXP: 100 },
-    });
-  }
+  const row = getReadDb().prepare(
+    'SELECT streak, last_active FROM users WHERE id = ?',
+  ).get(context.auth.userId) as { streak: number; last_active: string | null } | undefined;
+  const today = new Date().toISOString().slice(0, 10);
+  return NextResponse.json({
+    streak: row?.streak ?? 0,
+    checkedInToday: row?.last_active?.slice(0, 10) === today,
+  });
 });

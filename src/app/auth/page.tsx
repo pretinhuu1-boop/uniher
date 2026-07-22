@@ -37,7 +37,9 @@ function AuthContent() {
   // Se já autenticado, redirecionar
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === 'admin') {
+      if (user.mustChangePassword === true || user.firstAccessTourCompleted === false) {
+        router.push('/primeiro-acesso');
+      } else if (user.role === 'admin') {
         router.push('/admin');
       } else if (user.role === 'colaboradora') {
         const redirect = getSafeRedirect(searchParams.get('redirect'));
@@ -55,22 +57,25 @@ function AuthContent() {
     setError('');
 
     try {
-      const ok = await login(email, password);
+      const loggedUser = await login(email, password);
 
-      if (!ok) {
+      if (!loggedUser) {
         setError('Email ou senha incorretos.');
         return;
       }
 
       setToast({ message: 'Bem-vinda de volta!', type: 'success' });
 
-      const u = JSON.parse(localStorage.getItem('uniher-user') || '{}');
       // Admin always goes to /admin, ignoring redirect param
       let target: string;
-      if (u.role === 'admin') {
+      if (loggedUser.mustChangePassword === true || loggedUser.firstAccessTourCompleted === false) {
+        target = '/primeiro-acesso';
+      } else if (loggedUser.role === 'admin') {
         target = '/admin';
       } else {
-        target = getSafeRedirect(searchParams.get('redirect')) || (u.role === 'rh' || u.role === 'lideranca' ? '/dashboard' : '/colaboradora');
+        target =
+          getSafeRedirect(searchParams.get('redirect')) ||
+          (loggedUser.role === 'rh' || loggedUser.role === 'lideranca' ? '/dashboard' : '/colaboradora');
       }
       router.push(target);
     } catch {

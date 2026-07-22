@@ -10,6 +10,7 @@ import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { logAudit } from '@/lib/audit';
+import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 // ─── GET — lista admin masters ────────────────────────────────────────────────
 
@@ -22,13 +23,13 @@ export const GET = withMasterAdmin(async (req, _context) => {
   const db = getReadDb();
   const total = (db.prepare("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND is_master_admin = 1 AND deleted_at IS NULL").get() as { cnt: number }).cnt;
   const users = db.prepare(`
-    SELECT id, name, email, role, is_master_admin, level, points, blocked, created_at, company_id
+    SELECT id, name, email, role, is_master_admin, blocked, created_at, company_id
     FROM users
     WHERE role = 'admin' AND is_master_admin = 1 AND deleted_at IS NULL
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
   `).all(limit, offset);
-  return NextResponse.json({ users, total, limit, offset });
+  return NextResponse.json(toSafeUserProjection({ users, total, limit, offset }));
 });
 
 // ─── POST — cria novo usuário ─────────────────────────────────────────────────
@@ -87,6 +88,14 @@ export const POST = withMasterAdmin(async (req: NextRequest, context) => {
       INSERT INTO users (id, name, email, password_hash, role, company_id, is_master_admin, approved, level, points, streak, must_change_password, also_collaborator)
       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 0, 0, ?, ?)
     `).run(id, name, email, passwordHash, role, finalCompanyId, role === 'admin' ? 1 : 0, mustChangePw, alsoCollaborator);
+
+    db.prepare(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+      VALUES (?, 'first_access_tour_completed', '0', datetime('now'))
+      ON CONFLICT(user_id, pref_key) DO UPDATE SET
+        pref_value = excluded.pref_value,
+        updated_at = excluded.updated_at
+    `).run(id);
   });
 
   await logAudit({

@@ -1,233 +1,331 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useCollaboratorChallenges, useCollaboratorHome } from '@/hooks/useCollaborator';
-import { useAuth } from '@/hooks/useAuth';
+import { BookOpenCheck, Check, DoorOpen, Gauge, Plus, ShieldCheck, UsersRound } from 'lucide-react';
+import useSWR from 'swr';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Modal } from '@/components/ui/Modal';
-import { cn } from '@/lib/utils';
+import { FeedbackState } from '@/components/ui/FeedbackState';
+import PageHeader from '@/components/platform/PageHeader';
+import { SummaryBand } from '@/components/platform/SummaryBand';
+import { useAuth } from '@/hooks/useAuth';
+import type { CompanyChallengeCatalogItem, CompanyChallengeView } from '@/types/challenges';
 
-type TabKey = 'active' | 'completed' | 'locked';
+type ChallengesPayload = {
+  catalog: CompanyChallengeCatalogItem[];
+  challenges: CompanyChallengeView[];
+  error?: string;
+};
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'active', label: 'Em Andamento' },
-  { key: 'completed', label: 'Concluidos' },
-  { key: 'locked', label: 'Próximos' },
-];
+const fetcher = async (url: string): Promise<ChallengesPayload> => {
+  const response = await fetch(url);
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error ?? 'Nao foi possivel carregar seus desafios');
+  return payload;
+};
 
-const CATEGORIES = ['Hábitos', 'Saúde Mental', 'Prevenção', 'Sono', 'Nutrição'];
+function statusLabel(status: CompanyChallengeView['status']): string {
+  if (status === 'completed') return 'Concluido';
+  if (status === 'left') return 'Encerrado';
+  return 'Em andamento';
+}
+
+function modeLabel(challenge: CompanyChallengeCatalogItem): string {
+  if (challenge.mode === 'content_items') return `${challenge.target} conteudos`;
+  if (challenge.mode === 'sessions') return `${challenge.target} sessoes`;
+  return `${challenge.target} dias`;
+}
+
+function nextProgress(progress: number): number {
+  if (progress < 25) return 25;
+  if (progress < 50) return 50;
+  if (progress < 75) return 75;
+  return 100;
+}
 
 export default function DesafiosPage() {
-  const { user } = useAuth();
-  const { challenges, isLoading, mutate: mutateChallenges } = useCollaboratorChallenges();
-  const { mutate: mutateHome } = useCollaboratorHome();
-  const [activeTab, setActiveTab] = useState<TabKey>('active');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-  const canCreateChallenge = user?.role === 'rh' || user?.role === 'admin';
+  const { user, isLoading: authLoading } = useAuth();
+  const canUseChallenges = user?.role === 'colaboradora' || user?.also_collaborator === 1;
+  const { data, error, isLoading, mutate } = useSWR<ChallengesPayload>(
+    canUseChallenges ? '/api/collaborator/challenges' : null,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
 
-  // Form State para Novo Desafio (RH ou Auto-desafio)
-  const [form, setForm] = useState({ title: '', desc: '', cat: CATEGORIES[0], total: 5, pts: 100 });
+  const challenges = data?.challenges ?? [];
+  const joined = challenges.filter((challenge) => challenge.status === 'joined');
+  const completed = challenges.filter((challenge) => challenge.status === 'completed');
+  const left = challenges.filter((challenge) => challenge.status === 'left');
+  const participatedKeys = new Set(challenges.map((challenge) => challenge.catalog_key));
+  const availableCatalog = (data?.catalog ?? []).filter((challenge) => !participatedKeys.has(challenge.key));
 
-  const filtered = useMemo(() => {
-    return (challenges || []).filter((c: any) => c.status === activeTab);
-  }, [challenges, activeTab]);
+  const averageProgress = useMemo(() => {
+    if (joined.length === 0) return 0;
+    return Math.round(joined.reduce((sum, challenge) => sum + challenge.progress, 0) / joined.length);
+  }, [joined]);
 
-  const handleIncrement = async (id: string, total: number, cur: number) => {
-    if (cur >= total) return;
-    setLoadingId(id);
+  async function runAction(key: string, action: () => Promise<Response>, successMessage: string) {
+    setBusyKey(key);
+    setMessage('');
     try {
-      await fetch('/api/collaborator/challenges', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeId: id, increment: 1 })
-      });
-      mutateChallenges();
-      mutateHome(); 
-    } catch (err) {
-      console.error(err);
+      const response = await action();
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(payload.error ?? 'Nao foi possivel atualizar o desafio.');
+        return;
+      }
+      setMessage(successMessage);
+      await mutate();
+    } catch {
+      setMessage('Nao foi possivel conectar agora.');
     } finally {
-      setLoadingId(null);
+      setBusyKey(null);
     }
-  };
+  }
 
-  const handleCreate = async () => {
-    if (!canCreateChallenge) return;
-    if (!form.title) return;
-    try {
-      await fetch('/api/collaborator/challenges', {
+  function joinChallenge(catalogKey: string) {
+    return runAction(
+      `join:${catalogKey}`,
+      () => fetch('/api/collaborator/challenges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: form.title,
-          description: form.desc,
-          category: form.cat,
-          points: form.pts,
-          totalSteps: form.total
-        })
-      });
-      mutateChallenges();
-      setIsModalOpen(false);
-      setForm({ title: '', desc: '', cat: CATEGORIES[0], total: 5, pts: 100 });
-    } catch (err) {
-      console.error(err);
-    }
-  };
+        body: JSON.stringify({ catalogKey }),
+      }),
+      'Desafio iniciado.',
+    );
+  }
+
+  function updateChallenge(challenge: CompanyChallengeView, body: Record<string, unknown>, successMessage: string) {
+    return runAction(
+      `${body.action}:${challenge.id}`,
+      () => fetch(`/api/collaborator/challenges/${challenge.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+      successMessage,
+    );
+  }
+
+  if (authLoading || isLoading) {
+    return (
+      <FeedbackState
+        kind="loading"
+        title="Carregando desafios"
+        description="Estamos preparando apenas o catalogo seguro da sua empresa."
+      />
+    );
+  }
+
+  if (!canUseChallenges) {
+    return (
+      <FeedbackState
+        kind="denied"
+        title="Desafios indisponiveis"
+        description="Este perfil nao possui acesso persistido a experiencia de colaboradora."
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <FeedbackState
+        kind="error"
+        title="Nao foi possivel abrir desafios"
+        description={error.message}
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 animate-fadeIn font-body">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-uni-text-900">Meus Desafios</h1>
-          <p className="text-uni-text-500 mt-1">Pequenos passos diários para grandes conquistas em saúde.</p>
+    <div className="space-y-6">
+      <PageHeader
+        context="Desafios"
+        title="Desafios da empresa"
+        description="Entre voluntariamente em acoes educativas e gerais, registre progresso deliberado e saia quando quiser."
+      />
+
+      <SummaryBand
+        label="Resumo privado"
+        items={[
+          { label: 'Em andamento', value: joined.length },
+          { label: 'Concluidos', value: completed.length },
+          { label: 'Progresso medio', value: averageProgress, detail: '%' },
+        ]}
+      />
+
+      {message && (
+        <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] px-4 py-3 text-sm text-[var(--platform-ink)]">
+          {message}
         </div>
-        {canCreateChallenge && (
-          <Button
-            variant="outline"
-            className="rounded-2xl border-rose-200 text-rose-600 hover:bg-rose-50"
-            onClick={() => setIsModalOpen(true)}
-          >
-            + Novo Desafio
-          </Button>
-        )}
-      </div>
+      )}
 
-      {/* Tabs */}
-      <div className="flex gap-2 p-1.5 bg-white/50 backdrop-blur-sm border border-border-1 rounded-2xl w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "px-6 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-widest",
-              activeTab === tab.key 
-                ? "bg-white text-rose-500 shadow-sm border border-rose-100" 
-                : "text-uni-text-400 hover:text-uni-text-900"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <section aria-labelledby="challenge-privacy-title" className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+        <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+              <BookOpenCheck size={24} strokeWidth={1.8} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase text-[var(--platform-action-strong)]">
+                Wave 7 ativa
+              </p>
+              <h2 id="challenge-privacy-title" className="mt-2 text-xl font-semibold text-[var(--platform-ink)]">
+                Convite voluntario, sem ranking
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">
+                Esta tela usa o dominio novo de desafios da empresa. O progresso fica no fluxo da propria colaboradora e nao reativa pontos, badges ou classificacao.
+              </p>
+            </div>
+          </div>
+        </div>
 
-      {/* Challenges List */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {isLoading ? (
-          <div className="col-span-full py-20 text-center animate-pulse">Carregando seus desafios...</div>
-        ) : filtered.length === 0 ? (
-          <div className="col-span-full py-16 text-center bg-white rounded-[2rem] border border-dashed border-border-1 space-y-2">
-            <span className="text-4xl block">🎯</span>
-            <p className="text-uni-text-700 font-medium">Nenhum desafio em &quot;{TABS.find(t => t.key === activeTab)?.label}&quot;</p>
-            <p className="text-sm text-uni-text-400">Seus desafios aparecerão aqui! O RH da sua empresa irá criar desafios para você participar.</p>
+        <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[color-mix(in_srgb,var(--platform-positive)_10%,var(--platform-surface))] p-5 sm:p-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--platform-ink)]">
+            <ShieldCheck size={19} aria-hidden="true" />
+            Contrato seguro
+          </h2>
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--platform-muted)]">
+            <li className="flex gap-3"><DoorOpen size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Entrar e sair e sempre voluntario.</span></li>
+            <li className="flex gap-3"><UsersRound size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>RH nao ve nomes nem progresso individual nesta wave.</span></li>
+            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Sem Semaforo, NR-1, agenda, exames, pontos ou Liga.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="challenge-active-title" className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
+        <div className="border-b border-[var(--platform-line)] px-5 py-4 sm:px-6">
+          <h2 id="challenge-active-title" className="text-lg font-semibold text-[var(--platform-ink)]">
+            Meus desafios
+          </h2>
+          <p className="mt-1 text-sm text-[var(--platform-muted)]">
+            Atualize em passos claros. Concluir encerra o desafio; sair registra uma reversao explicita sem penalidade.
+          </p>
+        </div>
+
+        {challenges.length === 0 ? (
+          <div className="p-5 sm:p-6">
+            <FeedbackState
+              kind="empty"
+              title="Nenhum desafio iniciado"
+              description="Escolha uma opcao do catalogo para participar."
+            />
           </div>
         ) : (
-          filtered.map((c: any) => (
-            <div 
-              key={c.id}
-              className={cn(
-                "group relative bg-white border border-border-1 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all duration-300",
-                expandedId === c.id && "ring-2 ring-rose-100"
-              )}
-            >
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex gap-4 items-center">
-                  <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center text-2xl shadow-inner group-hover:scale-110 transition-transform">
-                    {c.category === 'Saúde Mental' ? '🧘' : c.category === 'Prevenção' ? '🏥' : c.category === 'Nutrição' ? '🍎' : '💧'}
+          <div className="divide-y divide-[var(--platform-line)]">
+            {challenges.map((challenge) => {
+              const next = nextProgress(challenge.progress);
+              const isJoined = challenge.status === 'joined';
+              return (
+                <article key={challenge.id} className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-[var(--platform-ink)]">{challenge.challenge.title}</h3>
+                      <span className="rounded-full border border-[var(--platform-line)] px-2 py-0.5 text-xs font-medium text-[var(--platform-muted)]">
+                        {statusLabel(challenge.status)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">{challenge.challenge.description}</p>
+                    <p className="mt-3 text-xs font-semibold uppercase text-[var(--platform-action-strong)]">{modeLabel(challenge.challenge)}</p>
+                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--platform-group)]" aria-label={`Progresso ${challenge.progress}%`}>
+                      <div className="h-full rounded-full bg-[var(--platform-action)]" style={{ width: `${challenge.progress}%` }} />
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-[var(--platform-muted)]">{challenge.progress}% registrado</p>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-display font-bold text-uni-text-900 leading-tight">{c.title}</h3>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-uni-text-400">{c.category}</span>
+
+                  <div className="flex flex-wrap gap-2 lg:justify-end">
+                    {isJoined && challenge.progress < 100 && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        isLoading={busyKey === `progress:${challenge.id}`}
+                        onClick={() => updateChallenge(challenge, { action: 'progress', progress: next }, `Progresso atualizado para ${next}%.`)}
+                      >
+                        <Gauge size={16} aria-hidden="true" />
+                        Avancar
+                      </Button>
+                    )}
+                    {isJoined && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        isLoading={busyKey === `complete:${challenge.id}`}
+                        onClick={() => updateChallenge(challenge, { action: 'complete' }, 'Desafio concluido.')}
+                      >
+                        <Check size={16} aria-hidden="true" />
+                        Concluir
+                      </Button>
+                    )}
+                    {isJoined && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        isLoading={busyKey === `leave:${challenge.id}`}
+                        onClick={() => updateChallenge(challenge, { action: 'leave' }, 'Participacao encerrada.')}
+                      >
+                        <DoorOpen size={16} aria-hidden="true" />
+                        Sair
+                      </Button>
+                    )}
                   </div>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-sm font-bold text-emerald-600">+{c.points} pts</span>
-                  {c.status === 'completed' && <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-tighter">Concluído!</span>}
-                </div>
-              </div>
-
-              <p className="text-sm text-uni-text-600 mb-8 leading-relaxed">
-                {c.description}
-              </p>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-uni-text-400 uppercase tracking-widest">Seu Progresso</span>
-                  <span className="text-sm font-bold text-uni-text-900">{c.progress} / {c.total}</span>
-                </div>
-                <div className="h-3 w-full bg-cream-100 rounded-full overflow-hidden p-0.5">
-                  <div 
-                    className="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full transition-all duration-700 shadow-sm"
-                    style={{ width: `${(c.progress / c.total) * 100}%` }} 
-                  />
-                </div>
-              </div>
-
-              {c.status === 'active' && (
-                <div className="mt-8 flex gap-3">
-                  <Button 
-                    className="flex-1 rounded-2xl shadow-lg shadow-rose-500/10"
-                    disabled={loadingId === c.id}
-                    onClick={() => handleIncrement(c.id, c.total, c.progress)}
-                  >
-                    {loadingId === c.id ? 'Registrando...' : 'Registrar Progresso'}
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))
+                </article>
+              );
+            })}
+          </div>
         )}
-      </div>
+      </section>
 
-      {/* Creation Modal */}
-      <Modal isOpen={isModalOpen && canCreateChallenge} onClose={() => setIsModalOpen(false)} title="Novo Desafio">
-        <div className="space-y-5">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Título</label>
-            <input 
-              className="w-full px-4 py-3 rounded-2xl border border-border-1 focus:ring-2 focus:ring-rose-200 outline-none"
-              placeholder="Ex: Beber 2L de água"
-              value={form.title}
-              onChange={e => setForm({...form, title: e.target.value})}
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Descrição</label>
-            <textarea 
-              className="w-full px-4 py-3 rounded-2xl border border-border-1 focus:ring-2 focus:ring-rose-200 outline-none h-24 resize-none"
-              placeholder="Detalhes para te motivar..."
-              value={form.desc}
-              onChange={e => setForm({...form, desc: e.target.value})}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Meta (Passos)</label>
-              <input 
-                type="number"
-                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none"
-                value={form.total}
-                onChange={e => setForm({...form, total: parseInt(e.target.value) || 1})}
-              />
-            </div>
-             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-uni-text-400 uppercase tracking-widest px-1">Pontos</label>
-              <input 
-                type="number"
-                className="w-full px-4 py-3 rounded-2xl border border-border-1 outline-none"
-                value={form.pts}
-                onChange={e => setForm({...form, pts: parseInt(e.target.value) || 10})}
-              />
-            </div>
-          </div>
-          <div className="pt-4">
-            <Button className="w-full rounded-2xl py-4 text-lg" onClick={handleCreate}>Começar Desafio!</Button>
-          </div>
+      <section aria-labelledby="challenge-catalog-title" className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
+        <div className="border-b border-[var(--platform-line)] px-5 py-4 sm:px-6">
+          <h2 id="challenge-catalog-title" className="text-lg font-semibold text-[var(--platform-ink)]">
+            Catalogo aprovado
+          </h2>
+          <p className="mt-1 text-sm text-[var(--platform-muted)]">
+            Opcoes neutras, sem fonte sensivel, sem recompensas e sem comparacao.
+          </p>
         </div>
-      </Modal>
+        <div className="grid gap-4 p-5 sm:p-6 lg:grid-cols-3">
+          {availableCatalog.map((challenge) => (
+            <article key={challenge.key} className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+                <Plus size={19} aria-hidden="true" />
+              </div>
+              <h3 className="mt-4 font-semibold text-[var(--platform-ink)]">{challenge.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">{challenge.description}</p>
+              <p className="mt-3 text-xs font-semibold uppercase text-[var(--platform-action-strong)]">{modeLabel(challenge)}</p>
+              <Button
+                type="button"
+                className="mt-4 w-full"
+                variant="secondary"
+                size="sm"
+                isLoading={busyKey === `join:${challenge.key}`}
+                onClick={() => joinChallenge(challenge.key)}
+              >
+                <DoorOpen size={16} aria-hidden="true" />
+                Entrar
+              </Button>
+            </article>
+          ))}
+          {availableCatalog.length === 0 && (
+            <div className="lg:col-span-3">
+              <FeedbackState
+                kind="empty"
+                title="Catalogo ja foi escolhido"
+                description="Voce ja entrou em todas as opcoes disponiveis nesta primeira versao."
+              />
+            </div>
+          )}
+        </div>
+      </section>
+
+      {left.length > 0 && (
+        <p className="text-xs text-[var(--platform-muted)]">
+          {left.length} participacao encerrada fica visivel somente para voce e para DSAR.
+        </p>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
+import { LEGACY_GAMIFICATION_NOTIFICATION_TYPES } from '@/lib/gamification/containment';
 
 const inflightReadUpdates = new Map<string, Promise<void>>();
 
@@ -11,20 +12,24 @@ export interface NotificationRow {
   message: string;
   read: number;
   created_at: string;
+  source: string | null;
+  resource_id: string | null;
 }
 
 export function getUserNotifications(userId: string, limit = 20): NotificationRow[] {
   const db = getReadDb();
+  const blocked = LEGACY_GAMIFICATION_NOTIFICATION_TYPES.map(() => '?').join(', ');
   return db.prepare(
-    'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
-  ).all(userId, limit) as NotificationRow[];
+    `SELECT * FROM notifications WHERE user_id = ? AND type NOT IN (${blocked}) ORDER BY created_at DESC LIMIT ?`
+  ).all(userId, ...LEGACY_GAMIFICATION_NOTIFICATION_TYPES, limit) as NotificationRow[];
 }
 
 export function countUnread(userId: string): number {
   const db = getReadDb();
+  const blocked = LEGACY_GAMIFICATION_NOTIFICATION_TYPES.map(() => '?').join(', ');
   const row = db.prepare(
-    'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read = 0'
-  ).get(userId) as { count: number };
+    `SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read = 0 AND type NOT IN (${blocked})`
+  ).get(userId, ...LEGACY_GAMIFICATION_NOTIFICATION_TYPES) as { count: number };
   return row.count;
 }
 
@@ -74,15 +79,25 @@ export async function createNotification(data: {
   type: string;
   title: string;
   message: string;
+  source?: string | null;
+  resourceId?: string | null;
 }): Promise<NotificationRow> {
   const writeQueue = getWriteQueue();
   const id = nanoid();
 
   return writeQueue.enqueue((db) => {
     db.prepare(`
-      INSERT INTO notifications (id, user_id, type, title, message)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, data.userId, data.type, data.title, data.message);
+      INSERT INTO notifications (id, user_id, type, title, message, source, resource_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      data.userId,
+      data.type,
+      data.title,
+      data.message,
+      data.source ?? null,
+      data.resourceId ?? null,
+    );
     return db.prepare('SELECT * FROM notifications WHERE id = ?').get(id) as NotificationRow;
   });
 }

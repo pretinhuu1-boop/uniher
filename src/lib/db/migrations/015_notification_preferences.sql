@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS notification_preferences (
   user_id          TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   reminder_times   TEXT NOT NULL DEFAULT '["08:00","18:00"]',
-  mission_reminders TEXT NOT NULL DEFAULT '{"check_in":true,"drink_water":true,"complete_challenge":true,"update_semaforo":true}',
+  mission_reminders TEXT NOT NULL DEFAULT '{"check_in":true,"drink_water":true,"complete_challenge":true}',
   browser_enabled  INTEGER NOT NULL DEFAULT 0,
   updated_at       TEXT DEFAULT (datetime('now'))
 );

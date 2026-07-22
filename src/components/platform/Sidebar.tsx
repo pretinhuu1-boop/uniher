@@ -1,70 +1,97 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
-import { Avatar, Badge } from '@/components/ui/AvatarBadge';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
-import SidebarNavItem, { NavIcon } from './SidebarNavItem';
+import { usePathname, useRouter } from 'next/navigation';
 import useSWR from 'swr';
+import { clearProtectedReportCaches, useAuth } from '@/hooks/useAuth';
+import { Avatar, Badge } from '@/components/ui/AvatarBadge';
+import SidebarNavItem, { NavIcon } from './SidebarNavItem';
+import {
+  getNavigationForRole,
+  getRoleHome,
+  isNavigationItemActive,
+  normalizeUserRole,
+  resolveActiveView,
+} from './navigation';
+import type { NavigationGroup, NavigationItem } from './navigation';
+import type { UserRole } from '@/types/platform';
+import styles from './Sidebar.module.css';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+type ScopedApiKey = readonly [string, ...unknown[]];
 
-type NavItem = { href: string; label: string; icon: string };
+const scopedFetcher = (key: ScopedApiKey) => (
+  fetch(key[0]).then(response => response.json())
+);
 
-const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
-  admin: [
-    { href: '/admin', label: 'Painel Master', icon: 'companies' },
-    { href: '/analytics-emails', label: 'Analytics Global', icon: 'analytics' },
-  ],
-  rh: [
-    { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { href: '/colaboradoras-gestao', label: 'Colaboradoras', icon: 'colaboradoras' },
-    { href: '/departamentos', label: 'Departamentos', icon: 'departamentos' },
-    { href: '/semaforo', label: 'Semaforo de Saude', icon: 'semaforo' },
-    { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
-    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
-    { href: '/desafios/gerenciar', label: 'Gerenciar Desafios', icon: 'desafios' },
-    { href: '/liga/gerenciar', label: 'Gerenciar Ligas', icon: 'liga' },
-    { href: '/gamificacao-config', label: 'Config. Gamificacao', icon: 'config' },
-    { href: '/convites', label: 'Convites', icon: 'invite' },
-    { href: '/agenda', label: 'Agenda de Saude', icon: 'agenda' },
-    { href: '/historico', label: 'Historico', icon: 'historico' },
-    { href: '/analytics-emails', label: 'Comunicacao', icon: 'analytics' },
-    { href: '/company-profile', label: 'Perfil da Empresa', icon: 'profile' },
-  ],
-  lideranca: [
-    { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { href: '/semaforo', label: 'Semaforo da Equipe', icon: 'semaforo' },
-    { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
-    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
-    { href: '/desafios', label: 'Desafios', icon: 'desafios' },
-    { href: '/agenda', label: 'Agenda de Saude', icon: 'agenda' },
-    { href: '/historico', label: 'Historico', icon: 'historico' },
-  ],
-  colaboradora: [
-    { href: '/colaboradora', label: 'Meu Painel', icon: 'dashboard' },
-    { href: '/semaforo', label: 'Meu Semaforo', icon: 'semaforo' },
-    { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
-    { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
-    { href: '/desafios', label: 'Desafios', icon: 'desafios' },
-    { href: '/conquistas', label: 'Conquistas', icon: 'conquistas' },
-    { href: '/liga', label: 'Liga Semanal', icon: 'liga' },
-    { href: '/agenda', label: 'Minha Agenda', icon: 'agenda' },
-  ],
-};
-
-const ROLE_LABELS: Record<string, string> = {
+const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Master',
   rh: 'Admin',
-  lideranca: 'Lideranca',
+  lideranca: 'Liderança',
   colaboradora: 'Colaboradora',
 };
 
-const BOTTOM_ITEMS = [
-  { href: '/configuracoes', label: 'Configuracoes', icon: 'config' },
-];
+const PERSONAL_NAVIGATION_GROUPS = [
+  {
+    label: 'Pessoal',
+    items: [
+      {
+        href: '/notificacoes',
+        label: 'Notificações',
+        icon: 'notifications',
+        description: 'Alertas e avisos do sistema para você',
+      },
+      {
+        href: '/configuracoes',
+        label: 'Configurações',
+        icon: 'config',
+        description: 'Preferências pessoais, senha e notificações',
+      },
+    ],
+  },
+] as const satisfies readonly NavigationGroup[];
+
+interface SidebarNavigationGroupsProps {
+  groups: readonly NavigationGroup[];
+  pathname: string;
+  onNavigate: () => void;
+  idPrefix: string;
+  renderItemChildren?: (item: NavigationItem) => ReactNode;
+}
+
+export function SidebarNavigationGroups({
+  groups,
+  pathname,
+  onNavigate,
+  idPrefix,
+  renderItemChildren,
+}: SidebarNavigationGroupsProps) {
+  return groups.map((group, groupIndex) => {
+    const headingId = `${idPrefix}-${groupIndex}`;
+
+    return (
+      <section key={group.label} className={styles.navSection} aria-labelledby={headingId}>
+        <h2 id={headingId} className={styles.navLabel}>{group.label}</h2>
+        <ul className={styles.navList}>
+          {group.items.map(item => (
+            <li key={item.href}>
+              <SidebarNavItem
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                description={item.description}
+                isActive={isNavigationItemActive(pathname, item.href)}
+                onClick={onNavigate}
+              >
+                {renderItemChildren?.(item)}
+              </SidebarNavItem>
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  });
+}
 
 interface SidebarProps {
   isOpen: boolean;
@@ -74,209 +101,308 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const sidebarRef = useRef<HTMLElement>(null);
   const { user, logout } = useAuth();
+  const [isMobile, setIsMobile] = useState(false);
 
-  const realRole = user?.role || 'colaboradora';
-  const alsoCollab = user?.also_collaborator || realRole === 'lideranca';
+  const realRole = normalizeUserRole(user?.role);
+  const alsoCollab = Boolean(user?.also_collaborator);
   const canSwitchView = alsoCollab && realRole !== 'colaboradora';
-
-  const [activeView, setActiveView] = useState<string>(realRole);
+  const [activeView, setActiveView] = useState<UserRole>(realRole);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem('uniher-view-mode');
-      if (saved && canSwitchView && (saved === 'colaboradora' || saved === realRole)) {
-        setActiveView(saved);
-        return;
-      }
-    }
-    setActiveView(realRole);
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateViewport = () => setIsMobile(mediaQuery.matches);
+
+    updateViewport();
+    mediaQuery.addEventListener('change', updateViewport);
+    return () => mediaQuery.removeEventListener('change', updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile && isOpen) onClose();
+  }, [isMobile, isOpen, onClose]);
+
+  useEffect(() => {
+    const savedView = typeof window === 'undefined'
+      ? null
+      : sessionStorage.getItem('uniher-view-mode');
+    setActiveView(resolveActiveView(realRole, canSwitchView, savedView));
   }, [realRole, canSwitchView]);
 
-  const role = activeView;
-  const navItems = NAV_ITEMS_BY_ROLE[role] || NAV_ITEMS_BY_ROLE.colaboradora;
-  const visibleNavItems = role === 'admin' ? navItems : navItems.filter(item => item.href !== '/admin');
-  const roleLabel = ROLE_LABELS[role] || 'Colaboradora';
+  const isMobileDialogOpen = isMobile && isOpen;
 
-  const handleSwitchView = (view: string) => {
-    setActiveView(view);
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('uniher-view-mode', view);
+  useLayoutEffect(() => {
+    if (!isMobileDialogOpen) return;
+
+    const focusFirstLinkIfOutsideDialog = () => {
+      const sidebar = sidebarRef.current;
+      if (!sidebar || sidebar.contains(document.activeElement)) return;
+
+      sidebar
+        .querySelector<HTMLAnchorElement>('nav a[href]')
+        ?.focus({ preventScroll: true });
+    };
+
+    focusFirstLinkIfOutsideDialog();
+    const focusTimeout = window.setTimeout(focusFirstLinkIfOutsideDialog, 0);
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(focusFirstLinkIfOutsideDialog);
+    });
+
+    return () => {
+      window.clearTimeout(focusTimeout);
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [isMobileDialogOpen]);
+
+  useEffect(() => {
+    if (!isMobileDialogOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !sidebarRef.current) return;
+
+      const focusableElements = Array.from(
+        sidebarRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter(element => element.getClientRects().length > 0);
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstFocusable = focusableElements[0];
+      const lastFocusable = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && (activeElement === firstFocusable || !sidebarRef.current.contains(activeElement))) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileDialogOpen, onClose]);
+
+  const role = activeView;
+  const navigationGroups = getNavigationForRole(role);
+  const roleLabel = ROLE_LABELS[role];
+
+  const handleSwitchView = async (view: UserRole, closeAfterNavigation: boolean) => {
+    if (view === activeView) {
+      if (closeAfterNavigation) onClose();
+      return;
     }
-    if (view === 'colaboradora') router.push('/colaboradora');
-    else if (view === 'admin') router.push('/admin');
-    else router.push('/dashboard');
-    onClose();
+    await clearProtectedReportCaches();
+    setActiveView(view);
+    sessionStorage.setItem('uniher-view-mode', view);
+    router.push(getRoleHome(view));
+    if (closeAfterNavigation) onClose();
   };
 
   const skipCompanyFetch = role === 'admin' || pathname === '/primeiro-acesso';
-  const { data: companyData } = useSWR<{ company: { name: string; trade_name: string | null; logo_url: string | null; primary_color: string | null } }>(
-    !skipCompanyFetch ? '/api/company' : null,
-    fetcher,
-    { revalidateOnFocus: false }
+  const companyCacheKey = !skipCompanyFetch && user?.companyId
+    ? ['/api/company', user.companyId, realRole] as const
+    : null;
+  const { data: companyData } = useSWR<{
+    company: {
+      name: string;
+      trade_name: string | null;
+      logo_url: string | null;
+      primary_color: string | null;
+    };
+  }>(
+    companyCacheKey,
+    scopedFetcher,
+    { revalidateOnFocus: false },
   );
   const company = companyData?.company;
 
-  const { data: notifData } = useSWR<{ unread: number }>(
-    pathname !== '/primeiro-acesso' ? '/api/notifications/count' : null,
-    fetcher,
-    { refreshInterval: 30000, dedupingInterval: 5000, revalidateOnFocus: true }
+  const notificationCacheKey = pathname !== '/primeiro-acesso' && user
+    ? ['/api/notifications/count', user.id, user.companyId ?? null, realRole] as const
+    : null;
+  const { data: notificationData } = useSWR<{ unread: number }>(
+    notificationCacheKey,
+    scopedFetcher,
+    { refreshInterval: 30000, dedupingInterval: 5000, revalidateOnFocus: true },
   );
-  const unreadCount = notifData?.unread ?? 0;
+  const unreadCount = notificationData?.unread ?? 0;
 
   const initials = user?.name
-    ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    ? user.name.split(' ').map(word => word[0]).join('').slice(0, 2).toUpperCase()
     : 'UN';
 
-  return (
+  const performLogout = async () => {
+    await logout();
+  };
+
+  const closeAfterMobileNavigation = () => {
+    if (isMobile) onClose();
+  };
+
+  const renderSidebarContent = (onNavigate: () => void, closeAfterSwitch: boolean) => (
     <>
-      <div
-        className={cn(
-          'fixed inset-0 bg-rose-700/20 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden',
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
-        onClick={onClose}
-      />
+      <div className={styles.brandBlock}>
+        <button
+          type="button"
+          className={styles.brandButton}
+          onClick={() => {
+            router.push('/');
+            onNavigate();
+          }}
+          aria-label="Ir para o início da UniHER"
+        >
+          <Image
+            src="/logo-uniher.png"
+            alt="UniHER"
+            width={140}
+            height={116}
+            className={styles.brandLogo}
+            priority
+          />
+        </button>
 
-      <aside
-        className={cn(
-          'fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-white border-r border-border-1 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
-        <div className="border-b border-border-1">
-          <div
-            className="h-16 flex items-center gap-3 px-6 cursor-pointer group hover:bg-cream-50/50 transition-colors"
-            onClick={() => router.push('/')}
-          >
-            <div className="relative flex-shrink-0 transform transition-transform group-hover:scale-105">
-              <Image src="/logo-uniher.png" alt="UniHER" width={140} height={56} className="object-contain" style={{ width: 140, height: 'auto' }} />
-            </div>
-          </div>
-
-          {company && (
-            <div className="flex items-center gap-2.5 px-6 py-2.5 bg-cream-50/80 border-t border-border-1">
-              <div
-                className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold flex-shrink-0 overflow-hidden"
-                style={company.primary_color
-                  ? { background: company.primary_color + '25', border: `1px solid ${company.primary_color}50`, color: company.primary_color }
-                  : { background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c' }
-                }
-              >
-                {company.logo_url
-                  ? <img src={company.logo_url} alt="" className="w-full h-full object-contain" />
-                  : (company.trade_name || company.name).slice(0, 2).toUpperCase()
-                }
-              </div>
-              <span className="text-[11px] font-semibold text-uni-text-600 truncate">{company.trade_name || company.name}</span>
-            </div>
-          )}
-        </div>
-
-        {canSwitchView && (
-          <div className="px-4 py-2 border-b border-border-1 bg-cream-50/50">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-uni-text-300 mb-1.5 px-1">Visualizar como</div>
-            <div className="flex gap-1">
-              <button
-                onClick={() => handleSwitchView(realRole)}
-                className={cn(
-                  'flex-1 text-xs py-1.5 px-2 rounded-lg font-semibold transition-all',
-                  activeView === realRole
-                    ? 'bg-gold-500 text-white shadow-sm'
-                    : 'bg-white text-uni-text-500 border border-border-1 hover:bg-cream-50'
-                )}
-              >
-                {ROLE_LABELS[realRole]}
-              </button>
-              <button
-                onClick={() => handleSwitchView('colaboradora')}
-                className={cn(
-                  'flex-1 text-xs py-1.5 px-2 rounded-lg font-semibold transition-all',
-                  activeView === 'colaboradora'
-                    ? 'bg-gold-500 text-white shadow-sm'
-                    : 'bg-white text-uni-text-500 border border-border-1 hover:bg-cream-50'
-                )}
-              >
-                Colaboradora
-              </button>
-            </div>
-          </div>
-        )}
-
-        <nav role="navigation" aria-label="Menu principal" className="flex-1 overflow-y-auto py-6 px-4 space-y-8 scrollbar-thin scrollbar-thumb-cream-200">
-          <div className="space-y-1">
-            <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">Principal</div>
-            {visibleNavItems.map(item => (
-              <SidebarNavItem
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                isActive={pathname === item.href}
-                onClick={onClose}
-              />
-            ))}
-          </div>
-
-          <div className="space-y-1">
-            <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-uni-text-300">Pessoal</div>
-            <SidebarNavItem
-              href="/notificacoes"
-              icon="notifications"
-              label="Notificacoes"
-              isActive={pathname === '/notificacoes'}
-              onClick={onClose}
+        {company ? (
+          <div className={styles.companyCard}>
+            <div
+              className={styles.companyMark}
+              style={company.primary_color
+                ? {
+                    background: `${company.primary_color}25`,
+                    borderColor: `${company.primary_color}80`,
+                    color: company.primary_color,
+                  }
+                : undefined}
             >
-              {unreadCount > 0 && (
-                <Badge variant="alert" size="sm" className="ml-auto w-5 h-5 p-0 flex items-center justify-center">{unreadCount}</Badge>
+              {company.logo_url ? (
+                <img src={company.logo_url} alt="" className={styles.companyLogo} />
+              ) : (
+                (company.trade_name || company.name).slice(0, 2).toUpperCase()
               )}
-            </SidebarNavItem>
-
-            {BOTTOM_ITEMS.map(item => (
-              <SidebarNavItem
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                isActive={pathname === item.href}
-                onClick={onClose}
-              />
-            ))}
-          </div>
-
-          <button
-            className="w-full group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold text-rose-700 hover:bg-rose-50 transition-all duration-200 text-left"
-            onClick={() => { logout(); window.location.href = '/auth'; }}
-          >
-            <NavIcon name="logout" />
-            Sair da Conta
-          </button>
-        </nav>
-
-        <div className="p-4 border-t border-border-1 bg-cream-50/50">
-          <div className="flex items-center gap-3 px-2 py-1">
-            <Avatar fallback={role === 'admin' ? '🔑' : initials} size="sm" className={role === 'admin' ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-rose-100 text-rose-700 border-rose-200'} />
-            <div className="flex flex-col min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 overflow-hidden">
-                <span className="text-xs font-bold text-uni-text-900 truncate uppercase tracking-wide">{user?.name || 'Usuario'}</span>
-                <Badge variant="secondary" size="sm" className="text-[9px] px-1 py-0">{roleLabel}</Badge>
-              </div>
-              <span className="text-[10px] text-uni-text-600 truncate">{role === 'admin' ? 'Sistema UniHER' : (user?.email || '')}</span>
             </div>
+            <span className={styles.companyName}>{company.trade_name || company.name}</span>
+          </div>
+        ) : null}
+      </div>
+
+      {canSwitchView ? (
+        <div className={styles.viewSwitcher}>
+          <span className={styles.viewLabel}>Visualizar como</span>
+          <div className={styles.viewOptions}>
             <button
-              onClick={() => { logout(); window.location.href = '/auth'; }}
-              className="flex-shrink-0 p-1.5 rounded-lg text-uni-text-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
-              aria-label="Sair da conta"
-              title="Sair"
+              type="button"
+              onClick={() => handleSwitchView(realRole, closeAfterSwitch)}
+              className={`${styles.viewButton} ${activeView === realRole ? styles.viewButtonActive : ''}`}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
+              {ROLE_LABELS[realRole]}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSwitchView('colaboradora', closeAfterSwitch)}
+              className={`${styles.viewButton} ${activeView === 'colaboradora' ? styles.viewButtonActive : ''}`}
+            >
+              Colaboradora
             </button>
           </div>
         </div>
+      ) : null}
+
+      <nav aria-label="Navegação principal" className={styles.navigation}>
+        <SidebarNavigationGroups
+          groups={navigationGroups}
+          pathname={pathname}
+          onNavigate={onNavigate}
+          idPrefix={`platform-navigation-${role}`}
+        />
+        <SidebarNavigationGroups
+          groups={PERSONAL_NAVIGATION_GROUPS}
+          pathname={pathname}
+          onNavigate={onNavigate}
+          idPrefix="platform-navigation-personal"
+          renderItemChildren={item => item.href === '/notificacoes' && unreadCount > 0 ? (
+            <Badge variant="alert" size="sm" className={styles.navBadge}>{unreadCount}</Badge>
+          ) : null}
+        />
+        <button type="button" className={styles.logoutNav} onClick={performLogout}>
+          <NavIcon name="logout" />
+          Sair da conta
+        </button>
+      </nav>
+
+      <div className={styles.footer}>
+        <div className={styles.userCard}>
+          <Avatar
+            fallback={role === 'admin' ? 'U' : initials}
+            size="sm"
+            className={styles.userAvatar}
+          />
+          <div className={styles.userDetails}>
+            <div className={styles.userMetaRow}>
+              <span className={styles.userName}>{user?.name || 'Usuário'}</span>
+              <Badge variant="secondary" size="sm" className={styles.roleBadge}>{roleLabel}</Badge>
+            </div>
+            <span className={styles.userEmail}>
+              {role === 'admin' ? 'Sistema UniHER' : (user?.email || '')}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={performLogout}
+            className={styles.footerLogout}
+            aria-label="Sair da conta"
+          >
+            <NavIcon name="logout" />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {isMobileDialogOpen ? (
+        <div className={styles.overlay} aria-hidden="true" onClick={onClose} />
+      ) : null}
+      <aside
+        ref={sidebarRef}
+        className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}
+        role={isMobileDialogOpen ? 'dialog' : undefined}
+        aria-modal={isMobileDialogOpen ? true : undefined}
+        aria-label={isMobileDialogOpen ? 'Navegação' : 'Navegação principal'}
+        aria-hidden={isMobile && !isOpen ? true : undefined}
+        inert={isMobile && !isOpen ? true : undefined}
+      >
+        <button
+          type="button"
+          className={styles.closeButton}
+          aria-label="Fechar navegação"
+          onClick={onClose}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+        {renderSidebarContent(closeAfterMobileNavigation, isMobile)}
       </aside>
     </>
   );
