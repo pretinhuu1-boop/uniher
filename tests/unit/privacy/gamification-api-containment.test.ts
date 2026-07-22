@@ -37,8 +37,6 @@ import * as objectives from '@/app/api/objectives/route';
 import * as objectiveClaim from '@/app/api/objectives/[id]/claim/route';
 import * as rhObjectives from '@/app/api/rh/objectives/route';
 import * as rhObjective from '@/app/api/rh/objectives/[id]/route';
-import * as collaboratorChallenges from '@/app/api/collaborator/challenges/route';
-import * as collaboratorChallenge from '@/app/api/collaborator/challenges/[id]/route';
 import * as rhChallenges from '@/app/api/rh/challenges/route';
 import * as rhChallenge from '@/app/api/rh/challenges/[id]/route';
 
@@ -63,8 +61,6 @@ const routes: Array<[string, Record<string, unknown>, string[]]> = [
   ['/api/objectives/:id/claim', objectiveClaim, ['POST']],
   ['/api/rh/objectives', rhObjectives, ['GET', 'POST']],
   ['/api/rh/objectives/:id', rhObjective, ['PATCH', 'DELETE']],
-  ['/api/collaborator/challenges', collaboratorChallenges, ['GET', 'POST', 'PATCH']],
-  ['/api/collaborator/challenges/:id', collaboratorChallenge, ['PATCH']],
   ['/api/rh/challenges', rhChallenges, ['GET', 'POST']],
   ['/api/rh/challenges/:id', rhChallenge, ['PATCH', 'DELETE']],
 ];

@@ -461,8 +461,6 @@ describe('legacy gamification write containment', () => {
       ['src/app/api/collaborator/activities/route.ts', 'POST'],
       ['src/app/api/gamification/rewards/redeem/route.ts', 'POST'],
       ['src/app/api/objectives/[id]/claim/route.ts', 'POST'],
-      ['src/app/api/collaborator/challenges/route.ts', 'POST'],
-      ['src/app/api/collaborator/challenges/[id]/route.ts', 'PATCH'],
     ];
 
     for (const [route, method] of unavailableRoutes) {

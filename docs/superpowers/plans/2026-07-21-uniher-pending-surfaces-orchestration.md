@@ -156,16 +156,18 @@ The database row must contain `id`, `event_key`, `mutation_id`, `company_id`, `u
 - Create: `docs/superpowers/plans/2026-07-21-uniher-personal-objectives.md`
 - Create: `src/lib/db/migrations/057_personal_objectives.sql`
 - Create: `src/types/objectives.ts`
-- Create: `src/repositories/personal-objective.repository.ts`
-- Create: `src/services/personal-objective.service.ts`
-- Replace: `src/app/api/objectives/route.ts`
-- Keep contained: `src/app/api/objectives/[id]/claim/route.ts`; create explicit progress/archive routes in the child plan rather than assigning new semantics to a legacy reward URL.
+- Create: `src/lib/objectives/catalog.ts`
+- Create: `src/lib/objectives/api.ts`
+- Create: `src/repositories/objectives.repository.ts`
+- Create: `src/services/personal-objectives.service.ts`
+- Keep contained: `src/app/api/objectives/route.ts` and `src/app/api/objectives/[id]/claim/route.ts`.
+- Create: `src/app/api/collaborator/objectives/route.ts`
+- Create: `src/app/api/collaborator/objectives/[id]/route.ts`
 - Replace: `src/app/(platform)/objetivos/page.tsx`
-- Create: `src/components/objectives/`
-- Test: `tests/unit/personal-objective-policy.test.ts`
+- Test: `tests/unit/personal-objectives.test.ts`
 - Test: `tests/e2e/personal-objectives.spec.ts`
 
-**Lifecycle:** `active -> completed | archived` and `archived -> active`. Restoring an archived objective resumes the same private instance; a completed objective cannot be reopened. There is no reward claim, XP, points, rank, streak, employer-assigned target, or health score.
+**Lifecycle:** `active -> completed | archived`. A completed objective cannot be reopened. V1 creates a new objective for a future restart instead of restoring archived rows. There is no reward claim, XP, points, rank, streak, employer-assigned target, or health score.
 
 **Gate:** self-only authorization, idempotent progress, clear loading/empty/error/completed states, private history, responsive screenshots, and no legacy objective table reads.
 
@@ -281,16 +283,16 @@ For visual routes, add focused Playwright coverage at `375x812`, `390x844`, `768
 | Wave | Start condition | Completion evidence | Status |
 |---|---|---|---|
 | 4 Community | Current branch green | Feed tests, screenshots, tenant/privacy review, scorecard | PASS / promovida em `d90147f` |
-| 5 Eligible ledger | Community repository contract stable or disjoint coordinator slot available | Eligibility tests, quarantine regression, spec/plan review | Queued |
-| 6 Objectives | Wave 5 promoted | Self-only objective tests and visual evidence | Waiting |
-| 7 Challenges | Wave 5 promoted | Catalog/tenant/aggregate tests and visual evidence | Waiting |
+| 5 Eligible ledger | Product/privacy decision packet approvals complete | Eligibility tests, quarantine regression, spec/plan review | PASS foundation |
+| 6 Objectives | Wave 5 promoted | Self-only objective tests and visual evidence | Ready |
+| 7 Challenges | Wave 5 promoted | Catalog/tenant/aggregate tests and visual evidence | Ready |
 | 8 Achievements | Waves 5-7 contracts stable | Ledger derivation and self-only tests | Waiting |
 | 9 Semaforo | Mandatory product/privacy decision approved | Negative-role, retention/deletion, visual evidence | Decision gate |
 | 10 Liga | Waves 5 and 8 promoted plus policy approval | Ranking/collective gate, tenant/opt-in tests, visual evidence | Blocked |
 
 ## 14. First execution slice
 
-Execute Wave 5 a partir do contrato de ledger elegivel, somente depois das decisoes de retencao, exclusao, DSAR e auditoria. Wave 4 nao deve ser reexecutada; mantenha apenas sua regressao. Nao abra codigo mutavel de Waves 6-10 antes do gate da dependencia imediatamente anterior.
+Execute Wave 5 a partir do contrato de ledger elegivel, somente depois das decisoes de retencao, exclusao, DSAR, auditoria, recibo count-only, owner operacional, reversao e tombstone. Wave 4 nao deve ser reexecutada; mantenha apenas sua regressao. Nao abra migration 056, servico, repositorio, API ou codigo mutavel de Waves 6-10 antes do gate da dependencia imediatamente anterior.
 
 ## Self-review
 

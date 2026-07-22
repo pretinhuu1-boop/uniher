@@ -126,6 +126,16 @@ function materializePage(rows: IterableIterator<DsarRow>): DsarRow[] {
   return Array.from(rows);
 }
 
+function tableExists(db: Database.Database, table: string): boolean {
+  const row = db.prepare(`
+    SELECT 1 AS exists_flag
+    FROM sqlite_master
+    WHERE type = 'table' AND name = ?
+    LIMIT 1
+  `).get(table) as { exists_flag: number } | undefined;
+  return row !== undefined;
+}
+
 function* streamPaginatedJsonArray<Cursor>(
   loadPage: (cursor: Cursor | null) => DsarRow[],
   readCursor: (row: DsarRow) => Cursor,
@@ -378,6 +388,179 @@ export function* createDsarExportJsonChunks(
     const params = cursor === null
       ? [userId, ...legacyTypes, DSAR_EXPORT_BATCH_SIZE]
       : [userId, ...legacyTypes, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getTimestampCursor);
+
+  yield '},"personalObjectives":';
+  if (!tableExists(db, 'personal_objectives')) {
+    yield '[]';
+  } else {
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, user_id, template_key, status, progress,
+                   created_at, updated_at, completed_at, archived_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(updated_at, '') AS __dsar_cursor_timestamp
+            FROM personal_objectives
+            WHERE user_id = ?
+            ORDER BY COALESCE(updated_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, user_id, template_key, status, progress,
+                   created_at, updated_at, completed_at, archived_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(updated_at, '') AS __dsar_cursor_timestamp
+            FROM personal_objectives
+            WHERE user_id = ?
+              AND (COALESCE(updated_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(updated_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+  }
+
+  yield ',"companyChallenges":';
+  if (!tableExists(db, 'user_company_challenges')) {
+    yield '[]';
+  } else {
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, user_id, catalog_key, status, progress,
+                   joined_at, updated_at, completed_at, left_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(updated_at, '') AS __dsar_cursor_timestamp
+            FROM user_company_challenges
+            WHERE user_id = ?
+            ORDER BY COALESCE(updated_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, user_id, catalog_key, status, progress,
+                   joined_at, updated_at, completed_at, left_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(updated_at, '') AS __dsar_cursor_timestamp
+            FROM user_company_challenges
+            WHERE user_id = ?
+              AND (COALESCE(updated_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(updated_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+  }
+
+  yield ',"privateAchievements":';
+  if (!tableExists(db, 'private_achievements')) {
+    yield '[]';
+  } else {
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, user_id, achievement_key, status, progress,
+                   earned_event_id, created_at, updated_at, earned_at, revoked_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(updated_at, '') AS __dsar_cursor_timestamp
+            FROM private_achievements
+            WHERE user_id = ?
+            ORDER BY COALESCE(updated_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, user_id, achievement_key, status, progress,
+                   earned_event_id, created_at, updated_at, earned_at, revoked_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(updated_at, '') AS __dsar_cursor_timestamp
+            FROM private_achievements
+            WHERE user_id = ?
+              AND (COALESCE(updated_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(updated_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+  }
+
+  const participationTablesExist = tableExists(db, 'eligible_participation_events')
+    && tableExists(db, 'eligible_participation_event_revocations');
+  if (!participationTablesExist) {
+    yield ',"eligibleParticipation":{"events":[],"revocations":[]}}';
+    return;
+  }
+
+  yield ',"eligibleParticipation":{"events":';
+  yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT id, event_key, mutation_id, company_id, user_id, event_type,
+                 source_domain, source_id, eligibility_version, metadata_json,
+                 occurred_at, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(occurred_at, '') AS __dsar_cursor_timestamp
+          FROM eligible_participation_events
+          WHERE user_id = ?
+          ORDER BY COALESCE(occurred_at, '') DESC, id DESC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT id, event_key, mutation_id, company_id, user_id, event_type,
+                 source_domain, source_id, eligibility_version, metadata_json,
+                 occurred_at, created_at,
+                 id AS __dsar_cursor_id,
+                 COALESCE(occurred_at, '') AS __dsar_cursor_timestamp
+          FROM eligible_participation_events
+          WHERE user_id = ?
+            AND (COALESCE(occurred_at, ''), id) < (?, ?)
+          ORDER BY COALESCE(occurred_at, '') DESC, id DESC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+    return materializePage(statement.iterate(...params));
+  }, getTimestampCursor);
+
+  yield ',"revocations":';
+  yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+    const statement = cursor === null
+      ? db.prepare<unknown[], DsarRow>(`
+          SELECT r.id, r.event_id, r.company_id, r.reason_code, r.actor_id,
+                 r.version, r.revoked_at,
+                 r.id AS __dsar_cursor_id,
+                 COALESCE(r.revoked_at, '') AS __dsar_cursor_timestamp
+          FROM eligible_participation_event_revocations r
+          JOIN eligible_participation_events e ON e.id = r.event_id
+          WHERE e.user_id = ?
+          ORDER BY COALESCE(r.revoked_at, '') DESC, r.id DESC
+          LIMIT ?
+        `)
+      : db.prepare<unknown[], DsarRow>(`
+          SELECT r.id, r.event_id, r.company_id, r.reason_code, r.actor_id,
+                 r.version, r.revoked_at,
+                 r.id AS __dsar_cursor_id,
+                 COALESCE(r.revoked_at, '') AS __dsar_cursor_timestamp
+          FROM eligible_participation_event_revocations r
+          JOIN eligible_participation_events e ON e.id = r.event_id
+          WHERE e.user_id = ?
+            AND (COALESCE(r.revoked_at, ''), r.id) < (?, ?)
+          ORDER BY COALESCE(r.revoked_at, '') DESC, r.id DESC
+          LIMIT ?
+        `);
+    const params = cursor === null
+      ? [userId, DSAR_EXPORT_BATCH_SIZE]
+      : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
     return materializePage(statement.iterate(...params));
   }, getTimestampCursor);
   yield '}}';

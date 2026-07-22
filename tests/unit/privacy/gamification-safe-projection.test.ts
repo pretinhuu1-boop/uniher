@@ -678,10 +678,7 @@ describe('safe authenticated projections', () => {
 
   it('removes numeric gamification promises and totals from platform source', () => {
     const neutralDeepLinks = [
-      'src/app/(platform)/conquistas/page.tsx',
-      'src/app/(platform)/desafios/page.tsx',
       'src/app/(platform)/desafios/gerenciar/page.tsx',
-      'src/app/(platform)/objetivos/page.tsx',
       'src/app/(platform)/gamificacao-config/page.tsx',
       'src/app/(platform)/liga/page.tsx',
       'src/app/(platform)/liga/gerenciar/page.tsx',
@@ -691,6 +688,14 @@ describe('safe authenticated projections', () => {
       expect(source, page).toContain('FeedbackState');
       expect(source, page).toContain('LEGACY_GAMIFICATION_STATE.message');
     }
+
+    const approvedParticipationPages = [
+      'src/app/(platform)/conquistas/page.tsx',
+      'src/app/(platform)/desafios/page.tsx',
+      'src/app/(platform)/objetivos/page.tsx',
+    ].map(read).join('\n');
+    expect(approvedParticipationPages).not.toMatch(/week_points|points_spent|xp_reward|pontos totais|subir de nÃ­vel|ranking semanal|exibir no ranking/i);
+    expect(approvedParticipationPages).not.toMatch(/user_badges|user_leagues|custom_league_members|health_scores/);
 
     const reachablePages = [
       'src/app/(platform)/colaboradora/page.tsx',

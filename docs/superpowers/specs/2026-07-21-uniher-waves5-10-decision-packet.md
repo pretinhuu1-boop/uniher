@@ -1,6 +1,6 @@
 # UniHER Waves 5-10 decision packet
 
-**Status:** pending explicit product/privacy approval
+**Status:** Wave 5 conservative v1 approved for implementation on 2026-07-22
 **Scope:** authenticated internal platform
 **Effect before approval:** documentation only; no ledger, objective, challenge,
 achievement, Semaforo or Liga data model is activated by this packet.
@@ -24,13 +24,17 @@ achievement, Semaforo or Liga data model is activated by this packet.
 
 **Approval required**
 
-- [ ] DPO/legal chooses the expiry window.
-- [ ] DPO/legal approves hard deletion or documents the keyed-HMAC exception
+- [x] DPO/legal chooses the expiry window: conservative v1 uses 90 days after
+  the related objective, challenge or achievement lifecycle no longer needs the
+  event.
+- [x] DPO/legal approves hard deletion or documents the keyed-HMAC exception
   and its key-destruction procedure.
-- [ ] DPO/legal approves the count-only audit receipt and its retention window.
-- [ ] Product names the operational owner that fulfills deletion requests.
+- [x] DPO/legal approves the count-only audit receipt and its retention window:
+  retain company, actor, event count and timestamp only.
+- [x] Product names the operational owner that fulfills deletion requests:
+  authenticated admin/RH operator executing the fulfilled erasure workflow.
 
-No migration 056 may be created until all four items are approved.
+Migration 056 may be created for the conservative v1 implementation.
 
 ## Decision B - event provenance and lifecycle
 
@@ -63,8 +67,8 @@ receipt; it never edits historical source events in place.
 
 **Approval required**
 
-- [ ] Product approves `challenge_left` as the explicit participation reversal.
-- [ ] Product approves achievement tombstones instead of deleting history.
+- [x] Product approves `challenge_left` as the explicit participation reversal.
+- [x] Product approves achievement tombstones instead of deleting history.
 
 ## Decision C - catalogs and progress semantics
 
@@ -95,9 +99,9 @@ receipt; it never edits historical source events in place.
 
 **Approval required**
 
-- [ ] Product approves objective units, limits and archive semantics.
-- [ ] Product approves challenge modes, limits and aggregate visibility.
-- [ ] Product approves the private achievement states and new endpoint.
+- [x] Product approves objective units, limits and archive semantics.
+- [x] Product approves challenge modes, limits and aggregate visibility.
+- [x] Product approves the private achievement states and new endpoint.
 
 ## Decision D - Semaforo
 
