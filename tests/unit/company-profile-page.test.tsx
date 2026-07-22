@@ -4,6 +4,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import CompanyProfilePage from '@/app/(platform)/company-profile/page';
+import { AuthContext } from '@/hooks/useAuth';
+import type { MockUser } from '@/types/platform';
 
 const company = {
   id: 'company-a',
@@ -38,6 +40,35 @@ function deferredResponse() {
   return { promise, resolve: (response: Response) => resolve?.(response) };
 }
 
+const rhUser: MockUser = {
+  id: 'user-rh',
+  name: 'RH Teste',
+  email: 'rh@example.test',
+  role: 'rh',
+  companyId: 'company-a',
+  joinedAt: '2025-01-01T00:00:00.000Z',
+};
+
+function renderWithAuth(user: MockUser | null = rhUser) {
+  return render(
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: Boolean(user),
+        isLoading: false,
+        approved: true,
+        login: vi.fn(),
+        register: vi.fn(),
+        selectRole: vi.fn(),
+        logout: vi.fn(),
+        refreshUser: vi.fn(),
+      }}
+    >
+      <CompanyProfilePage />
+    </AuthContext.Provider>
+  );
+}
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -58,7 +89,7 @@ describe('company profile editing', () => {
     });
     vi.stubGlobal('fetch', fetcher);
 
-    render(<CompanyProfilePage />);
+    renderWithAuth();
     fireEvent.click(await screen.findByRole('button', { name: 'Editar Dados' }));
 
     const save = screen.getByRole('button', { name: 'Salvar' });
@@ -87,7 +118,7 @@ describe('company profile editing', () => {
   it('exposes switch semantics, state, visible focus, and a 44px touch target', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ company })));
 
-    render(<CompanyProfilePage />);
+    renderWithAuth();
     const switchControl = await screen.findByRole('switch', { name: 'Feed da comunidade da empresa' });
 
     expect(switchControl.getAttribute('aria-checked')).toBe('false');
@@ -99,5 +130,23 @@ describe('company profile editing', () => {
     fireEvent.click(switchControl);
 
     expect(switchControl.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('does not fetch company data for a master admin without a company', async () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal('fetch', fetcher);
+
+    renderWithAuth({
+      id: 'user-admin',
+      name: 'Admin UniHER',
+      email: 'admin@uniher.com.br',
+      role: 'admin',
+      companyId: undefined,
+      isMasterAdmin: true,
+      joinedAt: '2025-01-01T00:00:00.000Z',
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Perfil por empresa' })).toBeTruthy();
+    expect(fetcher).not.toHaveBeenCalledWith('/api/company');
   });
 });
