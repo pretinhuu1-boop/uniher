@@ -12,7 +12,7 @@ Inventory refreshed on 2026-07-23 from `C:/Users/user/Documents/uniher-app-audit
 
 | Lane | Worktree | Branch | Dirty State |
 |---|---|---|---|
-| L1 Root docs cleanup | `C:/Users/user/Documents/uniher-app-audit` | `codex/security-lessons-review` | untracked `.superpowers/**`, untracked docs/specs/plans/audits; branch ahead 3 |
+| L1 Root docs cleanup | `C:/Users/user/Documents/uniher-app-audit` | `codex/security-lessons-review` | docs package committed locally as `766648c`; `.superpowers/**` artifacts on HOLD |
 | L2 Deploy package fix | `.worktrees/uniher-deploy-package-fix` | `codex/uniher-deploy-package-fix` | committed locally as `dc44ad8` |
 | L3 DSAR test hardening | `.worktrees/uniher-platform-wave1` | `codex/uniher-platform-wave1` | committed locally as `bb7f8f7` |
 | L4 Wave 2B education repair | `.worktrees/uniher-wave2b-education` | `codex/uniher-wave2b-education` | committed locally as `28404c3` |
@@ -22,7 +22,7 @@ Inventory refreshed on 2026-07-23 from `C:/Users/user/Documents/uniher-app-audit
 
 | Lane | Worktree | Decision | Evidence |
 |---|---|---|---|
-| L1 Root docs cleanup | `C:/Users/user/Documents/uniher-app-audit` | PASS-DOCS-ONLY + HOLD | Markdown docs package staged for root commit; `.superpowers/**` brainstorm runtime artifacts preserved unstaged |
+| L1 Root docs cleanup | `C:/Users/user/Documents/uniher-app-audit` | PASS-DOCS-ONLY + HOLD | `766648c docs: audit and plan UniHER worktree closure`; `.superpowers/**` brainstorm runtime artifacts preserved unstaged |
 | L2 Deploy package fix | `.worktrees/uniher-deploy-package-fix` | PASS-COMMITTED | `dc44ad8 fix: remove redundant bcryptjs types package`; `tsc` PASS; `next build` PASS with known Turbopack/NFT warning |
 | L3 DSAR test hardening | `.worktrees/uniher-platform-wave1` | PASS-COMMITTED | `bb7f8f7 test: harden DSAR export streaming resilience`; focused DSAR PASS 1 file / 8 tests; privacy suite PASS 16 files / 171 tests; `tsc` PASS |
 | L4 Wave 2B education repair | `.worktrees/uniher-wave2b-education` | PASS-COMMITTED | `28404c3 fix: contain Wave 2B education boundaries`; education/security boundary PASS 2 files / 22 tests; `tsc` PASS |
@@ -35,7 +35,7 @@ Inventory refreshed on 2026-07-23 from `C:/Users/user/Documents/uniher-app-audit
 - Status: PASS-DOCS-ONLY + HOLD
 - Allowlist: Markdown docs/specs/plans/audits needed for the UniHER redesign and worktree closure record.
 - Denylist: `.superpowers/**/state/*.pid`, `.superpowers/**/state/*.log`, `.superpowers/**/state/*.err`, broad staging.
-- Evidence: root docs package contains the source audit, closure plan, closure scorecard and pre-existing UniHER redesign plans/specs. `.superpowers/**` content/state artifacts remain untracked because they include preview HTML, logs, PID/state files and stopped-server receipts that require an explicit archival/discard decision.
+- Evidence: root docs package was committed locally as `766648c docs: audit and plan UniHER worktree closure` and contains the source audit, closure plan, closure scorecard and pre-existing UniHER redesign plans/specs. `.superpowers/**` content/state artifacts remain untracked because they include preview HTML, logs, PID/state files and stopped-server receipts that require an explicit archival/discard decision.
 
 ### L2 Deploy Package Fix
 
