@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollaboratorSaved } from '@/hooks/useCollaborator';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import type { CollaboratorSavedSessionKey } from '@/hooks/useCollaborator';
 import type { CommunityFeedItem, CommunityTopic } from '@/types/community';
 import styles from './config.module.css';
@@ -468,7 +469,7 @@ export default function ConfiguracoesPage() {
           setNickname(user.nickname || '');
           setEmailVal(user.email || '');
           setDeptName(user.department_name || '');
-          setCargo(user.role === 'rh' ? 'Admin Empresa' : user.role === 'lideranca' ? 'Liderança' : 'Colaboradora');
+          setCargo(getUserRoleLabel(user.role));
           setEmergencyName(user.emergency_contact_name || '');
           setEmergencyPhone(user.emergency_contact_phone || '');
         }

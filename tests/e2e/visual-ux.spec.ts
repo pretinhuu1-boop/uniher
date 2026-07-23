@@ -369,7 +369,7 @@ test.describe('Mobile — Visual UX', () => {
     await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
     const navigation = page.getByRole('dialog', { name: 'Navegação', exact: true });
     await expect(navigation).toBeVisible();
-    await expect(navigation.getByRole('link', { name: 'Início', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(navigation.getByRole('link', { name: 'Dashboard', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 
   test('Buttons stack correctly on mobile', async ({ page }) => {

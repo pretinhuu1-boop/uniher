@@ -1,4 +1,10 @@
 import type { UserRole } from '@/types/platform';
+import {
+  COMPANY_MODULE_DEFINITIONS,
+  type CompanyModuleRecord,
+  type CompanyModuleSlug,
+  type CompanyModuleState,
+} from '@/types/modules';
 
 export const USER_ROLES = ['admin', 'rh', 'lideranca', 'colaboradora'] as const satisfies readonly UserRole[];
 
@@ -30,6 +36,9 @@ export interface NavigationItem {
   readonly label: string;
   readonly icon: NavigationIcon;
   readonly description: string;
+  readonly moduleSlug?: CompanyModuleSlug;
+  readonly moduleState?: CompanyModuleState;
+  readonly badgeLabel?: string;
 }
 
 export interface NavigationGroup {
@@ -40,55 +49,132 @@ export interface NavigationGroup {
 const NAVIGATION = {
   admin: [
     {
-      label: 'Operação',
+      label: 'Dashboard geral',
       items: [
         {
           href: '/admin',
-          label: 'Visão geral',
+          label: 'Dashboard geral',
           icon: 'companies',
-          description: 'Exceções, empresas e integridade da plataforma',
+          description: 'Empresas, usuarios e integridade operacional da plataforma',
         },
+      ],
+    },
+    {
+      label: 'Empresas',
+      items: [
+        {
+          href: '/admin?tab=empresas',
+          label: 'Empresas',
+          icon: 'companies',
+          description: 'Lista, ambientes, usuarios, permissoes e configuracoes de empresas',
+        },
+      ],
+    },
+    {
+      label: 'Saude Primaria',
+      items: [
+        {
+          href: '/saude-primaria',
+          label: 'Saude Primaria',
+          icon: 'semaforo',
+          description: 'Visao agregada futura do Semaforo, bloqueada por governanca clinica',
+        },
+        {
+          href: '/concierge',
+          label: 'Concierge',
+          icon: 'profile',
+          description: 'Gestao de casos somente quando o modulo e contrato estiverem aprovados',
+        },
+        {
+          href: '/historico',
+          label: 'Dashboard de exames',
+          icon: 'historico',
+          description: 'Base existente para relatorios e acompanhamento de exames',
+        },
+      ],
+    },
+    {
+      label: 'Educacao',
+      items: [
         {
           href: '/comunidade/gerenciar',
-          label: 'Gerenciar comunidade',
+          label: 'Educacao',
           icon: 'community',
-          description: 'Conteúdos editoriais das comunidades das empresas',
+          description: 'Conteudos editoriais e campanhas educativas das empresas',
         },
+      ],
+    },
+    {
+      label: 'Gamificacao',
+      items: [
+        {
+          href: '/gamificacao-config',
+          label: 'Gamificacao',
+          icon: 'config',
+          description: 'Governanca de desafios, recompensas e rankings aprovados',
+        },
+      ],
+    },
+    {
+      label: 'Produtos e Modulos',
+      items: [
+        {
+          href: '/produtos-modulos',
+          label: 'Produtos e Modulos',
+          icon: 'config',
+          description: 'Controle administrativo em preparacao para modulos contratados',
+        },
+      ],
+    },
+    {
+      label: 'Relatorios',
+      items: [
         {
           href: '/analytics-emails',
-          label: 'Analytics global',
+          label: 'Relatorios',
           icon: 'analytics',
-          description: 'Comunicação e atividade agregada',
+          description: 'Comunicacao e atividade agregada da plataforma',
+        },
+      ],
+    },
+    {
+      label: 'Sistema',
+      items: [
+        {
+          href: '/admin?tab=sistema',
+          label: 'Sistema',
+          icon: 'config',
+          description: 'Administradores UniHER, permissoes e configuracoes globais no painel master',
         },
       ],
     },
   ],
   rh: [
     {
-      label: 'Visão geral',
+      label: 'Dashboard',
       items: [
         {
           href: '/dashboard',
-          label: 'Início',
+          label: 'Dashboard',
           icon: 'dashboard',
-          description: 'Atenção, ações e impacto',
+          description: 'Visao geral, atencao, acoes e impacto da empresa',
         },
       ],
     },
     {
-      label: 'Pessoas e cuidado',
+      label: 'Pessoas',
       items: [
         {
           href: '/colaboradoras-gestao',
           label: 'Colaboradoras',
           icon: 'colaboradoras',
-          description: 'Aprovações, perfis e status',
+          description: 'Aprovacoes, perfis e status',
         },
         {
           href: '/departamentos',
           label: 'Departamentos',
           icon: 'departamentos',
-          description: 'Estrutura e participação por setor',
+          description: 'Estrutura e participacao por setor',
         },
         {
           href: '/convites',
@@ -99,40 +185,51 @@ const NAVIGATION = {
       ],
     },
     {
-      label: 'Engajamento',
+      label: 'Educacao',
       items: [
         {
           href: '/campanhas',
-          label: 'Campanhas',
+          label: 'Campanhas e trilhas',
           icon: 'campanhas',
-          description: 'Planejar e acompanhar campanhas',
+          description: 'Planejar campanhas, trilhas e conteudos educativos',
         },
         {
           href: '/comunidade/gerenciar',
-          label: 'Gerenciar comunidade',
+          label: 'Conteudos educativos',
           icon: 'community',
-          description: 'Publicar e organizar conteúdos da comunidade',
-        },
-        {
-          href: '/desafios/gerenciar',
-          label: 'Desafios',
-          icon: 'desafios',
-          description: 'Configuração de desafios',
+          description: 'Publicar e organizar conteudos da comunidade',
         },
       ],
     },
     {
-      label: 'Gestão',
+      label: 'Conquistas',
+      items: [
+        {
+          href: '/desafios/gerenciar',
+          label: 'Desafios',
+          icon: 'desafios',
+          description: 'Configurar desafios aprovados para a empresa',
+        },
+        {
+          href: '/gamificacao-config',
+          label: 'Configuracao de conquistas',
+          icon: 'config',
+          description: 'Governar objetivos, desafios e gamificacao aprovada',
+        },
+      ],
+    },
+    {
+      label: 'Gestao',
       items: [
         {
           href: '/historico',
-          label: 'Histórico',
+          label: 'Historico',
           icon: 'historico',
-          description: 'Relatórios e evolução',
+          description: 'Relatorios e evolucao',
         },
         {
           href: '/analytics-emails',
-          label: 'Comunicação',
+          label: 'Comunicacao',
           icon: 'analytics',
           description: 'Entrega e leitura de mensagens',
         },
@@ -142,78 +239,87 @@ const NAVIGATION = {
           icon: 'profile',
           description: 'Dados e identidade corporativa',
         },
-        {
-          href: '/gamificacao-config',
-          label: 'Gamificação',
-          icon: 'config',
-          description: 'Configuração em revisão de privacidade',
-        },
       ],
     },
   ],
   lideranca: [
     {
-      label: 'Equipe',
+      label: 'Dashboard',
       items: [
         {
           href: '/dashboard',
-          label: 'Início',
+          label: 'Dashboard da equipe',
           icon: 'dashboard',
           description: 'Resumo da equipe',
         },
+      ],
+    },
+    {
+      label: 'Educacao',
+      items: [
         {
           href: '/campanhas',
-          label: 'Campanhas',
+          label: 'Campanhas e trilhas',
           icon: 'campanhas',
-          description: 'Campanhas disponíveis',
+          description: 'Campanhas e conteudos disponiveis',
         },
       ],
     },
   ],
   colaboradora: [
     {
-      label: 'Minha jornada',
+      label: 'Meu bem-estar',
       items: [
         {
           href: '/colaboradora',
           label: 'Hoje',
           icon: 'dashboard',
-          description: 'Seu foco e suas próximas ações',
+          description: 'Check-in, foco do dia e proximas acoes',
+        },
+        {
+          href: '/agenda',
+          label: 'Minha agenda de exames',
+          icon: 'agenda',
+          description: 'Exames, consultas, lembretes e historico',
+        },
+      ],
+    },
+    {
+      label: 'Saude Primaria',
+      items: [
+        {
+          href: '/semaforo',
+          label: 'Meu semaforo',
+          icon: 'semaforo',
+          description: 'Leitura individual de cuidado em superficie contida',
+        },
+      ],
+    },
+    {
+      label: 'Educacao',
+      items: [
+        {
+          href: '/campanhas',
+          label: 'Campanhas e trilhas',
+          icon: 'campanhas',
+          description: 'Conteudos, trilhas e acoes educativas disponiveis',
         },
         {
           href: '/comunidade',
           label: 'Comunidade',
           icon: 'community',
-          description: 'Conteúdos editoriais da sua empresa',
-        },
-        {
-          href: '/semaforo',
-          label: 'Meu semáforo',
-          icon: 'semaforo',
-          description: 'Sua leitura de cuidado',
-        },
-        {
-          href: '/agenda',
-          label: 'Minha agenda',
-          icon: 'agenda',
-          description: 'Exames, consultas e lembretes',
+          description: 'Conteudos editoriais da sua empresa',
         },
       ],
     },
     {
-      label: 'Evolução',
+      label: 'Conquistas',
       items: [
-        {
-          href: '/campanhas',
-          label: 'Campanhas',
-          icon: 'campanhas',
-          description: 'Conteúdos e ações disponíveis',
-        },
         {
           href: '/objetivos',
           label: 'Objetivos',
           icon: 'objetivos',
-          description: 'Metas de bem-estar',
+          description: 'Metas pessoais de bem-estar',
         },
         {
           href: '/desafios',
@@ -231,6 +337,96 @@ const NAVIGATION = {
     },
   ],
 } as const satisfies Readonly<Record<UserRole, readonly NavigationGroup[]>>;
+
+type NavigationModuleRow = Pick<CompanyModuleRecord, 'module_slug' | 'module_state' | 'visible'>;
+
+const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
+  href: string;
+  icon: NavigationIcon;
+  description: string;
+}>> = {
+  primary_health: {
+    href: '/saude-primaria',
+    icon: 'semaforo',
+    description: 'Modulo contratado de cuidado primario, visivel conforme governanca',
+  },
+  concierge: {
+    href: '/concierge',
+    icon: 'profile',
+    description: 'Acompanhamento de casos somente para empresas com Concierge contratado',
+  },
+  education: {
+    href: '/campanhas',
+    icon: 'campanhas',
+    description: 'Campanhas, trilhas, videos e conteudos educativos',
+  },
+  achievements: {
+    href: '/conquistas',
+    icon: 'conquistas',
+    description: 'Objetivos, desafios, conquistas e gamificacao aprovada',
+  },
+  nr1: {
+    href: '/avaliacao-nr1',
+    icon: 'historico',
+    description: 'Avaliacao psicossocial NR-1 sob contrato e gates Yavix',
+  },
+  sipat: {
+    href: '/viva-sipat',
+    icon: 'campanhas',
+    description: 'Campanhas, materiais e acoes SIPAT quando o conteudo fonte for aprovado',
+  },
+  human_development: {
+    href: '/desenvolvimento-humano',
+    icon: 'objetivos',
+    description: 'Conteudos de desenvolvimento humano contratados pela empresa',
+  },
+  denunciation: {
+    href: '/canal-denuncias',
+    icon: 'config',
+    description: 'Canal parceiro para denuncias, governado por contrato especifico',
+  },
+};
+
+const MODULE_STATE_BADGES: Readonly<Record<Exclude<CompanyModuleState, 'enabled'>, string>> = {
+  locked: 'Bloqueado',
+  coming_soon: 'Em breve',
+  partner_managed: 'Parceiro',
+  requires_contract: 'Contrato',
+};
+
+function getModuleBadgeLabel(moduleState: CompanyModuleState): string | undefined {
+  return moduleState === 'enabled' ? undefined : MODULE_STATE_BADGES[moduleState];
+}
+
+function getExistingRoutes(groups: readonly NavigationGroup[]): Set<string> {
+  return new Set(groups.flatMap((group) => group.items.map((item) => item.href)));
+}
+
+function getModuleNavigationItems(
+  role: UserRole,
+  companyModules: readonly NavigationModuleRow[],
+  existingRoutes: ReadonlySet<string>,
+): NavigationItem[] {
+  return companyModules.flatMap((module) => {
+    if (module.visible !== 1) return [];
+
+    const definition = COMPANY_MODULE_DEFINITIONS.find((item) => item.slug === module.module_slug);
+    if (!definition || !definition.visibleForRoles.includes(role)) return [];
+
+    const navigation = MODULE_NAVIGATION[module.module_slug];
+    if (existingRoutes.has(navigation.href)) return [];
+
+    return [{
+      href: navigation.href,
+      label: definition.label,
+      icon: navigation.icon,
+      description: navigation.description,
+      moduleSlug: module.module_slug,
+      moduleState: module.module_state,
+      badgeLabel: getModuleBadgeLabel(module.module_state),
+    }];
+  });
+}
 
 export function isUserRole(value: unknown): value is UserRole {
   return typeof value === 'string' && USER_ROLES.some((role) => role === value);
@@ -252,6 +448,29 @@ export function getNavigationForRole(role: UserRole): readonly NavigationGroup[]
   return NAVIGATION[normalizeUserRole(role)];
 }
 
+export function getModuleAwareNavigationForRole(
+  role: UserRole,
+  companyModules: readonly NavigationModuleRow[],
+): readonly NavigationGroup[] {
+  const normalizedRole = normalizeUserRole(role);
+  const baseGroups = NAVIGATION[normalizedRole];
+  const moduleItems = getModuleNavigationItems(
+    normalizedRole,
+    companyModules,
+    getExistingRoutes(baseGroups),
+  );
+
+  if (moduleItems.length === 0) return baseGroups;
+
+  return [
+    ...baseGroups,
+    {
+      label: 'Modulos',
+      items: moduleItems,
+    },
+  ];
+}
+
 export function getRoleHome(role: UserRole): string {
   const normalizedRole = normalizeUserRole(role);
 
@@ -260,6 +479,24 @@ export function getRoleHome(role: UserRole): string {
   return '/dashboard';
 }
 
-export function isNavigationItemActive(pathname: string, href: string): boolean {
-  return pathname === href || (href !== '/' && pathname.startsWith(`${href}/`));
+const QUERY_DISTINCT_PATHS = new Set(['/admin']);
+
+function splitLocation(value: string): { path: string; query: string } {
+  const [path, query = ''] = value.split('?');
+  return { path, query };
+}
+
+export function isNavigationItemActive(currentLocation: string, href: string): boolean {
+  const current = splitLocation(currentLocation);
+  const target = splitLocation(href);
+
+  if (target.query) {
+    return current.path === target.path && current.query === target.query;
+  }
+
+  if (current.query && current.path === target.path && QUERY_DISTINCT_PATHS.has(target.path)) {
+    return false;
+  }
+
+  return current.path === target.path || (target.path !== '/' && current.path.startsWith(`${target.path}/`));
 }

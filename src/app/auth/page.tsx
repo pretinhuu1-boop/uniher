@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FormEvent, Suspense } from 'react';
+import { useState, useEffect, useCallback, type FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
@@ -21,6 +21,21 @@ function getSafeRedirect(redirect: string | null): string | null {
   return redirect;
 }
 
+type AuthRedirectUser = {
+  role?: string;
+  mustChangePassword?: boolean;
+  firstAccessTourCompleted?: boolean;
+};
+
+function getAuthRedirectTarget(user: AuthRedirectUser, redirectParam: string | null): string {
+  if (user.mustChangePassword === true || user.firstAccessTourCompleted === false) {
+    return '/primeiro-acesso';
+  }
+  if (user.role === 'admin') return '/admin';
+  if (user.role === 'colaboradora') return getSafeRedirect(redirectParam) || '/colaboradora';
+  return getSafeRedirect(redirectParam) || (user.role === 'rh' || user.role === 'lideranca' ? '/dashboard' : '/colaboradora');
+}
+
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,22 +49,39 @@ function AuthContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const navigateAfterAuth = useCallback((target: string) => {
+    router.replace(target);
+    window.setTimeout(() => {
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current !== target) window.location.assign(target);
+    }, 250);
+  }, [router]);
+
   // Se já autenticado, redirecionar
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.mustChangePassword === true || user.firstAccessTourCompleted === false) {
-        router.push('/primeiro-acesso');
-      } else if (user.role === 'admin') {
-        router.push('/admin');
-      } else if (user.role === 'colaboradora') {
-        const redirect = getSafeRedirect(searchParams.get('redirect'));
-        router.push(redirect || '/colaboradora');
-      } else {
-        const redirect = getSafeRedirect(searchParams.get('redirect'));
-        router.push(redirect || '/dashboard');
-      }
+      navigateAfterAuth(getAuthRedirectTarget(user, searchParams.get('redirect')));
     }
-  }, [isAuthenticated, user, router, searchParams]);
+  }, [isAuthenticated, user, navigateAfterAuth, searchParams]);
+
+  useEffect(() => {
+    const redirect = getSafeRedirect(searchParams.get('redirect'));
+    if (!redirect || isAuthenticated || user) return;
+
+    let cancelled = false;
+    fetch('/api/auth/me')
+      .then(async response => (response.ok ? response.json() : null))
+      .then(data => {
+        if (!cancelled && data?.user) {
+          navigateAfterAuth(getAuthRedirectTarget(data.user, searchParams.get('redirect')));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, navigateAfterAuth, searchParams, user]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,18 +98,7 @@ function AuthContent() {
 
       setToast({ message: 'Bem-vinda de volta!', type: 'success' });
 
-      // Admin always goes to /admin, ignoring redirect param
-      let target: string;
-      if (loggedUser.mustChangePassword === true || loggedUser.firstAccessTourCompleted === false) {
-        target = '/primeiro-acesso';
-      } else if (loggedUser.role === 'admin') {
-        target = '/admin';
-      } else {
-        target =
-          getSafeRedirect(searchParams.get('redirect')) ||
-          (loggedUser.role === 'rh' || loggedUser.role === 'lideranca' ? '/dashboard' : '/colaboradora');
-      }
-      router.push(target);
+      navigateAfterAuth(getAuthRedirectTarget(loggedUser, searchParams.get('redirect')));
     } catch {
       setError('Erro de conexão. Tente novamente.');
     } finally {

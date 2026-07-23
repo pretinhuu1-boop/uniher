@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import type { UserRole } from '@/types/platform';
 
 type Step = 'password' | 'tour' | 'welcome';
@@ -135,19 +136,6 @@ const TOUR_BY_ROLE: Record<UserRole, TourSlide[]> = {
     },
   ],
 };
-
-function getRoleLabel(role?: UserRole) {
-  switch (role) {
-    case 'admin':
-      return 'Admin Master';
-    case 'rh':
-      return 'Admin Empresa';
-    case 'lideranca':
-      return 'Lideranca';
-    default:
-      return 'Colaboradora';
-  }
-}
 
 function getLandingPath(role?: UserRole) {
   if (role === 'admin') return '/admin';
@@ -327,7 +315,7 @@ export default function PrimeiroAcessoPage() {
   }
 
   const companyName = (user as { companyName?: string } | null)?.companyName || '';
-  const roleLabel = getRoleLabel(activeRole);
+  const roleLabel = getUserRoleLabel(activeRole);
   const progressPercent = Math.round(((tourIndex + 1) / tourSlides.length) * 100);
   const wideLayout = step === 'tour';
 

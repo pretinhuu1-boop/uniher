@@ -206,7 +206,7 @@ test.describe('UniHER platform foundation', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/admin');
 
-    const overview = page.getByRole('link', { name: 'Visão geral' });
+    const overview = page.getByRole('link', { name: 'Dashboard geral' });
     await expect(overview).toHaveAttribute('aria-current', 'page');
     await expect(overview).toHaveCSS('background-color', 'rgb(255, 247, 236)');
     await expect(overview).toHaveCSS('color', 'rgb(32, 24, 18)');

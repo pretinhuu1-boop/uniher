@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { useAuth } from '@/hooks/useAuth';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import { cn } from '@/lib/utils';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -74,10 +75,10 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  rh: 'Admin Empresa',
-  lideranca: 'Liderança',
-  colaboradora: 'Colaboradora',
-  admin: 'Admin Master',
+  rh: getUserRoleLabel('rh'),
+  lideranca: getUserRoleLabel('lideranca'),
+  colaboradora: getUserRoleLabel('colaboradora'),
+  admin: getUserRoleLabel('admin'),
 };
 
 const RARITY_COLORS: Record<string, string> = {
@@ -89,6 +90,20 @@ const RARITY_COLORS: Record<string, string> = {
 
 const TABS = ['Visão Geral', 'Empresas', 'Usuários', 'Admin Master', 'Sistema', 'Alertas', 'Auditoria'] as const;
 type Tab = (typeof TABS)[number];
+const TAB_QUERY = {
+  overview: TABS[0],
+  empresas: TABS[1],
+  usuarios: TABS[2],
+  admin: TABS[3],
+  sistema: TABS[4],
+  alertas: TABS[5],
+  auditoria: TABS[6],
+} as const satisfies Record<string, Tab>;
+
+function resolveAdminTab(value: string | null): Tab | undefined {
+  if (!value) return undefined;
+  return (TAB_QUERY as Readonly<Record<string, Tab | undefined>>)[value];
+}
 
 // ─── Shared Components ────────────────────────────────────────────────────────
 
@@ -3071,9 +3086,20 @@ function AuditoriaTab() {
 
 export default function AdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>('Visão Geral');
+  const requestedTab = searchParams.get('tab');
+  const requestedAdminTab = resolveAdminTab(requestedTab);
+  const [activeTab, setActiveTab] = useState<Tab>(() => (
+    requestedAdminTab ?? TABS[0]
+  ));
   const { data: sysStats } = useSWR<SystemStats>('/api/admin/system', fetcher, { revalidateOnFocus: false });
+
+  useEffect(() => {
+    if (requestedAdminTab) {
+      setActiveTab(requestedAdminTab);
+    }
+  }, [requestedAdminTab]);
 
   useEffect(() => {
     if (isAuthenticated && user && user.isMasterAdmin !== true) {

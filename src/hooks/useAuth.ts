@@ -6,6 +6,7 @@ import { MockUser, UserRole } from '@/types/platform';
 import { toSafeUserProjection } from '@/lib/gamification/containment';
 
 const STORAGE_KEY_USER = 'uniher-user';
+const PUBLIC_PATHS_WITHOUT_SESSION_CHECK = ['/', '/auth', '/esqueci-senha', '/redefinir-senha'];
 const PROTECTED_REPORT_ENDPOINTS = [
   '/api/dashboard',
   '/api/analytics/history',
@@ -83,6 +84,16 @@ function clearStoredUser() {
   try {
     localStorage.removeItem(STORAGE_KEY_USER);
   } catch {}
+}
+
+function hasSafeAuthRedirect(): boolean {
+  if (typeof window === 'undefined') return false;
+  const redirect = new URLSearchParams(window.location.search).get('redirect');
+  if (!redirect) return false;
+  if (!redirect.startsWith('/')) return false;
+  if (redirect.startsWith('//')) return false;
+  if (redirect.includes('://')) return false;
+  return true;
 }
 
 export const authBoundaryNavigation = {
@@ -173,9 +184,13 @@ export function useAuthState(): AuthContextValue {
     const controller = new AbortController();
     const requestEpoch = ++authReadEpochRef.current;
     const stored = getStoredUser();
-    const publicPathsWithoutSessionCheck = ['/', '/auth', '/esqueci-senha', '/redefinir-senha'];
+    const shouldSkipSessionCheck =
+      !stored
+      && pathname
+      && PUBLIC_PATHS_WITHOUT_SESSION_CHECK.includes(pathname)
+      && !(pathname === '/auth' && hasSafeAuthRedirect());
 
-    if (!stored && pathname && publicPathsWithoutSessionCheck.includes(pathname)) {
+    if (shouldSkipSessionCheck) {
       setIsLoading(false);
       return;
     }

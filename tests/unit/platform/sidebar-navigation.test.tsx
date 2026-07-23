@@ -15,6 +15,52 @@ const TEST_GROUPS = [
         label: 'Desafios',
         icon: 'desafios',
         description: 'Atividades em andamento',
+        badgeLabel: 'Bloqueado',
+      },
+    ],
+  },
+] as const satisfies readonly NavigationGroup[];
+
+const ADMIN_QUERY_GROUPS = [
+  {
+    label: 'Admin',
+    items: [
+      {
+        href: '/admin',
+        label: 'Dashboard geral',
+        icon: 'companies',
+        description: 'Resumo master',
+      },
+      {
+        href: '/admin?tab=empresas',
+        label: 'Empresas',
+        icon: 'companies',
+        description: 'Empresas cadastradas',
+      },
+    ],
+  },
+] as const satisfies readonly NavigationGroup[];
+
+const ADMIN_WITH_PERSONAL_GROUPS = [
+  {
+    label: 'Admin',
+    items: [
+      {
+        href: '/admin?tab=sistema',
+        label: 'Sistema',
+        icon: 'config',
+        description: 'Configuracoes gerais da plataforma',
+      },
+    ],
+  },
+  {
+    label: 'Pessoal',
+    items: [
+      {
+        href: '/configuracoes',
+        label: 'Minha conta',
+        icon: 'config',
+        description: 'Preferencias pessoais, senha e notificacoes',
       },
     ],
   },
@@ -62,5 +108,37 @@ describe('Sidebar navigation rendering', () => {
     expect(html).toContain('<ul');
     expect(html).toContain('<li>');
     expect(html).toContain('aria-current="page"');
+    expect(html).toContain('Bloqueado');
+  });
+
+  it('marks query-specific admin shortcuts active without activating the base admin dashboard', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
+      groups: ADMIN_QUERY_GROUPS,
+      pathname: '/admin?tab=empresas',
+      onNavigate: vi.fn(),
+      idPrefix: 'admin-navigation',
+    }));
+
+    expect(html).toContain('href="/admin"');
+    expect(html).toContain('href="/admin?tab=empresas"');
+    expect(html).toContain('Empresas');
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="\/admin\?tab=empresas"/);
+    expect(html).not.toMatch(/<a[^>]*aria-current="page"[^>]*href="\/admin"/);
+  });
+
+  it('renders distinct labels for platform settings and personal account settings', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
+      groups: ADMIN_WITH_PERSONAL_GROUPS,
+      pathname: '/configuracoes',
+      onNavigate: vi.fn(),
+      idPrefix: 'admin-personal-navigation',
+    }));
+
+    expect(html).toContain('Sistema');
+    expect(html).toContain('Minha conta');
+    expect(html).not.toContain('>Configurações<');
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="\/configuracoes"/);
   });
 });

@@ -2,19 +2,21 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { clearProtectedReportCaches, useAuth } from '@/hooks/useAuth';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import { Avatar, Badge } from '@/components/ui/AvatarBadge';
 import SidebarNavItem, { NavIcon } from './SidebarNavItem';
 import {
-  getNavigationForRole,
+  getModuleAwareNavigationForRole,
   getRoleHome,
   isNavigationItemActive,
   normalizeUserRole,
   resolveActiveView,
 } from './navigation';
 import type { NavigationGroup, NavigationItem } from './navigation';
+import type { CompanyModuleNavigationRecord } from '@/types/modules';
 import type { UserRole } from '@/types/platform';
 import styles from './Sidebar.module.css';
 
@@ -23,13 +25,6 @@ type ScopedApiKey = readonly [string, ...unknown[]];
 const scopedFetcher = (key: ScopedApiKey) => (
   fetch(key[0]).then(response => response.json())
 );
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Master',
-  rh: 'Admin',
-  lideranca: 'Liderança',
-  colaboradora: 'Colaboradora',
-};
 
 const PERSONAL_NAVIGATION_GROUPS = [
   {
@@ -43,7 +38,7 @@ const PERSONAL_NAVIGATION_GROUPS = [
       },
       {
         href: '/configuracoes',
-        label: 'Configurações',
+        label: 'Minha conta',
         icon: 'config',
         description: 'Preferências pessoais, senha e notificações',
       },
@@ -83,7 +78,9 @@ export function SidebarNavigationGroups({
                 isActive={isNavigationItemActive(pathname, item.href)}
                 onClick={onNavigate}
               >
-                {renderItemChildren?.(item)}
+                {renderItemChildren?.(item) ?? (item.badgeLabel ? (
+                  <Badge variant="secondary" size="sm" className={styles.navBadge}>{item.badgeLabel}</Badge>
+                ) : null)}
               </SidebarNavItem>
             </li>
           ))}
@@ -101,6 +98,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const sidebarRef = useRef<HTMLElement>(null);
   const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
@@ -205,8 +203,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, [isMobileDialogOpen, onClose]);
 
   const role = activeView;
-  const navigationGroups = getNavigationForRole(role);
-  const roleLabel = ROLE_LABELS[role];
+  const roleLabel = getUserRoleLabel(role);
+  const search = searchParams.toString();
+  const currentLocation = search ? `${pathname}?${search}` : pathname;
 
   const handleSwitchView = async (view: UserRole, closeAfterNavigation: boolean) => {
     if (view === activeView) {
@@ -237,6 +236,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { revalidateOnFocus: false },
   );
   const company = companyData?.company;
+
+  const moduleCacheKey = pathname !== '/primeiro-acesso' && user?.companyId
+    ? ['/api/company/modules', user.id, user.companyId, role] as const
+    : null;
+  const { data: moduleData } = useSWR<{ modules: CompanyModuleNavigationRecord[] }>(
+    moduleCacheKey,
+    scopedFetcher,
+    { revalidateOnFocus: false },
+  );
+  const navigationGroups = getModuleAwareNavigationForRole(role, moduleData?.modules ?? []);
 
   const notificationCacheKey = pathname !== '/primeiro-acesso' && user
     ? ['/api/notifications/count', user.id, user.companyId ?? null, realRole] as const
@@ -314,7 +323,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               onClick={() => handleSwitchView(realRole, closeAfterSwitch)}
               className={`${styles.viewButton} ${activeView === realRole ? styles.viewButtonActive : ''}`}
             >
-              {ROLE_LABELS[realRole]}
+              {getUserRoleLabel(realRole)}
             </button>
             <button
               type="button"
@@ -330,13 +339,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       <nav aria-label="Navegação principal" className={styles.navigation}>
         <SidebarNavigationGroups
           groups={navigationGroups}
-          pathname={pathname}
+          pathname={currentLocation}
           onNavigate={onNavigate}
           idPrefix={`platform-navigation-${role}`}
         />
         <SidebarNavigationGroups
           groups={PERSONAL_NAVIGATION_GROUPS}
-          pathname={pathname}
+          pathname={currentLocation}
           onNavigate={onNavigate}
           idPrefix="platform-navigation-personal"
           renderItemChildren={item => item.href === '/notificacoes' && unreadCount > 0 ? (

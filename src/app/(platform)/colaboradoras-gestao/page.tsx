@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/hooks/useAuth';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import { cn } from '@/lib/utils';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -36,12 +37,6 @@ interface Department {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const ROLE_LABELS: Record<string, string> = {
-  rh: 'Admin',
-  lideranca: 'Liderança',
-  colaboradora: 'Colaboradora',
-};
 
 const PAGE_SIZE = 20;
 
@@ -323,7 +318,7 @@ export default function ColaboradorasGestaoPage() {
                     </div>
                     <div className="flex flex-wrap gap-2 text-[11px] text-uni-text-500">
                       <span className="bg-cream-100 px-2 py-0.5 rounded-full font-bold text-uni-text-600">
-                        {ROLE_LABELS[u.role] ?? u.role}
+                        {getUserRoleLabel(u.role)}
                       </span>
                       {u.department_name && <span>{u.department_name}</span>}
                     </div>
@@ -433,7 +428,7 @@ export default function ColaboradorasGestaoPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-[11px] font-bold bg-cream-100 text-uni-text-600 px-2 py-0.5 rounded-full">
-                            {ROLE_LABELS[u.role] ?? u.role}
+                            {getUserRoleLabel(u.role)}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">
