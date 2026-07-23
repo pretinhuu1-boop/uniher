@@ -5,6 +5,21 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import CompanyProfilePage from '@/app/(platform)/company-profile/page';
 
+const mocks = vi.hoisted(() => ({
+  auth: {
+    user: { id: 'rh-a', role: 'rh', companyId: 'company-a' } as {
+      id: string;
+      role: string;
+      companyId?: string;
+    },
+    isLoading: false,
+  },
+}));
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => mocks.auth,
+}));
+
 const company = {
   id: 'company-a',
   name: 'Empresa Original',
@@ -42,6 +57,10 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  mocks.auth = {
+    user: { id: 'rh-a', role: 'rh', companyId: 'company-a' },
+    isLoading: false,
+  };
 });
 
 describe('company profile editing', () => {
@@ -99,5 +118,20 @@ describe('company profile editing', () => {
     fireEvent.click(switchControl);
 
     expect(switchControl.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('keeps Admin Master without company on the company selection state', async () => {
+    mocks.auth = {
+      user: { id: 'admin-master', role: 'admin', companyId: undefined },
+      isLoading: false,
+    };
+    const fetcher = vi.fn();
+    vi.stubGlobal('fetch', fetcher);
+
+    render(<CompanyProfilePage />);
+
+    expect(await screen.findByText('Perfil por empresa')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Voltar ao painel' }).getAttribute('href')).toBe('/admin');
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });
