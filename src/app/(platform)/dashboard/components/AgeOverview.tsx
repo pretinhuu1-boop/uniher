@@ -23,15 +23,15 @@ export function AgeOverview({ data }: { data: ProtectedAgeMetric[] }) {
     <section className={styles.surface} aria-labelledby="age-title">
       <div className={styles.sectionHeader}>
         <div>
-          <p className={styles.eyebrow}>Distribui\u00e7\u00e3o</p>
-          <h3 id="age-title" className={styles.sectionTitle}>Faixas et\u00e1rias protegidas</h3>
+          <p className={styles.eyebrow}>Distribuição</p>
+          <h3 id="age-title" className={styles.sectionTitle}>Faixas etárias protegidas</h3>
         </div>
       </div>
       {data.length === 0 ? (
         <FeedbackState
           kind="empty"
-          title="Distribui\u00e7\u00e3o indispon\u00edvel"
-          description="A faixa ser\u00e1 exibida quando houver dados eleg\u00edveis."
+          title="Distribuição indisponível"
+          description="A faixa será exibida quando houver dados elegíveis."
         />
       ) : (
         <ul className={styles.legendList}>

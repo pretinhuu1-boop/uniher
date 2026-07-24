@@ -152,7 +152,7 @@ export default function SidebarNavItem({ href, icon, label, description, isActiv
       >
         <NavIcon name={icon} />
         <span className={styles.navItemLabel}>{label}</span>
-        {children}
+        {children ? <> {children}</> : null}
       </Link>
       <span id={descriptionId} className="sr-only">{description}</span>
     </>

@@ -28,6 +28,7 @@ Every worker session must load:
 - `docs/superpowers/research/2026-07-22-uniher-harness-loop-engineering-research.md`
 - `docs/superpowers/specs/2026-07-22-uniher-paola-menu-redesign-contract.md`
 - `docs/superpowers/plans/2026-07-22-uniher-paola-menu-redesign-orchestration.md`
+- `docs/superpowers/audits/2026-07-23-uniher-paola-redesign-current-state-scorecard.md`
 - `docs/superpowers/plans/2026-07-21-uniher-final-delivery-roadmap.md`
 - `docs/superpowers/plans/2026-07-21-uniher-pending-surfaces-orchestration.md`
 - `docs/superpowers/audits/2026-07-21-uniher-end-to-end-production-redesign-audit.md`
@@ -44,9 +45,10 @@ Every worker session must load:
 | `/semaforo` | Contained visual redesign local | wave9-semaforo | clinical/privacy gate | No API/data activation before approval. |
 | `/objetivos` | Functional self-only objectives local | wave6-objectives | PASS local validation | Stage only exact Wave 6 allowlist if user approves. |
 | `/desafios` | Functional self-only company challenges local | wave7-challenges | PASS local validation | RH management route is separate and was not reactivated. |
-| `/conquistas` | Functional private achievements local | wave8-achievements | PASS local validation | No legacy badges. |
+| `/conquistas` | Functional private achievements local | wave8-achievements | PASS after revocation correction | No legacy badges; mobile bottom visual evidence remains historical/weak until recaptured. |
 | `/liga` | Contained visual redesign local | wave10-liga | policy approval + Waves 5 and 8 | Outside core unless formally approved. |
-| `/avaliacao-nr1` | Scaffold | R2 NR-1 owner | Yavix payload/auth/scoring/consent | Do not mix with this redesign wave unless assigned. |
+| `/nr1` | Locked module shell | Paola P4A/P4 correction | PASS after default gate correction | `requires_contract` module rows land here; no COPSOQ/Yavix runtime. |
+| `/avaliacao-nr1` | Runtime scaffold | R2 NR-1 owner | explicit enabled module + Yavix payload/auth/scoring/consent | Do not expose from default `requires_contract` rows. |
 
 ## Concurrency Rules
 
@@ -102,11 +104,11 @@ Promotion criteria:
 | Lane | Owner/session | Status | Write set | Next gate |
 | --- | --- | --- | --- | --- |
 | orchestration | current session | in progress | docs/superpowers orchestration docs | scorecard |
-| visual-contained-pages | current session/local work | PASS visual QA | five contained pages + `ContainedSurfacePreview.tsx` | stage only exact visual allowlist if user approves |
+| visual-contained-pages | current session/local work | historical PASS; current routes superseded | five contained-page screenshots + `ContainedSurfacePreview.tsx` | do not use old screenshots as current approval for Wave 6/7/8 functional routes |
 | wave5-ledger | current session | PASS foundation | Wave 5 ledger allowlist | explicit staging allowlist |
 | wave6-objectives | current session | PASS local validation | Wave 6 objectives allowlist | explicit staging allowlist |
-| wave7-challenges | current session | PASS local validation | Wave 7 challenge allowlist | explicit staging allowlist |
-| wave8-achievements | current session | PASS local validation | Wave 8 achievements allowlist | explicit staging allowlist |
+| wave7-challenges | current session | PASS local validation after scorecard count correction | Wave 7 challenge allowlist | explicit staging allowlist |
+| wave8-achievements | current session | PASS after revocation correction | Wave 8 achievements allowlist + scorecard update | explicit staging allowlist; recapture mobile bottom evidence if final visual approval depends on it |
 | wave9-semaforo | current session | PASS blocked/contained | docs scorecard only | clinical/privacy approval still required |
 | wave10-liga | current session | PASS blocked/contained | docs scorecard only | product/legal policy approval still required |
 | paola-menu-redesign-p0 | current session | PASS after P0.1 coverage correction | spec + scorecard + ledger | P1 orchestration may start docs-only; code remains blocked until dirty/divergent worktree is reconciled or allowlisted |
@@ -115,9 +117,11 @@ Promotion criteria:
 | paola-menu-redesign-p1a-content-inventory | current session | PASS inventory; SIPAT source unverified | `docs/superpowers/audits/2026-07-22-uniher-paola-menu-redesign-p1a-content-inventory.md` | SIPAT source/content policy before content-bearing implementation |
 | paola-menu-redesign-p2-navigation | current session | PASS | navigation contract, Sidebar badge fallback, focused tests, scorecard | closed |
 | paola-menu-redesign-p3-shells | current session | PASS | six static contained module shells, tests, screenshots, scorecard | P4 existing surface regrouping or Sidebar data/API wiring |
-| paola-menu-redesign-p4a-sidebar-data-wiring | current session | PASS after finding correction | read-only modules API with non-mutating default navigation rows, Sidebar module SWR, focused tests, scorecard | Admin/RH module-management governance |
-| paola-menu-redesign-p4-regrouping | current session | PASS after finding corrections and auth redirect validation | base navigation regrouping plus Admin Master taxonomy shortcuts, focused tests, browser auth redirect evidence, scorecard | Admin/RH module-management governance or P5 check-out foundation |
-| paola-doc-tree-validation | current session | PASS docs validity | doc tree validation scorecard | P1 implementation allowlist or P1A inventory |
+| paola-menu-redesign-p4a-sidebar-data-wiring | current session | PASS after NR-1 default gate correction | read-only modules API with non-mutating default navigation rows, Sidebar module SWR, focused tests, scorecard | Admin/RH module-management governance |
+| paola-menu-redesign-p4-regrouping | current session | PASS after NR-1 default gate correction | base navigation regrouping plus Admin Master taxonomy shortcuts, focused tests, browser auth redirect evidence, scorecard | Admin/RH module-management governance or P5 check-out foundation |
+| paola-redesign-current-state | current session | HOLD for full Dra. Paola approval; P7A runtime/menu evidence closed | docs current-state scorecard, operator screenshot, P7A scorecard and Obsidian note | P5 Check-out foundation, P7B visual target correction or P8 module-management governance |
+| paola-p7a-menu-boxes-visual-qa | current session | HOLD for visual approval; PASS runtime evidence + evidence lineage correction | screenshots, raw pre-polish metrics, RH post-polish completed fixture proof, Sidebar active/badge fallback, PT-BR copy cleanup, focused tests | decide visual target for richer Dra. Paola menu-card treatment |
+| paola-doc-tree-validation | current session | PASS docs validity; superseded for current state | doc tree validation scorecard | closed; superseded by P1/P1A/P3/P4A/P4/P7A/F0 |
 | qa-independent | unassigned | waiting | receipts only | lane receipt request |
 
 ## Worker Receipt Schema
@@ -151,7 +155,7 @@ Every worker returns:
 | 2026-07-21 | Adopt centralized coordinator + bounded worker-session model for accelerated redesign. | `2026-07-21-uniher-accelerated-redesign-orchestration-design.md` | active |
 | 2026-07-21 | Treat current five-page visual redesign as local work pending coordinator diff review; do not stage automatically. | git status + screenshots previously captured under projectless outputs | hold |
 | 2026-07-22 | Adopt harness/loop engineering as candidate framework and pilot it first on `visual-contained-pages`. | `2026-07-22-uniher-harness-loop-engineering-research.md` | pilot |
-| 2026-07-22 | Mark `visual-contained-pages` PASS for visual QA and promote harness/loop as the default framework for future UniHER specs. | `docs/superpowers/audits/2026-07-22-uniher-visual-contained-pages-pilot-scorecard.md` + independent QA re-review | active |
+| 2026-07-22 | Mark `visual-contained-pages` historical PASS for visual QA and promote harness/loop as the default framework for future UniHER specs. Current `/objetivos`, `/desafios` and `/conquistas` states are superseded by Waves 6/7/8. | `docs/superpowers/audits/2026-07-22-uniher-visual-contained-pages-pilot-scorecard.md` + independent QA re-review | active |
 | 2026-07-22 | Hold `wave5-ledger` as decision-gated; do not create migration 056, participation service, repository or writer tests before the decision packet approvals are complete. | `docs/superpowers/audits/2026-07-22-uniher-wave5-ledger-preflight.md` + decision packet lines 3-33 | blocked |
 | 2026-07-22 | Open `wave5-ledger` implementation under the recommended conservative v1: hard-delete, no metadata, no points/ranking and no sensitive sources. | operator decision "vamos com o recomendado" + `docs/superpowers/specs/2026-07-21-uniher-eligible-participation-ledger-design.md` | active |
 | 2026-07-22 | Mark `wave5-ledger` PASS for foundation implementation; release Wave 6 and Wave 7 for child-plan execution. | `docs/superpowers/audits/2026-07-22-uniher-wave5-ledger-scorecard.md` + unit/privacy/typecheck/build evidence | active |
@@ -178,6 +182,21 @@ Every worker returns:
 | 2026-07-22 | Resolve Paola naming/profile consistency finding: Admin platform settings now renders as `Sistema`, personal settings renders as `Minha conta`, and `/configuracoes` maps admin profile role to `Admin Master` instead of collaborator fallback. | `src/components/platform/navigation.ts`, `src/components/platform/Sidebar.tsx`, `src/app/(platform)/configuracoes/page.tsx`, `src/lib/users/role-label.ts`, `tests/unit/platform/role-label.test.ts`, P4 scorecard | active |
 | 2026-07-22 | Complete cross-panel naming/role projection audit: Sidebar, Admin, Convites, Gestão de Colaboradoras, invite acceptance, Primeiro Acesso and invite email now use canonical singular role labels; duplicate visible navigation labels are covered by regression tests. | `src/lib/users/role-label.ts`, user-facing panel imports, `tests/unit/platform/sidebar-capability.test.tsx`, `tests/unit/platform/role-label.test.ts`, P4 scorecard | active |
 | 2026-07-23 | Close cross-panel correction plan execution: validated no divergent local singular role labels remain in covered panels, classified mobile `/configuracoes` label `Perfil` as intentional compact shortcut, and corrected `/configuracoes` error copy accents. | `docs/superpowers/plans/2026-07-22-uniher-cross-panel-consistency-correction.md`, `src/app/(platform)/configuracoes/error.tsx`, P4 scorecard, focused/relevant unit tests, typecheck, build | active |
+| 2026-07-23 | Reconcile Dra. Paola redesign after new screenshots/request review: P1-P4 technical foundations remain PASS, but full redesign approval is HOLD because menu boxes visual proof, Check-out, Check-in x Check-out dashboards, RH/Admin aggregate indicators and source/contract-gated modules remain incomplete. | `docs/superpowers/audits/2026-07-23-uniher-paola-redesign-current-state-scorecard.md` + Obsidian MCP update `Mission/2026-07-22-uniher-paola-menu-redesign-spec.md` | hold |
+| 2026-07-23 | Accept operator-supplied screenshot as enough evidence to unblock P7A menu boxes visual QA execution; keep PASS blocked until reproducible desktop/mobile runtime screenshots exist. | operator screenshot of current `/configuracoes` state + `docs/superpowers/audits/2026-07-23-uniher-paola-redesign-current-state-scorecard.md` | active |
+| 2026-07-23 | Execute P7A runtime menu/boxes QA: captured Admin/RH/collaborator desktop/mobile/top-bottom evidence, confirmed no console/API/overflow blocker, added defensive Sidebar active-state fallback, and kept full visual approval on HOLD because current sidebar is functional grouped navigation rather than Dra. Paola's richer menu-card visual language. | `docs/superpowers/audits/2026-07-23-uniher-paola-p7a-menu-boxes-visual-qa-scorecard.md` + outputs `uniher-p7a-menu-boxes-2026-07-23` + focused tests/typecheck | hold |
+| 2026-07-23 | Close P7A polish continuation: fixed module badge text separation, aligned menu/module labels to accented PT-BR, cleaned escaped unicode/mojibake drift in dashboard and related platform copy, and captured RH dashboard completed-onboarding proof using Playwright route interception only. | `src/components/platform/SidebarNavItem.tsx`, `src/components/platform/navigation.ts`, `src/types/modules.ts`, focused platform copy files, `rh-dashboard-complete-*.png/json`, 69 focused tests, `npx tsc --noEmit` | hold |
+| 2026-07-23 | Audit Paola P7A/P5/P6 readiness against the plan and create the findings closure plan: F0 must close the remaining Saude Primaria accent/evidence ambiguity before opening P5, P7B or P8. | `docs/superpowers/plans/2026-07-23-uniher-paola-findings-closure-plan.md` | active |
+| 2026-07-23 | Close Paola F0 findings lane: fixed `Saude Primaria` context copy, added module-shell regression, annotated RH metrics `ÃO` as detector false-positive, and corrected current-state status so P7A is runtime PASS but visual HOLD. | `src/app/(platform)/saude-primaria/page.tsx`, `tests/unit/module-shells.test.ts`, F0 plan, P7A/current-state scorecards | active |
+| 2026-07-23 | Create post-audit correction plans for waves with findings: Wave 8 revocation idempotency, Paola NR-1 default gate, visual-contained current-state reconciliation, Wave 7 count drift, P7A metrics refresh and Paola doc-tree next-gate drift. | `docs/superpowers/plans/2026-07-23-uniher-post-audit-findings-correction-orchestration.md` + six lane plans | active |
+| 2026-07-23 | Close Wave 8 revocation finding: added RED/GREEN coverage for repeated sync after event revocation, kept `revoked` from downgrading to `in_progress`, and downgraded historical mobile top/bottom screenshot evidence instead of treating byte-identical captures as independent proof. | `src/repositories/achievements.repository.ts`, `tests/unit/private-achievements.test.ts`, Wave 8 scorecard, focused unit/privacy tests | active |
+| 2026-07-23 | Close Paola NR-1 default gate finding: added locked `/nr1` shell, routed `requires_contract` NR-1 module rows away from `/avaliacao-nr1`, and kept COPSOQ runtime reachable only for explicit `enabled` rows. | `src/components/platform/navigation.ts`, `src/app/(platform)/nr1/page.tsx`, navigation/module-shell tests, P4A/P4 scorecards | active |
+| 2026-07-23 | Close NR-1 collaborator-home bypass found in review: `/colaboradora` now derives NR-1 runtime entitlement from `/api/company/modules` and `isNr1RuntimeEntitled`, not from public entitlement env defaults; `/nr1` shell copy was accented. | `src/app/(platform)/colaboradora/page.tsx`, `src/lib/nr1/preview-state.ts`, `src/app/(platform)/nr1/page.tsx`, `tests/unit/nr1-preview-state.test.ts`, `tests/unit/module-shells.test.ts` | active |
+| 2026-07-23 | Close P7A evidence refresh finding: classified raw `metrics.json` as pre-polish, made `rh-dashboard-complete-metrics.json` the post-polish label source, and preserved full visual approval as HOLD. | P7A scorecard, current-state scorecard, P7A evidence refresh plan, output-directory rg evidence | active |
+| 2026-07-23 | Close Wave 7 scorecard count drift: reran the focused challenge/privacy suite and updated the scorecard from 52 to 53 tests passed. | Wave 7 scorecard + `npm run test:unit -- tests/unit/company-challenges.test.ts tests/unit/participation-eligibility.test.ts tests/unit/participation-repository.test.ts tests/unit/privacy/dsar-stable-pagination.test.ts tests/unit/privacy/gamification-write-containment.test.ts` | active |
+| 2026-07-23 | Close Paola doc-tree next-gates drift: marked the historical doc-tree lane closed/superseded and clarified that the 2026-07-22 route inventory predates P3 shells and later corrections. | `docs/superpowers/audits/2026-07-22-uniher-paola-doc-tree-validation.md`, ledger row update | active |
+| 2026-07-23 | Close visual-contained current-state reconciliation: preserved the 2026-07-22 pilot as historical PASS, kept `/semaforo` and `/liga` contained, and routed `/objetivos`, `/desafios`, `/conquistas` approval to Wave 6/7/8 evidence. | visual-contained scorecard + ledger row update | active |
+| 2026-07-23 | Close NR-1 direct runtime/API bypass: added canonical server-side `company_modules` entitlement guard, redirected direct `/avaliacao-nr1` access to `/nr1` unless NR-1 is explicitly visible/enabled, and blocked all `/api/yavix/copsoq/*` endpoints with 403 for non-entitled companies. | `src/lib/nr1/runtime-entitlement.ts`, `/avaliacao-nr1`, COPSOQ API routes, `tests/unit/nr1-runtime-entitlement.test.ts`, 76 focused tests | active |
 
 ## Promotion Checklist
 
@@ -200,10 +219,14 @@ Before any lane is marked PASS:
 - The current worktree contains uncommitted visual redesign changes. New sessions must preserve them.
 - Semaforo and Liga remain decision-gated; visual surfaces must not imply production activation.
 - Wave 6 passed local validation and post-wave diff review; explicit staging allowlist is still required before commit/promotion.
-- Wave 7 passed local validation and browser evidence; explicit staging allowlist is still required before commit/promotion.
-- Wave 8 passed local validation and browser evidence; explicit staging allowlist is still required before commit/promotion.
+- Wave 7 passed local validation and browser evidence; scorecard count was refreshed to 53 tests; explicit staging allowlist is still required before commit/promotion.
+- Wave 8 passed revocation correction and local validation; explicit staging allowlist is still required before commit/promotion, and mobile bottom visual evidence should be recaptured if final visual approval depends on it.
 - Wave 5 scheduled retention cleanup remains a future job spec, not an active background deletion process.
-- NR-1/Yavix work remains outside this orchestration unless explicitly assigned to R2/R7 lanes.
+- NR-1/Yavix production work remains outside this orchestration unless explicitly assigned to R2/R7 lanes; the `/nr1` locked shell is allowed only as a no-runtime contract gate, `/colaboradora` can only expose `/avaliacao-nr1` when company modules mark NR-1 as visible/enabled, and the direct COPSOQ page/API now fail closed on the same runtime entitlement.
 - Visual wave staging must be allowlisted manually because orchestration/research docs are also untracked in the same worktree.
 - SIPAT content claimed by stakeholder is not validated in this local tree; P3 must use sourced assets/content or an honest locked/source-needed shell.
 - Module-management mutations remain unimplemented; P4A is read-only runtime consumption of default navigation rows overlaid by existing `company_modules` rows.
+- Dra. Paola's menu/box runtime evidence is captured, but the richer card/numbered visual treatment is not approved.
+- Check-out and Check-in x Check-out dashboards remain unimplemented; do not represent the wellbeing quiz/dashboard request as complete.
+- P7A has reproducible menu screenshots plus RH completed-onboarding dashboard proof; raw `metrics.json` is pre-polish and the post-polish label source is `rh-dashboard-complete-metrics.json`; full visual approval still depends on a design-target decision for whether to implement Dra. Paola's richer menu-card visual language.
+- Post-audit correction execution has closed all six planned findings: Wave 8, Paola NR-1 default gate, P7A evidence refresh, Wave 7 scorecard count, Paola doc-tree next gates and visual-contained reconciliation.

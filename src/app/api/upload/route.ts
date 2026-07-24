@@ -26,10 +26,10 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erro ao fazer upload';
-    const status = message.includes('nÃ£o permitido')
+    const status = message.includes('não permitido')
       || message.includes('não permitido')
       || message.includes('muito grande')
-      || message.includes('nÃ£o corresponde')
+      || message.includes('não corresponde')
       || message.includes('não corresponde')
       || message.includes('armazenamento')
       || message.includes('Nenhum arquivo')

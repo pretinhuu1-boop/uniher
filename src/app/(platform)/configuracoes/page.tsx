@@ -20,12 +20,12 @@ interface TogglePref {
 }
 
 const NOTIFICATION_PREFS: TogglePref[] = [
-  { id: 'campaigns', label: 'Campanhas', description: 'Notificar sobre novas campanhas e atualizacoes', defaultOn: true },
+  { id: 'campaigns', label: 'Campanhas', description: 'Notificar sobre novas campanhas e atualizações', defaultOn: true },
   { id: 'email', label: 'Resumo por e-mail', description: 'Receber resumo semanal por e-mail', defaultOn: false },
 ];
 
 const PRIVACY_PREFS: TogglePref[] = [
-  { id: 'profile', label: 'Perfil visivel', description: 'Outros colaboradoras podem ver seu perfil', defaultOn: true },
+  { id: 'profile', label: 'Perfil visível', description: 'Outras colaboradoras podem ver seu perfil', defaultOn: true },
   { id: 'analytics', label: 'Dados anonimizados', description: 'Permitir uso de dados anonimizados para melhoria', defaultOn: true },
   {
     id: 'communitySupporterName',

@@ -48,7 +48,7 @@ export interface CompanyModuleDefinition {
 export const COMPANY_MODULE_DEFINITIONS: readonly CompanyModuleDefinition[] = [
   {
     slug: 'primary_health',
-    label: 'Saude Primaria',
+    label: 'Saúde Primária',
     defaultState: 'locked',
     visibleByDefault: true,
     visibleForRoles: ['admin', 'rh', 'lideranca', 'colaboradora'],
@@ -62,7 +62,7 @@ export const COMPANY_MODULE_DEFINITIONS: readonly CompanyModuleDefinition[] = [
   },
   {
     slug: 'education',
-    label: 'Educacao',
+    label: 'Educação',
     defaultState: 'enabled',
     visibleByDefault: true,
     visibleForRoles: ['admin', 'rh', 'lideranca', 'colaboradora'],
@@ -97,7 +97,7 @@ export const COMPANY_MODULE_DEFINITIONS: readonly CompanyModuleDefinition[] = [
   },
   {
     slug: 'denunciation',
-    label: 'Canal de Denuncias',
+    label: 'Canal de Denúncias',
     defaultState: 'partner_managed',
     visibleByDefault: true,
     visibleForRoles: ['admin', 'rh', 'colaboradora'],

@@ -5,7 +5,7 @@ import type { DashboardViewModel } from './dashboard-view-model';
 const DASHBOARD_TIME_ZONE = 'America/Sao_Paulo';
 
 function assertNever(value: never): never {
-  throw new Error(`Estado de m\u00e9trica protegida n\u00e3o suportado: ${JSON.stringify(value)}`);
+  throw new Error(`Estado de métrica protegida não suportado: ${JSON.stringify(value)}`);
 }
 
 export function neutralizeCsvFormula(value: string): string {
@@ -42,20 +42,20 @@ export function buildDashboardCsv(model: DashboardViewModel): string {
       protectedCsvCell(department.metric),
     ].join(',')),
     '',
-    [csvCell('Faixas et\u00e1rias'), csvCell('Contribuintes ativos protegidos')].join(','),
+    [csvCell('Faixas etárias'), csvCell('Contribuintes ativos protegidos')].join(','),
     ...model.ageDistribution.map((bucket) => [
       csvCell(bucket.label),
       protectedCsvCell(bucket.metric),
     ].join(',')),
     '',
-    [csvCell('Atividade de exames por m\u00eas'), csvCell('Contribuintes distintos')].join(','),
+    [csvCell('Atividade de exames por mês'), csvCell('Contribuintes distintos')].join(','),
     ...model.examActivitySeries.map((point) => [
       csvCell(point.period),
       protectedCsvCell(point.metric),
     ].join(',')),
     '',
-    [csvCell('ROI e absente\u00edsmo'), protectedCsvCell(model.metrics.roi)].join(','),
-    [csvCell('Risco de sa\u00fade'), protectedCsvCell(model.metrics.healthRisk)].join(','),
+    [csvCell('ROI e absenteísmo'), protectedCsvCell(model.metrics.roi)].join(','),
+    [csvCell('Risco de saúde'), protectedCsvCell(model.metrics.healthRisk)].join(','),
   ];
 
   return rows.join('\n');

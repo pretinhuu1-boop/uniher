@@ -61,6 +61,10 @@ export function SidebarNavigationGroups({
   idPrefix,
   renderItemChildren,
 }: SidebarNavigationGroupsProps) {
+  const browserLocation = typeof window === 'undefined'
+    ? pathname
+    : `${window.location.pathname}${window.location.search}`;
+
   return groups.map((group, groupIndex) => {
     const headingId = `${idPrefix}-${groupIndex}`;
 
@@ -75,7 +79,10 @@ export function SidebarNavigationGroups({
                 icon={item.icon}
                 label={item.label}
                 description={item.description}
-                isActive={isNavigationItemActive(pathname, item.href)}
+                isActive={
+                  isNavigationItemActive(pathname, item.href)
+                  || isNavigationItemActive(browserLocation, item.href)
+                }
                 onClick={onNavigate}
               >
                 {renderItemChildren?.(item) ?? (item.badgeLabel ? (

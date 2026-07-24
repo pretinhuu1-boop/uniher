@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   swrKeys: [] as unknown[],
   swrDataByEndpoint: new Map<string, unknown>(),
   searchParams: '',
+  pathname: '/lideranca',
   hasUser: true,
   user: {
     id: 'leadership-common',
@@ -28,7 +29,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/lideranca',
+  usePathname: () => mocks.pathname,
   useRouter: () => ({ push: mocks.push }),
   useSearchParams: () => new URLSearchParams(mocks.searchParams),
 }));
@@ -60,6 +61,7 @@ describe('Sidebar persisted collaborator capability', () => {
     mocks.swrKeys.length = 0;
     mocks.swrDataByEndpoint.clear();
     mocks.searchParams = '';
+    mocks.pathname = '/lideranca';
     mocks.hasUser = true;
     mocks.user.id = 'leadership-common';
     mocks.user.role = 'lideranca';
@@ -96,7 +98,7 @@ describe('Sidebar persisted collaborator capability', () => {
 
     await waitFor(() => expect(screen.queryByRole('link', { name: /Minha agenda/i })).not.toBeNull());
     expect(screen.queryByRole('link', { name: /^Comunidade$/i })).not.toBeNull();
-    expect(screen.queryByRole('link', { name: /Conteudos educativos|Educacao/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Conteúdos educativos|Educação/i })).toBeNull();
     expect(screen.queryByRole('link', { name: /^Dashboard$/i })).toBeNull();
   });
 
@@ -106,7 +108,7 @@ describe('Sidebar persisted collaborator capability', () => {
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /Conteudos educativos/i })).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /Conteúdos educativos/i })).not.toBeNull();
     expect(screen.queryByRole('link', { name: /^Comunidade$/i })).toBeNull();
   });
 
@@ -123,7 +125,7 @@ describe('Sidebar persisted collaborator capability', () => {
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     expect(screen.queryByRole('link', { name: /^Comunidade$/i }) !== null).toBe(feed);
-    expect(screen.queryByRole('link', { name: /Conteudos educativos|Educacao/i }) !== null).toBe(manage);
+    expect(screen.queryByRole('link', { name: /Conteúdos educativos|Educação/i }) !== null).toBe(manage);
   });
 
   it.each([
@@ -252,6 +254,24 @@ describe('Sidebar persisted collaborator capability', () => {
       'company-a',
       'colaboradora',
     ]));
+  });
+
+  it('keeps the current route active after module-aware navigation data loads', async () => {
+    mocks.pathname = '/dashboard';
+    mocks.user.role = 'rh';
+    mocks.user.companyId = 'company-a';
+    mocks.swrDataByEndpoint.set('/api/company/modules', {
+      modules: [
+        { module_slug: 'primary_health', module_state: 'locked', visible: 1 },
+        { module_slug: 'nr1', module_state: 'requires_contract', visible: 1 },
+      ],
+    });
+    window.history.pushState({}, '', '/dashboard');
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const dashboardLink = await screen.findByRole('link', { name: /^Dashboard$/i });
+    expect(dashboardLink.getAttribute('aria-current')).toBe('page');
   });
 
   it('scopes notification count by user, tenant and authenticated role', () => {

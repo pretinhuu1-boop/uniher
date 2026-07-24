@@ -7,6 +7,7 @@ import { isYavixMock } from '@/lib/yavix/config';
 import { checkWriteRateLimit } from '@/lib/security/rate-limit';
 import { getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
+import { requireNr1RuntimeEntitlement } from '@/lib/nr1/runtime-entitlement';
 
 // SPEC §4-C. Validação Zod do corpo.
 const consentSchema = z.object({
@@ -19,6 +20,9 @@ const consentSchema = z.object({
 export const POST = withRole('colaboradora', 'lideranca')(async (req, { auth }) => {
   try {
     await checkWriteRateLimit(req);
+    const entitlementError = await requireNr1RuntimeEntitlement(auth);
+    if (entitlementError) return entitlementError;
+
     const body = await req.json().catch(() => null);
     const parsed = consentSchema.safeParse(body);
     if (!parsed.success) {

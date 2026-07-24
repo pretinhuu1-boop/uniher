@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getNr1PreviewState } from '@/lib/nr1/preview-state';
+import { getNr1PreviewState, isNr1RuntimeEntitled } from '@/lib/nr1/preview-state';
 
 describe('getNr1PreviewState', () => {
   it('allows the controlled preview only when enabled and entitled', () => {
@@ -16,5 +16,18 @@ describe('getNr1PreviewState', () => {
 
   it('prioritizes the real integration state', () => {
     expect(getNr1PreviewState({ previewEnabled: false, entitled: false, realIntegration: true })).toBe('real_integration');
+  });
+
+  it('requires an explicit visible enabled company module for runtime entitlement', () => {
+    expect(isNr1RuntimeEntitled(undefined)).toBe(false);
+    expect(isNr1RuntimeEntitled([
+      { module_slug: 'nr1', module_state: 'requires_contract', visible: 1 },
+    ])).toBe(false);
+    expect(isNr1RuntimeEntitled([
+      { module_slug: 'nr1', module_state: 'enabled', visible: 0 },
+    ])).toBe(false);
+    expect(isNr1RuntimeEntitled([
+      { module_slug: 'nr1', module_state: 'enabled', visible: 1 },
+    ])).toBe(true);
   });
 });

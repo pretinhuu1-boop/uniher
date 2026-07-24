@@ -38,7 +38,10 @@ PASS:
 npm run test:unit -- tests/unit/company-challenges.test.ts tests/unit/participation-eligibility.test.ts tests/unit/participation-repository.test.ts tests/unit/privacy/dsar-stable-pagination.test.ts tests/unit/privacy/gamification-write-containment.test.ts
 ```
 
-Result: 5 files, 52 tests passed.
+Result: 5 files, 53 tests passed.
+
+Revalidated on 2026-07-23 with the same focused command: PASS, 5 files,
+53 tests passed.
 
 PASS:
 

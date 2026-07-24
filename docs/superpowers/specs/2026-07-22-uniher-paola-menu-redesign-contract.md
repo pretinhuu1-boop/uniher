@@ -5,6 +5,7 @@
 **Scope:** authenticated internal UniHER platform menus for RH/company, collaborator and UniHER Admin Master
 **Source request:** Dra. Paola's 2026-07-22 menu structure for RH, collaborator and platform administrator
 **Canonical workspace:** `C:\Users\user\Documents\uniher-app-audit\.worktrees\uniher-wave3-collaborator-nr1`
+**Latest current-state scorecard:** `docs/superpowers/audits/2026-07-23-uniher-paola-redesign-current-state-scorecard.md`
 
 ## 1. Purpose
 
@@ -348,9 +349,20 @@ Current state after second-pass audit:
 - P4 existing surface regrouping is closed after finding correction: base navigation now reuses existing routes under Dashboard, Educacao, Meu bem-estar/Agenda and Conquistas taxonomy and exposes the Admin Master taxonomy through existing/shell destinations without duplicating modules.
 - SIPAT remains source-gated for any content-bearing implementation.
 
+Current state after 2026-07-23 MCP/Obsidian and repo audit:
+
+- Overall redesign decision is HOLD for full approval, even though P1-P4 technical foundations are PASS.
+- The visual menu/box treatment from Dra. Paola's three supplied images has P7A runtime evidence, but remains HOLD for full visual approval because the current sidebar is functional grouped navigation rather than the richer menu-card/numbered visual language from the references.
+- `Meu Bem-Estar` remains partial: Check-in exists, but true Check-out and the daily Check-in/Check-out pair are not complete.
+- RH/Admin dashboard coverage remains partial until P5 Check-out and P6 aggregate dashboard projections exist.
+- Semaforo/Saude Primaria, Concierge, SIPAT, Desenvolvimento Humano, Canal de Denuncias, Liga/ranking and Yavix/NR-1 production behavior remain gated.
+- Runtime proof was not refreshed in the 2026-07-23 audit because `localhost:3001/api/health` did not respond.
+
 Next smallest executable choices:
 
-1. Open a separate Admin/RH module-management lane with explicit mutation governance, or open P5 check-out foundation.
-2. Source/approve SIPAT content policy before any SIPAT content-bearing implementation.
+1. Open P5 Check-out foundation, or a P7A design-target correction pass if the next goal is visual alignment first.
+2. Open P6 RH/Admin aggregate dashboards only after P5.
+3. Open a separate Admin/RH module-management lane with explicit mutation governance.
+4. Source/approve SIPAT content policy before any SIPAT content-bearing implementation.
 
 Do not rerun P0, and do not start navigation/shell code until the relevant gate is explicitly open.

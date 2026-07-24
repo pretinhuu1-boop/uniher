@@ -17,6 +17,8 @@ vi.mock('@/lib/security/rate-limit', () => ({
   checkWriteRateLimit: async () => undefined,
 }));
 
+vi.mock('@/lib/db/init', () => ({ initDb: async () => undefined }));
+
 vi.mock('@/lib/db', () => ({
   getReadDb: () => {
     databaseBoundary.gatewayAccesses.push('getReadDb');
@@ -47,11 +49,28 @@ function createSentinelDatabase(): Database.Database {
     CREATE TABLE activity_log (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, action TEXT NOT NULL);
     CREATE TABLE user_badges (user_id TEXT NOT NULL, badge_id TEXT NOT NULL);
     CREATE TABLE notifications (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, message TEXT NOT NULL);
+    CREATE TABLE company_modules (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      module_slug TEXT NOT NULL,
+      module_state TEXT NOT NULL,
+      visible INTEGER NOT NULL,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      updated_by TEXT
+    );
 
     INSERT INTO users VALUES ('nr1-user', 37);
     INSERT INTO activity_log VALUES ('activity-before', 'nr1-user', 'existing_activity');
     INSERT INTO user_badges VALUES ('nr1-user', 'existing-badge');
     INSERT INTO notifications VALUES ('notification-before', 'nr1-user', 'existing notification');
+    INSERT INTO company_modules (
+      id, company_id, module_slug, module_state, visible, notes, created_at, updated_at, updated_by
+    ) VALUES (
+      'company-1-nr1', 'company-1', 'nr1', 'enabled', 1, null,
+      '2026-07-23T22:00:00.000Z', '2026-07-23T22:00:00.000Z', null
+    );
   `);
   return db;
 }
@@ -122,7 +141,7 @@ describe('NR-1 gamification containment', () => {
     expect(retry.status).toBe(200);
     expect(await retry.json()).toEqual({ status: 'DONE' });
     expect(snapshotProtectedTables()).toEqual(before);
-    expect(databaseBoundary.gatewayAccesses).toEqual([]);
+    expect(databaseBoundary.gatewayAccesses).toEqual(['getReadDb', 'getReadDb', 'getReadDb']);
   });
 
   it('keeps COPSOQ completion disconnected from legacy gamification writes', () => {

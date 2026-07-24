@@ -4,39 +4,39 @@ import { ContainedSurfacePreview } from '@/components/platform/ContainedSurfaceP
 export default function CanalDenunciasPage() {
   return (
     <ContainedSurfacePreview
-      context="Canal de Denuncias"
-      title="Canal de Denuncias"
-      description="Shell parceiro para recebimento, acompanhamento e gestao de denuncias quando o contrato e o responsavel externo estiverem formalizados."
+      context="Canal de Denúncias"
+      title="Canal de Denúncias"
+      description="Shell parceiro para recebimento, acompanhamento e gestão de denúncias quando o contrato e o responsável externo estiverem formalizados."
       stateTitle="Parceiro pendente"
-      stateDescription="Nenhum relato, protocolo, caixa de entrada, fluxo de resposta ou integracao externa foi ativado."
-      intentTitle="Fronteira legal antes de formulario"
-      intentDescription="A pagina torna o modulo visivel sem capturar dados sensiveis ou simular um canal que depende de parceiro e contrato especificos."
+      stateDescription="Nenhum relato, protocolo, caixa de entrada, fluxo de resposta ou integração externa foi ativado."
+      intentTitle="Fronteira legal antes de formulário"
+      intentDescription="A página torna o módulo visível sem capturar dados sensíveis ou simular um canal que depende de parceiro e contrato específicos."
       steps={[
         {
           title: 'Formalizar parceiro',
-          description: 'Confirmar responsavel, SLA, escopo, armazenamento, auditoria e canal oficial.',
+          description: 'Confirmar responsável, SLA, escopo, armazenamento, auditoria e canal oficial.',
           icon: <Building2 size={21} strokeWidth={1.8} aria-hidden="true" />,
         },
         {
           title: 'Proteger relatos',
-          description: 'Definir confidencialidade, acesso, retencao e trilha de auditoria antes de receber dados.',
+          description: 'Definir confidencialidade, acesso, retenção e trilha de auditoria antes de receber dados.',
           icon: <FileLock2 size={21} strokeWidth={1.8} aria-hidden="true" />,
         },
         {
-          title: 'Operar com governanca',
-          description: 'Separar notificacoes, status e resposta sem expor informacoes indevidas.',
+          title: 'Operar com governança',
+          description: 'Separar notificações, status e resposta sem expor informações indevidas.',
           icon: <ShieldAlert size={21} strokeWidth={1.8} aria-hidden="true" />,
         },
       ]}
       allowedItems={[
-        'Shell visivel como modulo partner-managed.',
-        'Indicacao honesta de dependencia de parceiro e contrato.',
-        'Separacao entre menu e recebimento real de denuncia.',
+        'Shell visível como módulo partner-managed.',
+        'Indicação honesta de dependência de parceiro e contrato.',
+        'Separação entre menu e recebimento real de denúncia.',
       ]}
       blockedItems={[
-        'Formulario, caixa de entrada, protocolo ou upload de denuncia.',
-        'Integracao com parceiro sem contrato e definicao tecnica.',
-        'Acesso RH/Admin a relatos ou dados pessoais sensiveis.',
+        'Formulário, caixa de entrada, protocolo ou upload de denúncia.',
+        'Integração com parceiro sem contrato e definição técnica.',
+        'Acesso RH/Admin a relatos ou dados pessoais sensíveis.',
       ]}
     />
   );

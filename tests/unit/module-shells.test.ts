@@ -6,6 +6,7 @@ const root = process.cwd();
 const shellPages = [
   'src/app/(platform)/saude-primaria/page.tsx',
   'src/app/(platform)/concierge/page.tsx',
+  'src/app/(platform)/nr1/page.tsx',
   'src/app/(platform)/viva-sipat/page.tsx',
   'src/app/(platform)/desenvolvimento-humano/page.tsx',
   'src/app/(platform)/canal-denuncias/page.tsx',
@@ -29,9 +30,40 @@ describe('Paola P3 locked module shells', () => {
   it('keeps Viva SIPAT source-needed and does not invent content', () => {
     const source = read('src/app/(platform)/viva-sipat/page.tsx');
 
-    expect(source).toContain('Fonte de conteudo pendente');
-    expect(source).toContain('nao cria aulas, campanhas, videos ou materiais novos');
-    expect(source).not.toMatch(/certificado emitido|conteudo publicado|aula disponivel|cronograma oficial/i);
+    expect(source).toContain('Fonte de conteúdo pendente');
+    expect(source).toContain('não cria aulas, campanhas, vídeos ou materiais novos');
+    expect(source).not.toMatch(/certificado emitido|conte[uú]do publicado|aula dispon[ií]vel|cronograma oficial/i);
+  });
+
+  it('keeps Saude Primaria visible context accented', () => {
+    const source = read('src/app/(platform)/saude-primaria/page.tsx');
+
+    expect(source).toContain('context="Saúde Primária"');
+    expect(source).not.toContain('context="Saude Primaria"');
+  });
+
+  it('keeps NR-1 as a contract-gated shell separate from COPSOQ runtime', () => {
+    const source = read('src/app/(platform)/nr1/page.tsx');
+
+    expect(source).toContain('Contrato pendente');
+    expect(source).toContain('COPSOQ');
+    expect(source).not.toMatch(/CopsoqFlow|useCopsoq|\/api\/yavix\/copsoq|<form|<input|<textarea/i);
+  });
+
+  it('keeps the COPSOQ runtime route behind the NR-1 entitlement gate', () => {
+    const source = read('src/app/(platform)/avaliacao-nr1/page.tsx');
+
+    expect(source).toContain('getNr1RuntimeEntitlementForCurrentRequest');
+    expect(source).toContain("redirect('/nr1')");
+    expect(source.indexOf('getNr1RuntimeEntitlementForCurrentRequest')).toBeLessThan(source.indexOf('<CopsoqFlow'));
+  });
+
+  it('keeps the collaborator NR-1 journey gated by company modules', () => {
+    const source = read('src/app/(platform)/colaboradora/page.tsx');
+
+    expect(source).toContain("useSWR<CompanyModulesResponse>('/api/company/modules'");
+    expect(source).toContain('isNr1RuntimeEntitled(moduleData?.modules)');
+    expect(source).not.toContain('NEXT_PUBLIC_UNIHER_NR1_ENTITLEMENT');
   });
 
   it('keeps the denunciation shell partner-managed without receiving reports', () => {

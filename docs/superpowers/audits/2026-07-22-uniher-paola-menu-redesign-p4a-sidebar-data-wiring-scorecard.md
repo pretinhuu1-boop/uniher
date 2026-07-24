@@ -40,6 +40,7 @@ Wire the existing Sidebar runtime navigation to the canonical `company_modules` 
 - Sidebar requests `/api/company/modules` with SWR key scoped by endpoint, user id, company id and active navigation role.
 - Sidebar uses `getModuleAwareNavigationForRole(role, modules)` when data exists and falls back to current static navigation when no rows/data are available.
 - Locked and gated modules render badge metadata from P2.
+- NR-1 rows in `requires_contract` remain visible with `Contrato` badge but route to the locked `/nr1` shell; only explicit `enabled` rows can route to `/avaliacao-nr1`.
 
 ## Validation
 
@@ -61,13 +62,28 @@ Wire the existing Sidebar runtime navigation to the canonical `company_modules` 
 | `npx tsc --noEmit` | PASS. |
 | `npm run build` | PASS; 146 static pages. Existing Turbopack/NFT warning remains around `next.config.ts` through `/api/admin/system/ops`, emitted once. |
 
+## NR-1 default gate correction validation
+
+| Command | Result |
+|---|---|
+| `npm run test:unit -- tests/unit/platform/navigation.test.ts tests/unit/module-shells.test.ts` | PASS; 2 files, 37 tests. |
+| `npm run test:unit -- tests/unit/platform/navigation.test.ts tests/unit/company-modules-api.test.ts tests/unit/module-shells.test.ts tests/unit/privacy/semaforo-containment.test.ts tests/unit/privacy/gamification-api-containment.test.ts` | PASS; 5 files, 73 tests. |
+
+Correction receipt:
+
+- RED before patch: default/gated NR-1 navigation still pointed to `/avaliacao-nr1`, and no `/nr1` shell existed.
+- GREEN after patch: `requires_contract` NR-1 points to `/nr1` with `Contrato`; explicit `enabled` NR-1 can still point to `/avaliacao-nr1`.
+- The `/nr1` page is a static `ContainedSurfacePreview` shell and does not import COPSOQ runtime, `useCopsoq` or Yavix request paths.
+- Review follow-up: `/colaboradora` no longer uses public entitlement env defaults to expose `/avaliacao-nr1`; it fetches `/api/company/modules` and requires visible `enabled` NR-1 through `isNr1RuntimeEntitled`.
+- Runtime/API follow-up: `/avaliacao-nr1` and every `/api/yavix/copsoq/*` endpoint now enforce the canonical server-side NR-1 entitlement guard before mounting COPSOQ or returning mock/runtime behavior.
+
 ## Privacy and governance checks
 
 - No individual health, Semaforo, NR-1 answer, agenda, exam or check-in/check-out data is exposed.
 - No module state mutation endpoint was added.
 - No default module rows are created by a read.
 - SIPAT remains source-gated; this lane does not add lessons, campaigns, materials, schedules or videos.
-- Yavix/NR-1 remains preview/contract-gated; this lane does not add provisioning, scoring, result sync or partner calls.
+- Yavix/NR-1 remains preview/contract-gated; `requires_contract` module rows route to `/nr1`, `/colaboradora`, `/avaliacao-nr1` and `/api/yavix/copsoq/*` require visible `enabled` NR-1 before runtime access, and this lane does not add provisioning, scoring, result sync or partner calls.
 
 ## Decision
 

@@ -24,7 +24,7 @@ export function DepartmentOverview({ departments }: { departments: ProtectedDepa
       <div className={styles.sectionHeader}>
         <div>
           <p className={styles.eyebrow}>Departamentos</p>
-          <h3 id="departments-title" className={styles.sectionTitle}>Contribuintes ativos por \u00e1rea</h3>
+          <h3 id="departments-title" className={styles.sectionTitle}>Contribuintes ativos por área</h3>
         </div>
       </div>
       {departments.length === 0 ? (

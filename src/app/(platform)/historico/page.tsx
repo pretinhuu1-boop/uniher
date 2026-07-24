@@ -14,7 +14,7 @@ async function historyFetcher(endpoint: string): Promise<UnavailableHistoryProje
   const response = await fetch(endpoint, { cache: 'no-store' });
   const body = await response.json() as UnavailableHistoryProjection | { error?: string };
   if (response.status === 410) return body as UnavailableHistoryProjection;
-  if (!response.ok) throw new Error('N\u00e3o foi poss\u00edvel consultar o hist\u00f3rico protegido.');
+  if (!response.ok) throw new Error('Não foi possível consultar o histórico protegido.');
   return body as UnavailableHistoryProjection;
 }
 
@@ -39,12 +39,12 @@ export default function HistoricoPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        context="Privacidade \u00b7 RH"
-        title="Hist\u00f3rico protegido"
-        description="A evolu\u00e7\u00e3o s\u00f3 ser\u00e1 exibida quando houver um registro eleg\u00edvel para agrega\u00e7\u00e3o."
+        context="Privacidade · RH"
+        title="Histórico protegido"
+        description="A evolução só será exibida quando houver um registro elegível para agregação."
       />
       <label>
-        Per\u00edodo
+        Período
         <select value={period} onChange={(event) => setPeriod(event.target.value as HistoryPeriod)}>
           {HISTORY_PERIODS.map((value) => (
             <option key={value} value={value}>{value} meses</option>
@@ -60,14 +60,14 @@ export default function HistoricoPage() {
       ) : error ? (
         <FeedbackState
           kind="error"
-          title="N\u00e3o foi poss\u00edvel consultar o hist\u00f3rico"
-          description="Atualize a p\u00e1gina para tentar novamente."
+          title="Não foi possível consultar o histórico"
+          description="Atualize a página para tentar novamente."
         />
       ) : (
         <FeedbackState
           kind="empty"
-          title="Hist\u00f3rico indispon\u00edvel"
-          description={data?.message ?? 'O registro eleg\u00edvel ainda n\u00e3o est\u00e1 dispon\u00edvel.'}
+          title="Histórico indisponível"
+          description={data?.message ?? 'O registro elegível ainda não está disponível.'}
         />
       )}
     </div>

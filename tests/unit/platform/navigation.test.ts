@@ -23,7 +23,7 @@ const EXPECTED_NAVIGATION = {
           href: '/admin',
           label: 'Dashboard geral',
           icon: 'companies',
-          description: 'Empresas, usuarios e integridade operacional da plataforma',
+          description: 'Empresas, usuários e integridade operacional da plataforma',
         },
       ],
     },
@@ -34,74 +34,74 @@ const EXPECTED_NAVIGATION = {
           href: '/admin?tab=empresas',
           label: 'Empresas',
           icon: 'companies',
-          description: 'Lista, ambientes, usuarios, permissoes e configuracoes de empresas',
+          description: 'Lista, ambientes, usuários, permissões e configurações de empresas',
         },
       ],
     },
     {
-      label: 'Saude Primaria',
+      label: 'Saúde Primária',
       items: [
         {
           href: '/saude-primaria',
-          label: 'Saude Primaria',
+          label: 'Saúde Primária',
           icon: 'semaforo',
-          description: 'Visao agregada futura do Semaforo, bloqueada por governanca clinica',
+          description: 'Visão agregada futura do Semáforo, bloqueada por governança clínica',
         },
         {
           href: '/concierge',
           label: 'Concierge',
           icon: 'profile',
-          description: 'Gestao de casos somente quando o modulo e contrato estiverem aprovados',
+          description: 'Gestão de casos somente quando o módulo e contrato estiverem aprovados',
         },
         {
           href: '/historico',
           label: 'Dashboard de exames',
           icon: 'historico',
-          description: 'Base existente para relatorios e acompanhamento de exames',
+          description: 'Base existente para relatórios e acompanhamento de exames',
         },
       ],
     },
     {
-      label: 'Educacao',
+      label: 'Educação',
       items: [
         {
           href: '/comunidade/gerenciar',
-          label: 'Educacao',
+          label: 'Educação',
           icon: 'community',
-          description: 'Conteudos editoriais e campanhas educativas das empresas',
+          description: 'Conteúdos editoriais e campanhas educativas das empresas',
         },
       ],
     },
     {
-      label: 'Gamificacao',
+      label: 'Gamificação',
       items: [
         {
           href: '/gamificacao-config',
-          label: 'Gamificacao',
+          label: 'Gamificação',
           icon: 'config',
-          description: 'Governanca de desafios, recompensas e rankings aprovados',
+          description: 'Governança de desafios, recompensas e rankings aprovados',
         },
       ],
     },
     {
-      label: 'Produtos e Modulos',
+      label: 'Produtos e Módulos',
       items: [
         {
           href: '/produtos-modulos',
-          label: 'Produtos e Modulos',
+          label: 'Produtos e Módulos',
           icon: 'config',
-          description: 'Controle administrativo em preparacao para modulos contratados',
+          description: 'Controle administrativo em preparação para módulos contratados',
         },
       ],
     },
     {
-      label: 'Relatorios',
+      label: 'Relatórios',
       items: [
         {
           href: '/analytics-emails',
-          label: 'Relatorios',
+          label: 'Relatórios',
           icon: 'analytics',
-          description: 'Comunicacao e atividade agregada da plataforma',
+          description: 'Comunicação e atividade agregada da plataforma',
         },
       ],
     },
@@ -112,7 +112,7 @@ const EXPECTED_NAVIGATION = {
           href: '/admin?tab=sistema',
           label: 'Sistema',
           icon: 'config',
-          description: 'Administradores UniHER, permissoes e configuracoes globais no painel master',
+          description: 'Administradores UniHER, permissões e configurações globais no painel master',
         },
       ],
     },
@@ -125,7 +125,7 @@ const EXPECTED_NAVIGATION = {
           href: '/dashboard',
           label: 'Dashboard',
           icon: 'dashboard',
-          description: 'Visao geral, atencao, acoes e impacto da empresa',
+          description: 'Visão geral, atenção, ações e impacto da empresa',
         },
       ],
     },
@@ -136,13 +136,13 @@ const EXPECTED_NAVIGATION = {
           href: '/colaboradoras-gestao',
           label: 'Colaboradoras',
           icon: 'colaboradoras',
-          description: 'Aprovacoes, perfis e status',
+          description: 'Aprovações, perfis e status',
         },
         {
           href: '/departamentos',
           label: 'Departamentos',
           icon: 'departamentos',
-          description: 'Estrutura e participacao por setor',
+          description: 'Estrutura e participação por setor',
         },
         {
           href: '/convites',
@@ -153,19 +153,19 @@ const EXPECTED_NAVIGATION = {
       ],
     },
     {
-      label: 'Educacao',
+      label: 'Educação',
       items: [
         {
           href: '/campanhas',
           label: 'Campanhas e trilhas',
           icon: 'campanhas',
-          description: 'Planejar campanhas, trilhas e conteudos educativos',
+          description: 'Planejar campanhas, trilhas e conteúdos educativos',
         },
         {
           href: '/comunidade/gerenciar',
-          label: 'Conteudos educativos',
+          label: 'Conteúdos educativos',
           icon: 'community',
-          description: 'Publicar e organizar conteudos da comunidade',
+          description: 'Publicar e organizar conteúdos da comunidade',
         },
       ],
     },
@@ -180,24 +180,24 @@ const EXPECTED_NAVIGATION = {
         },
         {
           href: '/gamificacao-config',
-          label: 'Configuracao de conquistas',
+          label: 'Configuração de conquistas',
           icon: 'config',
-          description: 'Governar objetivos, desafios e gamificacao aprovada',
+          description: 'Governar objetivos, desafios e gamificação aprovada',
         },
       ],
     },
     {
-      label: 'Gestao',
+      label: 'Gestão',
       items: [
         {
           href: '/historico',
-          label: 'Historico',
+          label: 'Histórico',
           icon: 'historico',
-          description: 'Relatorios e evolucao',
+          description: 'Relatórios e evolução',
         },
         {
           href: '/analytics-emails',
-          label: 'Comunicacao',
+          label: 'Comunicação',
           icon: 'analytics',
           description: 'Entrega e leitura de mensagens',
         },
@@ -223,13 +223,13 @@ const EXPECTED_NAVIGATION = {
       ],
     },
     {
-      label: 'Educacao',
+      label: 'Educação',
       items: [
         {
           href: '/campanhas',
           label: 'Campanhas e trilhas',
           icon: 'campanhas',
-          description: 'Campanhas e conteudos disponiveis',
+          description: 'Campanhas e conteúdos disponíveis',
         },
       ],
     },
@@ -242,41 +242,41 @@ const EXPECTED_NAVIGATION = {
           href: '/colaboradora',
           label: 'Hoje',
           icon: 'dashboard',
-          description: 'Check-in, foco do dia e proximas acoes',
+          description: 'Check-in, foco do dia e próximas ações',
         },
         {
           href: '/agenda',
           label: 'Minha agenda de exames',
           icon: 'agenda',
-          description: 'Exames, consultas, lembretes e historico',
+          description: 'Exames, consultas, lembretes e histórico',
         },
       ],
     },
     {
-      label: 'Saude Primaria',
+      label: 'Saúde Primária',
       items: [
         {
           href: '/semaforo',
-          label: 'Meu semaforo',
+          label: 'Meu semáforo',
           icon: 'semaforo',
-          description: 'Leitura individual de cuidado em superficie contida',
+          description: 'Leitura individual de cuidado em superfície contida',
         },
       ],
     },
     {
-      label: 'Educacao',
+      label: 'Educação',
       items: [
         {
           href: '/campanhas',
           label: 'Campanhas e trilhas',
           icon: 'campanhas',
-          description: 'Conteudos, trilhas e acoes educativas disponiveis',
+          description: 'Conteúdos, trilhas e ações educativas disponíveis',
         },
         {
           href: '/comunidade',
           label: 'Comunidade',
           icon: 'community',
-          description: 'Conteudos editoriais da sua empresa',
+          description: 'Conteúdos editoriais da sua empresa',
         },
       ],
     },
@@ -365,7 +365,7 @@ describe('platform navigation', () => {
       '/analytics-emails',
       '/company-profile',
     ]);
-    expect(groupLabelsFor('rh')).toEqual(['Dashboard', 'Pessoas', 'Educacao', 'Conquistas', 'Gestao']);
+    expect(groupLabelsFor('rh')).toEqual(['Dashboard', 'Pessoas', 'Educação', 'Conquistas', 'Gestão']);
 
     expect(routesFor('colaboradora')).toEqual([
       '/colaboradora',
@@ -377,7 +377,7 @@ describe('platform navigation', () => {
       '/desafios',
       '/conquistas',
     ]);
-    expect(groupLabelsFor('colaboradora')).toEqual(['Meu bem-estar', 'Saude Primaria', 'Educacao', 'Conquistas']);
+    expect(groupLabelsFor('colaboradora')).toEqual(['Meu bem-estar', 'Saúde Primária', 'Educação', 'Conquistas']);
   });
 
   it('covers the Admin Master taxonomy requested by Paola with safe existing destinations', () => {
@@ -388,11 +388,11 @@ describe('platform navigation', () => {
     expect(labels).toEqual([
       'Dashboard geral',
       'Empresas',
-      'Saude Primaria',
-      'Educacao',
-      'Gamificacao',
-      'Produtos e Modulos',
-      'Relatorios',
+      'Saúde Primária',
+      'Educação',
+      'Gamificação',
+      'Produtos e Módulos',
+      'Relatórios',
       'Sistema',
     ]);
     expect(routes).toEqual([
@@ -429,16 +429,31 @@ describe('platform navigation', () => {
 
     expect(new Set(routes).size).toBe(routes.length);
     expect(routes).toContain('/saude-primaria');
-    expect(routes).toContain('/avaliacao-nr1');
+    expect(routes).toContain('/nr1');
+    expect(routes).not.toContain('/avaliacao-nr1');
     expect(routes).toContain('/viva-sipat');
     expect(routes).toContain('/desenvolvimento-humano');
     expect(routes).toContain('/canal-denuncias');
     expect(routes).not.toContain('/concierge');
     expect(routes.filter((route) => route === '/campanhas')).toHaveLength(1);
     expect(routes.filter((route) => route === '/conquistas')).toHaveLength(1);
-    expect(byLabel['Saude Primaria'].badgeLabel).toBe('Bloqueado');
+    expect(byLabel['Sa\u00fade Prim\u00e1ria'].badgeLabel).toBe('Bloqueado');
     expect(byLabel['NR-1'].badgeLabel).toBe('Contrato');
-    expect(byLabel['Canal de Denuncias'].badgeLabel).toBe('Parceiro');
+    expect(byLabel['Canal de Den\u00fancias'].badgeLabel).toBe('Parceiro');
+  });
+
+  it('routes explicitly enabled NR-1 to the COPSOQ runtime while keeping gated rows on the locked shell', () => {
+    const gatedRoutes = flatItems(getModuleAwareNavigationForRole('rh', [
+      moduleRow('nr1', 'requires_contract'),
+    ])).map((item) => item.href);
+    const enabledRoutes = flatItems(getModuleAwareNavigationForRole('rh', [
+      moduleRow('nr1', 'enabled'),
+    ])).map((item) => item.href);
+
+    expect(gatedRoutes).toContain('/nr1');
+    expect(gatedRoutes).not.toContain('/avaliacao-nr1');
+    expect(enabledRoutes).toContain('/avaliacao-nr1');
+    expect(enabledRoutes).not.toContain('/nr1');
   });
 
   it('keeps role visibility separate from module access state', () => {

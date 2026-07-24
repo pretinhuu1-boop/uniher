@@ -86,6 +86,10 @@ export function createAchievementsRepository(database: Database.Database): Achie
           AND achievement_key = @achievementKey
       `).get(input) as { status: PrivateAchievementStatus } | undefined;
 
+      if (existing?.status === 'revoked' && input.status === 'in_progress') {
+        return selectAchievement(database, input);
+      }
+
       database.prepare(`
         INSERT INTO private_achievements (
           id, company_id, user_id, achievement_key, status, progress,

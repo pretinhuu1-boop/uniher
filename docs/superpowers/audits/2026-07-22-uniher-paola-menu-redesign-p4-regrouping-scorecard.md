@@ -29,6 +29,7 @@ Regroup the existing Dashboard, Educacao, Agenda and Conquistas surfaces in the 
 - Collaborator `Meu bem-estar` reuses `/colaboradora` and `/agenda`; `Educacao` reuses `/campanhas` and `/comunidade`; `Conquistas` reuses `/objetivos`, `/desafios` and `/conquistas`.
 - Leadership base navigation is grouped as `Dashboard` and `Educacao`.
 - Module-aware navigation from P2/P4A remains separate; locked modules still come from `company_modules`.
+- NR-1 `requires_contract` rows are visible as a locked module shell at `/nr1`; only explicit `enabled` rows can reach `/avaliacao-nr1`.
 
 ## Validation
 
@@ -101,13 +102,25 @@ Regroup the existing Dashboard, Educacao, Agenda and Conquistas surfaces in the 
 | `git diff --check` | PASS; LF/CRLF warnings only. |
 | `npm run build` | PASS; 146 static pages. Existing Turbopack/NFT warning remains around `next.config.ts` through `/api/admin/system/ops`, emitted once. |
 
+## NR-1 default gate correction validation
+
+| Check | Result |
+|---|---|
+| Default/gated NR-1 navigation | PASS; `requires_contract` points to `/nr1`, not `/avaliacao-nr1`. |
+| Enabled NR-1 navigation | PASS; explicit `enabled` state can still point to `/avaliacao-nr1`. |
+| Locked NR-1 shell | PASS; `/nr1` uses `ContainedSurfacePreview` and does not import COPSOQ/Yavix runtime. |
+| Collaborator home NR-1 journey | PASS; `/colaboradora` no longer uses public entitlement env defaults and requires visible `enabled` NR-1 from `/api/company/modules` before exposing `/avaliacao-nr1`. |
+| Direct NR-1 runtime/API gate | PASS; `/avaliacao-nr1` and `/api/yavix/copsoq/*` now require the canonical server-side visible/enabled NR-1 entitlement. |
+| `npm run test:unit -- tests/unit/platform/navigation.test.ts tests/unit/module-shells.test.ts` | PASS; 2 files, 37 tests. |
+| `npm run test:unit -- tests/unit/platform/navigation.test.ts tests/unit/company-modules-api.test.ts tests/unit/module-shells.test.ts tests/unit/privacy/semaforo-containment.test.ts tests/unit/privacy/gamification-api-containment.test.ts` | PASS; 5 files, 73 tests. |
+
 ## Privacy and governance checks
 
 - No route was added to base navigation for sensitive module execution.
 - RH/leadership base navigation still excludes personal Agenda, personal Semaforo, personal Objetivos and Liga.
 - Collaborator base navigation still excludes Liga.
 - No SIPAT lessons, campaigns, schedules, videos or materials were invented.
-- No Yavix/NR-1 provisioning, scoring or result sync was added.
+- No Yavix/NR-1 provisioning, scoring or result sync was added; `requires_contract`, collaborator-home defaults, direct `/avaliacao-nr1` and direct `/api/yavix/copsoq/*` calls no longer run COPSOQ unless the company has explicit visible/enabled NR-1.
 - No module-management mutations were added.
 
 ## Decision

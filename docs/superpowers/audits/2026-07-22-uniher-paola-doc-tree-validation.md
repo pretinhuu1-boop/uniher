@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-22
 **Scope:** Paola menu redesign documentation package in `docs/superpowers`
-**Decision:** PASS for documentation validity after findings correction
+**Decision:** PASS for 2026-07-22 documentation validity after findings correction; superseded for current status by `docs/superpowers/audits/2026-07-23-uniher-paola-redesign-current-state-scorecard.md`
 
 ## Files validated
 
@@ -31,6 +31,14 @@
 | Existing route/content inventory | NR-1 preview/scaffold exists; dedicated SIPAT, Concierge, Denuncias and Desenvolvimento Humano route/content implementations were not found in `src`. |
 | Local reference check | All required current docs/source references exist, including the P1 implementation files. |
 | `git diff --check` | PASS; only LF/CRLF normalization warning on `docs/superpowers/SESSION_ORCHESTRATION_LEDGER.md`. |
+
+Historical inventory note:
+
+- The route/content inventory above was captured on 2026-07-22 before later P3
+  shells and P4/P7A corrections. It is retained as historical validation
+  evidence, not as the current route inventory.
+- Use the 2026-07-23 current-state and lane scorecards for current route/module
+  status.
 
 ## P1 implementation references now present
 
@@ -64,4 +72,14 @@ These paths were planned during preflight and now exist as the P1 implementation
 
 ## Decision
 
-The documentation tree is valid for continuing orchestration. It is not a product implementation approval.
+The documentation tree was valid for continuing orchestration on 2026-07-22. It is not a product implementation approval.
+
+## 2026-07-23 supersession note
+
+Use `docs/superpowers/audits/2026-07-23-uniher-paola-redesign-current-state-scorecard.md` for the latest product/design decision. The current decision is HOLD for full Dra. Paola redesign approval because visual menu/box proof, Check-out, Check-in x Check-out dashboards, complete RH/Admin indicators and source/contract-gated modules remain incomplete.
+
+Next-gate correction:
+
+- This doc-tree validation lane is closed and superseded by later P1/P1A/P3/P4A/P4/P7A/F0 artifacts.
+- Do not reopen P1 implementation allowlist or P1A inventory from this historical document.
+- SIPAT content-bearing implementation remains source-gated, and `SPEC CAPTURED` remains separate from runtime completion in the Paola redesign contract.

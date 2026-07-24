@@ -6,37 +6,37 @@ export default function DesenvolvimentoHumanoPage() {
     <ContainedSurfacePreview
       context="Desenvolvimento Humano"
       title="Desenvolvimento Humano"
-      description="Modulo futuro para conteudos, trilhas e acoes de desenvolvimento contratadas pela empresa."
-      stateTitle="Modulo futuro"
-      stateDescription="Nenhuma trilha, avaliacao, conteudo ou acompanhamento individual foi ativado."
+      description="Módulo futuro para conteúdos, trilhas e ações de desenvolvimento contratadas pela empresa."
+      stateTitle="Módulo futuro"
+      stateDescription="Nenhuma trilha, avaliação, conteúdo ou acompanhamento individual foi ativado."
       intentTitle="Biblioteca preparada para contrato"
-      intentDescription="A tela estabelece o lugar do modulo na plataforma sem criar curriculo, ranking, diagnostico ou promessa de entrega."
+      intentDescription="A tela estabelece o lugar do módulo na plataforma sem criar currículo, ranking, diagnóstico ou promessa de entrega."
       steps={[
         {
           title: 'Definir oferta',
-          description: 'Separar conteudos, trilhas e acoes que pertencem ao contrato de cada empresa.',
+          description: 'Separar conteúdos, trilhas e ações que pertencem ao contrato de cada empresa.',
           icon: <Layers3 size={21} strokeWidth={1.8} aria-hidden="true" />,
         },
         {
-          title: 'Revisar conteudo',
-          description: 'Garantir autoria, contexto e adequacao antes de publicar materiais.',
+          title: 'Revisar conteúdo',
+          description: 'Garantir autoria, contexto e adequação antes de publicar materiais.',
           icon: <BookOpenCheck size={21} strokeWidth={1.8} aria-hidden="true" />,
         },
         {
           title: 'Ativar com cuidado',
-          description: 'Abrir a experiencia apenas quando compra, permissao e governanca estiverem claras.',
+          description: 'Abrir a experiência apenas quando compra, permissão e governança estiverem claras.',
           icon: <Sparkles size={21} strokeWidth={1.8} aria-hidden="true" />,
         },
       ]}
       allowedItems={[
         'Shell futuro e bloqueado por contrato.',
-        'Espaco para trilhas e conteudos aprovados depois.',
-        'Copy que nao promete entrega ja existente.',
+        'Espaço para trilhas e conteúdos aprovados depois.',
+        'Copy que não promete entrega já existente.',
       ]}
       blockedItems={[
-        'Conteudos, trilhas, certificados ou avaliacoes reais.',
-        'Uso de dados de saude, Semaforo, NR-1, agenda ou check-in.',
-        'Ranking, pontuacao ou diagnostico de colaboradoras.',
+        'Conteúdos, trilhas, certificados ou avaliações reais.',
+        'Uso de dados de saúde, Semáforo, NR-1, agenda ou check-in.',
+        'Ranking, pontuação ou diagnóstico de colaboradoras.',
       ]}
     />
   );

@@ -18,7 +18,8 @@ import { Button } from '@/components/ui/Button';
 import PageHeader from '@/components/platform/PageHeader';
 import { SummaryBand } from '@/components/platform/SummaryBand';
 import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
-import { getNr1PreviewState, type Nr1PreviewState } from '@/lib/nr1/preview-state';
+import { getNr1PreviewState, isNr1RuntimeEntitled, type Nr1PreviewState } from '@/lib/nr1/preview-state';
+import type { CompanyModuleNavigationRecord } from '@/types/modules';
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
@@ -39,17 +40,15 @@ interface CollaboratorHomeData {
   contentViewed?: number;
 }
 
+interface CompanyModulesResponse {
+  modules?: CompanyModuleNavigationRecord[];
+}
+
 const actionLinkClass =
   'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[var(--platform-radius-control)] border border-[var(--platform-action)] px-4 py-2 text-sm font-semibold text-[var(--platform-action-strong)] transition-colors duration-[var(--platform-duration-fast)] hover:bg-[var(--platform-group)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)] focus-visible:ring-offset-2';
 
 const disabledActionClass =
   'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] px-4 py-2 text-sm font-semibold text-[var(--platform-muted)]';
-
-const nr1PreviewState = getNr1PreviewState({
-  previewEnabled: process.env.NEXT_PUBLIC_UNIHER_NR1_PREVIEW === '1',
-  entitled: process.env.NEXT_PUBLIC_UNIHER_NR1_ENTITLEMENT !== '0',
-  realIntegration: false,
-});
 
 function JourneyRow({
   step,
@@ -130,6 +129,7 @@ function Nr1JourneyRow({ state }: { state: Nr1PreviewState }) {
 export default function CollaboratorHomePage() {
   const searchParams = useSearchParams();
   const { data, isLoading } = useSWR<CollaboratorHomeData>('/api/collaborator', fetcher);
+  const { data: moduleData } = useSWR<CompanyModulesResponse>('/api/company/modules', fetcher);
   const { data: streak, mutate: refreshStreak } = useSWR<{ checkedInToday?: boolean }>('/api/gamification/streak-status', fetcher);
   const { data: missionData, mutate: refreshMissions } = useSWR<{ missions?: SafeMission[] }>('/api/gamification/daily-missions', fetcher);
   const [checkingIn, setCheckingIn] = useState(false);
@@ -183,6 +183,11 @@ export default function CollaboratorHomePage() {
 
   const missions = missionData?.missions ?? [];
   const checkInLabel = streak?.checkedInToday ? 'Check-in registrado' : 'Fazer check-in';
+  const nr1PreviewState = getNr1PreviewState({
+    previewEnabled: process.env.NEXT_PUBLIC_UNIHER_NR1_PREVIEW === '1',
+    entitled: isNr1RuntimeEntitled(moduleData?.modules),
+    realIntegration: false,
+  });
 
   return (
     <div className="space-y-6">

@@ -109,6 +109,8 @@ describe('Sidebar navigation rendering', () => {
     expect(html).toContain('<li>');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('Bloqueado');
+    expect(html).not.toContain('DesafiosBloqueado');
+    expect(html).toContain('Desafios</span> <span');
   });
 
   it('marks query-specific admin shortcuts active without activating the base admin dashboard', () => {

@@ -3,7 +3,7 @@
 Date: 2026-07-22
 Lane: `visual-contained-pages`
 Scope: authenticated internal UniHER routes `/semaforo`, `/objetivos`, `/desafios`, `/conquistas`, `/liga`
-Decision: PASS for visual QA and harness/loop pilot
+Decision: historical PASS for visual QA and harness/loop pilot; current-state HOLD for routes superseded by Waves 6/7/8
 
 ## Harness contract
 
@@ -34,6 +34,27 @@ Verify: deterministic checks, build, authenticated route screenshots, mobile top
 Reflect: first independent QA returned HOLD; after fixes and recapture, independent QA returned PASS with one P2 integration hygiene note.
 
 ## Evidence
+
+## Historical PASS / current-state HOLD
+
+This scorecard remains valid as the 2026-07-22 harness/loop pilot and
+historical contained-page visual QA evidence. It must not be used as current
+visual approval for every route listed in the original scope.
+
+Current-state split:
+
+- `/semaforo` remains contained and decision-gated under Wave 9.
+- `/liga` remains contained and policy-gated under Wave 10.
+- `/objetivos` was superseded by the functional self-only Wave 6 route and is
+  covered by the Wave 6 scorecard/evidence.
+- `/desafios` was superseded by the functional self-only Wave 7 route and is
+  covered by the Wave 7 scorecard/evidence.
+- `/conquistas` was superseded by the functional private achievements Wave 8
+  route and is covered by the Wave 8 scorecard/evidence.
+
+If current visual approval is required for `/objetivos`, `/desafios` or
+`/conquistas`, open a separate current visual QA lane instead of reusing the
+old contained-page screenshots as approval.
 
 | Check | Result |
 | --- | --- |
@@ -86,6 +107,9 @@ All files are under `C:\Users\user\Documents\Codex\2026-07-21\uniher-redesign-pa
 
 ## Decision
 
-The `visual-contained-pages` pilot is PASS for visual QA and validates the harness/loop operating model for future UniHER specs.
+The `visual-contained-pages` pilot is historical PASS for visual QA and validates the harness/loop operating model for future UniHER specs.
+
+Current-state promotion is HOLD for the routes superseded by Waves 6/7/8. Use
+the current route-specific scorecards before making visual approval claims.
 
 Do not stage, commit, PR or deploy automatically. If this wave is promoted into git, include only the six visual write-set files listed in the harness contract unless the user separately approves the orchestration docs write set.

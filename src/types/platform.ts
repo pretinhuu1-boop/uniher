@@ -89,7 +89,7 @@ export interface ProtectedCommunicationsProjection {
 export interface UnavailableHistoryProjection {
   status: 'unavailable';
   reason: 'eligible_ledger_required';
-  message: 'Hist\u00f3rico indispon\u00edvel at\u00e9 existir um registro eleg\u00edvel e protegido.';
+  message: 'Histórico indisponível até existir um registro elegível e protegido.';
 }
 
 export interface CampaignStatus {

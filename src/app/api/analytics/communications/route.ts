@@ -19,7 +19,7 @@ export const GET = withRole('rh', 'admin')(
     });
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Filtro de comunica\u00e7\u00f5es inv\u00e1lido.' },
+        { error: 'Filtro de comunicações inválido.' },
         { status: 400, headers: PROTECTED_HEADERS },
       );
     }
@@ -33,7 +33,7 @@ export const GET = withRole('rh', 'admin')(
       return NextResponse.json(projection, { headers: PROTECTED_HEADERS });
     } catch {
       return NextResponse.json(
-        { error: 'N\u00e3o foi poss\u00edvel produzir a proje\u00e7\u00e3o protegida.' },
+        { error: 'Não foi possível produzir a projeção protegida.' },
         { status: 500, headers: PROTECTED_HEADERS },
       );
     }

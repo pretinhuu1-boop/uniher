@@ -8,14 +8,14 @@ import type {
 import type { ProtectedMetric } from '@/types/privacy';
 
 export interface DashboardSummaryItem {
-  label: 'Atividade de exames' | 'Engajamento' | 'Participa\u00e7\u00e3o em campanha';
+  label: 'Atividade de exames' | 'Engajamento' | 'Participação em campanha';
   metric: ProtectedMetric<number>;
   detail: string;
   state: 'neutral';
 }
 
 export interface DashboardAction {
-  readonly label: 'Campanhas' | 'Convites' | 'Hist\u00f3rico';
+  readonly label: 'Campanhas' | 'Convites' | 'Histórico';
   readonly description: string;
   readonly href: '/campanhas' | '/convites' | '/historico';
 }
@@ -32,7 +32,7 @@ export interface DashboardViewModel {
 const ACTION_BLUEPRINTS: readonly DashboardAction[] = [
   {
     label: 'Campanhas',
-    description: 'Gerencie as campanhas sem expor participa\u00e7\u00e3o individual.',
+    description: 'Gerencie as campanhas sem expor participação individual.',
     href: '/campanhas',
   },
   {
@@ -41,7 +41,7 @@ const ACTION_BLUEPRINTS: readonly DashboardAction[] = [
     href: '/convites',
   },
   {
-    label: 'Hist\u00f3rico',
+    label: 'Histórico',
     description: 'Consulte a disponibilidade do registro protegido.',
     href: '/historico',
   },
@@ -55,19 +55,19 @@ export function createDashboardViewModel(
       {
         label: 'Atividade de exames',
         metric: source.metrics.examActivity,
-        detail: 'contribuintes distintos no per\u00edodo',
+        detail: 'contribuintes distintos no período',
         state: 'neutral',
       },
       {
         label: 'Engajamento',
         metric: source.metrics.engagement,
-        detail: 'fonte legada n\u00e3o comput\u00e1vel',
+        detail: 'fonte legada não computável',
         state: 'neutral',
       },
       {
-        label: 'Participa\u00e7\u00e3o em campanha',
+        label: 'Participação em campanha',
         metric: source.metrics.campaignParticipation,
-        detail: 'aguardando classifica\u00e7\u00e3o de sensibilidade',
+        detail: 'aguardando classificação de sensibilidade',
         state: 'neutral',
       },
     ],

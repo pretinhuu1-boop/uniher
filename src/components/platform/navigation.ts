@@ -55,7 +55,7 @@ const NAVIGATION = {
           href: '/admin',
           label: 'Dashboard geral',
           icon: 'companies',
-          description: 'Empresas, usuarios e integridade operacional da plataforma',
+          description: 'Empresas, usuários e integridade operacional da plataforma',
         },
       ],
     },
@@ -66,74 +66,74 @@ const NAVIGATION = {
           href: '/admin?tab=empresas',
           label: 'Empresas',
           icon: 'companies',
-          description: 'Lista, ambientes, usuarios, permissoes e configuracoes de empresas',
+          description: 'Lista, ambientes, usuários, permissões e configurações de empresas',
         },
       ],
     },
     {
-      label: 'Saude Primaria',
+      label: 'Saúde Primária',
       items: [
         {
           href: '/saude-primaria',
-          label: 'Saude Primaria',
+          label: 'Saúde Primária',
           icon: 'semaforo',
-          description: 'Visao agregada futura do Semaforo, bloqueada por governanca clinica',
+          description: 'Visão agregada futura do Semáforo, bloqueada por governança clínica',
         },
         {
           href: '/concierge',
           label: 'Concierge',
           icon: 'profile',
-          description: 'Gestao de casos somente quando o modulo e contrato estiverem aprovados',
+          description: 'Gestão de casos somente quando o módulo e contrato estiverem aprovados',
         },
         {
           href: '/historico',
           label: 'Dashboard de exames',
           icon: 'historico',
-          description: 'Base existente para relatorios e acompanhamento de exames',
+          description: 'Base existente para relatórios e acompanhamento de exames',
         },
       ],
     },
     {
-      label: 'Educacao',
+      label: 'Educação',
       items: [
         {
           href: '/comunidade/gerenciar',
-          label: 'Educacao',
+          label: 'Educação',
           icon: 'community',
-          description: 'Conteudos editoriais e campanhas educativas das empresas',
+          description: 'Conteúdos editoriais e campanhas educativas das empresas',
         },
       ],
     },
     {
-      label: 'Gamificacao',
+      label: 'Gamificação',
       items: [
         {
           href: '/gamificacao-config',
-          label: 'Gamificacao',
+          label: 'Gamificação',
           icon: 'config',
-          description: 'Governanca de desafios, recompensas e rankings aprovados',
+          description: 'Governança de desafios, recompensas e rankings aprovados',
         },
       ],
     },
     {
-      label: 'Produtos e Modulos',
+      label: 'Produtos e Módulos',
       items: [
         {
           href: '/produtos-modulos',
-          label: 'Produtos e Modulos',
+          label: 'Produtos e Módulos',
           icon: 'config',
-          description: 'Controle administrativo em preparacao para modulos contratados',
+          description: 'Controle administrativo em preparação para módulos contratados',
         },
       ],
     },
     {
-      label: 'Relatorios',
+      label: 'Relatórios',
       items: [
         {
           href: '/analytics-emails',
-          label: 'Relatorios',
+          label: 'Relatórios',
           icon: 'analytics',
-          description: 'Comunicacao e atividade agregada da plataforma',
+          description: 'Comunicação e atividade agregada da plataforma',
         },
       ],
     },
@@ -144,7 +144,7 @@ const NAVIGATION = {
           href: '/admin?tab=sistema',
           label: 'Sistema',
           icon: 'config',
-          description: 'Administradores UniHER, permissoes e configuracoes globais no painel master',
+          description: 'Administradores UniHER, permissões e configurações globais no painel master',
         },
       ],
     },
@@ -157,7 +157,7 @@ const NAVIGATION = {
           href: '/dashboard',
           label: 'Dashboard',
           icon: 'dashboard',
-          description: 'Visao geral, atencao, acoes e impacto da empresa',
+          description: 'Visão geral, atenção, ações e impacto da empresa',
         },
       ],
     },
@@ -168,13 +168,13 @@ const NAVIGATION = {
           href: '/colaboradoras-gestao',
           label: 'Colaboradoras',
           icon: 'colaboradoras',
-          description: 'Aprovacoes, perfis e status',
+          description: 'Aprovações, perfis e status',
         },
         {
           href: '/departamentos',
           label: 'Departamentos',
           icon: 'departamentos',
-          description: 'Estrutura e participacao por setor',
+          description: 'Estrutura e participação por setor',
         },
         {
           href: '/convites',
@@ -185,19 +185,19 @@ const NAVIGATION = {
       ],
     },
     {
-      label: 'Educacao',
+      label: 'Educação',
       items: [
         {
           href: '/campanhas',
           label: 'Campanhas e trilhas',
           icon: 'campanhas',
-          description: 'Planejar campanhas, trilhas e conteudos educativos',
+          description: 'Planejar campanhas, trilhas e conteúdos educativos',
         },
         {
           href: '/comunidade/gerenciar',
-          label: 'Conteudos educativos',
+          label: 'Conteúdos educativos',
           icon: 'community',
-          description: 'Publicar e organizar conteudos da comunidade',
+          description: 'Publicar e organizar conteúdos da comunidade',
         },
       ],
     },
@@ -212,24 +212,24 @@ const NAVIGATION = {
         },
         {
           href: '/gamificacao-config',
-          label: 'Configuracao de conquistas',
+          label: 'Configuração de conquistas',
           icon: 'config',
-          description: 'Governar objetivos, desafios e gamificacao aprovada',
+          description: 'Governar objetivos, desafios e gamificação aprovada',
         },
       ],
     },
     {
-      label: 'Gestao',
+      label: 'Gestão',
       items: [
         {
           href: '/historico',
-          label: 'Historico',
+          label: 'Histórico',
           icon: 'historico',
-          description: 'Relatorios e evolucao',
+          description: 'Relatórios e evolução',
         },
         {
           href: '/analytics-emails',
-          label: 'Comunicacao',
+          label: 'Comunicação',
           icon: 'analytics',
           description: 'Entrega e leitura de mensagens',
         },
@@ -255,13 +255,13 @@ const NAVIGATION = {
       ],
     },
     {
-      label: 'Educacao',
+      label: 'Educação',
       items: [
         {
           href: '/campanhas',
           label: 'Campanhas e trilhas',
           icon: 'campanhas',
-          description: 'Campanhas e conteudos disponiveis',
+          description: 'Campanhas e conteúdos disponíveis',
         },
       ],
     },
@@ -274,41 +274,41 @@ const NAVIGATION = {
           href: '/colaboradora',
           label: 'Hoje',
           icon: 'dashboard',
-          description: 'Check-in, foco do dia e proximas acoes',
+          description: 'Check-in, foco do dia e próximas ações',
         },
         {
           href: '/agenda',
           label: 'Minha agenda de exames',
           icon: 'agenda',
-          description: 'Exames, consultas, lembretes e historico',
+          description: 'Exames, consultas, lembretes e histórico',
         },
       ],
     },
     {
-      label: 'Saude Primaria',
+      label: 'Saúde Primária',
       items: [
         {
           href: '/semaforo',
-          label: 'Meu semaforo',
+          label: 'Meu semáforo',
           icon: 'semaforo',
-          description: 'Leitura individual de cuidado em superficie contida',
+          description: 'Leitura individual de cuidado em superfície contida',
         },
       ],
     },
     {
-      label: 'Educacao',
+      label: 'Educação',
       items: [
         {
           href: '/campanhas',
           label: 'Campanhas e trilhas',
           icon: 'campanhas',
-          description: 'Conteudos, trilhas e acoes educativas disponiveis',
+          description: 'Conteúdos, trilhas e ações educativas disponíveis',
         },
         {
           href: '/comunidade',
           label: 'Comunidade',
           icon: 'community',
-          description: 'Conteudos editoriais da sua empresa',
+          description: 'Conteúdos editoriais da sua empresa',
         },
       ],
     },
@@ -348,7 +348,7 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   primary_health: {
     href: '/saude-primaria',
     icon: 'semaforo',
-    description: 'Modulo contratado de cuidado primario, visivel conforme governanca',
+    description: 'Módulo contratado de cuidado primário, visível conforme governança',
   },
   concierge: {
     href: '/concierge',
@@ -358,32 +358,32 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   education: {
     href: '/campanhas',
     icon: 'campanhas',
-    description: 'Campanhas, trilhas, videos e conteudos educativos',
+    description: 'Campanhas, trilhas, vídeos e conteúdos educativos',
   },
   achievements: {
     href: '/conquistas',
     icon: 'conquistas',
-    description: 'Objetivos, desafios, conquistas e gamificacao aprovada',
+    description: 'Objetivos, desafios, conquistas e gamificação aprovada',
   },
   nr1: {
     href: '/avaliacao-nr1',
     icon: 'historico',
-    description: 'Avaliacao psicossocial NR-1 sob contrato e gates Yavix',
+    description: 'Avaliação psicossocial NR-1 sob contrato e gates Yavix',
   },
   sipat: {
     href: '/viva-sipat',
     icon: 'campanhas',
-    description: 'Campanhas, materiais e acoes SIPAT quando o conteudo fonte for aprovado',
+    description: 'Campanhas, materiais e ações SIPAT quando o conteúdo fonte for aprovado',
   },
   human_development: {
     href: '/desenvolvimento-humano',
     icon: 'objetivos',
-    description: 'Conteudos de desenvolvimento humano contratados pela empresa',
+    description: 'Conteúdos de desenvolvimento humano contratados pela empresa',
   },
   denunciation: {
     href: '/canal-denuncias',
     icon: 'config',
-    description: 'Canal parceiro para denuncias, governado por contrato especifico',
+    description: 'Canal parceiro para denúncias, governado por contrato específico',
   },
 };
 
@@ -396,6 +396,11 @@ const MODULE_STATE_BADGES: Readonly<Record<Exclude<CompanyModuleState, 'enabled'
 
 function getModuleBadgeLabel(moduleState: CompanyModuleState): string | undefined {
   return moduleState === 'enabled' ? undefined : MODULE_STATE_BADGES[moduleState];
+}
+
+function getModuleNavigationHref(moduleSlug: CompanyModuleSlug, moduleState: CompanyModuleState): string {
+  if (moduleSlug === 'nr1' && moduleState !== 'enabled') return '/nr1';
+  return MODULE_NAVIGATION[moduleSlug].href;
 }
 
 function getExistingRoutes(groups: readonly NavigationGroup[]): Set<string> {
@@ -414,10 +419,11 @@ function getModuleNavigationItems(
     if (!definition || !definition.visibleForRoles.includes(role)) return [];
 
     const navigation = MODULE_NAVIGATION[module.module_slug];
-    if (existingRoutes.has(navigation.href)) return [];
+    const href = getModuleNavigationHref(module.module_slug, module.module_state);
+    if (existingRoutes.has(href)) return [];
 
     return [{
-      href: navigation.href,
+      href,
       label: definition.label,
       icon: navigation.icon,
       description: navigation.description,
@@ -465,7 +471,7 @@ export function getModuleAwareNavigationForRole(
   return [
     ...baseGroups,
     {
-      label: 'Modulos',
+      label: 'Módulos',
       items: moduleItems,
     },
   ];

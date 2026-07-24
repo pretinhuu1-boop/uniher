@@ -106,7 +106,7 @@ export const SAFE_COMMUNICATION_ACTIONS: readonly SafeCommunicationDefinition[] 
       type: 'lesson',
       source: 'lesson_delivery',
       action: 'lesson_delivery',
-      label: 'Entregas de li\u00e7\u00e3o',
+      label: 'Entregas de lição',
     }),
   ]);
 
@@ -140,7 +140,7 @@ const PERIOD_DAYS: Record<CommunicationPeriod, number> = {
 function normalizedNow(now?: string): string {
   const candidate = now ?? new Date().toISOString();
   const result = ISO_DATE_TIME.safeParse(candidate);
-  if (!result.success) throw new Error('Data interna inv\u00e1lida para proje\u00e7\u00e3o protegida.');
+  if (!result.success) throw new Error('Data interna inválida para projeção protegida.');
   return new Date(result.data).toISOString();
 }
 
@@ -213,7 +213,7 @@ function validateDepartment(
   const department = db.prepare(
     'SELECT id FROM departments WHERE id = ? AND company_id = ?',
   ).get(departmentId, companyId);
-  if (!department) throw new Error('Departamento inv\u00e1lido para esta empresa.');
+  if (!department) throw new Error('Departamento inválido para esta empresa.');
 }
 
 function getExamActivityMetric(

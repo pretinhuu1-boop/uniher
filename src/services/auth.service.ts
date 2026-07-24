@@ -62,7 +62,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
   if (companyId) {
     const company = companyRepo.getCompanyById(companyId);
     if (!company) {
-      throw new ValidationError('Empresa informada nÃ£o foi encontrada');
+      throw new ValidationError('Empresa informada não foi encontrada');
     }
   }
 
