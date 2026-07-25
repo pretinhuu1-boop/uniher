@@ -1,0 +1,181 @@
+{
+  "api": {
+    "adminNoCompany": {
+      "status": 400,
+      "body": {
+        "error": "COMPANY_SCOPE_REQUIRED",
+        "message": "Selecione uma empresa antes de acessar o dashboard RH."
+      }
+    },
+    "adminSelectedCompany": {
+      "status": 200,
+      "body": {
+        "filters": {
+          "period": "1m"
+        },
+        "metrics": {
+          "examActivity": {
+            "status": "suppressed",
+            "reason": "minimum_cohort",
+            "message": "Dados insuficientes para proteger a privacidade"
+          },
+          "wellbeingCheckIn": {
+            "status": "suppressed",
+            "reason": "minimum_cohort",
+            "message": "Dados insuficientes para proteger a privacidade"
+          },
+          "wellbeingCheckOut": {
+            "status": "suppressed",
+            "reason": "minimum_cohort",
+            "message": "Dados insuficientes para proteger a privacidade"
+          },
+          "engagement": {
+            "status": "suppressed",
+            "reason": "not_computable",
+            "message": "Dados insuficientes para proteger a privacidade"
+          },
+          "healthRisk": {
+            "status": "suppressed",
+            "reason": "not_computable",
+            "message": "Dados insuficientes para proteger a privacidade"
+          },
+          "campaignParticipation": {
+            "status": "suppressed",
+            "reason": "not_computable",
+            "message": "Dados insuficientes para proteger a privacidade"
+          },
+          "roi": {
+            "status": "suppressed",
+            "reason": "not_computable",
+            "message": "Dados insuficientes para proteger a privacidade"
+          }
+        },
+        "departments": [],
+        "ageDistribution": [
+          {
+            "label": "18-25",
+            "color": "#C9A264",
+            "metric": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          },
+          {
+            "label": "26-35",
+            "color": "#E8849E",
+            "metric": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          },
+          {
+            "label": "36-45",
+            "color": "#3E7D5A",
+            "metric": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          },
+          {
+            "label": "46-55",
+            "color": "#378ADD",
+            "metric": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          },
+          {
+            "label": "56+",
+            "color": "#EF9F27",
+            "metric": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          }
+        ],
+        "examActivitySeries": [
+          {
+            "period": "2026-06",
+            "metric": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          },
+          {
+            "period": "2026-07",
+            "metric": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          }
+        ],
+        "wellbeingSeries": [
+          {
+            "period": "2026-06",
+            "checkIn": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            },
+            "checkOut": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          },
+          {
+            "period": "2026-07",
+            "checkIn": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            },
+            "checkOut": {
+              "status": "suppressed",
+              "reason": "minimum_cohort",
+              "message": "Dados insuficientes para proteger a privacidade"
+            }
+          }
+        ]
+      }
+    },
+    "rhForbiddenOverride": {
+      "status": 403,
+      "body": {
+        "error": "COMPANY_SCOPE_FORBIDDEN",
+        "message": "O escopo de empresa do dashboard deve vir da sessão autenticada."
+      }
+    }
+  },
+  "captures": [
+    {
+      "screenshotPath": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\p6-admin-selected-company-desktop.png",
+      "metrics": {
+        "selectedCompany": "company_uniher",
+        "hasProtectedSummary": true,
+        "hasWellbeing": true,
+        "hasSuppressionCopy": true,
+        "hasMoodLeak": false,
+        "horizontalOverflow": 0
+      }
+    },
+    {
+      "screenshotPath": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\p6-admin-selected-company-mobile.png",
+      "metrics": {
+        "selectedCompany": "company_uniher",
+        "hasProtectedSummary": true,
+        "hasWellbeing": true,
+        "hasSuppressionCopy": true,
+        "hasMoodLeak": false,
+        "horizontalOverflow": 0
+      }
+    }
+  ]
+}

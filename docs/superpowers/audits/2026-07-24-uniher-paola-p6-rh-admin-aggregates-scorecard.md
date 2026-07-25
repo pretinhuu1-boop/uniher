@@ -2,7 +2,7 @@
 
 Date: 2026-07-24
 Lane: P6 - RH/Admin aggregate dashboard
-Decision: PASS for first protected aggregate foundation; HOLD for visual approval
+Decision: PASS for protected aggregate foundation and Admin selected-company scope; HOLD for full visual/product approval
 
 ## Scope
 
@@ -34,6 +34,10 @@ Runtime evidence:
 - `C:\Users\user\Codex\2026-07-24\uniher-p6-admin-master\admin-master-company-scope-desktop.png`
 - `C:\Users\user\Codex\2026-07-24\uniher-p6-admin-master\admin-master-company-scope-mobile.png`
 - `C:\Users\user\Codex\2026-07-24\uniher-p6-admin-master\admin-master-company-scope-metrics.json`
+- `docs/superpowers/evidence/p6-admin-company-scope-gate-desktop.png`
+- `docs/superpowers/evidence/p6-admin-selected-company-desktop.png`
+- `docs/superpowers/evidence/p6-admin-selected-company-mobile.png`
+- `docs/superpowers/evidence/p6-admin-selected-company-metrics.json`
 
 ## Verification
 
@@ -60,6 +64,16 @@ Runtime evidence:
   individual ID leak, and horizontal overflow is `0`.
 - PASS: direct Admin Master `/api/dashboard` access without selected company
   scope fails closed with `COMPANY_SCOPE_REQUIRED`.
+- PASS: Admin Master can now select an explicit company on `/dashboard`; the UI
+  loads the protected aggregate dashboard only after selection and resets
+  department scope when the company changes.
+- PASS: direct Admin Master `/api/dashboard?period=1m&companyId=company_uniher`
+  returns `200`, while RH/company-scoped users attempting
+  `/api/dashboard?companyId=company_other` receive `403` with
+  `COMPANY_SCOPE_FORBIDDEN`.
+- PASS: selected-company desktop/mobile captures show `Check-in x Check-out`,
+  compact protected summary values, horizontal overflow `0`, and no visible
+  `mood`, `humor`, `user_id` or `participant_id` leak.
 
 ## Files Changed
 
@@ -68,6 +82,7 @@ Runtime evidence:
 - `src/app/(platform)/dashboard/dashboard-view-model.ts`
 - `src/app/(platform)/dashboard/page.tsx`
 - `src/app/api/dashboard/route.ts`
+- `src/hooks/useDashboard.ts`
 - `src/app/(platform)/dashboard/dashboard-export.ts`
 - `src/app/(platform)/dashboard/dashboard.module.css`
 - `src/app/(platform)/dashboard/components/DashboardDetails.tsx`
@@ -76,13 +91,13 @@ Runtime evidence:
 - `tests/unit/platform/dashboard-view-model.test.ts`
 - `tests/unit/platform/dashboard-export.test.ts`
 - `tests/unit/platform/dashboard-charts.test.tsx`
+- `tests/unit/platform/use-dashboard.test.ts`
 - `tests/e2e/rh.spec.ts`
 - `tests/e2e/integrado.spec.ts`
 - this scorecard and the P6 plan
 
 ## Decision
 
-P6 first aggregate foundation is technically PASS for RH/company-scoped
-dashboard behavior. Admin Master is PASS for fail-closed company-scope handling
-and remains HOLD for aggregate visualization until an explicit selected-company
-reporting scope exists. Full visual/product approval remains separate.
+P6 aggregate foundation is technically PASS for RH/company-scoped dashboard
+behavior and Admin Master selected-company reporting scope. Full
+visual/product approval remains separate.

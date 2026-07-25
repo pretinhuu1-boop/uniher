@@ -34,6 +34,7 @@ const ISO_DATE_TIME = z.string().datetime({ offset: true });
 export const dashboardQuerySchema = z.object({
   period: z.enum(DASHBOARD_PERIODS).default('1m'),
   departmentId: z.string().trim().min(1).max(128).optional(),
+  companyId: z.string().trim().min(1).max(128).optional(),
 }).strict();
 
 export const communicationsQuerySchema = z.object({

@@ -2,7 +2,7 @@
 
 Date: 2026-07-24
 Coordinator: current Codex session
-Status: PASS for first aggregate foundation; uncommitted in current worktree
+Status: PASS for first aggregate foundation and Admin selected-company reporting scope
 
 ## Intent
 
@@ -78,10 +78,16 @@ Result:
   company scope now receives an explicit company-selection gate instead of a
   generic dashboard error, and direct `/api/dashboard` access fails closed with
   `COMPANY_SCOPE_REQUIRED`.
+- PASS: Admin Master `/dashboard` now includes an explicit company selector;
+  selected company scope is sent as `companyId` only for companyless Admin
+  Master sessions, and scoped RH/company users cannot override their session
+  company.
+- PASS: runtime evidence captured under `docs/superpowers/evidence/` proves
+  `400` without Admin company scope, `200` with selected company,
+  `403` for RH override attempts, no visible mood/user ID leak and no
+  horizontal overflow.
 
 ## Remaining Gates
 
-- Admin Master aggregate visualization remains HOLD until there is an explicit
-  selected-company reporting scope. Do not infer a company for the master user.
 - Full Dra. Paola visual approval remains HOLD because P7B menu-card treatment
   is separate from this P6 data foundation.

@@ -70,7 +70,7 @@ Closed foundations:
 Still in HOLD for final approval:
 
 - Visual fidelity of the requested menu/box treatment from the three supplied images. P7A runtime/menu QA is executed, but the richer visual treatment remains not approved.
-- RH/Admin `Check-in x Check-out` chart has a first protected aggregate foundation, but visual/product approval remains HOLD.
+- RH/Admin `Check-in x Check-out` chart has a protected aggregate foundation and Admin Master selected-company scope, but visual/product approval remains HOLD.
 - RH dashboard metrics for adherence, evolution, absenteeism, presenteeism and other approved business indicators.
 - Real Semaforo/Saude Primaria behavior.
 - Real Concierge case workflow.
@@ -131,7 +131,7 @@ Acceptance gates:
 
 Objective: add approved aggregate indicators and `Check-in x Check-out` chart only after P5 exists.
 
-Status: PASS for first protected aggregate foundation; HOLD for full promotion and visual approval.
+Status: PASS for first protected aggregate foundation and Admin Master selected-company scope; HOLD for full visual/product approval.
 
 Acceptance gates:
 
@@ -140,7 +140,8 @@ Acceptance gates:
 - PASS: dashboard projection, view-model, CSV and component tests.
 - PASS: RH browser screenshots after local server became available.
 - PASS: Admin Master visual proof for this slice now fails closed with explicit company-scope copy when no company is selected.
-- HOLD: Admin Master aggregate visualization requires an explicit selected-company reporting scope before promotion.
+- PASS: Admin Master selected-company reporting scope exists; `/dashboard` loads protected aggregates only after explicit company selection.
+- PASS: RH/company-scoped users cannot override company scope via dashboard query.
 
 ### P7A - Menu boxes visual QA
 
@@ -160,7 +161,7 @@ Acceptance gates:
 
 ### P7B - Visual target decision
 
-Status: PASS for visual target extraction; HOLD for UI implementation.
+Status: PASS for visual target extraction and local focused Sidebar UI implementation; HOLD for final product visual approval.
 
 Plan: `docs/superpowers/plans/2026-07-24-uniher-paola-p7b-visual-target-decision.md`
 
@@ -172,20 +173,35 @@ Acceptance gates:
   assets.
 - PASS: Design MD extraction exists at
   `docs/superpowers/specs/2026-07-24-uniher-paola-p7b-menu-card-design.md`.
-- HOLD: UI implementation must wait for a focused P7B UI lane opened against
-  the extracted design spec.
+- PASS: focused Sidebar UI implementation stayed scoped to visual shell,
+  SidebarNavItem, CSS and layout offset, without changing module gates.
+- PASS: Admin/RH/collaborator desktop evidence and collaborator mobile drawer
+  evidence exist under `docs/superpowers/evidence/`.
+- HOLD: final visual approval still requires operator/product review of the
+  runtime screenshots.
 
 ### P8 - Module-management governance
 
 Objective: add Admin/RH module activation/deactivation mutations only after explicit governance approval.
 
+Status: PREFLIGHT PASS; IMPLEMENTATION HOLD.
+
+Plan: `docs/superpowers/plans/2026-07-24-uniher-paola-p8-module-management-governance.md`
+
+Preflight scorecard: `docs/superpowers/audits/2026-07-24-uniher-paola-p8-module-management-preflight-scorecard.md`
+
 Acceptance gates:
 
-- Audit log.
-- Tenant isolation.
-- No default row creation during reads.
-- Explicit module status transitions.
+- PASS: canonical `company_modules` table, typed module slugs/states and
+  read-only company-scoped API exist.
+- PASS: current read API overlays defaults in memory and does not create rows
+  on read.
+- PASS: mutation helper exists but is not exposed by an approved endpoint.
+- HOLD: implementation requires explicit approval because module mutations can
+  alter entitlements.
+- HOLD: future writes must include audit log, tenant isolation, explicit status
+  transitions and no sensitive workflow activation.
 
 ## Coordinator decision
 
-Continue from one explicitly selected lane: open focused P7B UI implementation against the extracted Design MD, open P6 selected-company Admin reporting scope, or open P8 module-management governance. P7A runtime/menu evidence is closed, but full visual approval remains HOLD. Do not open SIPAT, Concierge, Denuncias, Semaforo production behavior, Liga/ranking or Yavix provisioning until their source/contract/policy gates are satisfied.
+P6 selected-company Admin reporting scope and P8 governance preflight are now documented. Continue only with an explicitly approved implementation lane: P8 module-management mutations, a small visual polish lane after operator review, or another named data/product lane. P7A runtime/menu evidence is closed, but full visual approval remains HOLD. Do not open SIPAT, Concierge, Denuncias, Semaforo production behavior, Liga/ranking or Yavix provisioning until their source/contract/policy gates are satisfied.

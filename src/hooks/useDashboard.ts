@@ -44,13 +44,24 @@ export async function dashboardFetcher(url: string): Promise<DashboardApiRespons
   return response.json() as Promise<DashboardApiResponse>;
 }
 
-export function useDashboard(period: DashboardPeriod, departmentId?: string) {
-  const { user } = useAuth();
+export function buildDashboardEndpoint(
+  period: DashboardPeriod,
+  departmentId?: string,
+  companyId?: string,
+): string {
   const params = new URLSearchParams({ period });
   if (departmentId) params.set('departmentId', departmentId);
-  const endpoint = `/api/dashboard?${params.toString()}`;
-  const key = user?.companyId && user.role
-    ? ['protected-report', endpoint, user.companyId, user.role, period, departmentId ?? 'all'] as const
+  if (companyId) params.set('companyId', companyId);
+  return `/api/dashboard?${params.toString()}`;
+}
+
+export function useDashboard(period: DashboardPeriod, departmentId?: string, companyId?: string) {
+  const { user } = useAuth();
+  const endpoint = buildDashboardEndpoint(period, departmentId, companyId);
+  const sessionCompanyId = user?.companyId || undefined;
+  const effectiveCompanyId = sessionCompanyId ?? companyId;
+  const key = effectiveCompanyId && user?.role
+    ? ['protected-report', endpoint, effectiveCompanyId, user.role, period, departmentId ?? 'all'] as const
     : null;
 
   const { data, error, isLoading } = useSWR<DashboardApiResponse, DashboardHttpError>(

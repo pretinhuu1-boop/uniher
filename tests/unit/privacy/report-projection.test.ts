@@ -437,8 +437,9 @@ describe('protected report projection', () => {
   });
 
   it('permits only fixed filter buckets', () => {
-    expect(dashboardQuerySchema.safeParse({ period: '3m', departmentId: 'dept-a' }).success).toBe(true);
+    expect(dashboardQuerySchema.safeParse({ period: '3m', departmentId: 'dept-a', companyId: 'company-a' }).success).toBe(true);
     expect(dashboardQuerySchema.safeParse({ period: '2m' }).success).toBe(false);
+    expect(dashboardQuerySchema.safeParse({ period: '3m', companyId: '' }).success).toBe(false);
     expect(communicationsQuerySchema.safeParse({ period: '30' }).success).toBe(true);
     expect(communicationsQuerySchema.safeParse({ period: '31' }).success).toBe(false);
   });
@@ -513,7 +514,9 @@ describe('protected route and cache boundaries', () => {
     expect(historyRoute).not.toMatch(/getReadDb|initDb|users\.points|points_earned|ranking/i);
     expect(dashboardRoute).not.toMatch(/healthRisk|getReportConfigs|getDepartmentRanking|getROIData/);
     expect(dashboardRoute).toContain('COMPANY_SCOPE_REQUIRED');
+    expect(dashboardRoute).toContain('COMPANY_SCOPE_FORBIDDEN');
     expect(dashboardRoute).toMatch(/auth\.role === 'admin'[\s\S]*auth\.isMasterAdmin === true[\s\S]*!auth\.companyId/);
+    expect(dashboardRoute).toMatch(/requestedCompanyId[\s\S]*requestedCompanyId !== auth\.companyId/);
     expect(communicationsRoute).not.toMatch(/title|message|invites|alertCount|activity_log/);
   });
 

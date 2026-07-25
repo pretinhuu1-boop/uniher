@@ -139,10 +139,38 @@
 .actionLink:focus-visible,
 .inlineLink:focus-visible,
 .periodGroup button:focus-visible,
-.filters select:focus-visible {
+.filters select:focus-visible,
+.companyScopeField select:focus-visible {
   border-radius: var(--platform-radius-control);
   outline: 2px solid var(--platform-action);
   outline-offset: 3px;
+}
+
+.companyScopeField {
+  display: grid;
+  max-width: 520px;
+  gap: 8px;
+}
+
+.companyScopeField span {
+  color: var(--platform-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.companyScopeField select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--platform-line);
+  border-radius: var(--platform-radius-control);
+  color: var(--platform-ink);
+  background: var(--platform-surface);
+  font: inherit;
+  font-size: 0.875rem;
 }
 
 .details {
