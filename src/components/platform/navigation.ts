@@ -398,8 +398,16 @@ function getModuleBadgeLabel(moduleState: CompanyModuleState): string | undefine
   return moduleState === 'enabled' ? undefined : MODULE_STATE_BADGES[moduleState];
 }
 
-function getModuleNavigationHref(moduleSlug: CompanyModuleSlug, moduleState: CompanyModuleState): string {
-  if (moduleSlug === 'nr1' && moduleState !== 'enabled') return '/nr1';
+function getModuleNavigationHref(
+  role: UserRole,
+  moduleSlug: CompanyModuleSlug,
+  moduleState: CompanyModuleState,
+): string {
+  if (moduleSlug === 'nr1') {
+    if (moduleState !== 'enabled') return '/nr1';
+    return role === 'colaboradora' || role === 'lideranca' ? '/avaliacao-nr1' : '/nr1';
+  }
+
   return MODULE_NAVIGATION[moduleSlug].href;
 }
 
@@ -419,7 +427,7 @@ function getModuleNavigationItems(
     if (!definition || !definition.visibleForRoles.includes(role)) return [];
 
     const navigation = MODULE_NAVIGATION[module.module_slug];
-    const href = getModuleNavigationHref(module.module_slug, module.module_state);
+    const href = getModuleNavigationHref(role, module.module_slug, module.module_state);
     if (existingRoutes.has(href)) return [];
 
     return [{

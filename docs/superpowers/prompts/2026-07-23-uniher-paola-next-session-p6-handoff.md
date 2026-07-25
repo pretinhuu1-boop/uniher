@@ -173,4 +173,3 @@ Depois:
 2. Se o usuario pedir GitHub, commit/push P5.
 3. Caso contrario, inicie P6 com contrato de harness compacto, write allowlist, denylist e testes de privacidade antes da UI.
 ```
-

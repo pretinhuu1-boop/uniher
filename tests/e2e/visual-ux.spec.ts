@@ -5,13 +5,24 @@
  *
  * Rodar: npx playwright test --project=visual-ux
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import Database from 'better-sqlite3';
 import { test, expect, Page, type APIRequestContext } from '@playwright/test';
+import playwrightDbSafety from '../playwright-db-safety.cjs';
 import { extractAccessTokenFromSetCookie } from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASS = 'Admin@2026';
 const DEMO_RH_EMAIL = 'rh.visual@eduardaeyurimarketingltda.com.br';
 const DEMO_COMPANY_CNPJ = '00.000.000/0001-00';
+const DEMO_NR1_COLLAB_EMAIL = 'nr1.visual@eduardaeyurimarketingltda.com.br';
+const EVIDENCE_DIR = path.resolve(process.cwd(), 'docs/superpowers/evidence');
+
+function evidencePath(filename: string): string {
+  fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
+  return path.join(EVIDENCE_DIR, filename);
+}
 
 function assertVisualUxFixtureHostIsLoopback(): void {
   const configuredBaseUrl = process.env.BASE_URL
@@ -157,6 +168,90 @@ function masterTabButton(page: Page, name: string) {
   return page.getByRole('button', { name: new RegExp(`^${name}(?:\\s+\\d+)?$`) });
 }
 
+function openPlaywrightDatabase(): Database.Database {
+  const databasePath = playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env);
+  return new Database(databasePath);
+}
+
+function ensureNr1VisualFixtures(): void {
+  const db = openPlaywrightDatabase();
+  try {
+    const company = db.prepare("SELECT id FROM companies WHERE cnpj = ?").get(DEMO_COMPANY_CNPJ) as { id: string } | undefined;
+    if (!company) throw new Error('Empresa demo visual nao encontrada para o smoke NR-1.');
+
+    const admin = db.prepare("SELECT password_hash FROM users WHERE email = ?").get(ADMIN_EMAIL) as { password_hash: string } | undefined;
+    if (!admin) throw new Error('Usuario admin seed nao encontrado para o smoke NR-1.');
+
+    const now = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO company_modules (
+        id, company_id, module_slug, module_state, visible, notes, created_at, updated_at, updated_by
+      ) VALUES (
+        'visual-nr1-enabled-module',
+        @companyId,
+        'nr1',
+        'enabled',
+        1,
+        'Visual smoke fixture for PR7 NR-1 role gate',
+        @now,
+        @now,
+        NULL
+      )
+      ON CONFLICT(company_id, module_slug) DO UPDATE SET
+        module_state = excluded.module_state,
+        visible = excluded.visible,
+        notes = excluded.notes,
+        updated_at = excluded.updated_at,
+        updated_by = excluded.updated_by
+    `).run({ companyId: company.id, now });
+
+    db.prepare(`
+      INSERT INTO users (
+        id, company_id, department_id, name, email, password_hash, role,
+        approved, level, points, must_change_password, also_collaborator
+      )
+      VALUES (
+        'user_demo_nr1_collaborator',
+        @companyId,
+        'dept_demo_visual_ops',
+        'NR-1 Colaboradora',
+        @email,
+        @passwordHash,
+        'colaboradora',
+        1,
+        1,
+        0,
+        0,
+        0
+      )
+      ON CONFLICT(id) DO UPDATE SET
+        company_id = excluded.company_id,
+        department_id = excluded.department_id,
+        name = excluded.name,
+        email = excluded.email,
+        password_hash = excluded.password_hash,
+        role = excluded.role,
+        approved = excluded.approved,
+        must_change_password = excluded.must_change_password,
+        updated_at = datetime('now')
+    `).run({
+      companyId: company.id,
+      email: DEMO_NR1_COLLAB_EMAIL,
+      passwordHash: admin.password_hash,
+    });
+
+    db.prepare(`
+      INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+      VALUES ('user_demo_nr1_collaborator', 'first_access_tour_completed', '1', datetime('now'))
+      ON CONFLICT(user_id, pref_key) DO UPDATE SET
+        pref_value = excluded.pref_value,
+        updated_at = excluded.updated_at
+    `).run();
+  } finally {
+    db.close();
+  }
+}
+
 // Helper: login via UI
 async function loginUI(page: Page, email: string, password: string) {
   await page.goto('/auth');
@@ -288,6 +383,22 @@ test.describe('Admin Empresa — Visual UX', () => {
     await expect(page.getByText('OFG', { exact: true })).not.toBeVisible();
   });
 
+  test('NR-1 habilitado permanece no shell de RH', async () => {
+    ensureNr1VisualFixtures();
+    await openRhDashboard(page);
+    await page.screenshot({ path: evidencePath('pr7-rh-dashboard-desktop.png') });
+
+    const nr1Link = page.getByRole('link', { name: 'NR-1', exact: true });
+    await expect(nr1Link).toHaveAttribute('href', '/nr1');
+    await nr1Link.click();
+
+    await expect(page).toHaveURL(/\/nr1$/);
+    await expect(page.getByRole('heading', { name: 'NR-1', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Contrato antes da avalia/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Permanece bloqueado/i })).toBeVisible();
+    await page.screenshot({ path: evidencePath('pr7-nr1-rh-shell-desktop.png') });
+  });
+
   test('Colaboradoras — gestão carrega', async () => {
     await page.goto('/colaboradoras-gestao');
     await page.waitForLoadState('networkidle');
@@ -331,7 +442,7 @@ test.describe('Admin Empresa — Visual UX', () => {
   });
 
   test('Volta para RH funciona', async () => {
-    const rhBtn = page.getByRole('button', { name: 'Admin', exact: true });
+    const rhBtn = page.getByRole('button', { name: 'Admin Empresa', exact: true });
     await expect(rhBtn).toBeVisible();
     await rhBtn.click();
     await expectRhDashboard(page);
@@ -347,6 +458,23 @@ test.describe('Admin Empresa — Visual UX', () => {
 // ════════════════════════════════════════════════════════════════════════════════
 // MOBILE
 // ════════════════════════════════════════════════════════════════════════════════
+
+test.describe('Colaboradora NR-1 - Visual UX', () => {
+  test.beforeAll(async ({ request }) => {
+    await ensureDemoRhUser(request);
+    ensureNr1VisualFixtures();
+  });
+
+  test('Colaboradora com NR-1 habilitado abre runtime COPSOQ', async ({ page }) => {
+    await loginUI(page, DEMO_NR1_COLLAB_EMAIL, ADMIN_PASS);
+    await page.goto('/avaliacao-nr1');
+
+    await expect(page).toHaveURL(/\/avaliacao-nr1$/);
+    await expect(page.getByText('Avaliação Psicossocial', { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: 'Aceitar e continuar', exact: true })).toBeVisible();
+    await page.screenshot({ path: evidencePath('pr7-nr1-colaboradora-runtime-desktop.png') });
+  });
+});
 
 test.describe('Mobile — Visual UX', () => {
   test.use({ viewport: { width: 375, height: 812 } });

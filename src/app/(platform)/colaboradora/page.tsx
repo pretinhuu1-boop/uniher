@@ -217,27 +217,39 @@ export default function CollaboratorHomePage() {
   const checkIn = async () => {
     setCheckingIn(true);
     setMessage('');
-    const response = await fetch('/api/gamification/check-in', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mood: checkInMood }),
-    });
-    setMessage(response.ok ? 'Check-in registrado.' : 'Seu check-in já foi registrado hoje.');
-    await refreshStreak();
-    setCheckingIn(false);
+
+    try {
+      const response = await fetch('/api/gamification/check-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mood: checkInMood }),
+      });
+      setMessage(response.ok ? 'Check-in registrado.' : 'Seu check-in já foi registrado hoje.');
+      await refreshStreak();
+    } catch {
+      setMessage('Não foi possível registrar o check-in. Tente novamente.');
+    } finally {
+      setCheckingIn(false);
+    }
   };
 
   const checkOut = async () => {
     setCheckingOut(true);
     setMessage('');
-    const response = await fetch('/api/wellbeing/check-out', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mood: checkOutMood }),
-    });
-    setMessage(response.ok ? 'Check-out registrado.' : 'Seu check-out já foi registrado hoje.');
-    await refreshStreak();
-    setCheckingOut(false);
+
+    try {
+      const response = await fetch('/api/wellbeing/check-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mood: checkOutMood }),
+      });
+      setMessage(response.ok ? 'Check-out registrado.' : 'Seu check-out já foi registrado hoje.');
+      await refreshStreak();
+    } catch {
+      setMessage('Não foi possível registrar o check-out. Tente novamente.');
+    } finally {
+      setCheckingOut(false);
+    }
   };
 
   const completeReading = async (mission: SafeMission) => {

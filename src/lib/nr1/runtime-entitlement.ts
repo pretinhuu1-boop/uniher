@@ -10,6 +10,7 @@ export type Nr1RuntimeEntitlementStatus =
   | 'enabled'
   | 'missing_auth'
   | 'missing_company'
+  | 'role_not_allowed'
   | 'not_enabled';
 
 export async function isNr1RuntimeEntitledForCompany(companyId: string | null | undefined): Promise<boolean> {
@@ -27,6 +28,7 @@ export async function getNr1RuntimeEntitlementForCurrentRequest(): Promise<Nr1Ru
   try {
     const payload = await verifyAccessToken(token);
     if (!payload.companyId) return 'missing_company';
+    if (payload.role !== 'colaboradora' && payload.role !== 'lideranca') return 'role_not_allowed';
     return (await isNr1RuntimeEntitledForCompany(payload.companyId)) ? 'enabled' : 'not_enabled';
   } catch {
     return 'missing_auth';

@@ -11,6 +11,7 @@ const testServerEnv = {
   ...playwrightEnvironment,
   PLAYWRIGHT_PORT: defaultPort,
   ALLOW_INSECURE_HTTP_COOKIES: process.env.ALLOW_INSECURE_HTTP_COOKIES || 'true',
+  YAVIX_MOCK: process.env.YAVIX_MOCK || '1',
 };
 
 Object.assign(process.env, testServerEnv);

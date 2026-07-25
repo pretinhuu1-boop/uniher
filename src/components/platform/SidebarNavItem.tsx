@@ -169,6 +169,7 @@ export default function SidebarNavItem({
     <Link
       href={href}
       className={`${styles.navItem} ${VARIANT_CLASSES[variant]} ${isActive ? styles.navItemActive : ''}`}
+      aria-label={label}
       aria-current={isActive ? 'page' : undefined}
       aria-describedby={descriptionId}
       onClick={onClick}

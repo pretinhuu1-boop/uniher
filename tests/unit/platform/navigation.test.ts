@@ -449,11 +449,16 @@ describe('platform navigation', () => {
     const enabledRoutes = flatItems(getModuleAwareNavigationForRole('rh', [
       moduleRow('nr1', 'enabled'),
     ])).map((item) => item.href);
+    const collaboratorRoutes = flatItems(getModuleAwareNavigationForRole('colaboradora', [
+      moduleRow('nr1', 'enabled'),
+    ])).map((item) => item.href);
 
     expect(gatedRoutes).toContain('/nr1');
     expect(gatedRoutes).not.toContain('/avaliacao-nr1');
-    expect(enabledRoutes).toContain('/avaliacao-nr1');
-    expect(enabledRoutes).not.toContain('/nr1');
+    expect(enabledRoutes).toContain('/nr1');
+    expect(enabledRoutes).not.toContain('/avaliacao-nr1');
+    expect(collaboratorRoutes).toContain('/avaliacao-nr1');
+    expect(collaboratorRoutes).not.toContain('/nr1');
   });
 
   it('keeps role visibility separate from module access state', () => {
@@ -471,7 +476,8 @@ describe('platform navigation', () => {
     expect(leadershipRoutes).not.toContain('/avaliacao-nr1');
     expect(leadershipRoutes).not.toContain('/viva-sipat');
     expect(rhRoutes).toContain('/concierge');
-    expect(rhRoutes).toContain('/avaliacao-nr1');
+    expect(rhRoutes).toContain('/nr1');
+    expect(rhRoutes).not.toContain('/avaliacao-nr1');
     expect(rhRoutes).not.toContain('/viva-sipat');
   });
 

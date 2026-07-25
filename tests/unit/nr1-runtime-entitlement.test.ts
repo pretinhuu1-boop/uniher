@@ -6,6 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const boundary = vi.hoisted(() => ({
   db: null as Database.Database | null,
+  authToken: null as string | null,
+  tokenBlacklisted: false,
+  tokenPayload: null as {
+    userId: string;
+    companyId?: string | null;
+    role: string;
+  } | null,
 }));
 
 vi.mock('@/lib/auth/middleware', () => ({
@@ -24,9 +31,22 @@ vi.mock('@/lib/db', () => ({
     return boundary.db;
   },
 }));
+vi.mock('@/lib/auth/cookies', () => ({
+  getAccessToken: async () => boundary.authToken,
+}));
+vi.mock('@/lib/auth/jwt', () => ({
+  verifyAccessToken: async () => {
+    if (!boundary.tokenPayload) throw new Error('Test token payload is not configured');
+    return boundary.tokenPayload;
+  },
+}));
+vi.mock('@/lib/auth/token-blacklist', () => ({
+  isTokenBlacklisted: () => boundary.tokenBlacklisted,
+}));
 
 import { GET as bootstrapCopsoq } from '@/app/api/yavix/copsoq/bootstrap/route';
 import {
+  getNr1RuntimeEntitlementForCurrentRequest,
   isNr1RuntimeEntitledForCompany,
   requireNr1RuntimeEntitlement,
 } from '@/lib/nr1/runtime-entitlement';
@@ -80,6 +100,9 @@ async function getBootstrap(companyId: string): Promise<Response> {
 beforeEach(() => {
   vi.stubEnv('YAVIX_MOCK', '1');
   boundary.db = createDatabase();
+  boundary.authToken = null;
+  boundary.tokenBlacklisted = false;
+  boundary.tokenPayload = null;
 });
 
 afterEach(() => {
@@ -122,11 +145,37 @@ describe('NR-1 runtime entitlement', () => {
     await expect(allowed.json()).resolves.toMatchObject({ formName: 'COPSOQ41' });
   });
 
+  it('does not allow RH/admin users to render the COPSOQ answer runtime', async () => {
+    boundary.authToken = 'valid-token';
+    boundary.tokenPayload = {
+      userId: 'rh-user',
+      companyId: 'company-enabled',
+      role: 'rh',
+    };
+
+    await expect(getNr1RuntimeEntitlementForCurrentRequest()).resolves.toBe('role_not_allowed');
+  });
+
+  it('allows collaborator users to render the COPSOQ answer runtime when NR-1 is enabled', async () => {
+    boundary.authToken = 'valid-token';
+    boundary.tokenPayload = {
+      userId: 'collaborator-user',
+      companyId: 'company-enabled',
+      role: 'colaboradora',
+    };
+
+    await expect(getNr1RuntimeEntitlementForCurrentRequest()).resolves.toBe('enabled');
+  });
+
   it('keeps the route and all COPSOQ endpoints guarded by the canonical entitlement helper', () => {
     const page = read('src/app/(platform)/avaliacao-nr1/page.tsx');
+    const entitlementSource = read('src/lib/nr1/runtime-entitlement.ts');
     expect(page).toContain('getNr1RuntimeEntitlementForCurrentRequest');
     expect(page).toContain("redirect('/nr1')");
     expect(page.indexOf('getNr1RuntimeEntitlementForCurrentRequest')).toBeLessThan(page.indexOf('<CopsoqFlow'));
+    expect(entitlementSource).toContain("'role_not_allowed'");
+    expect(entitlementSource).toContain("payload.role !== 'colaboradora'");
+    expect(entitlementSource).toContain("payload.role !== 'lideranca'");
 
     for (const route of [
       'src/app/api/yavix/copsoq/bootstrap/route.ts',
