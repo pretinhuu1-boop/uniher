@@ -53,24 +53,107 @@ async function seed() {
 
       // ─── Demo Company + RH (usados pelos testes visuais E2E) ──────────────
       const existingDemo = db.prepare("SELECT id FROM companies WHERE cnpj = '00.000.000/0001-00'").get();
+      const demoCompanyId = 'company_demo_visual';
+      const demoRhId = 'user_demo_rh';
+      const demoRhEmail = 'rh.visual@eduardaeyurimarketingltda.com.br';
       if (!existingDemo) {
         console.log('[seed] Criando empresa demo + RH para testes visuais...');
-        const demoCompanyId = 'company_demo_visual';
         db.prepare(`
-          INSERT INTO companies (id, name, cnpj, sector, plan)
-          VALUES (?, 'Eduardo e Yurimara Marketing LTDA', '00.000.000/0001-00', 'Marketing', 'pro')
+          INSERT INTO companies (id, name, trade_name, cnpj, sector, plan, primary_color)
+          VALUES (?, 'Eduardo e Yurimara Marketing LTDA', 'Eduardo e Yurimara Marketing', '00.000.000/0001-00', 'Marketing', 'pro', '#3E7D5A')
         `).run(demoCompanyId);
-        db.prepare(`
-          INSERT INTO users (id, company_id, department_id, name, email, password_hash, role, level, points, is_approved)
-          VALUES (?, ?, NULL, 'Contabilidade RH', 'contabilidade@eduardaeyurimarketingltda.com.br', ?, 'rh', 1, 0, 1)
-        `).run('user_demo_rh', demoCompanyId, adminPassword);
       } else {
         console.log('[seed] Empresa demo já existe, pulando...');
+        db.prepare(`
+          UPDATE companies
+          SET trade_name = COALESCE(NULLIF(trade_name, ''), 'Eduardo e Yurimara Marketing'),
+              primary_color = COALESCE(NULLIF(primary_color, ''), '#3E7D5A'),
+              updated_at = datetime('now')
+          WHERE cnpj = '00.000.000/0001-00'
+        `).run();
       }
+
+      const resolvedDemoCompany = db.prepare("SELECT id FROM companies WHERE cnpj = '00.000.000/0001-00'").get() as { id: string } | undefined;
+      const resolvedDemoCompanyId = resolvedDemoCompany?.id ?? demoCompanyId;
+      const existingDemoRh = db.prepare(`
+        SELECT id FROM users
+        WHERE email = ? OR id = ?
+        ORDER BY CASE WHEN email = ? THEN 0 ELSE 1 END
+        LIMIT 1
+      `).get(demoRhEmail, demoRhId, demoRhEmail) as { id: string } | undefined;
+      const resolvedDemoRhId = existingDemoRh?.id ?? demoRhId;
+
+      if (existingDemoRh) {
+        db.prepare(`
+          UPDATE users
+          SET company_id = ?,
+              department_id = NULL,
+              name = 'Contabilidade RH',
+              email = ?,
+              password_hash = ?,
+              role = 'rh',
+              approved = 1,
+              must_change_password = 0,
+              also_collaborator = 1,
+              updated_at = datetime('now')
+          WHERE id = ?
+        `).run(resolvedDemoCompanyId, demoRhEmail, adminPassword, resolvedDemoRhId);
+      } else {
+        db.prepare(`
+          INSERT INTO users (
+            id, company_id, department_id, name, email, password_hash, role,
+            approved, level, points, must_change_password, also_collaborator
+          )
+          VALUES (?, ?, NULL, 'Contabilidade RH', ?, ?, 'rh', 1, 1, 0, 0, 1)
+        `).run(resolvedDemoRhId, resolvedDemoCompanyId, demoRhEmail, adminPassword);
+      }
+
+      db.prepare(`
+        INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+        VALUES (?, 'first_access_tour_completed', '1', datetime('now'))
+        ON CONFLICT(user_id, pref_key) DO UPDATE SET
+          pref_value = excluded.pref_value,
+          updated_at = excluded.updated_at
+      `).run(resolvedDemoRhId);
+
+      db.prepare(`
+        INSERT INTO departments (id, company_id, name, color)
+        VALUES ('dept_demo_visual_ops', ?, 'Operacoes', '#3E7D5A')
+        ON CONFLICT(id) DO UPDATE SET
+          company_id = excluded.company_id,
+          name = excluded.name,
+          color = excluded.color
+      `).run(resolvedDemoCompanyId);
+
+      db.prepare(`
+        INSERT INTO invites (
+          id, company_id, email, role, department_id, token, status, invited_by, expires_at
+        )
+        VALUES (
+          'invite_demo_visual_collab',
+          ?,
+          'fixture-colaboradora@eduardaeyurimarketingltda.com.br',
+          'colaboradora',
+          'dept_demo_visual_ops',
+          'fixture-demo-visual-collab-token',
+          'pending',
+          ?,
+          datetime('now', '+30 days')
+        )
+        ON CONFLICT(id) DO UPDATE SET
+          company_id = excluded.company_id,
+          email = excluded.email,
+          role = excluded.role,
+          department_id = excluded.department_id,
+          token = excluded.token,
+          status = excluded.status,
+          invited_by = excluded.invited_by,
+          expires_at = excluded.expires_at
+      `).run(resolvedDemoCompanyId, resolvedDemoRhId);
 
       console.log('[seed] ✅ Seed base concluído!');
       console.log('[seed] Admin: admin@uniher.com.br / Admin@2026');
-      console.log('[seed] Demo RH: contabilidade@eduardaeyurimarketingltda.com.br / Admin@2026');
+      console.log(`[seed] Demo RH: ${demoRhEmail} / Admin@2026`);
     })();
     db.pragma('foreign_keys = ON');
   });
