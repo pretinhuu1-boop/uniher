@@ -387,8 +387,8 @@
 .legendList li {
   display: grid;
   padding: 8px 0;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: start;
   gap: 8px;
   border-bottom: 1px solid var(--platform-line);
   color: var(--platform-muted);
@@ -400,7 +400,12 @@
 }
 
 .legendList strong {
+  display: block;
+  grid-column: 2;
   color: var(--platform-ink);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .legendDot {
