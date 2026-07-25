@@ -391,7 +391,39 @@ export function* createDsarExportJsonChunks(
     return materializePage(statement.iterate(...params));
   }, getTimestampCursor);
 
-  yield '},"personalObjectives":';
+  yield '},"wellbeingEvents":';
+  if (!tableExists(db, 'wellbeing_events')) {
+    yield '[]';
+  } else {
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, event_type, mood, day, created_at, updated_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM wellbeing_events
+            WHERE user_id = ?
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, event_type, mood, day, created_at, updated_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM wellbeing_events
+            WHERE user_id = ?
+              AND (COALESCE(created_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+  }
+
+  yield ',"personalObjectives":';
   if (!tableExists(db, 'personal_objectives')) {
     yield '[]';
   } else {

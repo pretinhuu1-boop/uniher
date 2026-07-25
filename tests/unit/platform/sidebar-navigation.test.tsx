@@ -67,7 +67,7 @@ const ADMIN_WITH_PERSONAL_GROUPS = [
 ] as const satisfies readonly NavigationGroup[];
 
 describe('Sidebar navigation rendering', () => {
-  it('associates the canonical description with the keyboard-focusable link', () => {
+  it('associates the visible canonical description with the keyboard-focusable link', () => {
     const html = renderToStaticMarkup(createElement(SidebarNavItem, {
       href: '/desafios',
       icon: 'desafios',
@@ -79,7 +79,23 @@ describe('Sidebar navigation rendering', () => {
     const describedBy = html.match(/aria-describedby="([^"]+)"/)?.[1];
     expect(describedBy).toBeTruthy();
     expect(html).toContain(`id="${describedBy}"`);
-    expect(html).toContain('class="sr-only">Atividades em andamento</span>');
+    expect(html).toContain('Atividades em andamento');
+  });
+
+  it('renders optional presentation details without replacing the canonical description', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNavItem, {
+      href: '/colaboradora',
+      icon: 'semaforo',
+      label: 'Saude Primaria',
+      description: 'Semaforo da Saude',
+      details: ['Check-in', 'Check-out'],
+      isActive: false,
+    }));
+
+    expect(html).toContain('Semaforo da Saude');
+    expect(html).toContain('Check-in');
+    expect(html).toContain('Check-out');
+    expect(html).toContain('Resumo do item');
   });
 
   it('fails explicitly instead of silently replacing an unsupported icon', () => {
@@ -110,7 +126,23 @@ describe('Sidebar navigation rendering', () => {
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('Bloqueado');
     expect(html).not.toContain('DesafiosBloqueado');
-    expect(html).toContain('Desafios</span> <span');
+    expect(html).toContain('Atividades em andamento');
+  });
+
+  it('renders sequence numbers and chevrons only when requested for operational menus', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
+      groups: ADMIN_QUERY_GROUPS,
+      pathname: '/admin',
+      onNavigate: vi.fn(),
+      idPrefix: 'admin-numbered-navigation',
+      variant: 'admin',
+      showSequence: true,
+      showChevron: true,
+    }));
+
+    expect(html).toContain('>1</span>');
+    expect(html).toContain('>2</span>');
+    expect(html).toContain('aria-hidden="true"');
   });
 
   it('marks query-specific admin shortcuts active without activating the base admin dashboard', () => {

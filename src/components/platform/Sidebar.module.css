@@ -1,16 +1,26 @@
 .sidebar {
+  --sidebar-bg: #3c0712;
+  --sidebar-bg-deep: #27040c;
+  --sidebar-bg-soft: #5a1120;
+  --sidebar-border: rgb(250 213 177 / 18%);
+  --sidebar-border-strong: rgb(250 213 177 / 32%);
+  --sidebar-text: #fff7ec;
+  --sidebar-muted: rgb(255 247 236 / 72%);
+  --sidebar-gold: #d7a45d;
+  --sidebar-rose: #e77a92;
+  --sidebar-rose-strong: #c55267;
   position: fixed;
   top: 0;
   left: 0;
   display: flex;
-  width: min(320px, calc(100vw - 32px));
+  width: min(340px, calc(100vw - 24px));
   height: 100dvh;
   flex-direction: column;
   overflow: hidden;
-  color: var(--platform-shell-text);
-  background: var(--platform-shell);
-  border-right: 1px solid rgb(255 247 236 / 12%);
-  box-shadow: 12px 0 32px rgb(32 24 18 / 28%);
+  color: var(--sidebar-text);
+  background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-deep) 100%);
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow: 14px 0 36px rgb(32 4 12 / 30%);
   font-family: var(--ff-body);
   z-index: var(--z-drawer);
   transform: translateX(-100%);
@@ -34,7 +44,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  color: var(--platform-shell-text);
+  color: var(--sidebar-text);
   background: transparent;
   border: 0;
   border-radius: var(--platform-radius-control);
@@ -50,19 +60,20 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-drawer-backdrop);
-  background: rgb(32 24 18 / 54%);
+  background: rgb(32 4 12 / 56%);
 }
 
 .brandBlock {
-  border-bottom: 1px solid rgb(255 247 236 / 18%);
+  border-bottom: 1px solid var(--sidebar-border);
 }
 
 .brandButton {
   display: flex;
   width: 100%;
-  min-height: 84px;
+  min-height: 112px;
   align-items: center;
-  padding: 12px 20px;
+  gap: 14px;
+  padding: 20px 18px 18px;
   color: inherit;
   background: transparent;
   border: 0;
@@ -73,7 +84,7 @@
 .brandButton:focus-visible,
 .closeButton:hover,
 .closeButton:focus-visible {
-  background: rgb(255 247 236 / 9%);
+  background: rgb(255 247 236 / 8%);
 }
 
 .brandButton:focus-visible,
@@ -85,12 +96,49 @@
   outline-offset: -2px;
 }
 
+.brandLogoTile {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  overflow: hidden;
+  place-items: center;
+  background: #fff8ef;
+  border: 1px solid rgb(250 213 177 / 36%);
+  border-radius: 16px;
+  box-shadow: 0 10px 22px rgb(27 3 9 / 22%);
+}
+
 .brandLogo {
-  width: 132px;
-  height: 58px;
-  object-fit: cover;
+  width: 58px;
+  height: auto;
+  max-height: 48px;
+  object-fit: contain;
   object-position: center;
-  border-radius: 4px;
+}
+
+.brandIdentity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.brandName {
+  color: var(--sidebar-text);
+  font-family: var(--ff-heading);
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.brandSubtitle {
+  overflow-wrap: anywhere;
+  color: var(--sidebar-gold);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .companyCard {
@@ -98,9 +146,9 @@
   align-items: center;
   gap: 10px;
   min-height: 44px;
-  padding: 8px 20px;
-  background: var(--platform-shell-soft);
-  border-top: 1px solid rgb(255 247 236 / 12%);
+  padding: 9px 18px;
+  background: rgb(255 247 236 / 6%);
+  border-top: 1px solid var(--sidebar-border);
 }
 
 .companyMark {
@@ -110,9 +158,9 @@
   flex: 0 0 28px;
   overflow: hidden;
   place-items: center;
-  color: var(--platform-shell);
-  background: var(--platform-shell-text);
-  border: 1px solid var(--platform-line);
+  color: var(--sidebar-bg);
+  background: var(--sidebar-text);
+  border: 1px solid var(--sidebar-border-strong);
   border-radius: 6px;
   font-size: 0.625rem;
   font-weight: 700;
@@ -127,7 +175,7 @@
 .companyName {
   min-width: 0;
   overflow: hidden;
-  color: var(--platform-shell-text);
+  color: var(--sidebar-text);
   font-size: 0.75rem;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -135,14 +183,14 @@
 }
 
 .viewSwitcher {
-  padding: 12px;
-  border-bottom: 1px solid rgb(255 247 236 / 18%);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--sidebar-border);
 }
 
 .viewLabel {
   display: block;
   padding: 0 4px 8px;
-  color: rgb(255 247 236 / 68%);
+  color: var(--sidebar-rose);
   font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -158,9 +206,9 @@
 .viewButton {
   min-height: 36px;
   padding: 6px 8px;
-  color: var(--platform-shell-text);
+  color: var(--sidebar-text);
   background: transparent;
-  border: 1px solid rgb(255 247 236 / 24%);
+  border: 1px solid var(--sidebar-border-strong);
   border-radius: var(--platform-radius-control);
   font: inherit;
   font-size: 0.75rem;
@@ -176,36 +224,42 @@
 .viewButtonActive,
 .viewButtonActive:hover,
 .viewButtonActive:focus-visible {
-  color: var(--platform-shell);
-  background: var(--platform-shell-text);
+  color: var(--sidebar-bg);
+  background: var(--sidebar-text);
 }
 
 .navigation {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
   min-height: 0;
   overflow-y: auto;
-  padding: 20px 12px;
-  color: var(--platform-shell-text);
-  background: var(--platform-shell);
-  scrollbar-color: rgb(255 247 236 / 30%) transparent;
+  padding: 18px 12px 20px;
+  color: var(--sidebar-text);
+  background: transparent;
+  scrollbar-color: rgb(255 247 236 / 28%) transparent;
   scrollbar-width: thin;
 }
 
 .navSection {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sidebar-border);
+}
+
+.navSection:first-child {
+  padding-top: 0;
 }
 
 .navLabel {
-  padding: 0 10px;
-  color: rgb(255 247 236 / 64%);
-  font-size: 0.625rem;
+  padding: 0 6px;
+  color: var(--sidebar-rose);
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   line-height: 1.4;
   text-transform: uppercase;
 }
@@ -213,7 +267,7 @@
 .navList {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -221,23 +275,47 @@
 
 .navItem,
 .logoutNav {
-  display: flex;
+  display: grid;
   width: 100%;
-  min-height: 44px;
+  min-height: 54px;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  color: var(--platform-shell-text);
+  gap: 8px;
+  padding: 9px 8px;
+  color: var(--sidebar-text);
   background: transparent;
-  border: 0;
-  border-radius: var(--platform-radius-control);
+  border: 1px solid transparent;
+  border-radius: 8px;
   font-family: var(--ff-body);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.35;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
+}
+
+.navItem {
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+}
+
+.navItemCollaborator {
+  min-height: 62px;
+}
+
+.navItemManager,
+.navItemAdmin {
+  grid-template-columns: 28px 22px minmax(0, 1fr) auto auto;
+}
+
+.navItemAdmin {
+  min-height: 64px;
+  grid-template-columns: 42px 22px minmax(0, 1fr) auto auto;
+  padding: 9px 8px;
+}
+
+.navItemPersonal {
+  min-height: 48px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
 }
 
 .navItem:hover,
@@ -246,8 +324,9 @@
 .logoutNav:focus-visible,
 .footerLogout:hover,
 .footerLogout:focus-visible {
-  color: var(--platform-shell-text);
-  background: rgb(255 247 236 / 9%);
+  color: var(--sidebar-text);
+  background: rgb(255 247 236 / 8%);
+  border-color: var(--sidebar-border);
 }
 
 .navItem:focus-visible {
@@ -258,21 +337,91 @@
 .navItemActive,
 .navItemActive:hover,
 .navItemActive:focus-visible {
-  color: var(--platform-shell);
-  background: var(--platform-shell-text);
+  color: var(--sidebar-text);
+  background: rgb(255 247 236 / 12%);
+  border-color: rgb(215 164 93 / 48%);
+  box-shadow: inset 3px 0 0 var(--sidebar-gold);
+}
+
+.navItemBody {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .navItemLabel {
   min-width: 0;
-  flex: 1;
+  overflow: hidden;
+  color: inherit;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  line-height: 1.16;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+}
+
+.navItemManager .navItemLabel,
+.navItemAdmin .navItemLabel {
+  font-size: 0.8125rem;
+}
+
+.navItemDescription {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--sidebar-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.28;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.navItemManager .navItemDescription,
+.navItemAdmin .navItemDescription {
+  font-size: 0.625rem;
+}
+
+.navItemDetails {
+  display: flex;
+  max-height: 2.9em;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  color: var(--sidebar-muted);
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.navItemDetail {
+  display: inline-flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.navItemDetail::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  flex: 0 0 4px;
+  margin-top: 0.48em;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.72;
 }
 
 .navIcon {
   display: inline-flex;
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
-  opacity: 0.82;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  color: var(--sidebar-rose);
+  opacity: 0.96;
 }
 
 .navIcon svg {
@@ -281,26 +430,74 @@
 }
 
 .navItemActive .navIcon {
+  color: var(--sidebar-gold);
   opacity: 1;
+}
+
+.navItemManager .navIcon {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+}
+
+.navItemAdmin .navIcon {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgb(215 164 93 / 48%);
+  border-radius: 8px;
+  color: var(--sidebar-gold);
+  background: rgb(255 247 236 / 4%);
+}
+
+.navSequence {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  color: var(--sidebar-text);
+  background: var(--sidebar-rose-strong);
+  border: 1px solid rgb(255 247 236 / 18%);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.navItemMeta {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .navBadge {
   display: inline-grid;
   min-width: 20px;
   height: 20px;
-  margin-left: auto;
   padding: 0 5px;
   place-items: center;
+  white-space: nowrap;
+}
+
+.navChevron {
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid rgb(255 247 236 / 82%);
+  border-right: 2px solid rgb(255 247 236 / 82%);
+  transform: rotate(45deg);
 }
 
 .logoutNav {
+  grid-template-columns: 34px minmax(0, 1fr);
   margin-top: auto;
+  color: var(--sidebar-rose);
+  font-weight: 800;
 }
 
 .footer {
   padding: 12px;
-  background: var(--platform-shell-soft);
-  border-top: 1px solid rgb(255 247 236 / 18%);
+  background: rgb(255 247 236 / 7%);
+  border-top: 1px solid var(--sidebar-border);
 }
 
 .userCard {
@@ -312,9 +509,9 @@
 
 .userAvatar {
   flex: 0 0 auto;
-  color: var(--platform-shell);
-  background: var(--platform-shell-text);
-  border-color: var(--platform-shell-text);
+  color: var(--sidebar-bg);
+  background: var(--sidebar-text);
+  border-color: var(--sidebar-text);
 }
 
 .userDetails {
@@ -340,7 +537,7 @@
 }
 
 .userName {
-  color: var(--platform-shell-text);
+  color: var(--sidebar-text);
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -348,7 +545,7 @@
 }
 
 .userEmail {
-  color: rgb(255 247 236 / 66%);
+  color: var(--sidebar-muted);
   font-size: 0.625rem;
 }
 
@@ -366,7 +563,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  color: var(--platform-shell-text);
+  color: var(--sidebar-text);
   background: transparent;
   border: 0;
   border-radius: var(--platform-radius-control);
@@ -381,12 +578,174 @@
 
 @media (min-width: 769px) {
   .sidebar {
-    width: 240px;
-    box-shadow: none;
+    top: 12px;
+    left: 12px;
+    width: 384px;
+    height: calc(100dvh - 24px);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 24px;
+    box-shadow: 18px 0 42px rgb(32 4 12 / 18%);
     z-index: var(--z-sticky);
     transform: none;
     visibility: visible;
     transition: none;
+  }
+
+  .brandButton {
+    min-height: 132px;
+    gap: 20px;
+    padding: 26px 28px 24px;
+  }
+
+  .brandLogoTile {
+    width: 76px;
+    height: 76px;
+    flex-basis: 76px;
+    border-radius: 18px;
+  }
+
+  .brandLogo {
+    width: 66px;
+    max-height: 54px;
+  }
+
+  .brandName {
+    font-size: 2.35rem;
+  }
+
+  .brandSubtitle {
+    font-size: 1rem;
+    overflow-wrap: break-word;
+  }
+
+  .companyCard {
+    min-height: 52px;
+    padding: 10px 28px;
+  }
+
+  .viewSwitcher {
+    padding: 14px 28px;
+  }
+
+  .navigation {
+    gap: 20px;
+    padding: 22px 28px 24px;
+  }
+
+  .navSection {
+    gap: 10px;
+    padding-top: 16px;
+  }
+
+  .navLabel {
+    padding: 0;
+    font-size: 0.75rem;
+  }
+
+  .navList {
+    gap: 8px;
+  }
+
+  .navItem,
+  .logoutNav {
+    min-height: 62px;
+    gap: 14px;
+    padding: 10px 12px;
+  }
+
+  .navItem {
+    grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  }
+
+  .navItemCollaborator {
+    min-height: 72px;
+  }
+
+  .navItemManager,
+  .navItemAdmin {
+    grid-template-columns: 42px 28px minmax(0, 1fr) auto auto;
+  }
+
+  .navItemManager {
+    min-height: 56px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .navItemAdmin {
+    min-height: 76px;
+    grid-template-columns: 58px 28px minmax(0, 1fr) auto auto;
+  }
+
+  .navItemPersonal {
+    min-height: 56px;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+  }
+
+  .navItemLabel {
+    font-size: 1rem;
+  }
+
+  .navItemManager .navItemLabel,
+  .navItemAdmin .navItemLabel {
+    font-size: 1rem;
+  }
+
+  .navItemManager .navItemLabel {
+    font-size: 0.9375rem;
+  }
+
+  .navItemDescription {
+    font-size: 0.8125rem;
+  }
+
+  .navItemManager .navItemDescription,
+  .navItemAdmin .navItemDescription {
+    font-size: 0.75rem;
+  }
+
+  .navItemManager .navItemDescription {
+    font-size: 0.6875rem;
+  }
+
+  .navItemDetails {
+    font-size: 0.75rem;
+  }
+
+  .navItemManager .navItemDetails,
+  .navItemAdmin .navItemDetails {
+    font-size: 0.6875rem;
+  }
+
+  .navIcon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .navItemManager .navIcon {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .navItemAdmin .navIcon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .navSequence {
+    width: 26px;
+    height: 26px;
+    font-size: 0.8125rem;
+  }
+
+  .footer {
+    padding: 16px 28px;
+  }
+
+  .logoutNav {
+    grid-template-columns: 42px minmax(0, 1fr);
   }
 
   .overlay {

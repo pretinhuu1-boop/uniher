@@ -23,6 +23,8 @@ const protectedDashboardFixture: ProtectedDashboardProjection = {
   filters: { period: '1m' },
   metrics: {
     examActivity: suppressedMetric('minimum_cohort'),
+    wellbeingCheckIn: suppressedMetric('minimum_cohort'),
+    wellbeingCheckOut: suppressedMetric('minimum_cohort'),
     engagement: suppressedMetric('not_computable'),
     healthRisk: suppressedMetric('not_computable'),
     campaignParticipation: suppressedMetric('not_computable'),
@@ -52,6 +54,7 @@ const protectedDashboardFixture: ProtectedDashboardProjection = {
   examActivitySeries: [
     { period: '2026-07', metric: suppressedMetric('minimum_cohort') },
   ],
+  wellbeingSeries: [],
 };
 
 async function completeAuthTourForDashboard(page: Page) {

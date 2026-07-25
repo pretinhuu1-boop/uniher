@@ -325,6 +325,37 @@
   flex-direction: column;
 }
 
+.comparisonList {
+  display: grid;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  list-style: none;
+}
+
+.comparisonList li {
+  display: grid;
+  min-width: 0;
+  padding: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  border: 1px solid var(--platform-line);
+  border-radius: var(--platform-radius-control);
+}
+
+.comparisonList strong {
+  color: var(--platform-ink);
+  font-size: 0.875rem;
+}
+
+.comparisonList span {
+  color: var(--platform-muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
 .legendList li {
   display: grid;
   padding: 8px 0;
@@ -410,6 +441,10 @@
 
   .wide {
     grid-column: 1 / -1;
+  }
+
+  .comparisonList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ageLayout {

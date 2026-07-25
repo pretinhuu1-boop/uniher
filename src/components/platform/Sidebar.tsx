@@ -7,7 +7,7 @@ import useSWR from 'swr';
 import { clearProtectedReportCaches, useAuth } from '@/hooks/useAuth';
 import { getUserRoleLabel } from '@/lib/users/role-label';
 import { Avatar, Badge } from '@/components/ui/AvatarBadge';
-import SidebarNavItem, { NavIcon } from './SidebarNavItem';
+import SidebarNavItem, { NavIcon, type SidebarNavVariant } from './SidebarNavItem';
 import {
   getModuleAwareNavigationForRole,
   getRoleHome,
@@ -46,11 +46,31 @@ const PERSONAL_NAVIGATION_GROUPS = [
   },
 ] as const satisfies readonly NavigationGroup[];
 
+const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readonly<Record<string, readonly string[]>>>> = {
+  collaborator: {
+    '/colaboradora': ['Check-in - Como você chega hoje?', 'Check-out - Como você encerra o seu dia?'],
+  },
+  manager: {
+    '/dashboard': ['Visão geral da empresa', 'Check-in x Check-out'],
+  },
+  admin: {
+    '/admin': ['Empresas e usuários', 'Integridade operacional'],
+  },
+  personal: {},
+};
+
+function getPresentationDetails(item: NavigationItem, variant: SidebarNavVariant): readonly string[] {
+  return NAVIGATION_PRESENTATION_DETAILS[variant][item.href] ?? [];
+}
+
 interface SidebarNavigationGroupsProps {
   groups: readonly NavigationGroup[];
   pathname: string;
   onNavigate: () => void;
   idPrefix: string;
+  variant?: SidebarNavVariant;
+  showSequence?: boolean;
+  showChevron?: boolean;
   renderItemChildren?: (item: NavigationItem) => ReactNode;
 }
 
@@ -59,6 +79,9 @@ export function SidebarNavigationGroups({
   pathname,
   onNavigate,
   idPrefix,
+  variant = 'collaborator',
+  showSequence = false,
+  showChevron = false,
   renderItemChildren,
 }: SidebarNavigationGroupsProps) {
   const browserLocation = typeof window === 'undefined'
@@ -67,18 +90,25 @@ export function SidebarNavigationGroups({
 
   return groups.map((group, groupIndex) => {
     const headingId = `${idPrefix}-${groupIndex}`;
+    const sequenceOffset = groups
+      .slice(0, groupIndex)
+      .reduce((total, item) => total + item.items.length, 0);
 
     return (
       <section key={group.label} className={styles.navSection} aria-labelledby={headingId}>
         <h2 id={headingId} className={styles.navLabel}>{group.label}</h2>
         <ul className={styles.navList}>
-          {group.items.map(item => (
+          {group.items.map((item, itemIndex) => (
             <li key={item.href}>
               <SidebarNavItem
                 href={item.href}
                 icon={item.icon}
                 label={item.label}
                 description={item.description}
+                variant={variant}
+                details={getPresentationDetails(item, variant)}
+                sequenceNumber={showSequence ? sequenceOffset + itemIndex + 1 : undefined}
+                showChevron={showChevron}
                 isActive={
                   isNavigationItemActive(pathname, item.href)
                   || isNavigationItemActive(browserLocation, item.href)
@@ -211,6 +241,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const role = activeView;
   const roleLabel = getUserRoleLabel(role);
+  const menuVariant: SidebarNavVariant = role === 'admin'
+    ? 'admin'
+    : role === 'rh' || role === 'lideranca'
+      ? 'manager'
+      : 'collaborator';
+  const brandSubtitle = role === 'admin'
+    ? 'Administrador da Plataforma'
+    : role === 'rh' || role === 'lideranca'
+      ? 'RH | Gestão da Saúde e Bem-estar'
+      : 'Saúde Feminina';
   const search = searchParams.toString();
   const currentLocation = search ? `${pathname}?${search}` : pathname;
 
@@ -288,14 +328,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           }}
           aria-label="Ir para o início da UniHER"
         >
-          <Image
-            src="/logo-uniher.png"
-            alt="UniHER"
-            width={140}
-            height={116}
-            className={styles.brandLogo}
-            priority
-          />
+          <span className={styles.brandLogoTile}>
+            <Image
+              src="/logo-uniher.png"
+              alt="UniHER"
+              width={140}
+              height={116}
+              className={styles.brandLogo}
+              priority
+            />
+          </span>
+          <span className={styles.brandIdentity}>
+            <span className={styles.brandName}>UniHER</span>
+            <span className={styles.brandSubtitle}>{brandSubtitle}</span>
+          </span>
         </button>
 
         {company ? (
@@ -349,12 +395,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           pathname={currentLocation}
           onNavigate={onNavigate}
           idPrefix={`platform-navigation-${role}`}
+          variant={menuVariant}
+          showSequence={role === 'admin' || role === 'rh'}
+          showChevron={role === 'admin'}
         />
         <SidebarNavigationGroups
           groups={PERSONAL_NAVIGATION_GROUPS}
           pathname={currentLocation}
           onNavigate={onNavigate}
           idPrefix="platform-navigation-personal"
+          variant="personal"
           renderItemChildren={item => item.href === '/notificacoes' && unreadCount > 0 ? (
             <Badge variant="alert" size="sm" className={styles.navBadge}>{unreadCount}</Badge>
           ) : null}

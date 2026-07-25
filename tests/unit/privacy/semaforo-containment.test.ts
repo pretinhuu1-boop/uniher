@@ -73,6 +73,7 @@ function useDatabase() {
   runtime.db = db;
   db.exec(`
     CREATE TABLE users (id TEXT PRIMARY KEY, company_id TEXT, streak INTEGER, last_active TEXT, updated_at TEXT, deleted_at TEXT, blocked INTEGER, role TEXT);
+    CREATE TABLE companies (id TEXT PRIMARY KEY);
     CREATE TABLE activity_log (id TEXT PRIMARY KEY, user_id TEXT, action TEXT, created_at TEXT);
     CREATE TABLE user_challenges (id TEXT PRIMARY KEY, user_id TEXT, status TEXT);
     CREATE TABLE daily_missions (id TEXT PRIMARY KEY, user_id TEXT, title TEXT, description TEXT, xp INTEGER, category TEXT, action TEXT, day TEXT, completed INTEGER DEFAULT 0, completed_at TEXT, created_at TEXT DEFAULT (datetime('now')));
@@ -82,6 +83,18 @@ function useDatabase() {
     CREATE TABLE archetypes (id TEXT PRIMARY KEY, key TEXT, name TEXT, description TEXT, base_scores TEXT, growth_30 TEXT, growth_60 TEXT, growth_90 TEXT, missions INTEGER, campaigns INTEGER, habits INTEGER);
     CREATE TABLE quiz_results (id TEXT PRIMARY KEY, user_id TEXT UNIQUE, archetype_id TEXT, answers_json TEXT, created_at TEXT DEFAULT (datetime('now')));
     CREATE TABLE notification_preferences (user_id TEXT PRIMARY KEY, reminder_times TEXT NOT NULL, mission_reminders TEXT NOT NULL, browser_enabled INTEGER NOT NULL, updated_at TEXT);
+    CREATE TABLE wellbeing_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      mood TEXT NOT NULL,
+      day TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, event_type, day)
+    );
+    INSERT INTO companies VALUES ('company-1');
     INSERT INTO users VALUES ('user-1', 'company-1', 4, NULL, '2026-01-01', NULL, 0, 'colaboradora');
     INSERT INTO health_scores VALUES ('health-1', 'user-1', 'Sono', 7.7, 'yellow', '2026-01-01');
     INSERT INTO archetypes VALUES ('arch-1', 'guardia', 'Guardiã', 'Conclusão educacional', '{}', '{}', '{}', '{}', 0, 0, 0);

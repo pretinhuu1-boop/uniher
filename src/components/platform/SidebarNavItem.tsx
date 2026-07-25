@@ -7,6 +7,7 @@ import type { NavigationIcon } from './navigation';
 import styles from './Sidebar.module.css';
 
 export type SidebarIcon = NavigationIcon | 'logout';
+export type SidebarNavVariant = 'collaborator' | 'manager' | 'admin' | 'personal';
 
 const ICONS = {
   companies: (
@@ -134,27 +135,61 @@ interface SidebarNavItemProps {
   label: string;
   description: string;
   isActive: boolean;
+  variant?: SidebarNavVariant;
+  details?: readonly string[];
+  sequenceNumber?: number;
+  showChevron?: boolean;
   onClick?: () => void;
   children?: React.ReactNode;
 }
 
-export default function SidebarNavItem({ href, icon, label, description, isActive, onClick, children }: SidebarNavItemProps) {
+const VARIANT_CLASSES: Record<SidebarNavVariant, string> = {
+  collaborator: styles.navItemCollaborator,
+  manager: styles.navItemManager,
+  admin: styles.navItemAdmin,
+  personal: styles.navItemPersonal,
+};
+
+export default function SidebarNavItem({
+  href,
+  icon,
+  label,
+  description,
+  isActive,
+  variant = 'collaborator',
+  details = [],
+  sequenceNumber,
+  showChevron = false,
+  onClick,
+  children,
+}: SidebarNavItemProps) {
   const descriptionId = useId();
 
   return (
-    <>
-      <Link
-        href={href}
-        className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-        aria-current={isActive ? 'page' : undefined}
-        aria-describedby={descriptionId}
-        onClick={onClick}
-      >
-        <NavIcon name={icon} />
+    <Link
+      href={href}
+      className={`${styles.navItem} ${VARIANT_CLASSES[variant]} ${isActive ? styles.navItemActive : ''}`}
+      aria-current={isActive ? 'page' : undefined}
+      aria-describedby={descriptionId}
+      onClick={onClick}
+    >
+      <NavIcon name={icon} />
+      {sequenceNumber ? (
+        <span className={styles.navSequence} aria-hidden="true">{sequenceNumber}</span>
+      ) : null}
+      <span className={styles.navItemBody}>
         <span className={styles.navItemLabel}>{label}</span>
-        {children ? <> {children}</> : null}
-      </Link>
-      <span id={descriptionId} className="sr-only">{description}</span>
-    </>
+        <span id={descriptionId} className={styles.navItemDescription}>{description}</span>
+        {details.length > 0 ? (
+          <span className={styles.navItemDetails} aria-label="Resumo do item">
+            {details.map(detail => (
+              <span key={detail} className={styles.navItemDetail}>{detail}</span>
+            ))}
+          </span>
+        ) : null}
+      </span>
+      {children ? <span className={styles.navItemMeta}>{children}</span> : null}
+      {showChevron ? <span className={styles.navChevron} aria-hidden="true" /> : null}
+    </Link>
   );
 }

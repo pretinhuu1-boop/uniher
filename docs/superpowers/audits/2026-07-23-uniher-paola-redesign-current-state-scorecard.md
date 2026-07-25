@@ -70,8 +70,7 @@ Closed foundations:
 Still in HOLD for final approval:
 
 - Visual fidelity of the requested menu/box treatment from the three supplied images. P7A runtime/menu QA is executed, but the richer visual treatment remains not approved.
-- Collaborator wellbeing pair `Check-in` + `Check-out`.
-- RH/Admin `Check-in x Check-out` chart.
+- RH/Admin `Check-in x Check-out` chart has a first protected aggregate foundation, but visual/product approval remains HOLD.
 - RH dashboard metrics for adherence, evolution, absenteeism, presenteeism and other approved business indicators.
 - Real Semaforo/Saude Primaria behavior.
 - Real Concierge case workflow.
@@ -87,9 +86,9 @@ Still in HOLD for final approval:
 |---|---|---|
 | Admin Master menu taxonomy | PARTIAL PASS | Navigation exposes the requested taxonomy through existing/shell destinations; dedicated full routes remain future lanes. |
 | RH menu taxonomy | PARTIAL PASS | Dashboard, Education, Conquistas and module shells are mapped; full indicators and sensitive modules remain gated. |
-| Collaborator menu taxonomy | PARTIAL PASS | Agenda, Education, Objectives/Challenges/Achievements and locked modules exist; Check-out and real Semaforo remain pending. |
+| Collaborator menu taxonomy | PARTIAL PASS | Agenda, Education, Objectives/Challenges/Achievements and locked modules exist; Check-out has P5 foundation; real Semaforo remains pending. |
 | Boxes/menu visual language | HOLD | Runtime screenshots exist and no overflow/API/console blocker was found, but the current grouped sidebar is not approved as the richer card/numbered reference treatment. |
-| Quiz / Meu Bem-Estar | HOLD | Check-in exists and legacy quiz/lesson surfaces exist, but Dra. Paola's daily Check-in/Check-out pair is not complete. |
+| Quiz / Meu Bem-Estar | P5 FOUNDATION PASS | Check-in and Check-out prompts now exist with controlled private wellbeing events; aggregate dashboard chart remains P6. |
 | Education / Community | PARTIAL PASS | Code now has a real community/feed foundation; runtime seeded-content and visual proof remain separate gates. |
 | Conquistas | PARTIAL PASS | Private objectives/challenges/achievements are advanced; Liga, ranking and rewards remain policy-gated. |
 | NR-1 / Yavix | HOLD for production; PASS for default gate | Default `requires_contract` navigation now lands on locked `/nr1`; `/avaliacao-nr1` remains runtime scaffold requiring explicit enabled state and Yavix contract before production use. |
@@ -111,16 +110,18 @@ Acceptance gates:
 - PASS: `src/app/(platform)/saude-primaria/page.tsx` context copy is accented consistently with `Saúde Primária`.
 - PASS: RH completed-onboarding metrics are annotated in the P7A scorecard as a detector false-positive for valid `ÃO`, not as a mojibake blocker.
 - PASS: P7A remains labelled as runtime/menu evidence and `HOLD` for full visual approval.
-- PASS: the next lane should be selected explicitly as P7B visual target, P5 Check-out foundation or P8 module-management governance.
+- PASS: the next lane should be selected explicitly as P7B visual target, P6 selected-company Admin scope, or P8 module-management governance.
 
 ### P5 - Check-out foundation
+
+Status: PASS for foundation; final promotion still requires build/diff gates for the active worktree.
 
 Objective: add `Check-out` as a first-class wellbeing event before any comparison chart.
 
 Acceptance gates:
 
 - Check-in prompt answers "Como voce chega hoje?"
-- Check-out prompt answers "Como voce encerra o seu dia?"
+- Check-out prompt answers "Como você encerra o seu dia?"
 - No XP, ranking, Liga, Semaforo, health score or NR-1 feed.
 - Self-only collaborator data access.
 - Focused unit/privacy tests.
@@ -130,12 +131,16 @@ Acceptance gates:
 
 Objective: add approved aggregate indicators and `Check-in x Check-out` chart only after P5 exists.
 
+Status: PASS for first protected aggregate foundation; HOLD for full promotion and visual approval.
+
 Acceptance gates:
 
-- Aggregate suppression.
-- No individual mood, Semaforo, exam, agenda or NR-1 answer exposure.
-- Dashboard view-model tests.
-- Browser screenshots for RH/Admin.
+- PASS: aggregate suppression for check-in/check-out counts and monthly series, including adjacent-month stable-cohort protection.
+- PASS: no individual mood, Semaforo, exam, agenda or NR-1 answer exposure in the P6 projection.
+- PASS: dashboard projection, view-model, CSV and component tests.
+- PASS: RH browser screenshots after local server became available.
+- PASS: Admin Master visual proof for this slice now fails closed with explicit company-scope copy when no company is selected.
+- HOLD: Admin Master aggregate visualization requires an explicit selected-company reporting scope before promotion.
 
 ### P7A - Menu boxes visual QA
 
@@ -153,6 +158,23 @@ Acceptance gates:
   while `rh-dashboard-complete-metrics.json` is the post-polish label source.
 - HOLD: visual fidelity to the richer card/numbered menu references is not approved.
 
+### P7B - Visual target decision
+
+Status: PASS for visual target extraction; HOLD for UI implementation.
+
+Plan: `docs/superpowers/plans/2026-07-24-uniher-paola-p7b-visual-target-decision.md`
+
+Acceptance gates:
+
+- PASS: the next visual lane is separated from P5/P6 data/privacy work.
+- PASS: no sensitive module behavior is needed for the visual decision.
+- PASS: the three Dra. Paola visual references were copied into durable repo
+  assets.
+- PASS: Design MD extraction exists at
+  `docs/superpowers/specs/2026-07-24-uniher-paola-p7b-menu-card-design.md`.
+- HOLD: UI implementation must wait for a focused P7B UI lane opened against
+  the extracted design spec.
+
 ### P8 - Module-management governance
 
 Objective: add Admin/RH module activation/deactivation mutations only after explicit governance approval.
@@ -166,4 +188,4 @@ Acceptance gates:
 
 ## Coordinator decision
 
-Continue from one explicitly selected lane: P5 Check-out foundation, P7B visual target correction, or P8 module-management governance. P7A runtime/menu evidence is closed, but full visual approval remains HOLD. Do not open SIPAT, Concierge, Denuncias, Semaforo production behavior, Liga/ranking or Yavix provisioning until their source/contract/policy gates are satisfied.
+Continue from one explicitly selected lane: open focused P7B UI implementation against the extracted Design MD, open P6 selected-company Admin reporting scope, or open P8 module-management governance. P7A runtime/menu evidence is closed, but full visual approval remains HOLD. Do not open SIPAT, Concierge, Denuncias, Semaforo production behavior, Liga/ranking or Yavix provisioning until their source/contract/policy gates are satisfied.

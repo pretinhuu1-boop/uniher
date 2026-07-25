@@ -54,6 +54,13 @@ export function buildDashboardCsv(model: DashboardViewModel): string {
       protectedCsvCell(point.metric),
     ].join(',')),
     '',
+    [csvCell('Check-in x Check-out por mês'), csvCell('Check-in'), csvCell('Check-out')].join(','),
+    ...model.wellbeingSeries.map((point) => [
+      csvCell(point.period),
+      protectedCsvCell(point.checkIn),
+      protectedCsvCell(point.checkOut),
+    ].join(',')),
+    '',
     [csvCell('ROI e absenteísmo'), protectedCsvCell(model.metrics.roi)].join(','),
     [csvCell('Risco de saúde'), protectedCsvCell(model.metrics.healthRisk)].join(','),
   ];

@@ -54,6 +54,8 @@ export default function DashboardPage() {
     () => dashboard.data ? createDashboardViewModel(dashboard.data) : null,
     [dashboard.data],
   );
+  const requiresCompanyScope =
+    user?.role === 'admin' && user.isMasterAdmin === true && !user.companyId;
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'Gestora';
   const canExport = Boolean(
     model
@@ -86,7 +88,13 @@ export default function DashboardPage() {
           </Button>
         )}
       />
-      {dashboard.isLoading ? (
+      {requiresCompanyScope ? (
+        <FeedbackState
+          kind="denied"
+          title="Selecione uma empresa no painel master"
+          description="O dashboard RH usa dados agregados por empresa. Escolha uma empresa antes de visualizar esta projeção."
+        />
+      ) : dashboard.isLoading ? (
         <FeedbackState
           kind="loading"
           title="Preparando sua visão protegida"

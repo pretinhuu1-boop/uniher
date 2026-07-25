@@ -62,6 +62,17 @@ function createDatabase() {
       created_at TEXT NOT NULL,
       source TEXT
     );
+    CREATE TABLE wellbeing_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      mood TEXT NOT NULL,
+      day TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, event_type, day)
+    );
   `);
   database.prepare('INSERT INTO departments (id, company_id, name, color) VALUES (?, ?, ?, ?)')
     .run('dept-a', 'company-a', 'Opera\u00e7\u00f5es', '#536444');
@@ -129,6 +140,26 @@ function addNotification(
     INSERT INTO notifications (id, user_id, type, title, message, created_at, source)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(id, userId, type, 'CANARY 86421', 'CANARY 86421', createdAt, source);
+}
+
+function addWellbeingEvent(
+  id: string,
+  userId: string,
+  eventType: 'check_in' | 'check_out',
+  day = '2026-07-10',
+  overrides: { companyId?: string; mood?: string } = {},
+) {
+  database.prepare(`
+    INSERT INTO wellbeing_events (id, user_id, company_id, event_type, mood, day)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    userId,
+    overrides.companyId ?? 'company-a',
+    eventType,
+    overrides.mood ?? 'sobrecarregada',
+    day,
+  );
 }
 
 function addEligibleExamContributors(count: number, departmentId = 'dept-a') {
@@ -224,6 +255,76 @@ describe('protected report projection', () => {
     expect(getProtectedDashboardProjection({
       companyId: 'company-a', period: '1m', now: NOW,
     }).metrics.examActivity).toEqual({ status: 'visible', value: 10 });
+  });
+
+  it('projects wellbeing check-in and check-out as protected company aggregates without mood values', () => {
+    for (let index = 1; index <= 10; index += 1) {
+      const id = `wellbeing-person-${index}`;
+      addUser(id, 'dept-a');
+      addWellbeingEvent(`${id}-previous-check-in`, id, 'check_in', '2026-06-20');
+      addWellbeingEvent(`${id}-previous-check-out`, id, 'check_out', '2026-06-20', { mood: 'muito_bem' });
+      addWellbeingEvent(`${id}-check-in`, id, 'check_in');
+      addWellbeingEvent(`${id}-check-out`, id, 'check_out', '2026-07-10', { mood: 'muito_bem' });
+    }
+    addUser('foreign-wellbeing', 'foreign-dept', { companyId: 'company-b' });
+    addWellbeingEvent('foreign-check-in', 'foreign-wellbeing', 'check_in', '2026-07-10', { companyId: 'company-b' });
+
+    const projection = getProtectedDashboardProjection({
+      companyId: 'company-a',
+      period: '1m',
+      now: NOW,
+    });
+
+    expect(projection.metrics.wellbeingCheckIn).toEqual({ status: 'visible', value: 10 });
+    expect(projection.metrics.wellbeingCheckOut).toEqual({ status: 'visible', value: 10 });
+    expect(projection.wellbeingSeries.find((point) => point.period === '2026-07')).toMatchObject({
+      checkIn: { status: 'visible', value: 10 },
+      checkOut: { status: 'visible', value: 10 },
+    });
+    expect(JSON.stringify(projection)).not.toMatch(/sobrecarregada|muito_bem|mood|participant_id|user_id|foreign-wellbeing/i);
+  });
+
+  it('suppresses both wellbeing totals when check-out has a small cohort', () => {
+    for (let index = 1; index <= 10; index += 1) {
+      const id = `wellbeing-small-${index}`;
+      addUser(id, 'dept-a');
+      addWellbeingEvent(`${id}-check-in`, id, 'check_in');
+      if (index <= 9) addWellbeingEvent(`${id}-check-out`, id, 'check_out');
+    }
+
+    const projection = getProtectedDashboardProjection({
+      companyId: 'company-a',
+      period: '1m',
+      now: NOW,
+    });
+
+    expect(projection.metrics.wellbeingCheckIn).toMatchObject({ status: 'suppressed', reason: 'complementary' });
+    expect(projection.metrics.wellbeingCheckOut).toMatchObject({ status: 'suppressed', reason: 'minimum_cohort' });
+  });
+
+  it('suppresses adjacent visible wellbeing months when their stable participant intersection is 9', () => {
+    for (let index = 1; index <= 11; index += 1) addUser(`wellbeing-monthly-${index}`);
+    for (let index = 1; index <= 10; index += 1) {
+      addWellbeingEvent(`wellbeing-jan-in-${index}`, `wellbeing-monthly-${index}`, 'check_in', '2026-01-15');
+      addWellbeingEvent(`wellbeing-jan-out-${index}`, `wellbeing-monthly-${index}`, 'check_out', '2026-01-15');
+    }
+    for (let index = 2; index <= 11; index += 1) {
+      addWellbeingEvent(`wellbeing-feb-in-${index}`, `wellbeing-monthly-${index}`, 'check_in', '2026-02-15');
+      addWellbeingEvent(`wellbeing-feb-out-${index}`, `wellbeing-monthly-${index}`, 'check_out', '2026-02-15');
+    }
+
+    const projection = getProtectedDashboardProjection({
+      companyId: 'company-a',
+      period: '3m',
+      now: '2026-03-01T00:00:00.000Z',
+    });
+    const jan = projection.wellbeingSeries.find((point) => point.period === '2026-01');
+    const feb = projection.wellbeingSeries.find((point) => point.period === '2026-02');
+
+    expect(jan?.checkIn.status).toBe('suppressed');
+    expect(jan?.checkOut.status).toBe('suppressed');
+    expect(feb?.checkIn.status).toBe('suppressed');
+    expect(feb?.checkOut.status).toBe('suppressed');
   });
 
   it('applies row, column and total complementary suppression to an age matrix', () => {
@@ -411,6 +512,8 @@ describe('protected route and cache boundaries', () => {
     expect(historyRoute).toContain('status: 410');
     expect(historyRoute).not.toMatch(/getReadDb|initDb|users\.points|points_earned|ranking/i);
     expect(dashboardRoute).not.toMatch(/healthRisk|getReportConfigs|getDepartmentRanking|getROIData/);
+    expect(dashboardRoute).toContain('COMPANY_SCOPE_REQUIRED');
+    expect(dashboardRoute).toMatch(/auth\.role === 'admin'[\s\S]*auth\.isMasterAdmin === true[\s\S]*!auth\.companyId/);
     expect(communicationsRoute).not.toMatch(/title|message|invites|alertCount|activity_log/);
   });
 

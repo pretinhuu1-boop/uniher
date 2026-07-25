@@ -25,6 +25,16 @@ export const GET = withRole('admin', 'rh', 'lideranca')(
       );
     }
 
+    if (auth.role === 'admin' && auth.isMasterAdmin === true && !auth.companyId) {
+      return NextResponse.json(
+        {
+          error: 'COMPANY_SCOPE_REQUIRED',
+          message: 'Selecione uma empresa antes de acessar o dashboard RH.',
+        },
+        { status: 400, headers: PROTECTED_HEADERS },
+      );
+    }
+
     try {
       await initDb();
       const projection = getProtectedDashboardProjection({

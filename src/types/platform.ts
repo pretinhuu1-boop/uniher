@@ -36,6 +36,8 @@ export type CommunicationPeriod = (typeof COMMUNICATION_PERIODS)[number];
 
 export interface ProtectedDashboardMetrics {
   examActivity: ProtectedMetric<number>;
+  wellbeingCheckIn: ProtectedMetric<number>;
+  wellbeingCheckOut: ProtectedMetric<number>;
   engagement: ProtectedMetric<never>;
   healthRisk: ProtectedMetric<never>;
   campaignParticipation: ProtectedMetric<never>;
@@ -60,6 +62,12 @@ export interface ProtectedSeriesMetric {
   metric: ProtectedMetric<number>;
 }
 
+export interface ProtectedWellbeingSeriesMetric {
+  period: string;
+  checkIn: ProtectedMetric<number>;
+  checkOut: ProtectedMetric<number>;
+}
+
 export interface ProtectedDashboardProjection {
   filters: {
     period: DashboardPeriod;
@@ -69,6 +77,7 @@ export interface ProtectedDashboardProjection {
   departments: ProtectedDepartmentMetric[];
   ageDistribution: ProtectedAgeMetric[];
   examActivitySeries: ProtectedSeriesMetric[];
+  wellbeingSeries: ProtectedWellbeingSeriesMetric[];
 }
 
 export type SafeCommunicationAction =

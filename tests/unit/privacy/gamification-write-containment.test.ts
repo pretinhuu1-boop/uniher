@@ -48,6 +48,7 @@ function useWriteDatabase() {
   runtime.db = db;
   db.exec(`
     CREATE TABLE users (id TEXT PRIMARY KEY, points INTEGER, level INTEGER, streak INTEGER, last_active TEXT, updated_at TEXT);
+    CREATE TABLE companies (id TEXT PRIMARY KEY);
     CREATE TABLE user_leagues (id TEXT PRIMARY KEY, user_id TEXT, league TEXT, week_points INTEGER, week_start TEXT);
     CREATE TABLE custom_league_members (id TEXT PRIMARY KEY, league_id TEXT, user_id TEXT, week_points INTEGER);
     CREATE TABLE user_badges (user_id TEXT, badge_id TEXT, unlocked_at TEXT);
@@ -63,6 +64,18 @@ function useWriteDatabase() {
     CREATE TABLE gamification_config (company_id TEXT PRIMARY KEY, hearts_enabled INTEGER, hearts_refill_hours INTEGER);
     CREATE TABLE user_hearts (user_id TEXT PRIMARY KEY, hearts INTEGER, max_hearts INTEGER);
     CREATE TABLE user_campaigns (user_id TEXT, campaign_id TEXT, progress INTEGER, PRIMARY KEY(user_id, campaign_id));
+    CREATE TABLE wellbeing_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      mood TEXT NOT NULL,
+      day TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, event_type, day)
+    );
+    INSERT INTO companies VALUES ('company-1');
     INSERT INTO users VALUES ('user-1', 731, 8, 4, NULL, '2026-01-01');
     INSERT INTO user_leagues VALUES ('league-1', 'user-1', 'ouro', 99, '2026-01-01');
     INSERT INTO custom_league_members VALUES ('custom-1', 'custom-league-1', 'user-1', 88);
@@ -477,6 +490,7 @@ describe('legacy gamification write containment', () => {
   it('keeps only private point-free presence and educational/campaign progress', () => {
     const pointFreeRoutes = [
       'src/app/api/gamification/check-in/route.ts',
+      'src/app/api/wellbeing/check-out/route.ts',
       'src/app/api/gamification/daily-lesson/route.ts',
       'src/app/api/gamification/daily-missions/[id]/complete/route.ts',
       'src/app/api/campaigns/join/route.ts',

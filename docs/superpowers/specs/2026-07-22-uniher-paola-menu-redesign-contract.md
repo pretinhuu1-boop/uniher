@@ -275,7 +275,7 @@ This table tracks whether Dra. Paola's requested menu concepts are captured in t
 
 | Stakeholder section | Coverage after correction | Notes |
 |---|---|---|
-| RH Dashboard | SPEC CAPTURED / PARTIAL RUNTIME | Existing dashboard reused; check-out chart waits for P5/P6. |
+| RH Dashboard | SPEC CAPTURED / PARTIAL RUNTIME | Existing dashboard reused; first protected Check-in x Check-out aggregate foundation exists; broader indicators and visual approval remain gated. |
 | RH Saude Primaria | SPEC CAPTURED / LOCKED RUNTIME | Semaforo colors/counts/evolution and Concierge captured; runtime waits clinical/privacy/product gates. |
 | RH Educacao | SPEC CAPTURED / EXISTING RUNTIME | Campaigns, trails, video classes, educational content and materials map to existing education surfaces. |
 | RH Conquistas | SPEC CAPTURED / GATED RUNTIME | Objectives, Liga, rankings, achievements, medals and rewards vocabulary captured; rankings/Liga remain gated. |
@@ -284,14 +284,14 @@ This table tracks whether Dra. Paola's requested menu concepts are captured in t
 | RH Desenvolvimento Humano | SPEC CAPTURED / LOCKED RUNTIME | Visible locked and future-fillable. |
 | RH Canal de Denuncias | SPEC CAPTURED / PARTNER-GATED RUNTIME | Visible partner-managed report flow captured; no receiving/tracking workflow active. |
 | Collaborator Saude Primaria | SPEC CAPTURED / LOCKED RUNTIME | Individual classification/guidance captured; clinical/privacy gate remains. |
-| Collaborator Meu Bem-Estar | SPEC CAPTURED / PARTIAL RUNTIME | Check-in exists; check-out prompt and event model wait for P5. |
+| Collaborator Meu Bem-Estar | SPEC CAPTURED / P5 FOUNDATION IMPLEMENTED | Check-in and Check-out prompts exist with controlled private wellbeing events; RH/Admin chart waits for P6 aggregate projection. |
 | Collaborator Agenda | SPEC CAPTURED / EXISTING RUNTIME | Existing route covers agenda/reminders/history/follow-up target. |
 | Collaborator Educacao | SPEC CAPTURED / EXISTING RUNTIME | Video classes, trails, monthly campaigns and educational content map to existing surfaces. |
 | Collaborator Conquistas | SPEC CAPTURED / GATED RUNTIME | Challenges, rewards, Liga, ranking, medals and achievements grouped; Liga/ranking remain gated. |
 | Collaborator NR-1 | SPEC CAPTURED / LOCKED RUNTIME | Visible module and stakeholder's "content already available" claim captured as inventory requirement. |
 | Collaborator Viva SIPAT | SPEC CAPTURED / SOURCE-GATED RUNTIME | Stakeholder's "content already available" claim captured as inventory requirement. |
 | Collaborator Desenvolvimento Humano | SPEC CAPTURED / LOCKED RUNTIME | Visible, blocked by default, future-updatable. |
-| Admin Dashboard Geral | SPEC CAPTURED / PARTIAL RUNTIME | Existing `/admin` overview reused; check-in/out and sensitive aggregates wait for P5/P6. |
+| Admin Dashboard Geral | SPEC CAPTURED / PARTIAL RUNTIME | Existing `/admin` overview reused; first protected check-in/out aggregate foundation exists in dashboard projection; sensitive aggregates remain gated. |
 | Admin Empresas | SPEC CAPTURED / EXISTING RUNTIME | Company list, environment access, settings and permissions remain in the Admin Master panel. |
 | Admin Saude Primaria | SPEC CAPTURED / LOCKED RUNTIME | Consolidated Semaforo and indicators captured; runtime waits clinical/privacy gates. |
 | Admin Concierge | SPEC CAPTURED / LOCKED RUNTIME | Cases, collaborators, statuses, pending items, response time and indicators captured; case workflow inactive. |
@@ -353,15 +353,15 @@ Current state after 2026-07-23 MCP/Obsidian and repo audit:
 
 - Overall redesign decision is HOLD for full approval, even though P1-P4 technical foundations are PASS.
 - The visual menu/box treatment from Dra. Paola's three supplied images has P7A runtime evidence, but remains HOLD for full visual approval because the current sidebar is functional grouped navigation rather than the richer menu-card/numbered visual language from the references.
-- `Meu Bem-Estar` remains partial: Check-in exists, but true Check-out and the daily Check-in/Check-out pair are not complete.
-- RH/Admin dashboard coverage remains partial until P5 Check-out and P6 aggregate dashboard projections exist.
+- `Meu Bem-Estar` P5 foundation exists: Check-in and Check-out record controlled private wellbeing events.
+- RH/Admin dashboard coverage remains partial; P6 now has a first protected Check-in x Check-out aggregate foundation, but broader indicators and visual/product approval remain gated.
 - Semaforo/Saude Primaria, Concierge, SIPAT, Desenvolvimento Humano, Canal de Denuncias, Liga/ranking and Yavix/NR-1 production behavior remain gated.
 - Runtime proof was not refreshed in the 2026-07-23 audit because `localhost:3001/api/health` did not respond.
 
 Next smallest executable choices:
 
-1. Open P5 Check-out foundation, or a P7A design-target correction pass if the next goal is visual alignment first.
-2. Open P6 RH/Admin aggregate dashboards only after P5.
+1. Broaden P6 verification/browser evidence for the protected aggregate dashboard, or open P7B visual target correction if the next goal is visual alignment first.
+2. Keep P5 private event data out of individual RH/Admin views.
 3. Open a separate Admin/RH module-management lane with explicit mutation governance.
 4. Source/approve SIPAT content policy before any SIPAT content-bearing implementation.
 

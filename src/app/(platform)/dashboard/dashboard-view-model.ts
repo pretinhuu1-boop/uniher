@@ -4,11 +4,12 @@ import type {
   ProtectedDashboardProjection,
   ProtectedDepartmentMetric,
   ProtectedSeriesMetric,
+  ProtectedWellbeingSeriesMetric,
 } from '@/types/platform';
 import type { ProtectedMetric } from '@/types/privacy';
 
 export interface DashboardSummaryItem {
-  label: 'Atividade de exames' | 'Engajamento' | 'Participação em campanha';
+  label: 'Atividade de exames' | 'Check-in' | 'Check-out' | 'Engajamento' | 'Participação em campanha';
   metric: ProtectedMetric<number>;
   detail: string;
   state: 'neutral';
@@ -27,6 +28,7 @@ export interface DashboardViewModel {
   departments: ProtectedDepartmentMetric[];
   ageDistribution: ProtectedAgeMetric[];
   examActivitySeries: ProtectedSeriesMetric[];
+  wellbeingSeries: ProtectedWellbeingSeriesMetric[];
 }
 
 const ACTION_BLUEPRINTS: readonly DashboardAction[] = [
@@ -59,6 +61,18 @@ export function createDashboardViewModel(
         state: 'neutral',
       },
       {
+        label: 'Check-in',
+        metric: source.metrics.wellbeingCheckIn,
+        detail: 'check-ins distintos no período',
+        state: 'neutral',
+      },
+      {
+        label: 'Check-out',
+        metric: source.metrics.wellbeingCheckOut,
+        detail: 'check-outs distintos no período',
+        state: 'neutral',
+      },
+      {
         label: 'Engajamento',
         metric: source.metrics.engagement,
         detail: 'fonte legada não computável',
@@ -78,5 +92,6 @@ export function createDashboardViewModel(
     departments: source.departments.map((department) => ({ ...department })),
     ageDistribution: source.ageDistribution.map((bucket) => ({ ...bucket })),
     examActivitySeries: source.examActivitySeries.map((point) => ({ ...point })),
+    wellbeingSeries: source.wellbeingSeries.map((point) => ({ ...point })),
   };
 }

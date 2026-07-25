@@ -50,6 +50,17 @@ const actionLinkClass =
 const disabledActionClass =
   'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] px-4 py-2 text-sm font-semibold text-[var(--platform-muted)]';
 
+const WELLBEING_MOOD_OPTIONS = [
+  { value: 'muito_bem', label: 'Muito bem' },
+  { value: 'bem', label: 'Bem' },
+  { value: 'neutra', label: 'Neutra' },
+  { value: 'cansada', label: 'Cansada' },
+  { value: 'sobrecarregada', label: 'Sobrecarregada' },
+] as const;
+
+type WellbeingMood = (typeof WELLBEING_MOOD_OPTIONS)[number]['value'];
+type WellbeingStatusMood = WellbeingMood | 'nao_informado';
+
 function JourneyRow({
   step,
   icon,
@@ -85,14 +96,50 @@ function JourneyRow({
   );
 }
 
-function Nr1JourneyRow({ state }: { state: Nr1PreviewState }) {
+function WellbeingMoodPicker({
+  label,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: WellbeingMood;
+  disabled?: boolean;
+  onChange: (value: WellbeingMood) => void;
+}) {
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="text-xs font-semibold text-[var(--platform-muted)]">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {WELLBEING_MOOD_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(option.value)}
+            className={`min-h-11 rounded-[var(--platform-radius-control)] border px-3 text-sm font-medium transition-colors ${
+              value === option.value
+                ? 'border-[var(--platform-action)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]'
+                : 'border-[var(--platform-line)] bg-[var(--platform-surface)] text-[var(--platform-muted)]'
+            }`}
+            aria-pressed={value === option.value}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Nr1JourneyRow({ state, step }: { state: Nr1PreviewState; step: number }) {
   const available = state === 'preview_available';
   const stateLabel = state === 'contract_required' ? 'Acesso controlado' : 'Acesso controlado';
   const actionLabel = available ? 'Abrir prévia' : 'Prévia indisponível';
 
   return (
     <JourneyRow
-      step={2}
+      step={step}
       icon={<ClipboardCheck size={21} strokeWidth={1.7} />}
       title={
         <span className="inline-flex flex-wrap items-center gap-2">
@@ -130,9 +177,17 @@ export default function CollaboratorHomePage() {
   const searchParams = useSearchParams();
   const { data, isLoading } = useSWR<CollaboratorHomeData>('/api/collaborator', fetcher);
   const { data: moduleData } = useSWR<CompanyModulesResponse>('/api/company/modules', fetcher);
-  const { data: streak, mutate: refreshStreak } = useSWR<{ checkedInToday?: boolean }>('/api/gamification/streak-status', fetcher);
+  const { data: streak, mutate: refreshStreak } = useSWR<{
+    checkedInToday?: boolean;
+    checkedOutToday?: boolean;
+    checkInMood?: WellbeingStatusMood | null;
+    checkOutMood?: WellbeingStatusMood | null;
+  }>('/api/gamification/streak-status', fetcher);
   const { data: missionData, mutate: refreshMissions } = useSWR<{ missions?: SafeMission[] }>('/api/gamification/daily-missions', fetcher);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [checkInMood, setCheckInMood] = useState<WellbeingMood>('neutra');
+  const [checkOutMood, setCheckOutMood] = useState<WellbeingMood>('neutra');
   const [note, setNote] = useState('');
   const [message, setMessage] = useState('');
 
@@ -162,10 +217,27 @@ export default function CollaboratorHomePage() {
   const checkIn = async () => {
     setCheckingIn(true);
     setMessage('');
-    const response = await fetch('/api/gamification/check-in', { method: 'POST' });
-    setMessage(response.ok ? 'Presença registrada.' : 'Seu check-in já foi registrado hoje.');
+    const response = await fetch('/api/gamification/check-in', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mood: checkInMood }),
+    });
+    setMessage(response.ok ? 'Check-in registrado.' : 'Seu check-in já foi registrado hoje.');
     await refreshStreak();
     setCheckingIn(false);
+  };
+
+  const checkOut = async () => {
+    setCheckingOut(true);
+    setMessage('');
+    const response = await fetch('/api/wellbeing/check-out', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mood: checkOutMood }),
+    });
+    setMessage(response.ok ? 'Check-out registrado.' : 'Seu check-out já foi registrado hoje.');
+    await refreshStreak();
+    setCheckingOut(false);
   };
 
   const completeReading = async (mission: SafeMission) => {
@@ -227,22 +299,51 @@ export default function CollaboratorHomePage() {
             step={1}
             icon={<ClipboardCheck size={21} strokeWidth={1.7} />}
             title="Check-in de hoje"
-            description={streak?.checkedInToday ? 'Seu registro de hoje está completo.' : 'Registre como você está se sentindo hoje.'}
+            description={streak?.checkedInToday ? 'Como você chega hoje já foi registrado.' : 'Como você chega hoje?'}
             action={(
               <Button type="button" size="sm" onClick={checkIn} disabled={checkingIn || streak?.checkedInToday} isLoading={checkingIn}>
                 {checkInLabel}
               </Button>
             )}
           >
+            <WellbeingMoodPicker
+              label="Como você chega hoje?"
+              value={(streak?.checkInMood && streak.checkInMood !== 'nao_informado' ? streak.checkInMood : checkInMood) as WellbeingMood}
+              disabled={Boolean(streak?.checkedInToday)}
+              onChange={setCheckInMood}
+            />
             <div className="mt-3 sm:hidden">
               <Button type="button" size="sm" onClick={checkIn} disabled={checkingIn || streak?.checkedInToday} isLoading={checkingIn}>
                 {checkInLabel}
               </Button>
             </div>
           </JourneyRow>
-          <Nr1JourneyRow state={nr1PreviewState} />
           <JourneyRow
-            step={3}
+            step={2}
+            icon={<Check size={21} strokeWidth={1.7} />}
+            title="Check-out do dia"
+            description={streak?.checkedOutToday ? 'Como você encerra o seu dia já foi registrado.' : 'Como você encerra o seu dia?'}
+            action={(
+              <Button type="button" size="sm" onClick={checkOut} disabled={checkingOut || streak?.checkedOutToday} isLoading={checkingOut}>
+                {streak?.checkedOutToday ? 'Check-out registrado' : 'Fazer check-out'}
+              </Button>
+            )}
+          >
+            <WellbeingMoodPicker
+              label="Como você encerra o seu dia?"
+              value={(streak?.checkOutMood && streak.checkOutMood !== 'nao_informado' ? streak.checkOutMood : checkOutMood) as WellbeingMood}
+              disabled={Boolean(streak?.checkedOutToday)}
+              onChange={setCheckOutMood}
+            />
+            <div className="mt-3 sm:hidden">
+              <Button type="button" size="sm" onClick={checkOut} disabled={checkingOut || streak?.checkedOutToday} isLoading={checkingOut}>
+                {streak?.checkedOutToday ? 'Check-out registrado' : 'Fazer check-out'}
+              </Button>
+            </div>
+          </JourneyRow>
+          <Nr1JourneyRow state={nr1PreviewState} step={3} />
+          <JourneyRow
+            step={4}
             icon={<BookOpen size={21} strokeWidth={1.7} />}
             title="Conteúdos recomendados"
             description="Acesse conteúdos selecionados para o seu bem-estar e desenvolvimento."
