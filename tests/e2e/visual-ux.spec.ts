@@ -266,7 +266,7 @@ async function loginUI(page: Page, email: string, password: string) {
 // Helper: logout via UI
 async function logoutUI(page: Page) {
   // Try sidebar logout button
-  const logoutBtn = page.locator('button:has-text("Sair da Conta"), button:has-text("Sair da conta")').first();
+  const logoutBtn = page.locator('button:has-text("Sair da Conta"), button:has-text("Sair da conta"), button:has-text("Sair da Plataforma")').first();
   if (await logoutBtn.isVisible()) {
     await logoutBtn.click();
     await page.waitForURL('**/', { timeout: 5000 });
@@ -344,12 +344,11 @@ test.describe('Master Admin — Visual UX', () => {
     await expect(page.getByRole('heading', { name: 'Identidade Visual do Sistema', exact: true })).toBeVisible();
   });
 
-  test('Sidebar — Notificações e Configurações acessíveis', async () => {
-    await page.getByRole('link', { name: 'Notificações', exact: true }).click();
-    await page.waitForURL('**/notificacoes');
-    await expect(page.getByRole('link', { name: 'Notificações', exact: true })).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('heading', { name: /^(Notificações|Nenhum aviso novo)$/ })).toBeVisible();
-    await page.goBack();
+  test('Sidebar — Admin Master expõe conta pessoal sem duplicar Configurações da plataforma', async () => {
+    await expect(page.getByRole('link', { name: 'Notificações', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Conta pessoal', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Configurações', exact: true })).toHaveCount(1);
+    await expect(page.locator('button:has-text("Sair da Plataforma")').first()).toBeVisible();
   });
 
   test('Logout funciona', async () => {

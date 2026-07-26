@@ -66,6 +66,37 @@ const ADMIN_WITH_PERSONAL_GROUPS = [
   },
 ] as const satisfies readonly NavigationGroup[];
 
+const ADMIN_TWO_GROUPS = [
+  {
+    label: 'Principal',
+    items: [
+      {
+        href: '/admin',
+        label: 'Dashboard geral',
+        icon: 'dashboard',
+        description: 'Resumo master',
+      },
+      {
+        href: '/admin?tab=empresas',
+        label: 'Empresas',
+        icon: 'companies',
+        description: 'Empresas cadastradas',
+      },
+    ],
+  },
+  {
+    label: 'Administração',
+    items: [
+      {
+        href: '/admin?tab=admin',
+        label: 'Administradores UniHER',
+        icon: 'profile',
+        description: 'Gestao dos administradores',
+      },
+    ],
+  },
+] as const satisfies readonly NavigationGroup[];
+
 describe('Sidebar navigation rendering', () => {
   it('associates the visible canonical description with the keyboard-focusable link', () => {
     const html = renderToStaticMarkup(createElement(SidebarNavItem, {
@@ -143,6 +174,24 @@ describe('Sidebar navigation rendering', () => {
     expect(html).toContain('>1</span>');
     expect(html).toContain('>2</span>');
     expect(html).toContain('aria-hidden="true"');
+  });
+
+  it('can limit sequence numbers and chevrons to the primary operational group', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
+      groups: ADMIN_TWO_GROUPS,
+      pathname: '/admin',
+      onNavigate: vi.fn(),
+      idPrefix: 'admin-primary-only-navigation',
+      variant: 'admin',
+      showSequence: 'first-group',
+      showChevron: true,
+    }));
+
+    expect(html).toContain('>1</span>');
+    expect(html).toContain('>2</span>');
+    expect(html).not.toContain('>3</span>');
+    expect(html).toContain('Administradores UniHER');
+    expect(html.match(/class="[^"]*navChevron/g)).toHaveLength(2);
   });
 
   it('marks query-specific admin shortcuts active without activating the base admin dashboard', () => {

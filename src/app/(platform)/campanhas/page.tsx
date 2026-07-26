@@ -166,7 +166,7 @@ export default function CampanhasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 animate-fadeIn font-body">
+    <div className="w-full space-y-8 animate-fadeIn font-body">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -204,7 +204,7 @@ export default function CampanhasPage() {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
         {isLoading ? (
           <>
             {[1, 2, 3].map(i => (

@@ -1,4 +1,6 @@
 .layout {
+  --platform-sidebar-width: clamp(320px, 22vw, 360px);
+  --platform-sidebar-offset: calc(var(--platform-sidebar-width) + 32px);
   display: flex;
   width: 100%;
   min-height: 100vh;
@@ -165,11 +167,11 @@
 
 @media (min-width: 769px) {
   .workspace {
-    margin-left: 416px;
+    margin-left: var(--platform-sidebar-offset);
   }
 
   .mainContent {
-    padding: 36px 40px 64px;
+    padding: 36px 32px 64px;
   }
 
   .mobileTopbar {

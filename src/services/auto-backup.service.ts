@@ -9,14 +9,18 @@ const HOUR_KEY = 'auto_backup_hour';
 const DEFAULT_RETENTION = 10;
 const DEFAULT_HOUR = 2;
 
+function projectPath(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ process.cwd(), ...segments);
+}
+
 function getDbPath(): string {
   const configured = process.env.DATABASE_PATH;
-  if (!configured) return path.join(process.cwd(), 'data', 'uniher.db');
-  return path.isAbsolute(configured) ? configured : path.join(process.cwd(), configured);
+  if (!configured) return projectPath('data', 'uniher.db');
+  return path.isAbsolute(configured) ? configured : projectPath(configured);
 }
 
 function getBackupsDir(): string {
-  return path.join(process.cwd(), 'data', 'backups');
+  return projectPath('data', 'backups');
 }
 
 function localDayKey(now = new Date()): string {

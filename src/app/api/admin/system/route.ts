@@ -6,6 +6,10 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
+function projectPath(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ process.cwd(), ...segments);
+}
+
 export const GET = withMasterAdmin(async (_req: NextRequest) => {
   await initDb();
   const db = getReadDb();
@@ -25,7 +29,7 @@ export const GET = withMasterAdmin(async (_req: NextRequest) => {
   }
 
   // DB file size
-  const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'uniher.db');
+  const dbPath = process.env.DATABASE_PATH || projectPath('data', 'uniher.db');
   let dbSizeBytes = 0;
   let walSizeBytes = 0;
   try {
@@ -71,13 +75,12 @@ export const GET = withMasterAdmin(async (_req: NextRequest) => {
     } catch { return 0; }
   }
 
-  const cwd = process.cwd();
-  const dataDirSize = dirSize(path.join(cwd, 'data'));
+  const dataDirSize = dirSize(projectPath('data'));
 
   let nextDirSize = 0;
   try {
     // Only estimate .next size (can be huge), check if exists
-    if (fs.existsSync(path.join(cwd, '.next'))) {
+    if (fs.existsSync(projectPath('.next'))) {
       nextDirSize = -1; // Exists but size not calculated (too slow)
     }
   } catch { /* */ }
@@ -85,7 +88,7 @@ export const GET = withMasterAdmin(async (_req: NextRequest) => {
   // Error log size
   let errorLogSize = 0;
   let errorLogLines = 0;
-  const errorLogPath = path.join(cwd, 'data', 'errors.log');
+  const errorLogPath = projectPath('data', 'errors.log');
   try {
     const stat = fs.statSync(errorLogPath);
     errorLogSize = stat.size;
@@ -95,7 +98,7 @@ export const GET = withMasterAdmin(async (_req: NextRequest) => {
 
   // Server log
   let serverLogSize = 0;
-  const serverLogPath = path.join(cwd, 'data', 'server.log');
+  const serverLogPath = projectPath('data', 'server.log');
   try {
     serverLogSize = fs.statSync(serverLogPath).size;
   } catch { /* */ }
@@ -103,7 +106,7 @@ export const GET = withMasterAdmin(async (_req: NextRequest) => {
   // Backups count
   let backupsCount = 0;
   let backupsTotalSize = 0;
-  const backupsDir = path.join(cwd, 'data', 'backups');
+  const backupsDir = projectPath('data', 'backups');
   try {
     const files = fs.readdirSync(backupsDir);
     backupsCount = files.filter(f => f.endsWith('.db')).length;

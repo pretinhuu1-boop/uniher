@@ -26,35 +26,64 @@ const scopedFetcher = (key: ScopedApiKey) => (
   fetch(key[0]).then(response => response.json())
 );
 
-const PERSONAL_NAVIGATION_GROUPS = [
-  {
-    label: 'Pessoal',
-    items: [
-      {
-        href: '/notificacoes',
-        label: 'Notificações',
-        icon: 'notifications',
-        description: 'Alertas e avisos do sistema para você',
-      },
-      {
-        href: '/configuracoes',
-        label: 'Minha conta',
-        icon: 'config',
-        description: 'Preferências pessoais, senha e notificações',
-      },
-    ],
-  },
-] as const satisfies readonly NavigationGroup[];
+const PERSONAL_NOTIFICATIONS_ITEM = {
+  href: '/notificacoes',
+  label: 'Notificações',
+  icon: 'notifications',
+  description: 'Alertas e avisos do sistema para você',
+} as const satisfies NavigationItem;
+
+const PERSONAL_SETTINGS_ITEM = {
+  href: '/configuracoes',
+  label: 'Configurações',
+  icon: 'config',
+  description: 'Preferências pessoais, senha e notificações',
+} as const satisfies NavigationItem;
+
+const PERSONAL_ACCOUNT_ITEM = {
+  href: '/configuracoes',
+  label: 'Conta pessoal',
+  icon: 'config',
+  description: 'Preferências pessoais, senha e notificações',
+} as const satisfies NavigationItem;
+
+function getPersonalNavigationGroups(role: UserRole): readonly NavigationGroup[] {
+  if (role === 'colaboradora') {
+    return [{
+      label: 'Minha Conta',
+      items: [PERSONAL_NOTIFICATIONS_ITEM, PERSONAL_SETTINGS_ITEM],
+    }];
+  }
+
+  if (role === 'admin') {
+    return [{
+      label: 'Minha Conta',
+      items: [PERSONAL_NOTIFICATIONS_ITEM, PERSONAL_ACCOUNT_ITEM],
+    }];
+  }
+
+  return [{
+    label: 'Minha Conta',
+    items: [PERSONAL_ACCOUNT_ITEM],
+  }];
+}
 
 const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readonly<Record<string, readonly string[]>>>> = {
   collaborator: {
+    '/semaforo': ['Semáforo da Saúde'],
     '/colaboradora': ['Check-in - Como você chega hoje?', 'Check-out - Como você encerra o seu dia?'],
+    '/conquistas': ['Desafios', 'Recompensas', 'Ranking'],
   },
   manager: {
-    '/dashboard': ['Visão geral da empresa', 'Check-in x Check-out'],
+    '/dashboard': ['Visão geral da empresa', 'Todos os indicadores e gráficos', 'Check-in x Check-out'],
+    '/saude-primaria': ['Semáforo da Saúde', 'Concierge'],
+    '/campanhas': ['Campanhas de saúde', 'Trilhas de aprendizagem', 'Videoaulas'],
+    '/gamificacao-config': ['Objetivos individuais e por equipe', 'Liga e rankings sob gate'],
   },
   admin: {
-    '/admin': ['Empresas e usuários', 'Integridade operacional'],
+    '/admin': ['Visão consolidada', 'Indicadores da plataforma'],
+    '/admin?tab=empresas': ['Empresas', 'Usuários', 'Módulos contratados'],
+    '/produtos-modulos': ['Controle de módulos contratados', 'Ativação de funcionalidades sob gate'],
   },
   personal: {},
 };
@@ -69,7 +98,7 @@ interface SidebarNavigationGroupsProps {
   onNavigate: () => void;
   idPrefix: string;
   variant?: SidebarNavVariant;
-  showSequence?: boolean;
+  showSequence?: boolean | 'first-group';
   showChevron?: boolean;
   renderItemChildren?: (item: NavigationItem) => ReactNode;
 }
@@ -98,29 +127,33 @@ export function SidebarNavigationGroups({
       <section key={group.label} className={styles.navSection} aria-labelledby={headingId}>
         <h2 id={headingId} className={styles.navLabel}>{group.label}</h2>
         <ul className={styles.navList}>
-          {group.items.map((item, itemIndex) => (
-            <li key={item.href}>
-              <SidebarNavItem
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                description={item.description}
-                variant={variant}
-                details={getPresentationDetails(item, variant)}
-                sequenceNumber={showSequence ? sequenceOffset + itemIndex + 1 : undefined}
-                showChevron={showChevron}
-                isActive={
-                  isNavigationItemActive(pathname, item.href)
-                  || isNavigationItemActive(browserLocation, item.href)
-                }
-                onClick={onNavigate}
-              >
-                {renderItemChildren?.(item) ?? (item.badgeLabel ? (
-                  <Badge variant="secondary" size="sm" className={styles.navBadge}>{item.badgeLabel}</Badge>
-                ) : null)}
-              </SidebarNavItem>
-            </li>
-          ))}
+          {group.items.map((item, itemIndex) => {
+            const shouldShowSequence = showSequence === true || (showSequence === 'first-group' && groupIndex === 0);
+
+            return (
+              <li key={item.href}>
+                <SidebarNavItem
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  description={item.description}
+                  variant={variant}
+                  details={getPresentationDetails(item, variant)}
+                  sequenceNumber={shouldShowSequence ? sequenceOffset + itemIndex + 1 : undefined}
+                  showChevron={showChevron && (showSequence !== 'first-group' || groupIndex === 0)}
+                  isActive={
+                    isNavigationItemActive(pathname, item.href)
+                    || isNavigationItemActive(browserLocation, item.href)
+                  }
+                  onClick={onNavigate}
+                >
+                  {renderItemChildren?.(item) ?? (item.badgeLabel ? (
+                    <Badge variant="secondary" size="sm" className={styles.navBadge}>{item.badgeLabel}</Badge>
+                  ) : null)}
+                </SidebarNavItem>
+              </li>
+            );
+          })}
         </ul>
       </section>
     );
@@ -254,6 +287,31 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const search = searchParams.toString();
   const currentLocation = search ? `${pathname}?${search}` : pathname;
 
+  useEffect(() => {
+    const navigation = sidebarRef.current?.querySelector<HTMLElement>('nav');
+    const activeLink = navigation?.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (!navigation || !activeLink) return;
+
+    const keepActiveLinkVisible = () => {
+      const navigationRect = navigation.getBoundingClientRect();
+      const activeRect = activeLink.getBoundingClientRect();
+
+      if (activeRect.bottom > navigationRect.bottom) {
+        navigation.scrollTop += activeRect.bottom - navigationRect.bottom + 12;
+      } else if (activeRect.top < navigationRect.top) {
+        navigation.scrollTop -= navigationRect.top - activeRect.top + 12;
+      }
+    };
+
+    const frame = window.requestAnimationFrame(keepActiveLinkVisible);
+    const followUp = window.setTimeout(keepActiveLinkVisible, 400);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(followUp);
+    };
+  }, [currentLocation, role]);
+
   const handleSwitchView = async (view: UserRole, closeAfterNavigation: boolean) => {
     if (view === activeView) {
       if (closeAfterNavigation) onClose();
@@ -303,6 +361,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { refreshInterval: 30000, dedupingInterval: 5000, revalidateOnFocus: true },
   );
   const unreadCount = notificationData?.unread ?? 0;
+  const personalNavigationGroups = getPersonalNavigationGroups(role);
+  const logoutLabel = role === 'admin' ? 'Sair da Plataforma' : 'Sair da Conta';
 
   const initials = user?.name
     ? user.name.split(' ').map(word => word[0]).join('').slice(0, 2).toUpperCase()
@@ -314,6 +374,42 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const closeAfterMobileNavigation = () => {
     if (isMobile) onClose();
+  };
+
+  const renderPersonalNavigation = (onNavigate: () => void) => {
+    const group = personalNavigationGroups[0];
+    const headingId = 'platform-navigation-personal-0';
+
+    return (
+      <section className={styles.navSection} aria-labelledby={headingId}>
+        <h2 id={headingId} className={styles.navLabel}>{group.label}</h2>
+        <ul className={styles.navList}>
+          {group.items.map((item) => (
+            <li key={item.href}>
+              <SidebarNavItem
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                description={item.description}
+                variant="personal"
+                isActive={isNavigationItemActive(currentLocation, item.href)}
+                onClick={onNavigate}
+              >
+                {item.href === '/notificacoes' && unreadCount > 0 ? (
+                  <Badge variant="alert" size="sm" className={styles.navBadge}>{unreadCount}</Badge>
+                ) : null}
+              </SidebarNavItem>
+            </li>
+          ))}
+          <li>
+            <button type="button" className={styles.logoutNav} onClick={performLogout}>
+              <NavIcon name="logout" />
+              {logoutLabel}
+            </button>
+          </li>
+        </ul>
+      </section>
+    );
   };
 
   const renderSidebarContent = (onNavigate: () => void, closeAfterSwitch: boolean) => (
@@ -396,23 +492,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           onNavigate={onNavigate}
           idPrefix={`platform-navigation-${role}`}
           variant={menuVariant}
-          showSequence={role === 'admin' || role === 'rh'}
+          showSequence={role === 'admin' || role === 'rh' ? 'first-group' : false}
           showChevron={role === 'admin'}
         />
-        <SidebarNavigationGroups
-          groups={PERSONAL_NAVIGATION_GROUPS}
-          pathname={currentLocation}
-          onNavigate={onNavigate}
-          idPrefix="platform-navigation-personal"
-          variant="personal"
-          renderItemChildren={item => item.href === '/notificacoes' && unreadCount > 0 ? (
-            <Badge variant="alert" size="sm" className={styles.navBadge}>{unreadCount}</Badge>
-          ) : null}
-        />
-        <button type="button" className={styles.logoutNav} onClick={performLogout}>
-          <NavIcon name="logout" />
-          Sair da conta
-        </button>
+        {renderPersonalNavigation(onNavigate)}
       </nav>
 
       <div className={styles.footer}>
@@ -435,7 +518,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             type="button"
             onClick={performLogout}
             className={styles.footerLogout}
-            aria-label="Sair da conta"
+            aria-label={logoutLabel}
           >
             <NavIcon name="logout" />
           </button>

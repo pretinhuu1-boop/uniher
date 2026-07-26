@@ -646,7 +646,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
               const isBlocked = company.is_active === 0;
               return (
                 <div key={company.id} className={cn('border-b border-border-1 last:border-b-0', isBlocked && 'bg-red-50/30')}>
-                  <div className="flex flex-col items-stretch gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-6 hover:bg-cream-50/50 transition-colors">
+                  <div className="flex flex-col items-stretch gap-3 px-4 py-4 xl:flex-row xl:items-center xl:gap-4 xl:px-6 hover:bg-cream-50/50 transition-colors">
                     {/* Company logo or initials */}
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden"
@@ -666,11 +666,11 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                         <span className="font-semibold text-uni-text-900 text-sm">{company.trade_name || company.name}</span>
                         {isBlocked && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">SUSPENSA</span>}
                       </div>
-                      <div className="text-[11px] text-uni-text-400 font-mono mt-0.5 break-all">{company.cnpj}</div>
+                      <div className="text-[11px] text-uni-text-400 font-mono mt-0.5 break-normal whitespace-nowrap">{company.cnpj}</div>
                       <div className="text-[11px] text-uni-text-500 md:hidden break-words">{company.sector || ''}</div>
                     </div>
                     <div className="hidden md:block text-xs text-uni-text-500 w-32 truncate" title={company.sector || ''}>{company.sector || '—'}</div>
-                    <div className="flex items-center justify-between sm:block text-left sm:text-center w-full sm:w-14 cursor-pointer" onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>
+                    <div className="flex items-center justify-between xl:block text-left xl:text-center w-full xl:w-16 cursor-pointer" onClick={() => setExpandedCompany(expandedCompany === company.id ? null : company.id)}>
                       <div className="text-sm font-bold text-uni-text-900">{company.user_count}</div>
                       <div className="text-[10px] text-uni-text-400">usuárias</div>
                     </div>
@@ -678,7 +678,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       {company.plan}
                     </span>
 
-                    <button onClick={() => startEditCompany(company)} className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-all flex-shrink-0">
+                    <button onClick={() => startEditCompany(company)} className="w-full xl:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 transition-all flex-shrink-0">
                       Editar
                     </button>
 
@@ -686,7 +686,7 @@ function CompaniesTab({ onGoToUsers }: { onGoToUsers?: () => void } = {}) {
                       onClick={() => toggleBlock(company)}
                       disabled={blocking === company.id}
                       className={cn(
-                        'w-full sm:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex-shrink-0',
+                        'w-full xl:w-auto px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex-shrink-0',
                         isBlocked ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200',
                         blocking === company.id && 'opacity-50 cursor-wait'
                       )}
@@ -3115,7 +3115,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

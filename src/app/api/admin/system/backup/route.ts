@@ -4,12 +4,15 @@ import { devOnlyGuard } from '@/lib/api/dev-only';
 import fs from 'fs';
 import path from 'path';
 
+function projectPath(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ process.cwd(), ...segments);
+}
+
 export const POST = withMasterAdmin(async (_req: NextRequest) => {
   const blocked = devOnlyGuard();
   if (blocked) return blocked;
-  const cwd = process.cwd();
-  const dbPath = process.env.DATABASE_PATH || path.join(cwd, 'data', 'uniher.db');
-  const backupsDir = path.join(cwd, 'data', 'backups');
+  const dbPath = process.env.DATABASE_PATH || projectPath('data', 'uniher.db');
+  const backupsDir = projectPath('data', 'backups');
 
   if (!fs.existsSync(dbPath)) {
     return NextResponse.json({ error: 'Banco de dados não encontrado' }, { status: 404 });

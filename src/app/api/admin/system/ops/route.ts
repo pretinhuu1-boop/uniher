@@ -6,17 +6,25 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
+function getProjectRoot(): string {
+  return /* turbopackIgnore: true */ process.cwd();
+}
+
+function projectPath(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ process.cwd(), ...segments);
+}
+
 export const POST = withMasterAdmin(async (req: NextRequest) => {
   const blocked = devOnlyGuard();
   if (blocked) return blocked;
 
   const { action } = await req.json() as { action: string };
-  const cwd = process.cwd();
+  const cwd = getProjectRoot();
 
   switch (action) {
     // ─── Read Logs ───
     case 'logs-server': {
-      const p = path.join(cwd, 'data', 'server.log');
+      const p = projectPath('data', 'server.log');
       try {
         const content = fs.readFileSync(p, 'utf-8');
         const lines = content.split('\n').filter(Boolean);
@@ -24,7 +32,7 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
       } catch { return NextResponse.json({ lines: [], total: 0 }); }
     }
     case 'logs-errors': {
-      const p = path.join(cwd, 'data', 'errors.log');
+      const p = projectPath('data', 'errors.log');
       try {
         const content = fs.readFileSync(p, 'utf-8');
         const lines = content.split('\n').filter(Boolean);
@@ -71,13 +79,13 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
       }
 
       const sizes: Record<string, number> = {};
-      sizes['data/'] = dirSizeSync(path.join(cwd, 'data'), 5);
-      sizes['src/'] = dirSizeSync(path.join(cwd, 'src'), 5);
-      sizes['public/'] = dirSizeSync(path.join(cwd, 'public'), 3);
+      sizes['data/'] = dirSizeSync(projectPath('data'), 5);
+      sizes['src/'] = dirSizeSync(projectPath('src'), 5);
+      sizes['public/'] = dirSizeSync(projectPath('public'), 3);
 
       // .next and node_modules just check existence
-      sizes['.next/'] = fs.existsSync(path.join(cwd, '.next')) ? -1 : 0;
-      sizes['node_modules/'] = fs.existsSync(path.join(cwd, 'node_modules')) ? -1 : 0;
+      sizes['.next/'] = fs.existsSync(projectPath('.next')) ? -1 : 0;
+      sizes['node_modules/'] = fs.existsSync(projectPath('node_modules')) ? -1 : 0;
 
       // System disk
       let diskFreeGB = 0, diskTotalGB = 0;
@@ -104,7 +112,7 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
     // ─── Clear Cache ───
     case 'clear-cache': {
       try {
-        const nextDir = path.join(cwd, '.next');
+        const nextDir = projectPath('.next');
         if (fs.existsSync(nextDir)) {
           fs.rmSync(nextDir, { recursive: true, force: true });
         }
@@ -121,10 +129,10 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
         const { closeDb } = require('@/lib/db');
         closeDb();
 
-        const dbPath = process.env.DATABASE_PATH || path.join(cwd, 'data', 'uniher.db');
+        const dbPath = process.env.DATABASE_PATH || projectPath('data', 'uniher.db');
 
         // Backup before reset
-        const backupsDir = path.join(cwd, 'data', 'backups');
+        const backupsDir = projectPath('data', 'backups');
         if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
         if (fs.existsSync(dbPath)) {
           const now = new Date();
@@ -180,7 +188,7 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
         uptime: os.uptime(),
         processUptime: process.uptime(),
         ips,
-        cwd: process.cwd(),
+        cwd,
         env: process.env.NODE_ENV || 'development',
       });
     }
