@@ -156,7 +156,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       window.cancelAnimationFrame(firstFrame);
       window.cancelAnimationFrame(secondFrame);
     };
-  }, [isMobileDialogOpen]);
+    // activeView entra nas dependências porque a troca de visão remonta os itens
+    // de navegação: sem isso, uma resolução tardia de auth/sessionStorage descarta
+    // o link focado e o drawer fica sem foco inicial.
+  }, [isMobileDialogOpen, activeView]);
 
   useEffect(() => {
     if (!isMobileDialogOpen) return;

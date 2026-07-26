@@ -11,6 +11,7 @@ import {
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
+const LEGACY_GAMIFICATION_KEY = /ranking|points?|xp|level|league|badges?/i;
 
 test.describe('Colaboradora — Gamificação e Jornada', () => {
   test.describe.configure({ mode: 'serial' });
@@ -257,15 +258,26 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
 
   // ─── Desafios ────────────────────────────────────────────────────────────────
 
-  test('GET /api/collaborator/challenges — permanece indisponível durante privacy review', async ({ request }) => {
+  test('GET /api/collaborator/challenges — lista catálogo aprovado sem gamificação legada', async ({ request }) => {
     const res = await request.get('/api/collaborator/challenges', {
       headers: { Cookie: `uniher-access-token=${colabToken}` },
     });
 
-    await expectPrivacyReviewResponse(
-      res,
-      [companyName, companyId, rhEmail, colabEmail, colabName],
-    );
+    expect(res.status()).toBe(200);
+    expectPrivateResponse(res);
+    const body = await res.json();
+    expect(Array.isArray(body.catalog)).toBeTruthy();
+    expect(Array.isArray(body.challenges)).toBeTruthy();
+    expectNoRecursiveKeys(body, LEGACY_GAMIFICATION_KEY, [rhEmail, colabEmail]);
+  });
+
+  test('POST /api/collaborator/challenges — rejeita payload inválido', async ({ request }) => {
+    const res = await request.post('/api/collaborator/challenges', {
+      headers: { Cookie: `uniher-access-token=${colabToken}` },
+      data: { catalogKey: '' },
+    });
+
+    expect(res.status()).toBe(400);
   });
 
   test('GET /api/collaborator/challenges — rejeita sem autenticação', async ({ request }) => {

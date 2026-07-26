@@ -10,13 +10,14 @@ import {
 } from '@playwright/test';
 
 import playwrightDbSafety from '../playwright-db-safety.cjs';
-import { extractAccessTokenFromSetCookie } from './helpers/auth';
+import { expectNoRecursiveKeys, extractAccessTokenFromSetCookie } from './helpers/auth';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const PASSWORD = 'Admin@2026';
 const COMPANY_A_CANARY = 'CANARY-ANA-MAMOGRAFIA-0930';
 const COLLABORATOR_B_CANARY = 'CANARY-B-CONSULTA-PRIVATE-1015';
 const COMPANY_B_CANARY = 'CANARY-OTHER-TENANT';
+const LEGACY_GAMIFICATION_KEY = /ranking|points?|xp|level|league|badges?/i;
 const RUN_ID = `${Date.now()}-${process.pid}`;
 
 const LEGACY_GAMIFICATION_TABLES = [
@@ -733,7 +734,6 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
       '/api/badges',
       '/api/collaborator/badges',
       '/api/objectives',
-      '/api/collaborator/challenges',
       '/api/gamification/rewards',
       '/api/gamification/rewards/redemptions',
     ];
@@ -754,9 +754,6 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
     }
 
     const mutations = [
-      { path: '/api/collaborator/challenges', method: 'POST', token: tokens.collaboratorA },
-      { path: '/api/collaborator/challenges', method: 'PATCH', token: tokens.collaboratorA },
-      { path: '/api/collaborator/challenges/not-real', method: 'PATCH', token: tokens.collaboratorA },
       { path: '/api/gamification/rewards/redeem', method: 'POST', token: tokens.collaboratorA },
       { path: '/api/gamification/rewards/redemptions', method: 'PATCH', token: tokens.collaboratorA },
       { path: '/api/objectives/not-real/claim', method: 'POST', token: tokens.collaboratorA },
@@ -782,6 +779,38 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
       });
       await expectPrivacyUnavailable(response);
     }
+
+    // Wave 7 promoveu os desafios de empresa para uma superficie viva e sem
+    // gamificacao legada. O contrato aqui deixa de ser o estado indisponivel e
+    // passa a ser: leitura self-only, sem vocabulario legado e sem escrever nas
+    // tabelas antigas (validado pelo snapshot no final do teste).
+    const challengesRead = await request.get('/api/collaborator/challenges', {
+      headers: authHeaders(tokens.collaboratorA),
+    });
+    expect(challengesRead.status(), await challengesRead.text()).toBe(200);
+    expectPrivateResponse(challengesRead);
+    const challengesPayload = await challengesRead.json() as Record<string, unknown>;
+    expect(Array.isArray(challengesPayload.catalog)).toBeTruthy();
+    expect(Array.isArray(challengesPayload.challenges)).toBeTruthy();
+    expectNoRecursiveKeys(challengesPayload, LEGACY_GAMIFICATION_KEY, [
+      COMPANY_A_CANARY,
+      COMPANY_B_CANARY,
+      COLLABORATOR_B_CANARY,
+    ]);
+
+    const invalidJoin = await request.post('/api/collaborator/challenges', {
+      headers: authHeaders(tokens.collaboratorA),
+      data: { id: 'not-real', title: 'must-not-write' },
+    });
+    expect(invalidJoin.status(), await invalidJoin.text()).toBe(400);
+
+    const unknownChallengePatch = await request.patch('/api/collaborator/challenges/not-real', {
+      headers: authHeaders(tokens.collaboratorA),
+      data: { action: 'progress', progress: 10 },
+    });
+    expect([403, 404], await unknownChallengePatch.text())
+      .toContain(unknownChallengePatch.status());
+
     expect(legacyGamificationSnapshot()).toEqual(legacyBefore);
   });
 
