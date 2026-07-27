@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { clearProtectedReportCaches, useAuth } from '@/hooks/useAuth';
@@ -76,14 +75,16 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
   },
   manager: {
     '/dashboard': ['Visão geral da empresa', 'Todos os indicadores e gráficos', 'Check-in x Check-out'],
-    '/saude-primaria': ['Semáforo da Saúde', 'Concierge'],
+    '/dashboard?section=saude-primaria': ['Semáforo da Saúde', 'Concierge'],
     '/campanhas': ['Campanhas de saúde', 'Trilhas de aprendizagem', 'Videoaulas'],
     '/gamificacao-config': ['Objetivos individuais e por equipe', 'Liga e rankings sob gate'],
   },
   admin: {
     '/admin': ['Visão consolidada', 'Indicadores da plataforma'],
     '/admin?tab=empresas': ['Empresas', 'Usuários', 'Módulos contratados'],
-    '/produtos-modulos': ['Controle de módulos contratados', 'Ativação de funcionalidades sob gate'],
+    '/dashboard?section=saude-primaria': ['Sem\u00e1foro consolidado', 'Indicadores por empresa'],
+    '/dashboard?section=exames': ['Exames em dia', 'Indicadores de preven\u00e7\u00e3o'],
+    '/admin?tab=empresas&section=modulos': ['Controle de m\u00f3dulos contratados', 'Ativa\u00e7\u00e3o de funcionalidades sob gate'],
   },
   personal: {},
 };
@@ -99,7 +100,7 @@ interface SidebarNavigationGroupsProps {
   idPrefix: string;
   variant?: SidebarNavVariant;
   showSequence?: boolean | 'first-group';
-  showChevron?: boolean;
+  showChevron?: boolean | 'first-group';
   renderItemChildren?: (item: NavigationItem) => ReactNode;
 }
 
@@ -129,6 +130,7 @@ export function SidebarNavigationGroups({
         <ul className={styles.navList}>
           {group.items.map((item, itemIndex) => {
             const shouldShowSequence = showSequence === true || (showSequence === 'first-group' && groupIndex === 0);
+            const shouldShowChevron = showChevron === true || (showChevron === 'first-group' && groupIndex === 0);
 
             return (
               <li key={item.href}>
@@ -140,7 +142,7 @@ export function SidebarNavigationGroups({
                   variant={variant}
                   details={getPresentationDetails(item, variant)}
                   sequenceNumber={shouldShowSequence ? sequenceOffset + itemIndex + 1 : undefined}
-                  showChevron={showChevron && (showSequence !== 'first-group' || groupIndex === 0)}
+                  showChevron={shouldShowChevron}
                   isActive={
                     isNavigationItemActive(pathname, item.href)
                     || isNavigationItemActive(browserLocation, item.href)
@@ -376,6 +378,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (isMobile) onClose();
   };
 
+  const renderNavigationBadge = (item: NavigationItem) => {
+    if (item.href === '/notificacoes' && unreadCount > 0) {
+      return <Badge variant="alert" size="sm" className={styles.navBadge}>{unreadCount}</Badge>;
+    }
+
+    return item.badgeLabel ? (
+      <Badge variant="secondary" size="sm" className={styles.navBadge}>{item.badgeLabel}</Badge>
+    ) : null;
+  };
+
   const renderPersonalNavigation = (onNavigate: () => void) => {
     const group = personalNavigationGroups[0];
     const headingId = 'platform-navigation-personal-0';
@@ -395,9 +407,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 isActive={isNavigationItemActive(currentLocation, item.href)}
                 onClick={onNavigate}
               >
-                {item.href === '/notificacoes' && unreadCount > 0 ? (
-                  <Badge variant="alert" size="sm" className={styles.navBadge}>{unreadCount}</Badge>
-                ) : null}
+                {renderNavigationBadge(item)}
               </SidebarNavItem>
             </li>
           ))}
@@ -425,13 +435,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           aria-label="Ir para o início da UniHER"
         >
           <span className={styles.brandLogoTile}>
-            <Image
+            <img
               src="/logo-uniher.png"
               alt="UniHER"
               width={140}
               height={116}
               className={styles.brandLogo}
-              priority
             />
           </span>
           <span className={styles.brandIdentity}>
@@ -492,8 +501,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           onNavigate={onNavigate}
           idPrefix={`platform-navigation-${role}`}
           variant={menuVariant}
-          showSequence={role === 'admin' || role === 'rh' ? 'first-group' : false}
-          showChevron={role === 'admin'}
+          showSequence={false}
+          showChevron={role === 'admin' ? 'first-group' : false}
+          renderItemChildren={renderNavigationBadge}
         />
         {renderPersonalNavigation(onNavigate)}
       </nav>

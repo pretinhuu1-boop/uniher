@@ -1,43 +1,29 @@
-import { Activity, FileCheck2, ShieldCheck } from 'lucide-react';
-import { ContainedSurfacePreview } from '@/components/platform/ContainedSurfacePreview';
+'use client';
 
-export default function SaudePrimariaPage() {
-  return (
-    <ContainedSurfacePreview
-      context="Saúde Primária"
-      title="Saúde Primária"
-      description="Módulo visível para organizar Semáforo, orientações e evolução agregada somente depois dos gates clínico, DPO e SST."
-      stateTitle="Módulo bloqueado"
-      stateDescription="A superfície está preparada, mas não ativa dados de saúde, classificações, alertas ou acompanhamento individual."
-      intentTitle="Cuidado com fronteira clara"
-      intentDescription="Esta tela define o espaço do módulo sem liberar comportamento sensível antes dos contratos de privacidade, saúde ocupacional e governança."
-      steps={[
-        {
-          title: 'Aprovar contrato clínico',
-          description: 'Definir texto não diagnóstico, audiência, consentimento, retenção e proibições de uso.',
-          icon: <FileCheck2 size={21} strokeWidth={1.8} aria-hidden="true" />,
-        },
-        {
-          title: 'Projetar agregados',
-          description: 'Separar indicadores de empresa por período e coorte sem expor respostas individuais.',
-          icon: <Activity size={21} strokeWidth={1.8} aria-hidden="true" />,
-        },
-        {
-          title: 'Validar supressão',
-          description: 'Aplicar limite mínimo de grupo antes de qualquer visualização RH/Admin.',
-          icon: <ShieldCheck size={21} strokeWidth={1.8} aria-hidden="true" />,
-        },
-      ]}
-      allowedItems={[
-        'Shell de módulo bloqueado e copy honesta sobre os próximos gates.',
-        'Referência ao Semáforo apenas como superfície contida, sem dados reais.',
-        'Preparação para agregados futuros com supressão.',
-      ]}
-      blockedItems={[
-        'Classificação verde, amarela ou vermelha em produção.',
-        'Acesso RH/Admin a registros individuais ou alertas ocupacionais.',
-        'Integração com Liga, conquistas, NR-1, agenda ou check-in/check-out.',
-      ]}
-    />
-  );
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AuthLoadingScreen from '@/components/platform/AuthLoadingScreen';
+import { useAuth } from '@/hooks/useAuth';
+
+export default function SaudePrimariaRoute() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!isAuthenticated || !user) {
+      router.replace('/auth?redirect=%2Fsaude-primaria');
+      return;
+    }
+
+    if (user.role === 'admin' || user.role === 'rh' || user.role === 'lideranca') {
+      router.replace('/dashboard?section=saude-primaria');
+      return;
+    }
+
+    router.replace('/semaforo');
+  }, [isAuthenticated, isLoading, router, user]);
+
+  return <AuthLoadingScreen />;
 }

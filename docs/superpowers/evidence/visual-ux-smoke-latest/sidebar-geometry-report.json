@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-07-27T19:29:28.334Z",
+  "viewports": [
+    {
+      "name": "mobile-375",
+      "width": 375,
+      "height": 812
+    },
+    {
+      "name": "tablet-768",
+      "width": 768,
+      "height": 1024
+    }
+  ],
+  "issues": []
+}

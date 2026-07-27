@@ -60,14 +60,14 @@ describe('mobile community navigation boundary', () => {
     expectReservedMobilePadding(true);
   });
 
-  it('keeps the personal community nav for a dual-role user on the feed', () => {
+  it('keeps the RH shell free of collaborator bottom nav until the collaborator role is active', () => {
     mocks.user.role = 'rh';
     mocks.user.also_collaborator = 1;
 
     renderLayout();
 
-    expect(screen.queryByRole('navigation', { name: 'Navegação mobile' })).not.toBeNull();
-    expectReservedMobilePadding(true);
+    expect(screen.queryByRole('navigation', { name: 'Navegação mobile' })).toBeNull();
+    expectReservedMobilePadding(false);
   });
 
   it.each(['/comunidade/gerenciar', '/comunidade/gerenciar/post-a'])(

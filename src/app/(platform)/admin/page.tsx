@@ -7,7 +7,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { getUserRoleLabel } from '@/lib/users/role-label';
 import { cn } from '@/lib/utils';
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+};
+
+const CAN_USE_DEV_SYSTEM_API = process.env.NEXT_PUBLIC_ENABLE_ADMIN_SYSTEM_API === '1';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +69,14 @@ interface SystemStats {
   db_size_kb: number;
   uptime_seconds: number;
   applied_migrations: string[];
+}
+
+function formatDbSize(data: Partial<SystemStats> | undefined): string {
+  return typeof data?.db_size_kb === 'number' ? `${data.db_size_kb} KB` : '—';
+}
+
+function getAppliedMigrations(data: Partial<SystemStats> | undefined): string[] {
+  return Array.isArray(data?.applied_migrations) ? data.applied_migrations : [];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -143,7 +157,7 @@ function TabButton({ label, active, onClick, count }: { label: string; active: b
     <button
       onClick={onClick}
       className={cn(
-        'px-4 py-2 text-sm font-semibold rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5',
+        'min-w-max shrink-0 snap-start px-4 py-2 text-sm font-semibold rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5',
         active
           ? 'bg-rose-500 text-white shadow-sm'
           : 'text-uni-text-600 hover:bg-cream-100 hover:text-uni-text-900'
@@ -181,7 +195,7 @@ function SectionHeader({ title, count, action }: { title: string; count?: number
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab() {
-  const { data: sysData } = useSWR<SystemStats>('/api/admin/system', fetcher, {
+  const { data: sysData } = useSWR<SystemStats>(CAN_USE_DEV_SYSTEM_API ? '/api/admin/system' : null, fetcher, {
     revalidateOnFocus: false,
   });
   const { data: companiesData, isLoading } = useSWR<{ companies: Company[] }>(
@@ -207,7 +221,7 @@ function OverviewTab() {
         />
         <StatCard
           label="Banco de Dados"
-          value={sysData ? `${sysData.db_size_kb} KB` : '—'}
+          value={formatDbSize(sysData)}
           sub="tamanho do arquivo"
         />
       </div>
@@ -1172,15 +1186,15 @@ function UsersTab() {
                 const isBlocked = u.blocked === 1;
                 return (
                   <div key={u.id} className={cn('p-4 space-y-2', isBlocked && 'bg-red-50/40')}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <div className="font-semibold text-uni-text-900 text-sm">{u.name}</div>
-                        <div className="text-[11px] text-uni-text-400">{u.email}</div>
-                        <div className="text-[11px] text-uni-text-500 mt-0.5">{u.company_name}</div>
+                        <div className="text-[11px] text-uni-text-400 break-all">{u.email}</div>
+                        <div className="text-[11px] text-uni-text-500 mt-0.5 break-words">{u.company_name}</div>
                       </div>
                       <span
                         className={cn(
-                          'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0',
+                          'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap',
                           isBlocked ? 'bg-red-100 text-red-700' : 'bg-emerald-50 text-emerald-700'
                         )}
                       >
@@ -1188,16 +1202,16 @@ function UsersTab() {
                         {isBlocked ? 'Bloqueada' : 'Ativa'}
                       </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <button onClick={() => openEdit(u)}
-                        className="flex-1 py-2 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all">
+                        className="min-w-0 py-2 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all">
                         Editar
                       </button>
                       <button
                         onClick={() => doAction(u.id, isBlocked ? 'unblock' : 'block')}
                         disabled={!!loading}
                         className={cn(
-                          'flex-1 py-2 rounded-lg text-[11px] font-bold transition-all',
+                          'min-w-0 py-2 rounded-lg text-[11px] font-bold transition-all',
                           isBlocked
                             ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                             : 'bg-red-50 text-red-700 hover:bg-red-100',
@@ -1209,7 +1223,7 @@ function UsersTab() {
                       <button
                         onClick={() => doAction(u.id, 'reset_password')}
                         disabled={!!loading}
-                        className="flex-1 py-2 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
+                        className="col-span-2 min-w-0 py-2 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-50"
                       >
                         Resetar Senha
                       </button>
@@ -1221,14 +1235,14 @@ function UsersTab() {
 
             {/* Desktop */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[980px] text-sm">
                 <thead>
                   <tr className="border-b border-border-1">
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Usuária</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Empresa</th>
                     <th className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Papel</th>
-                    <th className="text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
-                    <th className="text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
+                    <th className="w-[110px] text-center px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Status</th>
+                    <th className="w-[300px] text-right px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-1">
@@ -1248,7 +1262,7 @@ function UsersTab() {
                             {ROLE_LABELS[u.role] ?? u.role}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
                           <span
                             className={cn(
                               'inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full',
@@ -1260,7 +1274,7 @@ function UsersTab() {
                           </span>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex min-w-max items-center justify-end gap-2">
                             <button
                               onClick={() => openEdit(u)}
                               className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
@@ -2206,8 +2220,8 @@ function MasterActionButton({ label, icon, onClick, loading, variant = 'default'
   );
 }
 
-function SystemTab() {
-  const { data, isLoading, mutate } = useSWR<SystemStats>('/api/admin/system', fetcher, {
+function SystemTab({ initialSection }: { initialSection?: string | null }) {
+  const { data, isLoading, mutate } = useSWR<SystemStats>(CAN_USE_DEV_SYSTEM_API ? '/api/admin/system' : null, fetcher, {
     revalidateOnFocus: false,
     refreshInterval: 30000,
   });
@@ -2219,6 +2233,18 @@ function SystemTab() {
   const [clearLogsLoading, setClearLogsLoading] = useState(false);
 
   const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  useEffect(() => {
+    if (!initialSection) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`[data-admin-system-section="${initialSection}"]`)
+        ?.scrollIntoView({ block: 'start' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialSection]);
 
   async function handleBackup() {
     setBackupLoading(true);
@@ -2260,11 +2286,13 @@ function SystemTab() {
   return (
     <div className="space-y-6">
       {/* Branding editor */}
-      <BrandingEditor />
+      <div data-admin-system-section="gerais">
+        <BrandingEditor />
+      </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <StatCard label="Banco de Dados" value={data ? `${data.db_size_kb} KB` : '—'} sub="tamanho do arquivo" />
+        <StatCard label="Banco de Dados" value={formatDbSize(data)} sub="tamanho do arquivo" />
         <StatCard
           label="Uptime"
           value={data ? formatUptime(data.uptime_seconds) : '—'}
@@ -2294,7 +2322,7 @@ function SystemTab() {
         ) : (
           <div className="divide-y divide-border-1">
             {[
-              { label: 'Banco de Dados (SQLite)', ok: !!data, value: data ? `${data.db_size_kb} KB` : 'Indisponível' },
+              { label: 'Banco de Dados (SQLite)', ok: !!data, value: formatDbSize(data) === '—' ? 'Indisponível' : formatDbSize(data) },
               { label: 'Processo Node.js', ok: !!data, value: data ? `Uptime: ${formatUptime(data.uptime_seconds)}` : 'Desconhecido' },
               { label: 'Empresas', ok: !!data, value: data ? `${data.companies} cadastradas` : '—' },
               { label: 'Usuárias', ok: !!data, value: data ? `${data.users} ativas` : '—' },
@@ -2449,17 +2477,17 @@ function SystemTab() {
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
         <SectionHeader
           title="Migrations Aplicadas"
-          count={data?.applied_migrations?.length ?? 0}
+          count={getAppliedMigrations(data).length}
         />
         {isLoading ? (
           <div className="p-8 flex items-center justify-center gap-3 text-sm text-uni-text-400">
             <Spinner />
           </div>
-        ) : !data || data.applied_migrations.length === 0 ? (
+        ) : getAppliedMigrations(data).length === 0 ? (
           <div className="p-8 text-center text-sm text-uni-text-400">Nenhuma migration aplicada.</div>
         ) : (
           <div className="divide-y divide-border-1">
-            {data.applied_migrations.map((m) => (
+            {getAppliedMigrations(data).map((m) => (
               <div key={m} className="flex items-center gap-3 px-6 py-3">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                 <span className="text-sm font-mono text-uni-text-700">{m}</span>
@@ -3089,11 +3117,12 @@ export default function AdminPage() {
   const searchParams = useSearchParams();
   const { user, isAuthenticated } = useAuth();
   const requestedTab = searchParams.get('tab');
+  const requestedSection = searchParams.get('section');
   const requestedAdminTab = resolveAdminTab(requestedTab);
   const [activeTab, setActiveTab] = useState<Tab>(() => (
     requestedAdminTab ?? TABS[0]
   ));
-  const { data: sysStats } = useSWR<SystemStats>('/api/admin/system', fetcher, { revalidateOnFocus: false });
+  const { data: sysStats } = useSWR<SystemStats>(CAN_USE_DEV_SYSTEM_API ? '/api/admin/system' : null, fetcher, { revalidateOnFocus: false });
 
   useEffect(() => {
     if (requestedAdminTab) {
@@ -3131,7 +3160,7 @@ export default function AdminPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex max-w-full snap-x items-center gap-1.5 overflow-x-auto overscroll-x-contain scroll-px-3 px-1 pb-2 pt-0.5">
         {TABS.map((tab) => (
           <TabButton
             key={tab}
@@ -3141,6 +3170,7 @@ export default function AdminPage() {
             count={tabCounts[tab]}
           />
         ))}
+        <span aria-hidden="true" className="w-2 shrink-0" />
       </div>
 
       {/* Tab Content */}
@@ -3149,7 +3179,7 @@ export default function AdminPage() {
         {activeTab === 'Empresas' && <CompaniesTab onGoToUsers={() => setActiveTab('Usuários')} />}
         {activeTab === 'Usuários' && <UsersTab />}
         {activeTab === 'Admin Master' && <AdminMasterTab />}
-        {activeTab === 'Sistema' && <SystemTab />}
+        {activeTab === 'Sistema' && <SystemTab initialSection={requestedSection} />}
         {activeTab === 'Alertas' && <AlertasTab />}
         {activeTab === 'Auditoria' && <AuditoriaTab />}
       </div>

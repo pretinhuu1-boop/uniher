@@ -198,20 +198,22 @@ export default function DepartamentosPage() {
         ) : (
           <div className="divide-y divide-border-1">
             {departments.map((d) => (
-              <div key={d.id} className="flex items-center gap-4 px-6 py-4 hover:bg-cream-50/50 transition-colors">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                  style={{ backgroundColor: d.color }}
-                >
-                  {d.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-uni-text-900 truncate">{d.name}</div>
-                  <div className="text-[11px] text-uni-text-400">
-                    {d.user_count} {d.user_count === 1 ? 'colaboradora' : 'colaboradoras'}
+              <div key={d.id} className="flex flex-col gap-4 px-6 py-4 hover:bg-cream-50/50 transition-colors sm:flex-row sm:items-center">
+                <div className="flex min-w-0 flex-1 items-start gap-4">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                    style={{ backgroundColor: d.color }}
+                  >
+                    {d.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold leading-snug text-uni-text-900 break-words [overflow-wrap:anywhere]">{d.name}</div>
+                    <div className="mt-1 text-[11px] text-uni-text-400">
+                      {d.user_count} {d.user_count === 1 ? 'colaboradora' : 'colaboradoras'}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:flex-shrink-0">
                   <button
                     onClick={() => startEdit(d)}
                     className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"

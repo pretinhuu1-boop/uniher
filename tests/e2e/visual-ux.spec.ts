@@ -17,11 +17,300 @@ const ADMIN_PASS = 'Admin@2026';
 const DEMO_RH_EMAIL = 'rh.visual@eduardaeyurimarketingltda.com.br';
 const DEMO_COMPANY_CNPJ = '00.000.000/0001-00';
 const DEMO_NR1_COLLAB_EMAIL = 'nr1.visual@eduardaeyurimarketingltda.com.br';
-const EVIDENCE_DIR = path.resolve(process.cwd(), 'docs/superpowers/evidence');
+const REPO_ROOT = path.basename(process.cwd()) === 'tests'
+  ? path.dirname(process.cwd())
+  : process.cwd();
+const EVIDENCE_DIR = path.resolve(REPO_ROOT, 'docs/superpowers/evidence');
+const VISUAL_SMOKE_DIR = path.join(EVIDENCE_DIR, 'visual-ux-smoke-latest');
+
+type VisualSmokeRole = 'admin' | 'rh' | 'colaboradora';
+
+interface VisualSmokeRoute {
+  role: VisualSmokeRole;
+  name: string;
+  route: string;
+}
+
+interface VisualSmokeViewport {
+  name: string;
+  width: number;
+  height: number;
+}
+
+interface VisualSmokeResult extends VisualSmokeRoute {
+  viewport: string;
+  status: 'PASS' | 'FAIL';
+  screenshot?: string;
+  issues: string[];
+}
+
+const VISUAL_SMOKE_VIEWPORTS: readonly VisualSmokeViewport[] = [
+  { name: 'mobile-375', width: 375, height: 812 },
+  { name: 'tablet-768', width: 768, height: 1024 },
+  { name: 'desktop-1366', width: 1366, height: 768 },
+  { name: 'desktop-wide-1920', width: 1920, height: 1080 },
+];
+const VISUAL_SMOKE_ROLES: readonly VisualSmokeRole[] = ['admin', 'rh', 'colaboradora'];
+
+const VISUAL_SMOKE_ROUTES: readonly VisualSmokeRoute[] = [
+  { role: 'admin', name: 'admin-visao-geral', route: '/admin' },
+  { role: 'admin', name: 'admin-empresas', route: '/admin?tab=empresas' },
+  { role: 'admin', name: 'admin-usuarios', route: '/admin?tab=usuarios' },
+  { role: 'admin', name: 'admin-master', route: '/admin?tab=admin' },
+  { role: 'admin', name: 'admin-sistema', route: '/admin?tab=sistema' },
+  { role: 'admin', name: 'admin-produtos-modulos', route: '/admin?tab=empresas&section=modulos' },
+  { role: 'admin', name: 'admin-relatorios', route: '/analytics-emails' },
+  { role: 'admin', name: 'admin-saude-primaria', route: '/dashboard?section=saude-primaria' },
+  { role: 'admin', name: 'admin-concierge', route: '/concierge' },
+  { role: 'admin', name: 'admin-historico', route: '/dashboard?section=exames' },
+  { role: 'admin', name: 'admin-educacao', route: '/comunidade/gerenciar' },
+  { role: 'admin', name: 'admin-gamificacao', route: '/gamificacao-config' },
+  { role: 'admin', name: 'admin-viva-sipat', route: '/viva-sipat' },
+  { role: 'admin', name: 'admin-desenvolvimento-humano', route: '/desenvolvimento-humano' },
+  { role: 'admin', name: 'admin-canal-denuncias', route: '/canal-denuncias' },
+  { role: 'rh', name: 'rh-dashboard', route: '/dashboard' },
+  { role: 'rh', name: 'rh-colaboradoras', route: '/colaboradoras-gestao' },
+  { role: 'rh', name: 'rh-departamentos', route: '/departamentos' },
+  { role: 'rh', name: 'rh-convites', route: '/convites' },
+  { role: 'rh', name: 'rh-campanhas', route: '/campanhas' },
+  { role: 'rh', name: 'rh-company-profile', route: '/company-profile' },
+  { role: 'rh', name: 'rh-notificacoes', route: '/notificacoes' },
+  { role: 'rh', name: 'rh-saude-primaria', route: '/dashboard?section=saude-primaria' },
+  { role: 'rh', name: 'rh-gamificacao', route: '/gamificacao-config' },
+  { role: 'rh', name: 'rh-desafios-gerenciar', route: '/desafios/gerenciar' },
+  { role: 'rh', name: 'rh-liga-gerenciar', route: '/liga/gerenciar' },
+  { role: 'rh', name: 'rh-nr1', route: '/nr1' },
+  { role: 'rh', name: 'rh-viva-sipat', route: '/viva-sipat' },
+  { role: 'rh', name: 'rh-desenvolvimento-humano', route: '/desenvolvimento-humano' },
+  { role: 'rh', name: 'rh-canal-denuncias', route: '/canal-denuncias' },
+  { role: 'colaboradora', name: 'colab-home', route: '/colaboradora' },
+  { role: 'colaboradora', name: 'colab-semaforo', route: '/semaforo' },
+  { role: 'colaboradora', name: 'colab-agenda', route: '/agenda' },
+  { role: 'colaboradora', name: 'colab-comunidade', route: '/comunidade' },
+  { role: 'colaboradora', name: 'colab-conquistas', route: '/conquistas' },
+  { role: 'colaboradora', name: 'colab-campanhas', route: '/campanhas' },
+  { role: 'colaboradora', name: 'colab-notificacoes', route: '/notificacoes' },
+  { role: 'colaboradora', name: 'colab-configuracoes', route: '/configuracoes' },
+  { role: 'colaboradora', name: 'colab-objetivos', route: '/objetivos' },
+  { role: 'colaboradora', name: 'colab-desafios', route: '/desafios' },
+  { role: 'colaboradora', name: 'colab-liga', route: '/liga' },
+  { role: 'colaboradora', name: 'colab-nr1-shell', route: '/nr1' },
+  { role: 'colaboradora', name: 'colab-avaliacao-nr1', route: '/avaliacao-nr1' },
+  { role: 'colaboradora', name: 'colab-viva-sipat', route: '/viva-sipat' },
+  { role: 'colaboradora', name: 'colab-desenvolvimento-humano', route: '/desenvolvimento-humano' },
+  { role: 'colaboradora', name: 'colab-canal-denuncias', route: '/canal-denuncias' },
+];
 
 function evidencePath(filename: string): string {
   fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
   return path.join(EVIDENCE_DIR, filename);
+}
+
+function visualSmokePath(filename: string): string {
+  fs.mkdirSync(VISUAL_SMOKE_DIR, { recursive: true });
+  return path.join(VISUAL_SMOKE_DIR, filename);
+}
+
+function routeIsImplemented(route: string): boolean {
+  const pathname = route.split('?')[0];
+  const segments = pathname.split('/').filter(Boolean);
+  const routePage = path.join(REPO_ROOT, 'src', 'app', '(platform)', ...segments, 'page.tsx');
+  return fs.existsSync(routePage);
+}
+
+function implementedVisualSmokeRoutes(): readonly VisualSmokeRoute[] {
+  return VISUAL_SMOKE_ROUTES.filter((route) => routeIsImplemented(route.route));
+}
+
+async function waitForSidebarMotion(page: Page): Promise<void> {
+  await page.waitForTimeout(240);
+}
+
+async function waitForRouteSettled(page: Page): Promise<void> {
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined);
+}
+
+function loginCredentialsForRole(role: VisualSmokeRole): { email: string; password: string } {
+  if (role === 'admin') return { email: ADMIN_EMAIL, password: ADMIN_PASS };
+  if (role === 'rh') return { email: DEMO_RH_EMAIL, password: ADMIN_PASS };
+  return { email: DEMO_NR1_COLLAB_EMAIL, password: ADMIN_PASS };
+}
+
+function screenshotFilename(viewport: string, role: VisualSmokeRole, name: string): string {
+  return `${viewport}-${role}-${name}.png`;
+}
+
+function writeVisualSmokeReport(results: readonly VisualSmokeResult[]): void {
+  const generatedAt = new Date().toISOString();
+  const passCount = results.filter((result) => result.status === 'PASS').length;
+  const failCount = results.length - passCount;
+  const routes = [...new Set(results.map((result) => `${result.role}:${result.route}`))].length;
+  const viewports = [...new Set(results.map((result) => result.viewport))];
+  const markdown = [
+    '# UniHER visual UX smoke matrix',
+    '',
+    `Generated: ${generatedAt}`,
+    `Counts: total ${results.length}, PASS ${passCount}, FAIL ${failCount}`,
+    `Routes: ${routes}`,
+    `Viewports: ${viewports.join(', ')}`,
+    '',
+    '| Status | Viewport | Role | Screen | Route | Screenshot | Issues |',
+    '|---|---|---|---|---|---|---|',
+    ...results.map((result) => [
+      result.status,
+      result.viewport,
+      result.role,
+      result.name,
+      result.route,
+      result.screenshot ?? '-',
+      result.issues.length > 0 ? result.issues.join('<br>') : '-',
+    ].join(' | ')).map((row) => `| ${row} |`),
+    '',
+  ].join('\n');
+
+  fs.writeFileSync(visualSmokePath('screen-smoke-report.md'), markdown, 'utf8');
+  fs.writeFileSync(visualSmokePath('screen-smoke-report.json'), JSON.stringify({
+    generatedAt,
+    counts: { total: results.length, pass: passCount, fail: failCount },
+    viewports,
+    results,
+  }, null, 2), 'utf8');
+}
+
+async function collectRouteGeometryIssues(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const issues: string[] = [];
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const rootWidth = Math.max(
+      document.documentElement.scrollWidth,
+      document.body?.scrollWidth ?? 0,
+    );
+
+    if (rootWidth > viewportWidth + 2) {
+      issues.push(`root horizontal overflow ${rootWidth}px > ${viewportWidth}px`);
+    }
+
+    const visible = (element: Element): element is HTMLElement => {
+      if (!(element instanceof HTMLElement)) return false;
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.visibility !== 'hidden'
+        && style.display !== 'none'
+        && rect.width > 0
+        && rect.height > 0;
+    };
+
+    const clippedElements = Array.from(document.querySelectorAll<HTMLElement>(
+      'main a, main button, main h1, main h2, main h3, nav[aria-label="Navegação mobile"] a',
+    ))
+      .filter(visible)
+      .filter((element) => element.scrollWidth > element.clientWidth + 2)
+      .slice(0, 5)
+      .map((element) => (element.textContent ?? element.getAttribute('aria-label') ?? element.tagName).trim().replace(/\s+/g, ' ').slice(0, 80));
+
+    for (const label of clippedElements) {
+      issues.push(`possible clipped text: ${label || 'unlabelled element'}`);
+    }
+
+    const bottomNav = document.querySelector<HTMLElement>('nav[aria-label="Navegação mobile"]');
+    if (bottomNav && visible(bottomNav)) {
+      const navRect = bottomNav.getBoundingClientRect();
+      if (navRect.bottom > viewportHeight + 1 || navRect.left < -1 || navRect.right > viewportWidth + 1) {
+        issues.push('bottom nav escapes viewport');
+      }
+
+      const navLinks = Array.from(bottomNav.querySelectorAll<HTMLElement>('a')).filter(visible);
+      for (let index = 0; index < navLinks.length; index += 1) {
+        const current = navLinks[index].getBoundingClientRect();
+        if (current.bottom > navRect.bottom + 1 || current.top < navRect.top - 1) {
+          issues.push(`bottom nav item ${index + 1} escapes nav bounds`);
+        }
+        for (let nextIndex = index + 1; nextIndex < navLinks.length; nextIndex += 1) {
+          const next = navLinks[nextIndex].getBoundingClientRect();
+          const overlaps = current.left < next.right
+            && current.right > next.left
+            && current.top < next.bottom
+            && current.bottom > next.top;
+          if (overlaps) issues.push(`bottom nav items ${index + 1}/${nextIndex + 1} overlap`);
+        }
+      }
+
+      const main = document.querySelector<HTMLElement>('main');
+      if (main) {
+        const mainStyle = window.getComputedStyle(main);
+        const workspace = main.parentElement instanceof HTMLElement ? main.parentElement : null;
+        const workspaceStyle = workspace ? window.getComputedStyle(workspace) : null;
+        const mainPadding = Number.parseFloat(mainStyle.paddingBottom || '0');
+        const workspacePadding = Number.parseFloat(workspaceStyle?.paddingBottom || '0');
+        if (Math.max(mainPadding, workspacePadding) + 1 < navRect.height) {
+          issues.push(`bottom nav may occlude content: padding ${Math.max(mainPadding, workspacePadding)}px < nav ${Math.round(navRect.height)}px`);
+        }
+      }
+    }
+
+    return issues;
+  });
+}
+
+async function collectSidebarGeometryIssues(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const issues: string[] = [];
+    const dialog = document.querySelector<HTMLElement>('aside[role="dialog"]');
+    const navigation = dialog?.querySelector<HTMLElement>('nav[aria-label="Navegação principal"]') ?? null;
+    const footer = dialog?.querySelector<HTMLElement>('[class*="footer"]') ?? null;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const visible = (element: Element | null): element is HTMLElement => {
+      if (!(element instanceof HTMLElement)) return false;
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.visibility !== 'hidden'
+        && style.display !== 'none'
+        && rect.width > 0
+        && rect.height > 0;
+    };
+
+    if (!visible(dialog)) return ['sidebar dialog is not visible'];
+
+    const dialogRect = dialog.getBoundingClientRect();
+    if (dialogRect.left < -1 || dialogRect.top < -1 || dialogRect.right > viewportWidth + 1 || dialogRect.bottom > viewportHeight + 1) {
+      issues.push('sidebar dialog escapes viewport');
+    }
+
+    if (!visible(navigation)) {
+      issues.push('sidebar navigation is not visible');
+    }
+
+    if (!visible(footer)) {
+      issues.push('sidebar footer is not visible');
+    }
+
+    if (visible(navigation) && visible(footer)) {
+      const navRect = navigation.getBoundingClientRect();
+      const footerRect = footer.getBoundingClientRect();
+      if (navRect.bottom > footerRect.top + 1) {
+        issues.push('sidebar navigation overlaps footer');
+      }
+      if (footerRect.bottom > dialogRect.bottom + 1) {
+        issues.push('sidebar footer escapes dialog');
+      }
+    }
+
+    const clippedLabels = Array.from(dialog.querySelectorAll<HTMLElement>('a, button, [class*="brand"], [class*="company"], [class*="user"]'))
+      .filter(visible)
+      .filter((element) => element.scrollWidth > element.clientWidth + 2)
+      .slice(0, 5)
+      .map((element) => (element.textContent ?? element.getAttribute('aria-label') ?? element.tagName).trim().replace(/\s+/g, ' ').slice(0, 80));
+
+    for (const label of clippedLabels) {
+      issues.push(`sidebar possible clipped text: ${label || 'unlabelled element'}`);
+    }
+
+    return issues;
+  });
 }
 
 function assertVisualUxFixtureHostIsLoopback(): void {
@@ -183,16 +472,27 @@ function ensureNr1VisualFixtures(): void {
     if (!admin) throw new Error('Usuario admin seed nao encontrado para o smoke NR-1.');
 
     const now = new Date().toISOString();
-    db.prepare(`
+    const moduleFixtureRows = [
+      ['primary_health', 'enabled'],
+      ['concierge', 'requires_contract'],
+      ['education', 'enabled'],
+      ['achievements', 'enabled'],
+      ['nr1', 'enabled'],
+      ['sipat', 'locked'],
+      ['human_development', 'requires_contract'],
+      ['denunciation', 'partner_managed'],
+    ] as const;
+
+    const upsertModule = db.prepare(`
       INSERT INTO company_modules (
         id, company_id, module_slug, module_state, visible, notes, created_at, updated_at, updated_by
       ) VALUES (
-        'visual-nr1-enabled-module',
+        @id,
         @companyId,
-        'nr1',
-        'enabled',
+        @moduleSlug,
+        @moduleState,
         1,
-        'Visual smoke fixture for PR7 NR-1 role gate',
+        'Visual smoke fixture for redesign route matrix',
         @now,
         @now,
         NULL
@@ -203,7 +503,17 @@ function ensureNr1VisualFixtures(): void {
         notes = excluded.notes,
         updated_at = excluded.updated_at,
         updated_by = excluded.updated_by
-    `).run({ companyId: company.id, now });
+    `);
+
+    for (const [moduleSlug, moduleState] of moduleFixtureRows) {
+      upsertModule.run({
+        id: `visual-${moduleSlug}-module`,
+        companyId: company.id,
+        moduleSlug,
+        moduleState,
+        now,
+      });
+    }
 
     db.prepare(`
       INSERT INTO users (
@@ -437,7 +747,7 @@ test.describe('Admin Empresa — Visual UX', () => {
     await colabBtn.click();
     await expect(page).toHaveURL(/\/colaboradora$/);
     await expect(page.getByRole('heading', { name: 'Minha jornada', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Hoje', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('link', { name: 'Meu Bem-Estar', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 
   test('Volta para RH funciona', async () => {
@@ -480,6 +790,7 @@ test.describe('Mobile — Visual UX', () => {
 
   test.beforeAll(async ({ request }) => {
     await ensureDemoRhUser(request);
+    ensureNr1VisualFixtures();
   });
 
   test('Login page responsive', async ({ page }) => {
@@ -496,7 +807,53 @@ test.describe('Mobile — Visual UX', () => {
     await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
     const navigation = page.getByRole('dialog', { name: 'Navegação', exact: true });
     await expect(navigation).toBeVisible();
+    await waitForSidebarMotion(page);
     await expect(navigation.getByRole('link', { name: 'Dashboard', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.screenshot({ path: evidencePath('wave3-mobile-rh-sidebar.png'), fullPage: true });
+    await navigation.getByRole('navigation', { name: 'Navegação principal', exact: true })
+      .evaluate(element => { element.scrollTop = element.scrollHeight; });
+    await waitForSidebarMotion(page);
+    await expect(navigation.getByRole('link', { name: 'Notificações', exact: true })).toBeVisible();
+    await expect(navigation.locator('button').filter({ hasText: 'Sair da Conta' })).toBeVisible();
+    await page.screenshot({ path: evidencePath('wave3-mobile-rh-sidebar-bottom.png'), fullPage: true });
+  });
+
+  test('Admin mobile sidebar evidence', async ({ page }) => {
+    await loginUI(page, ADMIN_EMAIL, ADMIN_PASS);
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: 'Painel UniHER', exact: true })).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+
+    const navigation = page.getByRole('dialog', { name: 'Navegação', exact: true });
+    await expect(navigation).toBeVisible();
+    await waitForSidebarMotion(page);
+    await expect(navigation.getByRole('link', { name: 'Dashboard geral', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.screenshot({ path: evidencePath('wave3-mobile-admin-sidebar.png'), fullPage: true });
+    await navigation.getByRole('navigation', { name: 'Navegação principal', exact: true })
+      .evaluate(element => { element.scrollTop = element.scrollHeight; });
+    await waitForSidebarMotion(page);
+    await expect(navigation.getByRole('link', { name: 'Configurações Gerais', exact: true })).toBeVisible();
+    await expect(navigation.locator('button').filter({ hasText: 'Sair da Plataforma' })).toBeVisible();
+    await page.screenshot({ path: evidencePath('wave3-mobile-admin-sidebar-bottom.png'), fullPage: true });
+  });
+
+  test('Colaboradora mobile sidebar evidence', async ({ page }) => {
+    await loginUI(page, DEMO_NR1_COLLAB_EMAIL, ADMIN_PASS);
+    await page.goto('/colaboradora');
+    await expect(page.getByRole('heading', { name: 'Minha jornada', exact: true })).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+
+    const navigation = page.getByRole('dialog', { name: 'Navegação', exact: true });
+    await expect(navigation).toBeVisible();
+    await waitForSidebarMotion(page);
+    await expect(navigation.getByRole('link', { name: 'Meu Bem-Estar', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.screenshot({ path: evidencePath('wave3-mobile-colaboradora-sidebar.png'), fullPage: true });
+    await navigation.getByRole('navigation', { name: 'Navegação principal', exact: true })
+      .evaluate(element => { element.scrollTop = element.scrollHeight; });
+    await waitForSidebarMotion(page);
+    await expect(navigation.getByRole('link', { name: 'NR-1', exact: true })).toBeVisible();
+    await expect(navigation.locator('button').filter({ hasText: 'Sair da Conta' })).toBeVisible();
+    await page.screenshot({ path: evidencePath('wave3-mobile-colaboradora-sidebar-bottom.png'), fullPage: true });
   });
 
   test('Buttons stack correctly on mobile', async ({ page }) => {
@@ -513,5 +870,152 @@ test.describe('Mobile — Visual UX', () => {
     expect(exportBox).not.toBeNull();
     expect(inviteBox!.y + inviteBox!.height).toBeLessThanOrEqual(exportBox!.y);
     expect(Math.max(inviteBox!.x + inviteBox!.width, exportBox!.x + exportBox!.width)).toBeLessThanOrEqual(375);
+  });
+});
+
+test.describe('Final visual promotion smoke @visual-smoke', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeAll(async ({ request }) => {
+    await ensureDemoRhUser(request);
+    ensureNr1VisualFixtures();
+  });
+
+  test('route and viewport matrix is reproducible', async ({ browser }) => {
+    test.setTimeout(420000);
+
+    fs.rmSync(VISUAL_SMOKE_DIR, { recursive: true, force: true });
+    fs.mkdirSync(VISUAL_SMOKE_DIR, { recursive: true });
+
+    const routes = implementedVisualSmokeRoutes();
+    expect(routes.length, 'visual smoke must have implemented routes to audit').toBeGreaterThan(0);
+
+    const results: VisualSmokeResult[] = [];
+
+    for (const viewport of VISUAL_SMOKE_VIEWPORTS) {
+      for (const role of VISUAL_SMOKE_ROLES) {
+        const credentials = loginCredentialsForRole(role);
+        const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+        const consoleIssues: string[] = [];
+
+        page.on('console', (message) => {
+          if (message.type() === 'error') consoleIssues.push(message.text());
+        });
+        page.on('pageerror', (error) => {
+          consoleIssues.push(error.message);
+        });
+
+        try {
+          await loginUI(page, credentials.email, credentials.password);
+          await page.evaluate(() => sessionStorage.removeItem('uniher-view-mode')).catch(() => undefined);
+
+          for (const route of routes.filter((item) => item.role === role)) {
+            const issues: string[] = [];
+            const screenshot = screenshotFilename(viewport.name, role, route.name);
+            consoleIssues.length = 0;
+
+            try {
+              await page.goto(route.route);
+              await waitForRouteSettled(page);
+
+              const currentUrl = new URL(page.url());
+              const currentPath = `${currentUrl.pathname}${currentUrl.search}`;
+              if (currentPath !== route.route) {
+                issues.push(`unexpected navigation: ${currentPath}`);
+              }
+
+              issues.push(...await collectRouteGeometryIssues(page));
+
+              if (consoleIssues.length > 0) {
+                issues.push(...consoleIssues.slice(0, 5).map((message) => `console error: ${message.slice(0, 160)}`));
+              }
+
+              if (process.env.VISUAL_UX_CAPTURE_SCREENSHOTS === '1') {
+                await page.screenshot({ path: visualSmokePath(screenshot), fullPage: true });
+              }
+            } catch (error) {
+              issues.push(error instanceof Error ? error.message : String(error));
+            }
+
+            results.push({
+              ...route,
+              viewport: viewport.name,
+              status: issues.length === 0 ? 'PASS' : 'FAIL',
+              screenshot: process.env.VISUAL_UX_CAPTURE_SCREENSHOTS === '1' ? screenshot : undefined,
+              issues,
+            });
+          }
+        } finally {
+          await page.close();
+        }
+      }
+    }
+
+    writeVisualSmokeReport(results);
+
+    const failures = results
+      .filter((result) => result.status === 'FAIL')
+      .map((result) => `${result.viewport} ${result.role} ${result.route}: ${result.issues.join('; ')}`);
+    expect(failures).toEqual([]);
+  });
+
+  test('mobile sidebar top bottom and bottom nav geometry are guarded', async ({ browser }) => {
+    test.setTimeout(120000);
+
+    const issues: string[] = [];
+    const sidebarViewports = VISUAL_SMOKE_VIEWPORTS.slice(0, 2);
+
+    for (const viewport of sidebarViewports) {
+      for (const role of VISUAL_SMOKE_ROLES) {
+        const credentials = loginCredentialsForRole(role);
+        const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
+        const homeRoute = role === 'admin' ? '/admin' : role === 'rh' ? '/dashboard' : '/colaboradora';
+
+        try {
+          await loginUI(page, credentials.email, credentials.password);
+          await page.goto(homeRoute);
+          await waitForRouteSettled(page);
+          await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+
+          const navigation = page.getByRole('dialog', { name: 'Navegação', exact: true });
+          await expect(navigation).toBeVisible();
+          await waitForSidebarMotion(page);
+
+          const topIssues = await collectSidebarGeometryIssues(page);
+          issues.push(...topIssues.map((issue) => `${viewport.name} ${role} sidebar top: ${issue}`));
+          await page.screenshot({
+            path: visualSmokePath(`${viewport.name}-${role}-sidebar-top.png`),
+            fullPage: true,
+          });
+
+          await navigation.getByRole('navigation', { name: 'Navegação principal', exact: true })
+            .evaluate((element) => { element.scrollTop = element.scrollHeight; });
+          await waitForSidebarMotion(page);
+
+          const bottomIssues = await collectSidebarGeometryIssues(page);
+          issues.push(...bottomIssues.map((issue) => `${viewport.name} ${role} sidebar bottom: ${issue}`));
+          await page.screenshot({
+            path: visualSmokePath(`${viewport.name}-${role}-sidebar-bottom.png`),
+            fullPage: true,
+          });
+
+          await page.keyboard.press('Escape');
+          await expect(navigation).toBeHidden();
+
+          const routeIssues = await collectRouteGeometryIssues(page);
+          issues.push(...routeIssues.map((issue) => `${viewport.name} ${role} closed route: ${issue}`));
+        } finally {
+          await page.close();
+        }
+      }
+    }
+
+    fs.writeFileSync(visualSmokePath('sidebar-geometry-report.json'), JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      viewports: sidebarViewports,
+      issues,
+    }, null, 2), 'utf8');
+
+    expect(issues).toEqual([]);
   });
 });

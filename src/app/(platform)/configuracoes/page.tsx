@@ -1236,36 +1236,28 @@ export default function ConfiguracoesPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--border-1)' }}>
-              <div>
-                <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-900)' }}>Exportar meus dados</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-400)' }}>Baixe uma cópia de todos os seus dados em formato JSON</div>
+          <div className={styles.lgpdActions}>
+            <div className={styles.lgpdItem}>
+              <div className={styles.lgpdCopy}>
+                <div className={styles.lgpdItemTitle}>Exportar meus dados</div>
+                <div className={styles.lgpdItemDesc}>Baixe uma cópia de todos os seus dados em formato JSON</div>
               </div>
               <button
                 onClick={handleExportData}
-                style={{
-                  padding: '8px 18px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem',
-                  fontWeight: 600, border: '1px solid var(--border-2)', background: 'white',
-                  color: 'var(--text-700)', cursor: 'pointer', whiteSpace: 'nowrap',
-                }}
+                className={styles.lgpdButton}
               >
                 {exportLabel}
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0' }}>
-              <div>
-                <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-900)' }}>Solicitar exclusão da conta</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-400)' }}>Sua conta será removida em até 15 dias úteis após análise</div>
+            <div className={styles.lgpdItem}>
+              <div className={styles.lgpdCopy}>
+                <div className={styles.lgpdItemTitle}>Solicitar exclusão da conta</div>
+                <div className={styles.lgpdItemDesc}>Sua conta será removida em até 15 dias úteis após análise</div>
               </div>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                style={{
-                  padding: '8px 18px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem',
-                  fontWeight: 600, border: '1px solid #fca5a5', background: '#fff1f2',
-                  color: '#dc2626', cursor: 'pointer', whiteSpace: 'nowrap',
-                }}
+                className={`${styles.lgpdButton} ${styles.lgpdDangerButton}`}
               >
                 {deleteLabel}
               </button>

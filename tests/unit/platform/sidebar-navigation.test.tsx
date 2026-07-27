@@ -184,7 +184,7 @@ describe('Sidebar navigation rendering', () => {
       idPrefix: 'admin-primary-only-navigation',
       variant: 'admin',
       showSequence: 'first-group',
-      showChevron: true,
+      showChevron: 'first-group',
     }));
 
     expect(html).toContain('>1</span>');
@@ -192,6 +192,23 @@ describe('Sidebar navigation rendering', () => {
     expect(html).not.toContain('>3</span>');
     expect(html).toContain('Administradores UniHER');
     expect(html.match(/class="[^"]*navChevron/g)).toHaveLength(2);
+  });
+
+  it('renders operational chevrons without numeric badges when numbering is disabled', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
+      groups: ADMIN_TWO_GROUPS,
+      pathname: '/admin',
+      onNavigate: vi.fn(),
+      idPrefix: 'admin-unnumbered-navigation',
+      variant: 'admin',
+      showSequence: false,
+      showChevron: 'first-group',
+    }));
+
+    expect(html).not.toContain('>1</span>');
+    expect(html).not.toContain('>2</span>');
+    expect(html.match(/class="[^"]*navChevron/g)).toHaveLength(2);
+    expect(html).toContain('Administradores UniHER');
   });
 
   it('marks query-specific admin shortcuts active without activating the base admin dashboard', () => {

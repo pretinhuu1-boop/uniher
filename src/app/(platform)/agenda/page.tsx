@@ -108,10 +108,10 @@ export default function AgendaPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 24, fontFamily: 'var(--ff-display, Playfair Display, serif)', fontWeight: 700, color: '#1a2a4a', margin: 0 }}>
-            📅 Minha Agenda de Saúde
+            📅 Minha Agenda de Exames
           </h1>
           <p style={{ color: '#8a7a6a', fontSize: 14, marginTop: 4 }}>
-            Organize seus exames, consultas e lembretes
+            Acompanhe exames, consultas, lembretes e histórico realizado.
           </p>
         </div>
         <button onClick={() => setShowForm(!showForm)} style={{ padding: '10px 20px', background: '#C9A264', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>

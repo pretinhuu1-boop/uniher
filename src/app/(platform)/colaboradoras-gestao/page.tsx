@@ -299,13 +299,13 @@ export default function ColaboradorasGestaoPage() {
                 return (
                   <div key={u.id} className={cn('p-4 space-y-3', isBlocked && 'bg-red-50/40')}>
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-700 border border-rose-200 flex items-center justify-center text-xs font-bold flex-shrink-0">
                           {initials}
                         </div>
-                        <div>
-                          <div className="font-semibold text-uni-text-900 text-sm">{u.name}</div>
-                          <div className="text-[11px] text-uni-text-400 mt-0.5">{u.email}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-uni-text-900 text-sm leading-snug break-words [overflow-wrap:anywhere]">{u.name}</div>
+                          <div className="text-[11px] text-uni-text-400 mt-0.5 leading-snug break-words [overflow-wrap:anywhere]">{u.email}</div>
                         </div>
                       </div>
                       <span className={cn(
@@ -320,7 +320,7 @@ export default function ColaboradorasGestaoPage() {
                       <span className="bg-cream-100 px-2 py-0.5 rounded-full font-bold text-uni-text-600">
                         {getUserRoleLabel(u.role)}
                       </span>
-                      {u.department_name && <span>{u.department_name}</span>}
+                      {u.department_name && <span className="min-w-0 break-words [overflow-wrap:anywhere]">{u.department_name}</span>}
                     </div>
                     <div className="flex gap-2">
                       {u.role !== 'rh' && (
@@ -346,9 +346,9 @@ export default function ColaboradorasGestaoPage() {
                       </button>
                     </div>
                     {changeDeptUser === u.id && (
-                      <div className="flex gap-2 items-center">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <select
-                          className="flex-1 border border-border-1 rounded-lg px-2 py-1.5 text-xs bg-white"
+                          className="min-w-0 flex-1 border border-border-1 rounded-lg px-2 py-1.5 text-xs bg-white"
                           value={changeDeptValue}
                           onChange={(e) => setChangeDeptValue(e.target.value)}
                         >

@@ -21,8 +21,7 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const { isLoading, user } = useAuth();
   const pathname = usePathname();
-  const hasCollaboratorCapability = user?.role === 'colaboradora' || Boolean(user?.also_collaborator);
-  const showCollaboratorMobileNav = hasCollaboratorCapability && !isCommunityManagementPath(pathname);
+  const showCollaboratorMobileNav = user?.role === 'colaboradora' && !isCommunityManagementPath(pathname);
 
   const closeNavigation = useCallback(() => {
     setSidebarOpen(false);

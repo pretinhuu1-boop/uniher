@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMasterAdmin } from '@/lib/auth/middleware';
+import { devOnlyGuard } from '@/lib/api/dev-only';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import fs from 'fs';
@@ -11,6 +12,9 @@ function projectPath(...segments: string[]): string {
 }
 
 export const GET = withMasterAdmin(async (_req: NextRequest) => {
+  const blocked = devOnlyGuard();
+  if (blocked) return blocked;
+
   await initDb();
   const db = getReadDb();
 

@@ -64,7 +64,7 @@ const NAVIGATION = {
           description: 'Empresas, usuários, permissões e módulos contratados',
         },
         {
-          href: '/saude-primaria',
+          href: '/dashboard?section=saude-primaria',
           label: 'Saúde Primária',
           icon: 'semaforo',
           description: 'Semáforo consolidado e indicadores por empresa, setor e período',
@@ -76,7 +76,7 @@ const NAVIGATION = {
           description: 'Gestão de casos somente quando o módulo e contrato estiverem aprovados',
         },
         {
-          href: '/historico',
+          href: '/dashboard?section=exames',
           label: 'Dashboard de exames',
           icon: 'historico',
           description: 'Exames em dia, pendentes, vencidos e indicadores de prevenção',
@@ -94,7 +94,7 @@ const NAVIGATION = {
           description: 'Desafios, ligas, recompensas, rankings e campanhas de engajamento',
         },
         {
-          href: '/produtos-modulos',
+          href: '/admin?tab=empresas&section=modulos',
           label: 'Produtos e Módulos',
           icon: 'config',
           description: 'Controle de módulos contratados e ativação de funcionalidades',
@@ -148,7 +148,7 @@ const NAVIGATION = {
           description: 'Visão geral da empresa, indicadores e gráficos protegidos',
         },
         {
-          href: '/saude-primaria',
+          href: '/dashboard?section=saude-primaria',
           label: 'Saúde Primária',
           icon: 'semaforo',
           description: 'Semáforo da saúde e Concierge sob gates clínicos e contratuais',
@@ -280,7 +280,7 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   description: string;
 }>> = {
   primary_health: {
-    href: '/saude-primaria',
+    href: '/dashboard?section=saude-primaria',
     icon: 'semaforo',
     description: 'Módulo contratado de cuidado primário, visível conforme governança',
   },
@@ -335,7 +335,7 @@ function getModuleBadgeLabel(moduleState: CompanyModuleState): string | undefine
 function getRepresentedModuleHref(role: UserRole, moduleSlug: CompanyModuleSlug): string | undefined {
   if (moduleSlug === 'primary_health') {
     if (role === 'colaboradora') return '/semaforo';
-    if (role === 'admin' || role === 'rh') return '/saude-primaria';
+    if (role === 'admin' || role === 'rh') return '/dashboard?section=saude-primaria';
   }
 
   if (moduleSlug === 'education') {
@@ -351,7 +351,7 @@ function getRepresentedModuleHref(role: UserRole, moduleSlug: CompanyModuleSlug)
 
   if (moduleSlug === 'concierge') {
     if (role === 'admin') return '/concierge';
-    if (role === 'rh') return '/saude-primaria';
+    if (role === 'rh') return '/dashboard?section=saude-primaria';
   }
 
   return undefined;
@@ -515,7 +515,7 @@ export function getRoleHome(role: UserRole): string {
   return '/dashboard';
 }
 
-const QUERY_DISTINCT_PATHS = new Set(['/admin']);
+const QUERY_DISTINCT_PATHS = new Set(['/admin', '/dashboard']);
 const SEMANTIC_QUERY_KEYS = new Set(['tab', 'section']);
 
 function splitLocation(value: string): { path: string; query: string } {

@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 const root = process.cwd();
 const shellPages = [
-  'src/app/(platform)/saude-primaria/page.tsx',
   'src/app/(platform)/concierge/page.tsx',
   'src/app/(platform)/nr1/page.tsx',
   'src/app/(platform)/viva-sipat/page.tsx',
@@ -35,11 +34,13 @@ describe('Paola P3 locked module shells', () => {
     expect(source).not.toMatch(/certificado emitido|conte[uú]do publicado|aula dispon[ií]vel|cronograma oficial/i);
   });
 
-  it('keeps Saude Primaria visible context accented', () => {
+  it('keeps Saude Primaria legacy route as a compatibility redirect to real surfaces', () => {
     const source = read('src/app/(platform)/saude-primaria/page.tsx');
 
-    expect(source).toContain('context="Saúde Primária"');
-    expect(source).not.toContain('context="Saude Primaria"');
+    expect(source).toContain("router.replace('/dashboard?section=saude-primaria')");
+    expect(source).toContain("router.replace('/semaforo')");
+    expect(source).not.toContain('ContainedSurfacePreview');
+    expect(source).not.toContain('allowedItems');
   });
 
   it('keeps NR-1 as a contract-gated shell separate from COPSOQ runtime', () => {

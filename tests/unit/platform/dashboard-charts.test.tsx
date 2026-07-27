@@ -18,18 +18,19 @@ describe('RH protected dashboard accessibility', () => {
     expect(html).not.toMatch(/72%|reten\u00e7\u00e3o/i);
   });
 
-  it('renders a protected visible age count without a percentage denominator', () => {
+  it('renders a protected visible age chart without a percentage denominator', () => {
     const html = renderToStaticMarkup(createElement(AgeOverview, {
       data: [{ label: '26-35', color: '#536444', metric: { status: 'visible', value: 12 } }],
     }));
 
+    expect(html).toContain('Gráfico protegido de faixas etárias');
     expect(html).toContain('26-35');
     expect(html).toContain('<strong>12</strong>');
     expect(html).not.toContain('%');
     expect(html).not.toContain('<canvas');
   });
 
-  it('renders check-in x check-out only as protected aggregate counts', () => {
+  it('renders check-in x check-out as protected aggregate chart counts', () => {
     const html = renderToStaticMarkup(createElement(WellbeingOverview, {
       series: [{
         period: '2026-07',
@@ -39,6 +40,7 @@ describe('RH protected dashboard accessibility', () => {
     }));
 
     expect(html).toContain('Check-in x Check-out');
+    expect(html).toContain('Gráfico protegido de check-in e check-out por período');
     expect(html).toContain('Check-in: 10');
     expect(html).toContain(`Check-out: ${SUPPRESSION_MESSAGE}`);
     expect(html).not.toMatch(/mood|humor|user_id|participant_id|<canvas/i);
