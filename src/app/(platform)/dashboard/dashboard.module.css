@@ -278,7 +278,7 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .departmentRow:first-child,
@@ -384,7 +384,7 @@
   min-width: 0;
   padding: 16px;
   grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
   border: 1px solid var(--platform-line);
   border-radius: var(--platform-radius-control);
 }
@@ -403,7 +403,7 @@
 .comparisonMetric {
   display: grid;
   min-width: 0;
-  gap: 6px;
+  gap: 8px;
 }
 
 .chartTrack {

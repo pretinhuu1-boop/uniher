@@ -162,6 +162,7 @@ test.describe('RH — Painel da Empresa', () => {
       'examActivitySeries',
       'filters',
       'metrics',
+      'wellbeingSeries',
     ]);
     expect(body.filters).toEqual({ period: '1m' });
     expect(Object.keys(body.metrics).sort()).toEqual([
@@ -170,9 +171,13 @@ test.describe('RH — Painel da Empresa', () => {
       'examActivity',
       'healthRisk',
       'roi',
+      'wellbeingCheckIn',
+      'wellbeingCheckOut',
     ]);
     expect(body.metrics).toEqual({
       examActivity: suppressedMetric('minimum_cohort'),
+      wellbeingCheckIn: suppressedMetric('minimum_cohort'),
+      wellbeingCheckOut: suppressedMetric('minimum_cohort'),
       engagement: suppressedMetric('not_computable'),
       healthRisk: suppressedMetric('not_computable'),
       campaignParticipation: suppressedMetric('not_computable'),
@@ -195,6 +200,13 @@ test.describe('RH — Painel da Empresa', () => {
       expect(Object.keys(point).sort()).toEqual(['metric', 'period']);
       expect(point.period).toMatch(/^\d{4}-\d{2}$/);
       expect(point.metric).toEqual(suppressedMetric('minimum_cohort'));
+    }
+    expect(Array.isArray(body.wellbeingSeries)).toBe(true);
+    for (const point of body.wellbeingSeries) {
+      expect(Object.keys(point).sort()).toEqual(['checkIn', 'checkOut', 'period']);
+      expect(point.period).toMatch(/^\d{4}-\d{2}$/);
+      expect(point.checkIn).toEqual(suppressedMetric('minimum_cohort'));
+      expect(point.checkOut).toEqual(suppressedMetric('minimum_cohort'));
     }
     expectNoRecursiveKeys(
       body,
@@ -228,7 +240,7 @@ test.describe('RH — Painel da Empresa', () => {
     await expect(summary.getByText('Atividade de exames')).toBeVisible();
     await expect(summary.getByText('Engajamento')).toBeVisible();
     await expect(summary.getByText('Participação em campanha')).toBeVisible();
-    await expect(summary).toContainText(SUPPRESSION_MESSAGE);
+    await expect(summary.getByText('Protegido')).toHaveCount(5);
 
     const actions = page.getByRole('region', { name: 'Próximas ações' });
     await expect(actions.getByRole('link', { name: /Campanhas/ })).toHaveAttribute('href', '/campanhas');

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { PageHeader } from '@/components/platform/PageHeader';
 import { SummaryBand } from '@/components/platform/SummaryBand';
@@ -15,6 +15,7 @@ import { DashboardDetails, type DashboardFilters } from './components/DashboardD
 import { EngagementOverview } from './components/EngagementOverview';
 import { NextActions } from './components/NextActions';
 import { downloadDashboardCsv, hasMeaningfulDashboardData } from './dashboard-export';
+import { getDashboardSectionContext } from './dashboard-section';
 import { createDashboardViewModel } from './dashboard-view-model';
 import styles from './dashboard.module.css';
 
@@ -43,6 +44,7 @@ interface AdminDashboardCompany {
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activePeriod, setActivePeriod] = useState<DashboardPeriod>('1m');
   const [departmentId, setDepartmentId] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
@@ -98,6 +100,7 @@ export default function DashboardPage() {
     [dashboard.data],
   );
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'Gestora';
+  const sectionContext = getDashboardSectionContext(searchParams.get('section'));
   const canExport = Boolean(
     model
     && !dashboard.isLoading
@@ -121,9 +124,9 @@ export default function DashboardPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        context="Visão geral · RH"
+        context={sectionContext?.headerContext ?? 'Visão geral · RH'}
         title={`Bom dia, ${firstName}.`}
-        description="Indicadores agregados com proteção de coorte."
+        description={sectionContext?.description ?? 'Indicadores agregados com proteção de coorte.'}
         primaryAction={<Button onClick={() => router.push('/convites')}>Convidar</Button>}
         secondaryActions={(
           <Button
