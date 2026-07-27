@@ -235,10 +235,10 @@ export default function CopsoqFlow({ locale = 'pt' }: CopsoqFlowProps) {
           {/* ── DONE ─────────────────────────────────────────────────────── */}
           {c.screen === 'done' && (
             <div className={styles.wrapper} style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }} aria-hidden="true">🎉</p>
-              <h3 className={styles.questionTitle}>Questionário concluído!</h3>
+              <h3 className={styles.questionTitle}>Respostas recebidas no mock</h3>
               <p className={styles.questionSub} style={{ marginBottom: '1.5rem' }}>
-                Obrigado por participar da avaliação psicossocial. Suas respostas são confidenciais e nunca entram em ranking.
+                Este retorno valida apenas o fluxo técnico controlado. Ele não gera laudo, scoring,
+                conformidade NR-1, GRO/PGR ou envio real para a Yavix.
               </p>
             </div>
           )}

@@ -4,7 +4,7 @@ import { handleApiError } from '@/lib/errors';
 import { submit } from '@/lib/yavix/copsoq.mock';
 import { isYavixMock } from '@/lib/yavix/config';
 import { checkWriteRateLimit } from '@/lib/security/rate-limit';
-import { requireNr1RuntimeEntitlement } from '@/lib/nr1/runtime-entitlement';
+import { requireNr1PsychosocialConsent, requireNr1RuntimeEntitlement } from '@/lib/nr1/runtime-entitlement';
 import type { CopsoqIncomplete, CopsoqSubmitResult } from '@/lib/yavix/copsoq.types';
 
 // PUT /api/yavix/copsoq/submit
@@ -15,6 +15,8 @@ export const PUT = withRole('colaboradora', 'lideranca')(async (req, { auth }) =
     await checkWriteRateLimit(req);
     const entitlementError = await requireNr1RuntimeEntitlement(auth);
     if (entitlementError) return entitlementError;
+    const consentError = await requireNr1PsychosocialConsent(auth.userId);
+    if (consentError) return consentError;
 
     if (isYavixMock()) {
       const result = submit(auth.userId);

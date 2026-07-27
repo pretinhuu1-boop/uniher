@@ -60,6 +60,16 @@ function createSentinelDatabase(): Database.Database {
       updated_at TEXT NOT NULL,
       updated_by TEXT
     );
+    CREATE TABLE user_consents (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      consent_type TEXT NOT NULL,
+      granted INTEGER NOT NULL DEFAULT 1,
+      ip_address TEXT,
+      user_agent TEXT,
+      granted_at TEXT DEFAULT (datetime('now')),
+      revoked_at TEXT
+    );
 
     INSERT INTO users VALUES ('nr1-user', 37);
     INSERT INTO activity_log VALUES ('activity-before', 'nr1-user', 'existing_activity');
@@ -118,6 +128,9 @@ afterEach(() => {
 describe('NR-1 gamification containment', () => {
   it('submits incomplete, complete and retry flows without touching legacy gamification tables', async () => {
     const userId = `nr1-route-${Date.now()}-${Math.random()}`;
+    databaseBoundary.db!.prepare(
+      'INSERT INTO user_consents (id, user_id, consent_type, granted, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run(`consent-${userId}`, userId, 'nr1_psychosocial', 1, '127.0.0.1', 'vitest');
     const before = snapshotProtectedTables();
 
     const incomplete = await putCopsoq(userId);
@@ -141,7 +154,14 @@ describe('NR-1 gamification containment', () => {
     expect(retry.status).toBe(200);
     expect(await retry.json()).toEqual({ status: 'DONE' });
     expect(snapshotProtectedTables()).toEqual(before);
-    expect(databaseBoundary.gatewayAccesses).toEqual(['getReadDb', 'getReadDb', 'getReadDb']);
+    expect(databaseBoundary.gatewayAccesses).toEqual([
+      'getReadDb',
+      'getReadDb',
+      'getReadDb',
+      'getReadDb',
+      'getReadDb',
+      'getReadDb',
+    ]);
   });
 
   it('keeps COPSOQ completion disconnected from legacy gamification writes', () => {

@@ -51,3 +51,36 @@ export async function requireNr1RuntimeEntitlement(
     { status: 403 },
   );
 }
+
+export async function hasActiveNr1PsychosocialConsent(userId: string | null | undefined): Promise<boolean> {
+  if (!userId) return false;
+
+  await initDb();
+  try {
+    const row = getReadDb().prepare(
+      `SELECT 1
+       FROM user_consents
+       WHERE user_id = ?
+         AND consent_type = 'nr1_psychosocial'
+         AND granted = 1
+         AND revoked_at IS NULL
+       LIMIT 1`,
+    ).get(userId);
+    return Boolean(row);
+  } catch {
+    return false;
+  }
+}
+
+export async function requireNr1PsychosocialConsent(
+  userId: string | null | undefined,
+): Promise<NextResponse | null> {
+  if (await hasActiveNr1PsychosocialConsent(userId)) {
+    return null;
+  }
+
+  return NextResponse.json(
+    { error: 'Consentimento NR-1 pendente ou revogado' },
+    { status: 403 },
+  );
+}

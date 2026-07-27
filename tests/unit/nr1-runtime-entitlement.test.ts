@@ -45,11 +45,16 @@ vi.mock('@/lib/auth/token-blacklist', () => ({
 }));
 
 import { GET as bootstrapCopsoq } from '@/app/api/yavix/copsoq/bootstrap/route';
+import { PATCH as answerCopsoq } from '@/app/api/yavix/copsoq/answer/route';
+import { PUT as submitCopsoq } from '@/app/api/yavix/copsoq/submit/route';
 import {
+  hasActiveNr1PsychosocialConsent,
   getNr1RuntimeEntitlementForCurrentRequest,
   isNr1RuntimeEntitledForCompany,
+  requireNr1PsychosocialConsent,
   requireNr1RuntimeEntitlement,
 } from '@/lib/nr1/runtime-entitlement';
+import { isYavixMock } from '@/lib/yavix/config';
 
 const root = path.resolve(__dirname, '../..');
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), 'utf8');
@@ -68,6 +73,16 @@ function createDatabase(): Database.Database {
       updated_at TEXT NOT NULL,
       updated_by TEXT
     );
+    CREATE TABLE user_consents (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      consent_type TEXT NOT NULL,
+      granted INTEGER NOT NULL DEFAULT 1,
+      ip_address TEXT,
+      user_agent TEXT,
+      granted_at TEXT DEFAULT (datetime('now')),
+      revoked_at TEXT
+    );
 
     INSERT INTO company_modules (
       id, company_id, module_slug, module_state, visible, notes, created_at, updated_at, updated_by
@@ -77,6 +92,21 @@ function createDatabase(): Database.Database {
       ('company-hidden-nr1', 'company-hidden', 'nr1', 'enabled', 0, null, '2026-07-23T22:00:00.000Z', '2026-07-23T22:00:00.000Z', null);
   `);
   return db;
+}
+
+function grantNr1Consent(userId: string, revoked = false): void {
+  if (!boundary.db) throw new Error('Test database is not configured');
+  boundary.db.prepare(
+    'INSERT INTO user_consents (id, user_id, consent_type, granted, ip_address, user_agent, revoked_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  ).run(
+    `consent-${userId}-${revoked ? 'revoked' : 'active'}`,
+    userId,
+    'nr1_psychosocial',
+    1,
+    '127.0.0.1',
+    'vitest',
+    revoked ? '2026-07-27T00:00:00.000Z' : null,
+  );
 }
 
 async function getBootstrap(companyId: string): Promise<Response> {
@@ -92,6 +122,45 @@ async function getBootstrap(companyId: string): Promise<Response> {
     new Request('http://localhost/api/yavix/copsoq/bootstrap?locale=pt') as unknown as NextRequest,
     {
       auth: { userId: 'nr1-user', companyId, role: 'colaboradora' },
+      params: Promise.resolve({}),
+    },
+  );
+}
+
+async function patchAnswer(userId: string): Promise<Response> {
+  const handler = answerCopsoq as unknown as (
+    request: NextRequest,
+    context: {
+      auth: { userId: string; companyId: string; role: string };
+      params: Promise<Record<string, string>>;
+    },
+  ) => Promise<Response>;
+
+  return handler(
+    new Request('http://localhost/api/yavix/copsoq/answer', {
+      method: 'PATCH',
+      body: JSON.stringify({ code: 2, value: '5' }),
+    }) as unknown as NextRequest,
+    {
+      auth: { userId, companyId: 'company-enabled', role: 'colaboradora' },
+      params: Promise.resolve({}),
+    },
+  );
+}
+
+async function putSubmit(userId: string): Promise<Response> {
+  const handler = submitCopsoq as unknown as (
+    request: NextRequest,
+    context: {
+      auth: { userId: string; companyId: string; role: string };
+      params: Promise<Record<string, string>>;
+    },
+  ) => Promise<Response>;
+
+  return handler(
+    new Request('http://localhost/api/yavix/copsoq/submit', { method: 'PUT' }) as unknown as NextRequest,
+    {
+      auth: { userId, companyId: 'company-enabled', role: 'colaboradora' },
       params: Promise.resolve({}),
     },
   );
@@ -145,6 +214,47 @@ describe('NR-1 runtime entitlement', () => {
     await expect(allowed.json()).resolves.toMatchObject({ formName: 'COPSOQ41' });
   });
 
+  it('keeps the Yavix mock disabled outside dev/test even when YAVIX_MOCK is set', () => {
+    vi.stubEnv('YAVIX_MOCK', '1');
+    vi.stubEnv('NODE_ENV', 'test');
+    expect(isYavixMock()).toBe(true);
+
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isYavixMock()).toBe(false);
+
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('YAVIX_MOCK', 'true');
+    expect(isYavixMock()).toBe(false);
+  });
+
+  it('requires active NR-1 psychosocial consent before answer and submit mutations', async () => {
+    await expect(hasActiveNr1PsychosocialConsent('nr1-consent-user')).resolves.toBe(false);
+    const directBlock = await requireNr1PsychosocialConsent('nr1-consent-user');
+    expect(directBlock?.status).toBe(403);
+
+    grantNr1Consent('nr1-consent-user', true);
+    await expect(hasActiveNr1PsychosocialConsent('nr1-consent-user')).resolves.toBe(false);
+
+    const answerBlocked = await patchAnswer('nr1-consent-user');
+    expect(answerBlocked.status).toBe(403);
+    await expect(answerBlocked.json()).resolves.toMatchObject({
+      error: 'Consentimento NR-1 pendente ou revogado',
+    });
+
+    const submitBlocked = await putSubmit('nr1-consent-user');
+    expect(submitBlocked.status).toBe(403);
+
+    grantNr1Consent('nr1-consent-user');
+    await expect(hasActiveNr1PsychosocialConsent('nr1-consent-user')).resolves.toBe(true);
+
+    const answerAllowed = await patchAnswer('nr1-consent-user');
+    expect(answerAllowed.status).toBe(204);
+
+    const submitAllowed = await putSubmit('nr1-consent-user');
+    expect(submitAllowed.status).toBe(422);
+    await expect(submitAllowed.json()).resolves.toMatchObject({ error: 'INCOMPLETE' });
+  });
+
   it('does not allow RH/admin users to render the COPSOQ answer runtime', async () => {
     boundary.authToken = 'valid-token';
     boundary.tokenPayload = {
@@ -185,6 +295,14 @@ describe('NR-1 runtime entitlement', () => {
     ]) {
       const source = read(route);
       expect(source, route).toContain('requireNr1RuntimeEntitlement(auth)');
+    }
+
+    for (const route of [
+      'src/app/api/yavix/copsoq/answer/route.ts',
+      'src/app/api/yavix/copsoq/submit/route.ts',
+    ]) {
+      const source = read(route);
+      expect(source, route).toContain('requireNr1PsychosocialConsent(auth.userId)');
     }
   });
 });
