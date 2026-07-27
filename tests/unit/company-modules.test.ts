@@ -4,9 +4,11 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   COMPANY_MODULE_DEFINITIONS,
+  canAdminSetCompanyModuleState,
   canRoleSeeCompanyModule,
   createCompanyModulesStore,
   isCompanyModuleEnabled,
+  isSensitiveCompanyModuleSlug,
 } from '@/lib/modules/company-modules';
 import { applyMigration } from '@/lib/db/migrations/runner';
 import { COMPANY_MODULE_SLUGS, type CompanyModuleSlug } from '@/types/modules';
@@ -108,5 +110,17 @@ describe('company modules store', () => {
     expect(canRoleSeeCompanyModule('concierge', 'colaboradora')).toBe(false);
     expect(canRoleSeeCompanyModule('sipat', 'colaboradora')).toBe(true);
     expect(canRoleSeeCompanyModule('nr1', 'lideranca')).toBe(false);
+  });
+
+  it('does not allow sensitive modules to be marked enabled by the admin module mutation', () => {
+    expect(isSensitiveCompanyModuleSlug('nr1')).toBe(true);
+    expect(isSensitiveCompanyModuleSlug('sipat')).toBe(true);
+    expect(isSensitiveCompanyModuleSlug('concierge')).toBe(true);
+    expect(isSensitiveCompanyModuleSlug('education')).toBe(false);
+
+    expect(canAdminSetCompanyModuleState('nr1', 'enabled')).toBe(false);
+    expect(canAdminSetCompanyModuleState('sipat', 'requires_contract')).toBe(true);
+    expect(canAdminSetCompanyModuleState('denunciation', 'partner_managed')).toBe(true);
+    expect(canAdminSetCompanyModuleState('education', 'enabled')).toBe(true);
   });
 });

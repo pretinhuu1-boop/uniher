@@ -94,7 +94,7 @@ const NAVIGATION = {
           description: 'Desafios, ligas, recompensas, rankings e campanhas de engajamento',
         },
         {
-          href: '/admin?tab=empresas&section=modulos',
+          href: '/produtos-modulos',
           label: 'Produtos e Módulos',
           icon: 'config',
           description: 'Controle de módulos contratados e ativação de funcionalidades',

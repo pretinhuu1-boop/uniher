@@ -6,6 +6,7 @@ export type AuditAction =
   | 'login' | 'login_failed' | 'logout' | 'first_access_password_change'
   | 'user_create' | 'user_edit' | 'user_block' | 'user_unblock' | 'user_delete' | 'password_reset'
   | 'company_create' | 'company_edit' | 'company_block' | 'company_unblock' | 'company_delete'
+  | 'company_module_update'
   | 'system_settings_update'
   // User actions (all roles)
   | 'profile_update' | 'quiz_submit' | 'challenge_complete' | 'challenge_create'

@@ -17,6 +17,14 @@ export { COMPANY_MODULE_DEFINITIONS };
 
 const moduleSlugs = new Set<CompanyModuleSlug>(COMPANY_MODULE_SLUGS);
 const moduleStates = new Set<CompanyModuleState>(COMPANY_MODULE_STATES);
+const sensitiveModuleSlugs = new Set<CompanyModuleSlug>([
+  'primary_health',
+  'concierge',
+  'nr1',
+  'sipat',
+  'human_development',
+  'denunciation',
+]);
 
 export function isCompanyModuleSlug(value: string): value is CompanyModuleSlug {
   return moduleSlugs.has(value as CompanyModuleSlug);
@@ -24,6 +32,17 @@ export function isCompanyModuleSlug(value: string): value is CompanyModuleSlug {
 
 export function isCompanyModuleState(value: string): value is CompanyModuleState {
   return moduleStates.has(value as CompanyModuleState);
+}
+
+export function isSensitiveCompanyModuleSlug(value: CompanyModuleSlug): boolean {
+  return sensitiveModuleSlugs.has(value);
+}
+
+export function canAdminSetCompanyModuleState(
+  moduleSlug: CompanyModuleSlug,
+  moduleState: CompanyModuleState,
+): boolean {
+  return moduleState !== 'enabled' || !isSensitiveCompanyModuleSlug(moduleSlug);
 }
 
 export function getCompanyModuleDefinition(slug: CompanyModuleSlug): CompanyModuleDefinition {
