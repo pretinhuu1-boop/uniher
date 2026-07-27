@@ -9,6 +9,7 @@ import type { RegisterInput, LoginInput } from '@/lib/validation/schemas';
 import { sanitizeObject } from '@/lib/security/sanitize';
 import { logAudit } from '@/lib/audit';
 import { toSafeUserProjection } from '@/lib/gamification/containment';
+import { getActiveSessionSubject } from '@/lib/auth/session-subject';
 
 // Pre-computed dummy hash for timing attack mitigation.
 // Generated once at server start so bcrypt always does a full cost-12 computation
@@ -186,20 +187,19 @@ export async function refresh(): Promise<{ accessToken: string; refreshToken: st
     throw new UnauthorizedError('Refresh token revogado ou expirado');
   }
 
-  const user = userRepo.getUserById(payload.userId);
-  if (!user) {
-    throw new UnauthorizedError('Usuário não encontrado');
+  let sessionSubject: ReturnType<typeof getActiveSessionSubject>;
+  try {
+    sessionSubject = getActiveSessionSubject(payload.userId);
+  } catch (error) {
+    await refreshTokenRepo.deleteAllUserTokens(payload.userId);
+    throw error;
   }
+  const { user, auth } = sessionSubject;
 
   // Rotacao: deletar token antigo, criar novo
   await refreshTokenRepo.deleteRefreshToken(currentRefreshToken);
 
-  const accessToken = await signAccessToken({
-    userId: user.id,
-    role: user.role,
-    companyId: user.company_id ?? '',
-    isMasterAdmin: user.is_master_admin === 1,
-  });
+  const accessToken = await signAccessToken(auth);
 
   const newRefreshToken = await signRefreshToken({ userId: user.id });
   await refreshTokenRepo.createRefreshToken(user.id, newRefreshToken);
