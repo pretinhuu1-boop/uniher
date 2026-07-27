@@ -85,19 +85,19 @@ const NAVIGATION = {
           href: '/comunidade/gerenciar',
           label: 'Educação',
           icon: 'community',
-          description: 'Campanhas, conteúdos, videoaulas, trilhas e agendas',
+          description: 'Campanhas e conteúdos educativos publicados para empresas',
         },
         {
           href: '/gamificacao-config',
-          label: 'Gamificação',
+          label: 'Objetivos e Desafios',
           icon: 'conquistas',
-          description: 'Desafios, ligas, recompensas, rankings e campanhas de engajamento',
+          description: 'Governança de objetivos, desafios e conquistas sem ranking ou liga ativa',
         },
         {
           href: '/produtos-modulos',
           label: 'Produtos e Módulos',
           icon: 'config',
-          description: 'Controle de módulos contratados e ativação de funcionalidades',
+          description: 'Catálogo, estados contratados e visibilidade sem ativação automática de módulos gated',
         },
         {
           href: '/analytics-emails',
@@ -157,13 +157,13 @@ const NAVIGATION = {
           href: '/campanhas',
           label: 'Educação',
           icon: 'campanhas',
-          description: 'Campanhas de saúde, trilhas, videoaulas e materiais de apoio',
+          description: 'Campanhas e conteúdos educativos publicados para a empresa',
         },
         {
           href: '/gamificacao-config',
-          label: 'Conquistas',
+          label: 'Objetivos e Desafios',
           icon: 'conquistas',
-          description: 'Objetivos, desafios, ligas, rankings e conquistas aprovadas',
+          description: 'Objetivos, desafios e conquistas em governança, sem ranking ou liga ativa',
         },
       ],
     },
@@ -256,10 +256,22 @@ const NAVIGATION = {
           description: 'Conteúdos, trilhas e videoaulas',
         },
         {
+          href: '/objetivos',
+          label: 'Objetivos',
+          icon: 'objetivos',
+          description: 'Objetivos pessoais iniciados pela própria colaboradora',
+        },
+        {
+          href: '/desafios',
+          label: 'Desafios',
+          icon: 'desafios',
+          description: 'Desafios voluntários da empresa sem pontuação competitiva',
+        },
+        {
           href: '/conquistas',
           label: 'Conquistas',
           icon: 'conquistas',
-          description: 'Desafios, recompensas e ranking sob gate de privacidade',
+          description: 'Conquistas privadas derivadas de eventos elegíveis',
         },
         {
           href: '/campanhas',
@@ -297,7 +309,7 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   achievements: {
     href: '/conquistas',
     icon: 'conquistas',
-    description: 'Objetivos, desafios, conquistas e gamificação aprovada',
+    description: 'Objetivos, desafios e conquistas sem ranking ou liga ativa',
   },
   nr1: {
     href: '/avaliacao-nr1',

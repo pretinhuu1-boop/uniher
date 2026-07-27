@@ -25,7 +25,7 @@ const EXPECTED_NAVIGATION_CONTRACT = {
         ['/concierge', 'Concierge'],
         ['/dashboard?section=exames', 'Dashboard de exames'],
         ['/comunidade/gerenciar', 'Educa\u00e7\u00e3o'],
-        ['/gamificacao-config', 'Gamifica\u00e7\u00e3o'],
+        ['/gamificacao-config', 'Objetivos e Desafios'],
         ['/produtos-modulos', 'Produtos e M\u00f3dulos'],
         ['/analytics-emails', 'Relat\u00f3rios'],
         ['/admin?tab=sistema', 'Configura\u00e7\u00f5es'],
@@ -47,7 +47,7 @@ const EXPECTED_NAVIGATION_CONTRACT = {
         ['/dashboard', 'Dashboard'],
         ['/dashboard?section=saude-primaria', 'Sa\u00fade Prim\u00e1ria'],
         ['/campanhas', 'Educa\u00e7\u00e3o'],
-        ['/gamificacao-config', 'Conquistas'],
+        ['/gamificacao-config', 'Objetivos e Desafios'],
       ],
     },
     {
@@ -83,6 +83,8 @@ const EXPECTED_NAVIGATION_CONTRACT = {
         ['/colaboradora', 'Meu Bem-Estar'],
         ['/agenda', 'Minha Agenda de Exames'],
         ['/comunidade', 'Educa\u00e7\u00e3o'],
+        ['/objetivos', 'Objetivos'],
+        ['/desafios', 'Desafios'],
         ['/conquistas', 'Conquistas'],
         ['/campanhas', 'Campanhas'],
       ],
@@ -164,6 +166,8 @@ describe('platform navigation', () => {
       '/colaboradora',
       '/agenda',
       '/comunidade',
+      '/objetivos',
+      '/desafios',
       '/conquistas',
       '/campanhas',
     ]);
@@ -243,7 +247,7 @@ describe('platform navigation', () => {
 
     expect(byLabel['Saúde Primária'].badgeLabel).toBe('Contrato');
     expect(byLabel.Educação.badgeLabel).toBe('Bloqueado');
-    expect(byLabel.Conquistas.badgeLabel).toBe('Em breve');
+    expect(byLabel['Objetivos e Desafios'].badgeLabel).toBe('Em breve');
   });
 
   it('routes explicitly enabled NR-1 to the COPSOQ runtime while keeping gated rows on the locked shell', () => {
@@ -288,6 +292,19 @@ describe('platform navigation', () => {
   it('keeps admin navigation free from non-admin destinations', () => {
     const adminRoutes = getNavigationForRole('admin').flatMap((group) => group.items.map((item) => item.href));
     expect(adminRoutes.filter((route) => ADMIN_DENIED_ROUTES.includes(route as typeof ADMIN_DENIED_ROUTES[number]))).toEqual([]);
+  });
+
+  it('keeps sidebar navigation copy free from active ranking or league promises', () => {
+    const forbidden = /(?:ligas?, recompensas, rankings|liga e rankings|ranking sob gate|ranking sob gate de privacidade|gamifica[cç][aã]o aprovada)/i;
+    const surfaces = USER_ROLES.flatMap((role) =>
+      getNavigationForRole(role).flatMap((group) =>
+        group.items.map((item) => `${role}:${item.label}:${item.description}`),
+      ),
+    );
+
+    expect(surfaces).not.toEqual(expect.arrayContaining([
+      expect.stringMatching(forbidden),
+    ]));
   });
 
   it('applies the community role boundary to every navigation table', () => {

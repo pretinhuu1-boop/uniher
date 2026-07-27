@@ -160,48 +160,45 @@ describe('Sidebar navigation rendering', () => {
     expect(html).toContain('Atividades em andamento');
   });
 
-  it('renders sequence numbers and chevrons only when requested for operational menus', () => {
+  it('renders operational chevrons without sequence numbers in platform menus', () => {
     const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
       groups: ADMIN_QUERY_GROUPS,
       pathname: '/admin',
       onNavigate: vi.fn(),
-      idPrefix: 'admin-numbered-navigation',
+      idPrefix: 'admin-chevron-navigation',
       variant: 'admin',
-      showSequence: true,
       showChevron: true,
     }));
 
-    expect(html).toContain('>1</span>');
-    expect(html).toContain('>2</span>');
+    expect(html).not.toContain('>1</span>');
+    expect(html).not.toContain('>2</span>');
     expect(html).toContain('aria-hidden="true"');
   });
 
-  it('can limit sequence numbers and chevrons to the primary operational group', () => {
+  it('can limit chevrons to the primary operational group without adding numbers', () => {
     const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
       groups: ADMIN_TWO_GROUPS,
       pathname: '/admin',
       onNavigate: vi.fn(),
       idPrefix: 'admin-primary-only-navigation',
       variant: 'admin',
-      showSequence: 'first-group',
       showChevron: 'first-group',
     }));
 
-    expect(html).toContain('>1</span>');
-    expect(html).toContain('>2</span>');
+    expect(html).not.toContain('>1</span>');
+    expect(html).not.toContain('>2</span>');
     expect(html).not.toContain('>3</span>');
     expect(html).toContain('Administradores UniHER');
     expect(html.match(/class="[^"]*navChevron/g)).toHaveLength(2);
   });
 
-  it('renders operational chevrons without numeric badges when numbering is disabled', () => {
+  it('does not expose numeric badges for operational chevrons', () => {
     const html = renderToStaticMarkup(createElement(SidebarNavigationGroups, {
       groups: ADMIN_TWO_GROUPS,
       pathname: '/admin',
       onNavigate: vi.fn(),
       idPrefix: 'admin-unnumbered-navigation',
       variant: 'admin',
-      showSequence: false,
       showChevron: 'first-group',
     }));
 

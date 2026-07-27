@@ -31,6 +31,7 @@ test('Sidebar production menu keeps role ordering without visible sequence badge
     /<SidebarNavigationGroups[\s\S]*?renderItemChildren=\{renderNavigationBadge\}[\s\S]*?\/>/,
   )?.[0] || '';
 
-  assert.match(renderCall, /showSequence=\{false\}/);
+  assert.doesNotMatch(renderCall, /showSequence/);
+  assert.doesNotMatch(sidebarSource, /sequenceNumber/);
   assert.match(renderCall, /showChevron=\{role === 'admin' \? 'first-group' : false\}/);
 });

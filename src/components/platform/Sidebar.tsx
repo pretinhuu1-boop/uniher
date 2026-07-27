@@ -71,13 +71,15 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
   collaborator: {
     '/semaforo': ['Semáforo da Saúde'],
     '/colaboradora': ['Check-in - Como você chega hoje?', 'Check-out - Como você encerra o seu dia?'],
-    '/conquistas': ['Desafios', 'Recompensas', 'Ranking'],
+    '/objetivos': ['Pessoal', 'Auto-iniciado', 'Sem comparação'],
+    '/desafios': ['Voluntário', 'Empresa', 'Sem Liga'],
+    '/conquistas': ['Privado', 'Eventos elegíveis', 'Sem ranking'],
   },
   manager: {
     '/dashboard': ['Visão geral da empresa', 'Todos os indicadores e gráficos', 'Check-in x Check-out'],
     '/dashboard?section=saude-primaria': ['Semáforo da Saúde', 'Concierge'],
-    '/campanhas': ['Campanhas de saúde', 'Trilhas de aprendizagem', 'Videoaulas'],
-    '/gamificacao-config': ['Objetivos individuais e por equipe', 'Liga e rankings sob gate'],
+    '/campanhas': ['Campanhas de saúde', 'Conteúdos publicados'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas em revisão'],
   },
   admin: {
     '/admin': ['Visão consolidada', 'Indicadores da plataforma'],
@@ -85,6 +87,7 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
     '/dashboard?section=saude-primaria': ['Sem\u00e1foro consolidado', 'Indicadores por empresa'],
     '/dashboard?section=exames': ['Exames em dia', 'Indicadores de preven\u00e7\u00e3o'],
     '/produtos-modulos': ['Controle de m\u00f3dulos contratados', 'Ativa\u00e7\u00e3o de funcionalidades sob gate'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Sem ranking ativo'],
   },
   personal: {},
 };
@@ -99,7 +102,6 @@ interface SidebarNavigationGroupsProps {
   onNavigate: () => void;
   idPrefix: string;
   variant?: SidebarNavVariant;
-  showSequence?: boolean | 'first-group';
   showChevron?: boolean | 'first-group';
   renderItemChildren?: (item: NavigationItem) => ReactNode;
 }
@@ -110,7 +112,6 @@ export function SidebarNavigationGroups({
   onNavigate,
   idPrefix,
   variant = 'collaborator',
-  showSequence = false,
   showChevron = false,
   renderItemChildren,
 }: SidebarNavigationGroupsProps) {
@@ -120,16 +121,12 @@ export function SidebarNavigationGroups({
 
   return groups.map((group, groupIndex) => {
     const headingId = `${idPrefix}-${groupIndex}`;
-    const sequenceOffset = groups
-      .slice(0, groupIndex)
-      .reduce((total, item) => total + item.items.length, 0);
 
     return (
       <section key={group.label} className={styles.navSection} aria-labelledby={headingId}>
         <h2 id={headingId} className={styles.navLabel}>{group.label}</h2>
         <ul className={styles.navList}>
-          {group.items.map((item, itemIndex) => {
-            const shouldShowSequence = showSequence === true || (showSequence === 'first-group' && groupIndex === 0);
+          {group.items.map((item) => {
             const shouldShowChevron = showChevron === true || (showChevron === 'first-group' && groupIndex === 0);
 
             return (
@@ -141,7 +138,6 @@ export function SidebarNavigationGroups({
                   description={item.description}
                   variant={variant}
                   details={getPresentationDetails(item, variant)}
-                  sequenceNumber={shouldShowSequence ? sequenceOffset + itemIndex + 1 : undefined}
                   showChevron={shouldShowChevron}
                   isActive={
                     isNavigationItemActive(pathname, item.href)
@@ -501,7 +497,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           onNavigate={onNavigate}
           idPrefix={`platform-navigation-${role}`}
           variant={menuVariant}
-          showSequence={false}
           showChevron={role === 'admin' ? 'first-group' : false}
           renderItemChildren={renderNavigationBadge}
         />

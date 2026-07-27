@@ -18,8 +18,8 @@ Object.assign(process.env, testServerEnv);
 
 const webServerCommand =
   process.platform === 'win32'
-    ? 'powershell -NoProfile -Command "npm run db:seed; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; npm run build; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; node tests/start-playwright-server.cjs"'
-    : 'npm run db:seed && npm run build && node tests/start-playwright-server.cjs';
+    ? 'powershell -NoProfile -Command "npm run db:seed; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; $env:NODE_ENV=\'production\'; npm run build; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; node tests/start-playwright-server.cjs"'
+    : 'npm run db:seed && NODE_ENV=production npm run build && node tests/start-playwright-server.cjs';
 
 const cpus = os.cpus().length;
 const autoWorkers = Math.max(1, Math.min(3, Math.floor(cpus / 2)));

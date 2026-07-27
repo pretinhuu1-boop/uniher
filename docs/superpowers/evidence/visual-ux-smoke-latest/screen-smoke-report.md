@@ -1,6 +1,6 @@
 # UniHER visual UX smoke matrix
 
-Generated: 2026-07-27T19:29:04.074Z
+Generated: 2026-07-27T23:25:10.978Z
 Counts: total 184, PASS 184, FAIL 0
 Routes: 46
 Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920

@@ -459,30 +459,11 @@
   background: rgb(255 247 236 / 4%);
 }
 
-.navSequence {
-  display: inline-grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  color: var(--sidebar-text);
-  background: var(--sidebar-rose-strong);
-  border: 1px solid rgb(255 247 236 / 18%);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
 .navItemMeta {
   display: inline-flex;
   min-width: 0;
   align-items: center;
   justify-content: flex-end;
-}
-
-.navItemSequenced.navItemManager .navItemMeta {
-  grid-column: 3;
-  justify-content: flex-start;
 }
 
 .navBadge {
@@ -770,12 +751,6 @@
   .navItemAdmin .navIcon {
     width: 42px;
     height: 42px;
-  }
-
-  .navSequence {
-    width: 26px;
-    height: 26px;
-    font-size: 0.8125rem;
   }
 
   .footer {

@@ -137,7 +137,6 @@ interface SidebarNavItemProps {
   isActive: boolean;
   variant?: SidebarNavVariant;
   details?: readonly string[];
-  sequenceNumber?: number;
   showChevron?: boolean;
   onClick?: () => void;
   children?: React.ReactNode;
@@ -158,7 +157,6 @@ export default function SidebarNavItem({
   isActive,
   variant = 'collaborator',
   details = [],
-  sequenceNumber,
   showChevron = false,
   onClick,
   children,
@@ -168,16 +166,13 @@ export default function SidebarNavItem({
   return (
     <Link
       href={href}
-      className={`${styles.navItem} ${VARIANT_CLASSES[variant]} ${sequenceNumber ? styles.navItemSequenced : styles.navItemUnsequenced} ${isActive ? styles.navItemActive : ''}`}
+      className={`${styles.navItem} ${VARIANT_CLASSES[variant]} ${styles.navItemUnsequenced} ${isActive ? styles.navItemActive : ''}`}
       aria-label={label}
       aria-current={isActive ? 'page' : undefined}
       aria-describedby={descriptionId}
       onClick={onClick}
     >
       <NavIcon name={icon} />
-      {sequenceNumber ? (
-        <span className={styles.navSequence} aria-hidden="true">{sequenceNumber}</span>
-      ) : null}
       <span className={styles.navItemBody}>
         <span className={styles.navItemLabel}>{label}</span>
         <span id={descriptionId} className={styles.navItemDescription}>{description}</span>

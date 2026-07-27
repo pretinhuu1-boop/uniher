@@ -398,15 +398,20 @@ async function ensureDemoRhUser(request: APIRequestContext): Promise<void> {
     data: { email: DEMO_RH_EMAIL, password: ADMIN_PASS },
   });
   expect(rhLoginRes.ok(), `Login RH falhou: HTTP ${rhLoginRes.status()}`).toBeTruthy();
+  const rhLoginPayload = await rhLoginRes.json() as {
+    user?: { firstAccessTourCompleted?: boolean };
+  };
   const rhCookie = extractAccessTokenFromSetCookie(rhLoginRes);
   expect(rhCookie).toBeTruthy();
   const rhHeaders = { Cookie: `uniher-access-token=${rhCookie}` };
 
-  const preferencesRes = await request.patch('/api/users/me/preferences', {
-    headers: rhHeaders,
-    data: { preferences: { first_access_tour_completed: '1' } },
-  });
-  expect(preferencesRes.ok(), `Tour RH não foi concluído: HTTP ${preferencesRes.status()}`).toBeTruthy();
+  if (rhLoginPayload.user?.firstAccessTourCompleted !== true) {
+    const preferencesRes = await request.patch('/api/users/me/preferences', {
+      headers: rhHeaders,
+      data: { preferences: { first_access_tour_completed: '1' } },
+    });
+    expect(preferencesRes.ok(), `Tour RH não foi concluído: HTTP ${preferencesRes.status()}`).toBeTruthy();
+  }
 
   const companyRes = await request.patch('/api/company', {
     headers: rhHeaders,
