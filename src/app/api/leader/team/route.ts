@@ -15,7 +15,19 @@ export const GET = withRole('lideranca')(async (_req: NextRequest, context: any)
   const companyId = context.auth.companyId;
 
   // Get leader's department
-  const leader = db.prepare('SELECT department_id, can_approve FROM users WHERE id = ?').get(userId) as any;
+  const leader = db.prepare(`
+    SELECT department_id, can_approve, company_id, role
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'lideranca'
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(userId, companyId) as any;
+  if (!leader) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
   if (!leader?.department_id) {
     return NextResponse.json({ error: 'Sem setor vinculado', team: [], stats: null }, { status: 200 });
   }
@@ -25,8 +37,9 @@ export const GET = withRole('lideranca')(async (_req: NextRequest, context: any)
            u.blocked, u.approved, u.last_active, u.created_at,
            d.name as department_name
     FROM users u
-    LEFT JOIN departments d ON d.id = u.department_id
+    LEFT JOIN departments d ON d.id = u.department_id AND d.company_id = u.company_id
     WHERE u.company_id = ? AND u.department_id = ? AND u.deleted_at IS NULL
+    AND u.role = 'colaboradora'
     AND u.id != ?
     ORDER BY u.name ASC
   `).all(companyId, leader.department_id, userId);
@@ -49,25 +62,47 @@ export const POST = withRole('lideranca')(async (req: NextRequest, context: any)
   await initDb();
   const db = getReadDb();
   const userId = context.auth.userId;
-  const body = await req.json();
+  const companyId = context.auth.companyId;
+  const body = await req.json().catch(() => ({}));
   const { action, targetUserId } = body;
 
   // Check if leader can approve
-  const leader = db.prepare('SELECT department_id, can_approve FROM users WHERE id = ?').get(userId) as any;
+  const leader = db.prepare(`
+    SELECT department_id, can_approve, company_id, role
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'lideranca'
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(userId, companyId) as any;
+  if (!leader) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
   if (!leader?.can_approve) {
     return NextResponse.json({ error: 'Sem permissão para aprovar. Solicite ao admin.' }, { status: 403 });
   }
 
   // Verify target is in same department
-  const target = db.prepare('SELECT id, department_id, company_id FROM users WHERE id = ? AND deleted_at IS NULL').get(targetUserId) as any;
-  if (!target || target.department_id !== leader.department_id) {
+  const target = db.prepare(`
+    SELECT id, department_id, company_id
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND department_id = ?
+      AND role = 'colaboradora'
+      AND deleted_at IS NULL
+  `).get(targetUserId, companyId, leader.department_id) as any;
+  if (!target) {
     return NextResponse.json({ error: 'Colaboradora não encontrada no seu setor' }, { status: 404 });
   }
 
   if (action === 'approve') {
     const wq = getWriteQueue();
     await wq.enqueue((db) => {
-      db.prepare('UPDATE users SET approved = 1 WHERE id = ?').run(targetUserId);
+      db.prepare('UPDATE users SET approved = 1 WHERE id = ? AND company_id = ? AND department_id = ?')
+        .run(targetUserId, companyId, leader.department_id);
     });
 
     // Notify the approved user

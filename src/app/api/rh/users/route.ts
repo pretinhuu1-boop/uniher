@@ -19,6 +19,20 @@ export const GET = withRole('rh')(async (req, context) => {
     return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
   }
 
+  const actor = db.prepare(`
+    SELECT id, company_id, role
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'rh'
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(context.auth.userId, companyId) as { id: string; company_id: string; role: string } | undefined;
+  if (!actor || actor.role !== context.auth.role) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
+
   const url = new URL(req.url);
   const search = url.searchParams.get('search')?.trim() || '';
   const department = url.searchParams.get('department') || '';
@@ -60,7 +74,7 @@ export const GET = withRole('rh')(async (req, context) => {
       u.blocked, u.approved, u.created_at,
       d.name as department_name
     FROM users u
-    LEFT JOIN departments d ON d.id = u.department_id
+    LEFT JOIN departments d ON d.id = u.department_id AND d.company_id = u.company_id
     WHERE ${where}
     ORDER BY u.created_at DESC
     LIMIT ? OFFSET ?

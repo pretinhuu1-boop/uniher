@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { getCompanyById, type CompanyRow } from '@/repositories/company.repository';
-import { getUserById } from '@/repositories/user.repository';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
@@ -12,7 +11,30 @@ import { checkWriteRateLimit } from '@/lib/security/rate-limit';
 export const GET = withAuth(async (_req: NextRequest, context) => {
   try {
     await initDb();
-    const user = getUserById(context.auth.userId);
+    if (context.auth.role !== 'rh' && context.auth.role !== 'admin') {
+      return NextResponse.json({ error: 'Sem permissao', code: 'FORBIDDEN' }, { status: 403 });
+    }
+
+    const db = getReadDb();
+    const actor = db.prepare(`
+      SELECT id, company_id, role
+      FROM users
+      WHERE id = ?
+        AND deleted_at IS NULL
+        AND COALESCE(blocked, 0) = 0
+        AND COALESCE(approved, 0) = 1
+    `).get(context.auth.userId) as {
+      id: string;
+      company_id: string | null;
+      role: string;
+    } | undefined;
+    if (!actor || actor.role !== context.auth.role || !['rh', 'admin'].includes(actor.role)) {
+      return NextResponse.json({ error: 'Sem permissao', code: 'FORBIDDEN' }, { status: 403 });
+    }
+    const user = actor;
+    if (user.company_id && user.company_id !== context.auth.companyId) {
+      return NextResponse.json({ error: 'Empresa nao encontrada' }, { status: 404 });
+    }
     if (!user?.company_id) {
       return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 404 });
     }
@@ -21,7 +43,6 @@ export const GET = withAuth(async (_req: NextRequest, context) => {
       return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 404 });
     }
 
-    const db = getReadDb();
     const statsRow = db.prepare(`
       SELECT
         (SELECT COUNT(*) FROM users WHERE company_id = ?) AS user_count,

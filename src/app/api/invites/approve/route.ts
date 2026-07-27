@@ -32,9 +32,23 @@ export const PATCH = withRole('rh')(async (req, context) => {
   const rhCompanyId = context.auth.companyId;
 
   const db = getReadDb();
+  const actor = db.prepare(`
+    SELECT id, company_id, role
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'rh'
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(context.auth.userId, rhCompanyId) as { id: string; company_id: string; role: string } | undefined;
+  if (!actor || actor.role !== context.auth.role) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
+
   const targetUser = db.prepare(
-    'SELECT id, name, email, company_id, role FROM users WHERE id = ? AND approved = 0'
-  ).get(targetUserId) as { id: string; name: string; email: string; company_id: string; role: string } | undefined;
+    'SELECT id, name, email, company_id, role FROM users WHERE id = ? AND company_id = ? AND approved = 0 AND deleted_at IS NULL'
+  ).get(targetUserId, rhCompanyId) as { id: string; name: string; email: string; company_id: string; role: string } | undefined;
 
   if (!targetUser) {
     return NextResponse.json({ error: 'Usuário não encontrado ou já processado' }, { status: 404 });
@@ -54,8 +68,8 @@ export const PATCH = withRole('rh')(async (req, context) => {
   if (action === 'approve') {
     await wq.enqueue((db) => {
       db.prepare(
-        'UPDATE users SET approved = 1, updated_at = datetime(\'now\') WHERE id = ?'
-      ).run(targetUserId);
+        'UPDATE users SET approved = 1, updated_at = datetime(\'now\') WHERE id = ? AND company_id = ?'
+      ).run(targetUserId, rhCompanyId);
     });
 
     await createNotification({
@@ -66,7 +80,7 @@ export const PATCH = withRole('rh')(async (req, context) => {
     });
   } else {
     await wq.enqueue((db) => {
-      db.prepare('DELETE FROM users WHERE id = ? AND approved = 0').run(targetUserId);
+      db.prepare('DELETE FROM users WHERE id = ? AND company_id = ? AND approved = 0').run(targetUserId, rhCompanyId);
     });
   }
 

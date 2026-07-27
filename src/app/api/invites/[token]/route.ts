@@ -28,7 +28,7 @@ export async function GET(req: Request, segmentData: { params: Promise<{ token: 
     SELECT i.*, c.name as company_name, d.name as department_name
     FROM invites i
     JOIN companies c ON c.id = i.company_id
-    LEFT JOIN departments d ON d.id = i.department_id
+    LEFT JOIN departments d ON d.id = i.department_id AND d.company_id = i.company_id
     WHERE i.token = ?
   `).get(token) as any;
 
@@ -61,6 +61,11 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
   if (!invite) return NextResponse.json({ error: 'Convite inválido ou expirado' }, { status: 404 });
   if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
     return NextResponse.json({ error: 'Convite expirado' }, { status: 410 });
+  }
+  if (invite.department_id) {
+    const dept = db.prepare('SELECT id FROM departments WHERE id = ? AND company_id = ?')
+      .get(invite.department_id, invite.company_id);
+    if (!dept) return NextResponse.json({ error: 'Convite invalido' }, { status: 404 });
   }
 
   const body = await req.json().catch(() => ({}));
@@ -130,7 +135,19 @@ export const DELETE = withRole('rh')(async (_req, context) => {
   await initDb();
   const db = getReadDb();
 
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
+  const user = db.prepare(`
+    SELECT company_id, role
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'rh'
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(userId, context.auth.companyId) as any;
+  if (!user || user.role !== context.auth.role) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
   const invite = db.prepare('SELECT * FROM invites WHERE token = ?').get(token) as any;
 
   if (!invite) return NextResponse.json({ error: 'Convite não encontrado' }, { status: 404 });
@@ -138,7 +155,7 @@ export const DELETE = withRole('rh')(async (_req, context) => {
 
   const wq = getWriteQueue();
   await wq.enqueue((db) => {
-    db.prepare(`UPDATE invites SET status = 'expired' WHERE token = ?`).run(token);
+    db.prepare(`UPDATE invites SET status = 'expired' WHERE token = ? AND company_id = ?`).run(token, user.company_id);
   });
 
   return NextResponse.json({ success: true });

@@ -27,7 +27,19 @@ export const POST = withRole('rh')(async (req, context) => {
 
   const userId = context.auth.userId;
   const db = getReadDb();
-  const user = db.prepare('SELECT company_id, name FROM users WHERE id = ?').get(userId) as any;
+  const user = db.prepare(`
+    SELECT company_id, name, role
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'rh'
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(userId, context.auth.companyId) as any;
+  if (!user || user.role !== context.auth.role) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
   if (!user?.company_id) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
 
   const body = await req.json().catch(() => ({}));
@@ -64,9 +76,9 @@ export const POST = withRole('rh')(async (req, context) => {
       }
 
       // Check if already registered
-      const registered = db.prepare('SELECT id FROM users WHERE email = ? AND company_id = ?').get(email, user.company_id);
+      const registered = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
       if (registered) {
-        results.push({ email, success: false, error: 'Já cadastrado na empresa' });
+        results.push({ email, success: false, error: 'Este email ja possui uma conta na plataforma' });
         continue;
       }
 

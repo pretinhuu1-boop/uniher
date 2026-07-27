@@ -288,7 +288,7 @@ describe('safe authenticated projections', () => {
     })), 200]);
     responses.push(['/api/auth/me', await getAuthMe(new Request('http://localhost/api/auth/me') as any, contexts.collaborator as any), 200]);
     responses.push(['/api/users/me', await getUserMe(new Request('http://localhost/api/users/me') as any, contexts.collaborator as any), 200]);
-    responses.push(['/api/company', await getCompany(new Request('http://localhost/api/company') as any, contexts.collaborator as any), 200]);
+    responses.push(['/api/company', await getCompany(new Request('http://localhost/api/company') as any, contexts.rh as any), 200]);
     responses.push(['/api/leader/team', await getLeaderTeam(new Request('http://localhost/api/leader/team') as any, contexts.leader as any), 200]);
     responses.push(['/api/rh/users', await getRhUsers(new Request('http://localhost/api/rh/users') as any, contexts.rh as any), 200]);
     responses.push(['/api/admin/users', await getAdminUsers(new Request('http://localhost/api/admin/users') as any, contexts.admin as any), 200]);
@@ -694,7 +694,7 @@ describe('safe authenticated projections', () => {
       'src/app/(platform)/desafios/page.tsx',
       'src/app/(platform)/objetivos/page.tsx',
     ].map(read).join('\n');
-    expect(approvedParticipationPages).not.toMatch(/week_points|points_spent|xp_reward|pontos totais|subir de nÃ­vel|ranking semanal|exibir no ranking/i);
+    expect(approvedParticipationPages).not.toMatch(/week_points|points_spent|xp_reward|pontos totais|subir de nível|ranking semanal|exibir no ranking/i);
     expect(approvedParticipationPages).not.toMatch(/user_badges|user_leagues|custom_league_members|health_scores/);
 
     const reachablePages = [
