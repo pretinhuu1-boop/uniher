@@ -127,6 +127,10 @@ function legacySnapshot(db: Database.Database) {
   return db.prepare('SELECT points, level FROM users WHERE id = ?').get('user-1');
 }
 
+function legacyDailyCheckInSnapshot(db: Database.Database) {
+  return db.prepare('SELECT points, level, streak, last_active FROM users WHERE id = ?').get('user-1');
+}
+
 beforeEach(() => {
   runtime.db = createDatabase();
 });
@@ -197,6 +201,31 @@ describe('wellbeing check-in/check-out foundation', () => {
       { event_type: 'check_out', mood: 'cansada' },
     ]);
     expect(legacySnapshot(runtime.db!)).toEqual(before);
+  });
+
+  it('records wellbeing check-in when legacy daily check-in already marked today without duplicating gamification', async () => {
+    runtime.db!.prepare(`
+      UPDATE users
+      SET streak = 9, last_active = datetime('now')
+      WHERE id = 'user-1'
+    `).run();
+    const before = legacyDailyCheckInSnapshot(runtime.db!);
+
+    const response = await call(checkIn, '/api/gamification/check-in', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mood: 'sobrecarregada' }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      alreadyDone: true,
+      wellbeing: { checkedInToday: true, checkInMood: 'sobrecarregada' },
+    });
+    expect(runtime.db!.prepare('SELECT event_type, mood FROM wellbeing_events').all()).toEqual([
+      { event_type: 'check_in', mood: 'sobrecarregada' },
+    ]);
+    expect(legacyDailyCheckInSnapshot(runtime.db!)).toEqual(before);
   });
 
   it('returns daily status for collaborator UI without exposing scores or ranking fields', async () => {

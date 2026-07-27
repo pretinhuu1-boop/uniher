@@ -14,6 +14,10 @@ const STATUS_COLORS: Record<string, string> = { pending: '#C9A264', completed: '
 
 function getMonthStr(d: Date) { return d.toISOString().slice(0, 7); }
 function formatDate(s: string) { const d = new Date(s + 'T12:00:00'); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }); }
+async function readApiError(res: Response, fallback: string) {
+  const payload = await res.json().catch(() => null);
+  return payload?.error || fallback;
+}
 
 export default function AgendaPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -59,18 +63,38 @@ export default function AgendaPage() {
   }, [form, mutate]);
 
   const markCompleted = useCallback(async (id: string) => {
-    await fetch(`/api/collaborator/agenda/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'completed' }),
-    });
-    mutate();
+    setMsg('');
+    try {
+      const res = await fetch(`/api/collaborator/agenda/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      if (!res.ok) {
+        setMsg(await readApiError(res, 'Erro ao concluir evento'));
+        return;
+      }
+      setMsg('Evento marcado como realizado!');
+      mutate();
+    } catch {
+      setMsg('Erro de conexÃ£o ao concluir evento');
+    }
   }, [mutate]);
 
   const cancelEvent = useCallback(async (id: string) => {
     if (!confirm('Cancelar este evento?')) return;
-    await fetch(`/api/collaborator/agenda/${id}`, { method: 'DELETE' });
-    mutate();
+    setMsg('');
+    try {
+      const res = await fetch(`/api/collaborator/agenda/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        setMsg(await readApiError(res, 'Erro ao cancelar evento'));
+        return;
+      }
+      setMsg('Evento cancelado!');
+      mutate();
+    } catch {
+      setMsg('Erro de conexÃ£o ao cancelar evento');
+    }
   }, [mutate]);
 
   // Month navigation
@@ -118,6 +142,7 @@ export default function AgendaPage() {
           + Novo evento
         </button>
       </div>
+      {msg && !showForm && <p style={{ color: msg.includes('!') ? '#16a34a' : '#dc2626', fontSize: 13, marginTop: -12, marginBottom: 16 }}>{msg}</p>}
 
       {/* New event form */}
       {showForm && (

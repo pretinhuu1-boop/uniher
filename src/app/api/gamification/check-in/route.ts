@@ -11,10 +11,16 @@ export const POST = withAuth(async (req, context) => {
     const userId = context.auth.userId;
     const body = await req.json().catch(() => ({})) as { mood?: unknown };
     const result = await dailyCheckIn(userId);
+    const wellbeing = await recordWellbeingEvent({
+      userId,
+      companyId: context.auth.companyId,
+      eventType: 'check_in',
+      mood: normalizeWellbeingMood(body.mood),
+    });
 
-    // Idempotency: return 429 if already checked in today so concurrent
-    // requests cannot all "succeed" — only the first one gets 200.
-    if (result.alreadyDone) {
+    // Legacy streak and wellbeing events can be out of sync during migration.
+    // Reject only when both records already exist for today.
+    if (result.alreadyDone && wellbeing.alreadyDone) {
       return NextResponse.json(
         { error: 'Check-in já realizado hoje', alreadyDone: true },
         { status: 429 }
@@ -23,13 +29,6 @@ export const POST = withAuth(async (req, context) => {
 
     // Ensure daily missions are generated for today
     await ensureDailyMissions(userId);
-    const wellbeing = await recordWellbeingEvent({
-      userId,
-      companyId: context.auth.companyId,
-      eventType: 'check_in',
-      mood: normalizeWellbeingMood(body.mood),
-    });
-
     return NextResponse.json({
       ...result,
       wellbeing: {

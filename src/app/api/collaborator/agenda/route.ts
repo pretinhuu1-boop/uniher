@@ -11,16 +11,10 @@ import {
 } from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
+import { agendaCreateSchema } from '@/lib/agenda/validation';
 import { nanoid } from 'nanoid';
-import { z } from 'zod';
 
-const createSchema = z.object({
-  title: z.string().min(2).max(200),
-  type: z.enum(['exame', 'consulta', 'lembrete']),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  time: z.string().optional(),
-  notes: z.string().max(500).optional(),
-});
+export { agendaCreateSchema };
 
 export const GET = withAuth(async (req: NextRequest, context: any) => {
   await initDb();
@@ -76,7 +70,7 @@ export const POST = withAuth(async (req: NextRequest, context: any) => {
 
   const body = await req.json();
 
-  const parsed = createSchema.safeParse(body);
+  const parsed = agendaCreateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Dados inválidos', details: parsed.error.issues }, { status: 400 });
   }
