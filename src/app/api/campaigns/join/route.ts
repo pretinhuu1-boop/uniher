@@ -18,7 +18,11 @@ export const POST = withAuth(async (req, { auth }) => {
     await initDb();
     
     // 1. Persistir adesao
-    await campaignRepo.joinCampaign(auth.userId, campaignId);
+    await campaignRepo.joinCampaign({
+      userId: auth.userId,
+      companyId: auth.companyId,
+      campaignId,
+    });
     
     return NextResponse.json({
       success: true,
