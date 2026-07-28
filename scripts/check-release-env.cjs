@@ -93,6 +93,30 @@ if (appUrl?.protocol === 'https:' && env.ALLOW_INSECURE_HTTP_COOKIES === 'true')
   record('COOKIE_SECURITY', 'PASS', 'cookie posture matches configured app URL scheme');
 }
 
+const tokenBlacklistBackend = (env.ACCESS_TOKEN_BLACKLIST_BACKEND || 'memory').toLowerCase();
+const releaseLikeRuntime = env.NODE_ENV === 'production' || appUrl?.protocol === 'https:';
+if (tokenBlacklistBackend === 'memory') {
+  if (releaseLikeRuntime) {
+    record(
+      'ACCESS_TOKEN_BLACKLIST',
+      'FAIL',
+      'in-memory access token blacklist is not shared or persistent; production requires a real revocation backend',
+    );
+  } else {
+    record(
+      'ACCESS_TOKEN_BLACKLIST',
+      'HOLD',
+      'in-memory access token blacklist is acceptable only for local/homologation',
+    );
+  }
+} else {
+  record(
+    'ACCESS_TOKEN_BLACKLIST',
+    'FAIL',
+    `${tokenBlacklistBackend} backend is declared, but the current runtime adapter is still in-memory only`,
+  );
+}
+
 if (!env.DATABASE_PATH) {
   record('DATABASE_PATH', 'FAIL', 'missing');
 } else {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
+import { verifyAccessToken } from '@/lib/auth/jwt';
 
 const PUBLIC_ROUTES = [
   '/',
@@ -56,8 +56,7 @@ export async function proxy(request: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(accessToken, secret);
+    const payload = await verifyAccessToken(accessToken);
     const role = typeof payload.role === 'string' ? payload.role : '';
     const mustChangePassword = payload.mustChangePassword === true;
     const isAdminSurface = pathname.startsWith('/admin') || pathname.startsWith('/api/admin/');
