@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-07-27T23:59:31.675Z",
+  "generatedAt": "2026-07-28T02:20:27.262Z",
   "counts": {
-    "total": 184,
-    "pass": 184,
+    "total": 192,
+    "pass": 192,
     "fail": 0
   },
   "viewports": [
@@ -280,6 +280,24 @@
       "viewport": "mobile-375",
       "status": "PASS",
       "screenshot": "mobile-375-rh-rh-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-dashboard",
+      "route": "/dashboard",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-lideranca-lideranca-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-campanhas",
+      "route": "/campanhas",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-lideranca-lideranca-campanhas.png",
       "issues": []
     },
     {
@@ -697,6 +715,24 @@
       "issues": []
     },
     {
+      "role": "lideranca",
+      "name": "lideranca-dashboard",
+      "route": "/dashboard",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-lideranca-lideranca-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-campanhas",
+      "route": "/campanhas",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-lideranca-lideranca-campanhas.png",
+      "issues": []
+    },
+    {
       "role": "colaboradora",
       "name": "colab-home",
       "route": "/colaboradora",
@@ -1111,6 +1147,24 @@
       "issues": []
     },
     {
+      "role": "lideranca",
+      "name": "lideranca-dashboard",
+      "route": "/dashboard",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-lideranca-lideranca-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-campanhas",
+      "route": "/campanhas",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-lideranca-lideranca-campanhas.png",
+      "issues": []
+    },
+    {
       "role": "colaboradora",
       "name": "colab-home",
       "route": "/colaboradora",
@@ -1522,6 +1576,24 @@
       "viewport": "desktop-wide-1920",
       "status": "PASS",
       "screenshot": "desktop-wide-1920-rh-rh-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-dashboard",
+      "route": "/dashboard",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-lideranca-lideranca-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-campanhas",
+      "route": "/campanhas",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-lideranca-lideranca-campanhas.png",
       "issues": []
     },
     {
