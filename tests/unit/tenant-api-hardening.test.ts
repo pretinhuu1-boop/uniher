@@ -50,6 +50,7 @@ vi.mock('@/repositories/notification.repository', () => ({
 }));
 
 import { GET as getCompany } from '@/app/api/company/route';
+import { GET as getDepartments } from '@/app/api/departments/route';
 import { GET as getInvites, POST as postInvite } from '@/app/api/invites/route';
 import { GET as getPendingInvites } from '@/app/api/invites/pending/route';
 import { GET as getLeaderTeam, POST as postLeaderTeam } from '@/app/api/leader/team/route';
@@ -190,6 +191,26 @@ describe('tenant and role hardening for direct APIs', () => {
 
     expect(collaborator.status).toBe(403);
     expect(leader.status).toBe(403);
+  });
+
+  it('rejects collaborator and leadership reads of /api/departments', async () => {
+    const collaborator = await getDepartments(request('http://localhost/api/departments') as any, context('collab-current', 'colaboradora') as any);
+    const leader = await getDepartments(request('http://localhost/api/departments') as any, context('leader-a', 'lideranca') as any);
+    const rh = await getDepartments(request('http://localhost/api/departments') as any, context('rh-a', 'rh') as any);
+
+    expect(collaborator.status).toBe(403);
+    expect(leader.status).toBe(403);
+    expect(rh.status).toBe(200);
+    expect((await rh.json()).departments.map((department: { id: string }) => department.id)).toEqual(['dept-a2', 'dept-a']);
+  });
+
+  it('rejects department listing when the token tenant does not match the persisted RH', async () => {
+    const response = await getDepartments(
+      request('http://localhost/api/departments') as any,
+      context('rh-a', 'rh', 'company-b') as any,
+    );
+
+    expect(response.status).toBe(403);
   });
 
   it('rejects leader/team when the token tenant does not match the persisted leader', async () => {

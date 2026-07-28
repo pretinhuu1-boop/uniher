@@ -15,8 +15,23 @@ export const GET = withAuth(async (req, context) => {
   const url = new URL(req.url);
   const requestedCompanyId = url.searchParams.get('company_id');
 
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
+  if (context.auth.role !== 'admin' && context.auth.role !== 'rh') {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
+
+  const user = db.prepare(`
+    SELECT company_id, role
+    FROM users
+    WHERE id = ?
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(userId) as any;
   const canReadAnyCompany = context.auth.isMasterAdmin === true || (context.auth.isMasterAdmin === undefined && context.auth.role === 'admin');
+  if (context.auth.role === 'rh' && (!user || user.role !== 'rh' || user.company_id !== context.auth.companyId)) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
+
   const companyId = canReadAnyCompany && requestedCompanyId
     ? requestedCompanyId
     : user?.company_id;
