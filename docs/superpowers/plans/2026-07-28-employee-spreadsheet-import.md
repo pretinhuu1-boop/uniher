@@ -364,15 +364,15 @@ GREEN: 17/17 tests passed after adding the shared CSV body reader, commit route,
 - Modify: `src/app/(platform)/convites/page.tsx`
 - Test: add or extend focused UI tests if existing harness supports it.
 
-- [ ] **Step 1: Add failing source-contract tests**
+- [x] **Step 1: Add failing source-contract tests**
 
 Assert `colaboradoras-gestao` contains `Importar planilha` and calls RH import endpoints; assert onboarding points collaborator setup to `/colaboradoras-gestao`.
 
-- [ ] **Step 2: Implement UI controls**
+- [x] **Step 2: Implement UI controls**
 
 Place `Importar planilha` and `Baixar modelo` in the collaborator management header and empty state. Keep `Convites` as manual invite surface.
 
-- [ ] **Step 3: Run UI/source tests and visual smoke when viable**
+- [x] **Step 3: Run UI/source tests and visual smoke when viable**
 
 Run:
 
@@ -382,6 +382,32 @@ npm run test:rh
 ```
 
 Expected: focused import tests pass; RH smoke still passes or any visual gap is documented.
+
+**Wave 4 RED/GREEN:**
+- RED: `npx vitest run tests/unit/employee-import-ui.test.ts` failed because collaborator management lacked import CTAs/endpoints and RH onboarding still pointed collaborator setup to `/convites`.
+- GREEN: `npx vitest run tests/unit/employee-import-ui.test.ts` passed 3/3 after adding the source contract, import CTAs, preview/commit UI, safe masked preview rendering, and onboarding link to `/colaboradoras-gestao`.
+
+**Wave 4 gates:**
+- `npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts tests/unit/employee-import-ui.test.ts tests/unit/tenant-api-hardening.test.ts tests/unit/invite-leadership-capability.test.ts tests/unit/community-company-setting-audit.test.ts tests/unit/privacy/gamification-safe-projection.test.ts` -> PASS, 52/52 tests.
+- `npx tsc --noEmit --pretty false` -> PASS.
+- `rg -n 'Ã|Â|â'` on changed UI files -> PASS, no matches.
+
+**Claude Wave 4 initial review result:** PASS with Medium advisories for onboarding admin mismatch, client double-submit, and server duplicate CSV idempotency. Treated as blocking for zero-finding readiness.
+
+**Wave 4.1 advisory fixes:**
+- Onboarding RH accepts `rh` and `admin`, matching the management page and import APIs.
+- Commit button has immediate `useRef` in-flight guard in addition to status-based disabling.
+- Commit repository is idempotent for exact duplicate CSV per company and returns the original batch with `duplicate: true`.
+- Migration `066_employee_import_batch_idempotency.sql` adds a partial unique index on `(company_id, file_sha256)` for non-deleted batches.
+- Tests cover duplicate exact CSV, same-company changed CSV upsert, cross-company allowance, and the migration index.
+
+**Wave 4.1 gates:**
+- `npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts tests/unit/employee-import-ui.test.ts` -> PASS, 21/21 tests.
+- `npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts tests/unit/employee-import-ui.test.ts tests/unit/tenant-api-hardening.test.ts tests/unit/invite-leadership-capability.test.ts tests/unit/community-company-setting-audit.test.ts tests/unit/privacy/gamification-safe-projection.test.ts` -> PASS, 52/52 tests.
+- `npx tsc --noEmit --pretty false` -> PASS.
+- `git diff --check` -> PASS, CRLF warnings only.
+
+**Claude re-review result:** Wave 4/4.1 PASS. No Critical/High/Medium findings. M1/M2/M3 resolved.
 
 ## Task 5 / Wave 5: DSAR And Projection Hardening
 

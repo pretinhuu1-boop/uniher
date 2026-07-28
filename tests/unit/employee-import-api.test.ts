@@ -101,6 +101,8 @@ function createDatabase() {
   `);
   const migrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '065_employee_identity_imports.sql');
   applyMigration(db, '065_employee_identity_imports.sql', fs.readFileSync(migrationPath, 'utf8'));
+  const idempotencyMigrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '066_employee_import_batch_idempotency.sql');
+  applyMigration(db, '066_employee_import_batch_idempotency.sql', fs.readFileSync(idempotencyMigrationPath, 'utf8'));
   return db;
 }
 
@@ -369,6 +371,16 @@ describe('employee import RH APIs', () => {
       }),
       context('rh-a', 'rh'),
     );
+    const firstBody = await first.json();
+    const duplicateExact = await postImportCommit(
+      apiRequest('http://localhost/api/rh/employees/import-commit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ csv: validCsv(), filename: 'first-again.csv' }),
+      }),
+      context('rh-a', 'rh'),
+    );
+    const duplicateBody = await duplicateExact.json();
     const second = await postImportCommit(
       apiRequest('http://localhost/api/rh/employees/import-commit', {
         method: 'POST',
@@ -387,10 +399,18 @@ describe('employee import RH APIs', () => {
     );
 
     expect(first.status).toBe(200);
+    expect(duplicateExact.status).toBe(200);
+    expect(duplicateBody).toMatchObject({
+      batchId: firstBody.batchId,
+      duplicate: true,
+      summary: { insertedRows: 0, updatedRows: 0 },
+    });
     expect(second.status).toBe(200);
     expect((await second.json()).summary).toMatchObject({ insertedRows: 0, updatedRows: 1 });
     expect(otherCompany.status).toBe(200);
     expect(boundary.db!.prepare('SELECT COUNT(*) AS count FROM employee_identity_profiles').get()).toEqual({ count: 2 });
+    expect(boundary.db!.prepare("SELECT COUNT(*) AS count FROM employee_import_batches WHERE company_id = 'company-a'").get())
+      .toEqual({ count: 2 });
     expect(boundary.db!.prepare("SELECT full_name FROM employee_identity_profiles WHERE company_id = 'company-a'").get())
       .toEqual({ full_name: 'Ana Atualizada' });
   });

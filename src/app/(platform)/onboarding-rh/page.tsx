@@ -34,9 +34,9 @@ const STEPS = [
   },
   {
     key: 'invites' as const,
-    title: 'Convide colaboradoras',
-    description: 'Envie convites para sua equipe',
-    href: '/convites',
+    title: 'Importe ou convide colaboradoras',
+    description: 'Suba a planilha aprovada ou envie convites manuais',
+    href: '/colaboradoras-gestao',
     estimate: '~2 min',
     icon: (
       <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -77,10 +77,10 @@ export default function OnboardingRHPage() {
     revalidateOnFocus: false,
   });
 
-  if (user?.role !== 'rh') {
+  if (user?.role !== 'rh' && user?.role !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-uni-text-400">
-        Acesso restrito ao RH.
+        Acesso restrito ao RH/Admin.
       </div>
     );
   }

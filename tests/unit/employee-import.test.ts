@@ -136,9 +136,12 @@ describe('employee spreadsheet import foundation', () => {
     `);
     const migrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '065_employee_identity_imports.sql');
     const sql = fs.readFileSync(migrationPath, 'utf8');
+    const idempotencyMigrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '066_employee_import_batch_idempotency.sql');
+    const idempotencySql = fs.readFileSync(idempotencyMigrationPath, 'utf8');
 
     expect(applyMigration(db, '065_employee_identity_imports.sql', sql)).toBe('applied');
     expect(applyMigration(db, '065_employee_identity_imports.sql', sql)).toBe('skipped');
+    expect(applyMigration(db, '066_employee_import_batch_idempotency.sql', idempotencySql)).toBe('applied');
     expect(db.prepare("SELECT name FROM pragma_table_info('employee_identity_profiles') WHERE name = 'deleted_at'").get()).toBeTruthy();
     expect(db.prepare("SELECT name FROM pragma_table_info('employee_import_batches') WHERE name = 'deleted_at'").get()).toBeTruthy();
     expect(db.prepare("SELECT on_delete FROM pragma_foreign_key_list('employee_identity_profiles') WHERE \"table\" = 'companies'").get()).toEqual({ on_delete: 'RESTRICT' });
@@ -156,5 +159,17 @@ describe('employee spreadsheet import foundation', () => {
       INSERT INTO employee_identity_profiles (id, company_id, full_name, cpf_hash, cpf_last4, email)
       VALUES ('a2', 'company-a', 'Ana 2', 'hash-a', '8909', 'ana2@example.com')
     `).run()).toThrow();
+    db.prepare(`
+      INSERT INTO employee_import_batches (id, company_id, filename, file_sha256, status, total_rows, valid_rows, error_rows)
+      VALUES ('batch-a', 'company-a', 'a.csv', 'sha-a', 'committed', 1, 1, 0)
+    `).run();
+    expect(() => db.prepare(`
+      INSERT INTO employee_import_batches (id, company_id, filename, file_sha256, status, total_rows, valid_rows, error_rows)
+      VALUES ('batch-a2', 'company-a', 'a-again.csv', 'sha-a', 'committed', 1, 1, 0)
+    `).run()).toThrow();
+    db.prepare(`
+      INSERT INTO employee_import_batches (id, company_id, filename, file_sha256, status, total_rows, valid_rows, error_rows)
+      VALUES ('batch-b', 'company-b', 'b.csv', 'sha-a', 'committed', 1, 1, 0)
+    `).run();
   });
 });

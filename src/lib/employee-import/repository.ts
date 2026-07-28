@@ -19,6 +19,7 @@ export interface CommitEmployeeImportResult {
   errorRows: number;
   insertedRows: number;
   updatedRows: number;
+  duplicate?: boolean;
 }
 
 export function commitEmployeeImport(
@@ -27,6 +28,34 @@ export function commitEmployeeImport(
 ): CommitEmployeeImportResult {
   const batchId = nanoid();
   const fileSha256 = createHash('sha256').update(input.csv).digest('hex');
+  const existingBatch = db.prepare(`
+    SELECT id, total_rows, valid_rows, error_rows
+    FROM employee_import_batches
+    WHERE company_id = ?
+      AND file_sha256 = ?
+      AND status = 'committed'
+      AND deleted_at IS NULL
+    ORDER BY created_at DESC
+    LIMIT 1
+  `).get(input.companyId, fileSha256) as {
+    id: string;
+    total_rows: number;
+    valid_rows: number;
+    error_rows: number;
+  } | undefined;
+
+  if (existingBatch) {
+    return {
+      batchId: existingBatch.id,
+      fileSha256,
+      totalRows: existingBatch.total_rows,
+      validRows: existingBatch.valid_rows,
+      errorRows: existingBatch.error_rows,
+      insertedRows: 0,
+      updatedRows: 0,
+      duplicate: true,
+    };
+  }
 
   return db.transaction(() => {
     const existingHashes = new Set(

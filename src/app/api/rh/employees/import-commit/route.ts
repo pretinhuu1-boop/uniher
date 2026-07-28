@@ -82,13 +82,14 @@ export const POST = withRole('rh', 'admin')(async (req, context) => {
     entityType: 'employee_import_batch',
     entityId: result.batchId,
     entityLabel: csvBody.body.filename ?? 'planilha de colaboradoras',
-    details: { status: 'committed', ...summary },
+    details: { status: result.duplicate ? 'duplicate' : 'committed', ...summary },
     ip: requestIp,
   });
 
   return NextResponse.json({
     batchId: result.batchId,
     fileSha256: result.fileSha256,
+    duplicate: result.duplicate === true ? true : undefined,
     summary,
   }, {
     headers: {
