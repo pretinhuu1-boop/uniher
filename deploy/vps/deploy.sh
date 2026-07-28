@@ -59,8 +59,13 @@ cp -R .next/static .next/standalone/.next/static
 rm -rf .next/standalone/public
 cp -R public .next/standalone/public
 
-echo "[5/6] Migracoes e seed base..."
-npm run db:seed
+echo "[5/6] Migracoes de banco..."
+npm run db:migrate
+
+if [ "${UNIHER_RUN_DEMO_SEED:-false}" = "true" ]; then
+  echo "[5.0/6] Seed demo habilitado explicitamente..."
+  npm run db:seed
+fi
 
 echo "[5.1/6] Preflight de release..."
 npm run check:release-env

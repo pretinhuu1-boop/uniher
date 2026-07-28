@@ -1,0 +1,10 @@
+import { initDb } from './init';
+
+initDb()
+  .then(() => {
+    console.log('[db] Migracoes aplicadas.');
+  })
+  .catch((error) => {
+    console.error('[db] Falha ao aplicar migracoes:', error);
+    process.exit(1);
+  });

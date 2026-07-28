@@ -56,6 +56,18 @@ function checkSecret(name) {
   record(name, 'PASS', `present (${value.length} chars; value redacted)`);
 }
 
+function parseSmokeAccounts(rawValue) {
+  if (!rawValue) return [];
+  return rawValue
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [email, role] = entry.split(':').map((part) => part.trim());
+      return { email: email.toLowerCase(), role: role || undefined };
+    });
+}
+
 checkSecret('JWT_SECRET');
 checkSecret('JWT_REFRESH_SECRET');
 
@@ -159,31 +171,44 @@ if (!env.DATABASE_PATH) {
     record('DATABASE_PATH', 'HOLD', `database file not present yet: ${dbPath}`);
   } else {
     record('DATABASE_PATH', 'PASS', `database file exists (${fs.statSync(dbPath).size} bytes)`);
-    checkDemoAccounts(dbPath);
+    checkSmokeAccounts(dbPath, releaseLikeRuntime);
   }
 }
 
-function checkDemoAccounts(dbPath) {
+function checkSmokeAccounts(dbPath, isReleaseLikeRuntime) {
   let Database;
   try {
     Database = require('better-sqlite3');
   } catch (error) {
-    record('DEMO_ACCOUNTS', 'HOLD', `cannot inspect database; better-sqlite3 unavailable: ${error.message}`);
+    record('SMOKE_ACCOUNTS', 'HOLD', `cannot inspect database; better-sqlite3 unavailable: ${error.message}`);
     return;
   }
 
-  const expectedEmails = [
-    'admin@uniher.com.br',
-    'rh.visual@eduardaeyurimarketingltda.com.br',
-    'lideranca.visual@eduardaeyurimarketingltda.com.br',
-    'nr1.visual@eduardaeyurimarketingltda.com.br',
-  ];
+  const expectedAccounts = parseSmokeAccounts(env.UNIHER_RELEASE_SMOKE_ACCOUNTS);
+  if (expectedAccounts.length === 0) {
+    const detail = 'set UNIHER_RELEASE_SMOKE_ACCOUNTS=email:role,email:role for operational release smoke';
+    record('SMOKE_ACCOUNTS', isReleaseLikeRuntime ? 'FAIL' : 'HOLD', detail);
+    return;
+  }
+
+  const invalidAccounts = expectedAccounts.filter((account) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(account.email));
+  if (invalidAccounts.length > 0) {
+    record('SMOKE_ACCOUNTS', 'FAIL', `invalid smoke account email(s): ${invalidAccounts.map((account) => account.email).join(', ')}`);
+    return;
+  }
+
+  const expectedEmails = [...new Set(expectedAccounts.map((account) => account.email))];
+  const expectedRoleByEmail = new Map(
+    expectedAccounts
+      .filter((account) => account.role)
+      .map((account) => [account.email, account.role]),
+  );
 
   const db = new Database(dbPath, { readonly: true, fileMustExist: true });
   try {
     const usersTable = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users'").get();
     if (!usersTable) {
-      record('DEMO_ACCOUNTS', 'FAIL', 'users table not found');
+      record('SMOKE_ACCOUNTS', 'FAIL', 'users table not found');
       return;
     }
 
@@ -196,17 +221,30 @@ function checkDemoAccounts(dbPath) {
     const found = new Set(rows.map((row) => row.email));
     const missing = expectedEmails.filter((email) => !found.has(email));
     if (missing.length > 0) {
-      record('DEMO_ACCOUNTS', 'HOLD', `missing demo accounts in configured DB: ${missing.join(', ')}`);
+      record('SMOKE_ACCOUNTS', 'HOLD', `missing configured smoke account(s) in DB: ${missing.join(', ')}`);
       return;
     }
 
     const blocked = rows.filter((row) => row.deleted_at || row.approved === 0 || row.must_change_password === 1);
     if (blocked.length > 0) {
-      record('DEMO_ACCOUNTS', 'FAIL', `demo accounts not login-ready: ${blocked.map((row) => row.email).join(', ')}`);
+      record('SMOKE_ACCOUNTS', 'FAIL', `configured smoke account(s) not login-ready: ${blocked.map((row) => row.email).join(', ')}`);
       return;
     }
 
-    record('DEMO_ACCOUNTS', 'PASS', 'admin, RH visual, Leadership visual and NR-1 collaborator demo accounts are present and login-ready');
+    const roleMismatches = rows.filter((row) => {
+      const expectedRole = expectedRoleByEmail.get(row.email);
+      return expectedRole && row.role !== expectedRole;
+    });
+    if (roleMismatches.length > 0) {
+      record(
+        'SMOKE_ACCOUNTS',
+        'FAIL',
+        `configured smoke account role mismatch: ${roleMismatches.map((row) => `${row.email} is ${row.role}, expected ${expectedRoleByEmail.get(row.email)}`).join('; ')}`,
+      );
+      return;
+    }
+
+    record('SMOKE_ACCOUNTS', 'PASS', `${expectedEmails.length} configured smoke account(s) are present and login-ready`);
   } finally {
     db.close();
   }

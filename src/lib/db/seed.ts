@@ -237,11 +237,7 @@ async function seed() {
           expires_at = excluded.expires_at
       `).run(resolvedDemoCompanyId, resolvedDemoRhId);
 
-      console.log('[seed] ✅ Seed base concluído!');
-      console.log('[seed] Admin: admin@uniher.com.br / Admin@2026');
-      console.log(`[seed] Demo RH: ${demoRhEmail} / Admin@2026`);
-      console.log(`[seed] Demo Lideranca: ${demoLeadershipEmail} / Admin@2026`);
-      console.log(`[seed] Demo NR-1 colaboradora: ${demoNr1Email} / Admin@2026`);
+      console.log('[seed] ✅ Seed base concluído; credenciais não são exibidas em logs.');
     })();
     db.pragma('foreign_keys = ON');
   });
