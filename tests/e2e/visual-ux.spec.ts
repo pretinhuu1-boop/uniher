@@ -58,7 +58,7 @@ const VISUAL_SMOKE_ROUTES: readonly VisualSmokeRoute[] = [
   { role: 'admin', name: 'admin-usuarios', route: '/admin?tab=usuarios' },
   { role: 'admin', name: 'admin-master', route: '/admin?tab=admin' },
   { role: 'admin', name: 'admin-sistema', route: '/admin?tab=sistema' },
-  { role: 'admin', name: 'admin-produtos-modulos', route: '/admin?tab=empresas&section=modulos' },
+  { role: 'admin', name: 'admin-produtos-modulos', route: '/produtos-modulos' },
   { role: 'admin', name: 'admin-relatorios', route: '/analytics-emails' },
   { role: 'admin', name: 'admin-saude-primaria', route: '/dashboard?section=saude-primaria' },
   { role: 'admin', name: 'admin-concierge', route: '/concierge' },

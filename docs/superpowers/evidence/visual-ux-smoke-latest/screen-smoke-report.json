@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-27T23:25:10.978Z",
+  "generatedAt": "2026-07-27T23:59:31.675Z",
   "counts": {
     "total": 184,
     "pass": 184,
@@ -60,7 +60,7 @@
     {
       "role": "admin",
       "name": "admin-produtos-modulos",
-      "route": "/admin?tab=empresas&section=modulos",
+      "route": "/produtos-modulos",
       "viewport": "mobile-375",
       "status": "PASS",
       "screenshot": "mobile-375-admin-admin-produtos-modulos.png",
@@ -474,7 +474,7 @@
     {
       "role": "admin",
       "name": "admin-produtos-modulos",
-      "route": "/admin?tab=empresas&section=modulos",
+      "route": "/produtos-modulos",
       "viewport": "tablet-768",
       "status": "PASS",
       "screenshot": "tablet-768-admin-admin-produtos-modulos.png",
@@ -888,7 +888,7 @@
     {
       "role": "admin",
       "name": "admin-produtos-modulos",
-      "route": "/admin?tab=empresas&section=modulos",
+      "route": "/produtos-modulos",
       "viewport": "desktop-1366",
       "status": "PASS",
       "screenshot": "desktop-1366-admin-admin-produtos-modulos.png",
@@ -1302,7 +1302,7 @@
     {
       "role": "admin",
       "name": "admin-produtos-modulos",
-      "route": "/admin?tab=empresas&section=modulos",
+      "route": "/produtos-modulos",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
       "screenshot": "desktop-wide-1920-admin-admin-produtos-modulos.png",

@@ -322,9 +322,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (closeAfterNavigation) onClose();
   };
 
-  const skipCompanyFetch = role === 'admin' || pathname === '/primeiro-acesso';
-  const companyCacheKey = !skipCompanyFetch && user?.companyId
-    ? ['/api/company', user.companyId, realRole] as const
+  const companyEndpoint = (() => {
+    if (pathname === '/primeiro-acesso' || role === 'admin' || !user?.companyId) return null;
+    if (realRole === 'rh') return '/api/company';
+    if (realRole === 'colaboradora' || alsoCollab) return '/api/collaborator/company';
+    return null;
+  })();
+  const companyCacheKey = companyEndpoint && user?.companyId
+    ? [companyEndpoint, user.id, user.companyId, realRole] as const
     : null;
   const { data: companyData } = useSWR<{
     company: {

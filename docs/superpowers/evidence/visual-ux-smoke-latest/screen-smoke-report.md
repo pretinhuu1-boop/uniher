@@ -1,6 +1,6 @@
 # UniHER visual UX smoke matrix
 
-Generated: 2026-07-27T23:25:10.978Z
+Generated: 2026-07-27T23:59:31.675Z
 Counts: total 184, PASS 184, FAIL 0
 Routes: 46
 Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
@@ -12,7 +12,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | mobile-375 | admin | admin-usuarios | /admin?tab=usuarios | mobile-375-admin-admin-usuarios.png | - |
 | PASS | mobile-375 | admin | admin-master | /admin?tab=admin | mobile-375-admin-admin-master.png | - |
 | PASS | mobile-375 | admin | admin-sistema | /admin?tab=sistema | mobile-375-admin-admin-sistema.png | - |
-| PASS | mobile-375 | admin | admin-produtos-modulos | /admin?tab=empresas&section=modulos | mobile-375-admin-admin-produtos-modulos.png | - |
+| PASS | mobile-375 | admin | admin-produtos-modulos | /produtos-modulos | mobile-375-admin-admin-produtos-modulos.png | - |
 | PASS | mobile-375 | admin | admin-relatorios | /analytics-emails | mobile-375-admin-admin-relatorios.png | - |
 | PASS | mobile-375 | admin | admin-saude-primaria | /dashboard?section=saude-primaria | mobile-375-admin-admin-saude-primaria.png | - |
 | PASS | mobile-375 | admin | admin-concierge | /concierge | mobile-375-admin-admin-concierge.png | - |
@@ -58,7 +58,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | tablet-768 | admin | admin-usuarios | /admin?tab=usuarios | tablet-768-admin-admin-usuarios.png | - |
 | PASS | tablet-768 | admin | admin-master | /admin?tab=admin | tablet-768-admin-admin-master.png | - |
 | PASS | tablet-768 | admin | admin-sistema | /admin?tab=sistema | tablet-768-admin-admin-sistema.png | - |
-| PASS | tablet-768 | admin | admin-produtos-modulos | /admin?tab=empresas&section=modulos | tablet-768-admin-admin-produtos-modulos.png | - |
+| PASS | tablet-768 | admin | admin-produtos-modulos | /produtos-modulos | tablet-768-admin-admin-produtos-modulos.png | - |
 | PASS | tablet-768 | admin | admin-relatorios | /analytics-emails | tablet-768-admin-admin-relatorios.png | - |
 | PASS | tablet-768 | admin | admin-saude-primaria | /dashboard?section=saude-primaria | tablet-768-admin-admin-saude-primaria.png | - |
 | PASS | tablet-768 | admin | admin-concierge | /concierge | tablet-768-admin-admin-concierge.png | - |
@@ -104,7 +104,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | desktop-1366 | admin | admin-usuarios | /admin?tab=usuarios | desktop-1366-admin-admin-usuarios.png | - |
 | PASS | desktop-1366 | admin | admin-master | /admin?tab=admin | desktop-1366-admin-admin-master.png | - |
 | PASS | desktop-1366 | admin | admin-sistema | /admin?tab=sistema | desktop-1366-admin-admin-sistema.png | - |
-| PASS | desktop-1366 | admin | admin-produtos-modulos | /admin?tab=empresas&section=modulos | desktop-1366-admin-admin-produtos-modulos.png | - |
+| PASS | desktop-1366 | admin | admin-produtos-modulos | /produtos-modulos | desktop-1366-admin-admin-produtos-modulos.png | - |
 | PASS | desktop-1366 | admin | admin-relatorios | /analytics-emails | desktop-1366-admin-admin-relatorios.png | - |
 | PASS | desktop-1366 | admin | admin-saude-primaria | /dashboard?section=saude-primaria | desktop-1366-admin-admin-saude-primaria.png | - |
 | PASS | desktop-1366 | admin | admin-concierge | /concierge | desktop-1366-admin-admin-concierge.png | - |
@@ -150,7 +150,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | desktop-wide-1920 | admin | admin-usuarios | /admin?tab=usuarios | desktop-wide-1920-admin-admin-usuarios.png | - |
 | PASS | desktop-wide-1920 | admin | admin-master | /admin?tab=admin | desktop-wide-1920-admin-admin-master.png | - |
 | PASS | desktop-wide-1920 | admin | admin-sistema | /admin?tab=sistema | desktop-wide-1920-admin-admin-sistema.png | - |
-| PASS | desktop-wide-1920 | admin | admin-produtos-modulos | /admin?tab=empresas&section=modulos | desktop-wide-1920-admin-admin-produtos-modulos.png | - |
+| PASS | desktop-wide-1920 | admin | admin-produtos-modulos | /produtos-modulos | desktop-wide-1920-admin-admin-produtos-modulos.png | - |
 | PASS | desktop-wide-1920 | admin | admin-relatorios | /analytics-emails | desktop-wide-1920-admin-admin-relatorios.png | - |
 | PASS | desktop-wide-1920 | admin | admin-saude-primaria | /dashboard?section=saude-primaria | desktop-wide-1920-admin-admin-saude-primaria.png | - |
 | PASS | desktop-wide-1920 | admin | admin-concierge | /concierge | desktop-wide-1920-admin-admin-concierge.png | - |

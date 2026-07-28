@@ -52,6 +52,11 @@ vi.mock('@/hooks/useAuth', () => ({
 
 import Sidebar from '@/components/platform/Sidebar';
 
+function queryLinkByHref(href: string): HTMLElement | null {
+  return screen.queryAllByRole('link')
+    .find((link) => link.getAttribute('href') === href) ?? null;
+}
+
 describe('Sidebar persisted collaborator capability', () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -97,8 +102,8 @@ describe('Sidebar persisted collaborator capability', () => {
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     await waitFor(() => expect(screen.queryByRole('link', { name: /Minha agenda/i })).not.toBeNull());
-    expect(screen.queryByRole('link', { name: /^Comunidade$/i })).not.toBeNull();
-    expect(screen.queryByRole('link', { name: /Conteúdos educativos|Educação/i })).toBeNull();
+    expect(queryLinkByHref('/comunidade')?.textContent).toMatch(/Educação/i);
+    expect(queryLinkByHref('/campanhas')?.textContent).toMatch(/Campanhas/i);
     expect(screen.queryByRole('link', { name: /^Dashboard$/i })).toBeNull();
   });
 
@@ -108,8 +113,8 @@ describe('Sidebar persisted collaborator capability', () => {
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /Conteúdos educativos/i })).not.toBeNull();
-    expect(screen.queryByRole('link', { name: /^Comunidade$/i })).toBeNull();
+    expect(queryLinkByHref('/campanhas')?.textContent).toMatch(/Educação/i);
+    expect(queryLinkByHref('/comunidade')).toBeNull();
   });
 
   it.each([
@@ -124,8 +129,15 @@ describe('Sidebar persisted collaborator capability', () => {
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /^Comunidade$/i }) !== null).toBe(feed);
-    expect(screen.queryByRole('link', { name: /Conteúdos educativos|Educação/i }) !== null).toBe(manage);
+    const educationFeed = queryLinkByHref('/comunidade');
+    const educationManagement = role === 'admin'
+      ? queryLinkByHref('/comunidade/gerenciar')
+      : queryLinkByHref('/campanhas')?.textContent?.match(/Educação/i)
+        ? queryLinkByHref('/campanhas')
+        : null;
+
+    expect(educationFeed !== null).toBe(feed);
+    expect(educationManagement !== null).toBe(manage);
   });
 
   it.each([
@@ -194,19 +206,40 @@ describe('Sidebar persisted collaborator capability', () => {
     expect(mocks.push).not.toHaveBeenCalled();
   });
 
-  it('scopes the company SWR key to the authenticated tenant and role', () => {
+  it('scopes the company SWR key to the authenticated tenant, role and allowed endpoint', () => {
+    mocks.user.role = 'rh';
     const { rerender } = render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     const companyAKey = mocks.swrKeys.find(key => Array.isArray(key) && key[0] === '/api/company');
-    expect(companyAKey).toEqual(['/api/company', 'company-a', 'lideranca']);
+    expect(companyAKey).toEqual(['/api/company', 'leadership-common', 'company-a', 'rh']);
 
     mocks.swrKeys.length = 0;
     mocks.user.companyId = 'company-b';
     rerender(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     const companyBKey = mocks.swrKeys.find(key => Array.isArray(key) && key[0] === '/api/company');
-    expect(companyBKey).toEqual(['/api/company', 'company-b', 'lideranca']);
+    expect(companyBKey).toEqual(['/api/company', 'leadership-common', 'company-b', 'rh']);
     expect(companyBKey).not.toEqual(companyAKey);
+
+    cleanup();
+    mocks.swrKeys.length = 0;
+    mocks.user.companyId = 'company-a';
+    mocks.user.role = 'colaboradora';
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+    expect(mocks.swrKeys).toContainEqual([
+      '/api/collaborator/company',
+      'leadership-common',
+      'company-a',
+      'colaboradora',
+    ]);
+
+    cleanup();
+    mocks.swrKeys.length = 0;
+    mocks.user.role = 'lideranca';
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+    expect(mocks.swrKeys.some(key => Array.isArray(key) && (
+      key[0] === '/api/company' || key[0] === '/api/collaborator/company'
+    ))).toBe(false);
   });
 
   it('does not request company data before the authenticated tenant is known', () => {
@@ -229,7 +262,7 @@ describe('Sidebar persisted collaborator capability', () => {
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /Viva SIPAT/i })).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /^SIPAT$/i })).not.toBeNull();
     expect(screen.queryByText('Bloqueado')).not.toBeNull();
     expect(screen.queryByRole('link', { name: /^Concierge$/i })).toBeNull();
   });

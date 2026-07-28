@@ -156,7 +156,7 @@ function useBoundaryDatabase() {
     CREATE TABLE user_preferences (user_id TEXT, pref_key TEXT, pref_value TEXT, updated_at TEXT, UNIQUE(user_id, pref_key));
     CREATE TABLE refresh_tokens (id TEXT PRIMARY KEY, user_id TEXT, token_hash TEXT, expires_at TEXT, created_at TEXT DEFAULT (datetime('now')));
     CREATE TABLE user_exams (id TEXT PRIMARY KEY, user_id TEXT, status TEXT);
-    CREATE TABLE campaigns (id TEXT PRIMARY KEY, company_id TEXT, status TEXT, created_at TEXT);
+    CREATE TABLE campaigns (id TEXT PRIMARY KEY, company_id TEXT, status TEXT, created_at TEXT, start_date TEXT, end_date TEXT);
     CREATE TABLE notifications (
       id TEXT PRIMARY KEY, user_id TEXT, type TEXT, title TEXT, message TEXT, read INTEGER,
       created_at TEXT, source TEXT, resource_id TEXT
@@ -186,7 +186,7 @@ function useBoundaryDatabase() {
       VALUES ('admin-1', NULL, NULL, 'Ada Admin', 'Ada', 'ada@example.test', 'hashed:Password1!', 'admin', 1, 0);
     INSERT INTO user_preferences VALUES ('user-1', 'first_access_tour_completed', '1', '2026-01-01');
     INSERT INTO user_exams VALUES ('exam-1', 'user-1', 'completed');
-    INSERT INTO campaigns VALUES ('campaign-1', 'company-1', 'active', '2026-01-01');
+    INSERT INTO campaigns VALUES ('campaign-1', 'company-1', 'active', '2026-01-01', NULL, NULL);
     INSERT INTO notifications VALUES ('notification-1', 'user-1', 'campaign', 'Campanha', 'Conteudo seguro', 0, '2026-01-01', NULL, NULL);
     INSERT INTO notifications VALUES ('notification-2', 'user-1', 'badge', 'CANARY_BADGE', 'CANARY_LEGACY_BADGE', 0, '2026-01-02', NULL, NULL);
     INSERT INTO notifications VALUES ('notification-3', 'user-1', 'level', 'CANARY_LEVEL', 'CANARY_LEGACY_LEVEL', 0, '2026-01-03', NULL, NULL);
