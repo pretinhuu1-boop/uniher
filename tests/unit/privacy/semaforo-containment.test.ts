@@ -81,7 +81,9 @@ function useDatabase() {
       id TEXT PRIMARY KEY,
       user_id TEXT,
       action TEXT,
-      details TEXT,
+      target_type TEXT,
+      target_id TEXT,
+      points_earned INTEGER DEFAULT 0,
       created_at TEXT
     );
     CREATE TABLE health_scores (
@@ -213,9 +215,11 @@ describe('Semaforo private self-report', () => {
 
     expect(db.prepare('SELECT COUNT(*) AS count FROM personal_semaforo_entries WHERE user_id = ?').get('user-1')).toEqual({ count: 0 });
     expect(db.prepare('SELECT revoked_at IS NOT NULL AS revoked FROM personal_semaforo_consents WHERE user_id = ?').get('user-1')).toEqual({ revoked: 1 });
-    expect(db.prepare('SELECT action, details FROM activity_log WHERE user_id = ?').get('user-1')).toEqual({
+    expect(db.prepare('SELECT action, target_type, target_id, points_earned FROM activity_log WHERE user_id = ?').get('user-1')).toEqual({
       action: 'personal_semaforo_deleted',
-      details: '{"deletedCount":1}',
+      target_type: 'personal_semaforo',
+      target_id: '1',
+      points_earned: 0,
     });
   });
 

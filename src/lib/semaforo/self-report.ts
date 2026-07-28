@@ -191,9 +191,9 @@ export function deletePersonalSemaforoData(db: Database.Database, userId: string
   `).run(userId);
 
   db.prepare(`
-    INSERT INTO activity_log (id, user_id, action, details, created_at)
-    VALUES (?, ?, 'personal_semaforo_deleted', ?, datetime('now'))
-  `).run(nanoid(), userId, JSON.stringify({ deletedCount: deleted }));
+    INSERT INTO activity_log (id, user_id, action, target_type, target_id, points_earned, created_at)
+    VALUES (?, ?, 'personal_semaforo_deleted', 'personal_semaforo', ?, 0, datetime('now'))
+  `).run(nanoid(), userId, String(deleted));
 
   return { success: true, deletedCount: deleted };
 }
