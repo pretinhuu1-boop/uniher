@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-27T23:59:53.704Z",
+  "generatedAt": "2026-07-28T02:21:27.938Z",
   "viewports": [
     {
       "name": "mobile-375",
@@ -10,6 +10,16 @@
       "name": "tablet-768",
       "width": 768,
       "height": 1024
+    },
+    {
+      "name": "desktop-1366",
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "name": "desktop-wide-1920",
+      "width": 1920,
+      "height": 1080
     }
   ],
   "issues": []

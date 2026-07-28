@@ -15,6 +15,7 @@ import { extractAccessTokenFromSetCookie } from './helpers/auth';
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASS = 'Admin@2026';
 const DEMO_RH_EMAIL = 'rh.visual@eduardaeyurimarketingltda.com.br';
+const DEMO_LEADERSHIP_EMAIL = 'lideranca.visual@eduardaeyurimarketingltda.com.br';
 const DEMO_COMPANY_CNPJ = '00.000.000/0001-00';
 const DEMO_NR1_COLLAB_EMAIL = 'nr1.visual@eduardaeyurimarketingltda.com.br';
 const REPO_ROOT = path.basename(process.cwd()) === 'tests'
@@ -23,7 +24,7 @@ const REPO_ROOT = path.basename(process.cwd()) === 'tests'
 const EVIDENCE_DIR = path.resolve(REPO_ROOT, 'docs/superpowers/evidence');
 const VISUAL_SMOKE_DIR = path.join(EVIDENCE_DIR, 'visual-ux-smoke-latest');
 
-type VisualSmokeRole = 'admin' | 'rh' | 'colaboradora';
+type VisualSmokeRole = 'admin' | 'rh' | 'lideranca' | 'colaboradora';
 
 interface VisualSmokeRoute {
   role: VisualSmokeRole;
@@ -50,7 +51,7 @@ const VISUAL_SMOKE_VIEWPORTS: readonly VisualSmokeViewport[] = [
   { name: 'desktop-1366', width: 1366, height: 768 },
   { name: 'desktop-wide-1920', width: 1920, height: 1080 },
 ];
-const VISUAL_SMOKE_ROLES: readonly VisualSmokeRole[] = ['admin', 'rh', 'colaboradora'];
+const VISUAL_SMOKE_ROLES: readonly VisualSmokeRole[] = ['admin', 'rh', 'lideranca', 'colaboradora'];
 
 const VISUAL_SMOKE_ROUTES: readonly VisualSmokeRoute[] = [
   { role: 'admin', name: 'admin-visao-geral', route: '/admin' },
@@ -83,6 +84,8 @@ const VISUAL_SMOKE_ROUTES: readonly VisualSmokeRoute[] = [
   { role: 'rh', name: 'rh-viva-sipat', route: '/viva-sipat' },
   { role: 'rh', name: 'rh-desenvolvimento-humano', route: '/desenvolvimento-humano' },
   { role: 'rh', name: 'rh-canal-denuncias', route: '/canal-denuncias' },
+  { role: 'lideranca', name: 'lideranca-dashboard', route: '/dashboard' },
+  { role: 'lideranca', name: 'lideranca-campanhas', route: '/campanhas' },
   { role: 'colaboradora', name: 'colab-home', route: '/colaboradora' },
   { role: 'colaboradora', name: 'colab-semaforo', route: '/semaforo' },
   { role: 'colaboradora', name: 'colab-agenda', route: '/agenda' },
@@ -134,6 +137,7 @@ async function waitForRouteSettled(page: Page): Promise<void> {
 function loginCredentialsForRole(role: VisualSmokeRole): { email: string; password: string } {
   if (role === 'admin') return { email: ADMIN_EMAIL, password: ADMIN_PASS };
   if (role === 'rh') return { email: DEMO_RH_EMAIL, password: ADMIN_PASS };
+  if (role === 'lideranca') return { email: DEMO_LEADERSHIP_EMAIL, password: ADMIN_PASS };
   return { email: DEMO_NR1_COLLAB_EMAIL, password: ADMIN_PASS };
 }
 
@@ -257,9 +261,9 @@ async function collectRouteGeometryIssues(page: Page): Promise<string[]> {
 async function collectSidebarGeometryIssues(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const issues: string[] = [];
-    const dialog = document.querySelector<HTMLElement>('aside[role="dialog"]');
-    const navigation = dialog?.querySelector<HTMLElement>('nav[aria-label="Navegação principal"]') ?? null;
-    const footer = dialog?.querySelector<HTMLElement>('[class*="footer"]') ?? null;
+    const sidebar = document.querySelector<HTMLElement>('aside[role="dialog"], aside[aria-label]');
+    const navigation = sidebar?.querySelector<HTMLElement>('nav[aria-label="Navegação principal"]') ?? null;
+    const footer = sidebar?.querySelector<HTMLElement>('[class*="footer"]') ?? null;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
@@ -273,11 +277,11 @@ async function collectSidebarGeometryIssues(page: Page): Promise<string[]> {
         && rect.height > 0;
     };
 
-    if (!visible(dialog)) return ['sidebar dialog is not visible'];
+    if (!visible(sidebar)) return ['sidebar shell is not visible'];
 
-    const dialogRect = dialog.getBoundingClientRect();
-    if (dialogRect.left < -1 || dialogRect.top < -1 || dialogRect.right > viewportWidth + 1 || dialogRect.bottom > viewportHeight + 1) {
-      issues.push('sidebar dialog escapes viewport');
+    const sidebarRect = sidebar.getBoundingClientRect();
+    if (sidebarRect.left < -1 || sidebarRect.top < -1 || sidebarRect.right > viewportWidth + 1 || sidebarRect.bottom > viewportHeight + 1) {
+      issues.push('sidebar shell escapes viewport');
     }
 
     if (!visible(navigation)) {
@@ -294,12 +298,12 @@ async function collectSidebarGeometryIssues(page: Page): Promise<string[]> {
       if (navRect.bottom > footerRect.top + 1) {
         issues.push('sidebar navigation overlaps footer');
       }
-      if (footerRect.bottom > dialogRect.bottom + 1) {
-        issues.push('sidebar footer escapes dialog');
+      if (footerRect.bottom > sidebarRect.bottom + 1) {
+        issues.push('sidebar footer escapes shell');
       }
     }
 
-    const clippedLabels = Array.from(dialog.querySelectorAll<HTMLElement>('a, button, [class*="brand"], [class*="company"], [class*="user"]'))
+    const clippedLabels = Array.from(sidebar.querySelectorAll<HTMLElement>('a, button, [class*="brand"], [class*="company"], [class*="user"]'))
       .filter(visible)
       .filter((element) => element.scrollWidth > element.clientWidth + 2)
       .slice(0, 5)
@@ -435,6 +439,90 @@ async function ensureDemoRhUser(request: APIRequestContext): Promise<void> {
   const onboarding = await onboardingRes.json() as { completedCount?: number; isNewRH?: boolean };
   expect(onboarding.completedCount).toBeGreaterThanOrEqual(3);
   expect(onboarding.isNewRH).toBe(false);
+}
+
+async function ensureDemoLeadershipUser(request: APIRequestContext): Promise<void> {
+  assertVisualUxFixtureHostIsLoopback();
+  const adminLoginRes = await request.post('/api/auth/login', {
+    data: { email: ADMIN_EMAIL, password: ADMIN_PASS },
+  });
+  expect(adminLoginRes.ok(), `Login admin falhou: HTTP ${adminLoginRes.status()}`).toBeTruthy();
+
+  const adminCookie = extractAccessTokenFromSetCookie(adminLoginRes);
+  expect(adminCookie).toBeTruthy();
+  const demoCompanyId = await findDemoCompanyId(request, adminCookie);
+  expect(demoCompanyId).toBeTruthy();
+
+  const userRes = await request.post('/api/admin/users', {
+    headers: { Cookie: `uniher-access-token=${adminCookie}` },
+    data: {
+      name: 'Lideranca Visual',
+      email: DEMO_LEADERSHIP_EMAIL,
+      password: ADMIN_PASS,
+      role: 'lideranca',
+      company_id: demoCompanyId,
+      mustChangePassword: false,
+      also_collaborator: true,
+    },
+  });
+  expect([200, 409]).toContain(userRes.status());
+  ensureDemoLeadershipDepartment();
+
+  const leadershipLoginRes = await request.post('/api/auth/login', {
+    data: { email: DEMO_LEADERSHIP_EMAIL, password: ADMIN_PASS },
+  });
+  expect(leadershipLoginRes.ok(), `Login lideranca falhou: HTTP ${leadershipLoginRes.status()}`).toBeTruthy();
+  const leadershipLoginPayload = await leadershipLoginRes.json() as {
+    user?: { firstAccessTourCompleted?: boolean };
+  };
+  const leadershipCookie = extractAccessTokenFromSetCookie(leadershipLoginRes);
+  expect(leadershipCookie).toBeTruthy();
+
+  if (leadershipLoginPayload.user?.firstAccessTourCompleted !== true) {
+    const preferencesRes = await request.patch('/api/users/me/preferences', {
+      headers: { Cookie: `uniher-access-token=${leadershipCookie}` },
+      data: { preferences: { first_access_tour_completed: '1' } },
+    });
+    expect(preferencesRes.ok(), `Tour lideranca nao foi concluido: HTTP ${preferencesRes.status()}`).toBeTruthy();
+  }
+}
+
+function ensureDemoLeadershipDepartment(): void {
+  const db = openPlaywrightDatabase();
+  try {
+    const company = db.prepare("SELECT id FROM companies WHERE cnpj = ?").get(DEMO_COMPANY_CNPJ) as { id: string } | undefined;
+    if (!company) throw new Error('Empresa demo visual nao encontrada para a lideranca.');
+
+    let department = db.prepare(`
+      SELECT id
+      FROM departments
+      WHERE company_id = ?
+      ORDER BY name ASC
+      LIMIT 1
+    `).get(company.id) as { id: string } | undefined;
+
+    if (!department) {
+      db.prepare(`
+        INSERT INTO departments (id, company_id, name, color)
+        VALUES ('dept_demo_visual_ops', ?, 'Operacoes', '#3E7D5A')
+        ON CONFLICT(id) DO UPDATE SET
+          company_id = excluded.company_id,
+          name = excluded.name,
+          color = excluded.color
+      `).run(company.id);
+      department = { id: 'dept_demo_visual_ops' };
+    }
+
+    db.prepare(`
+      UPDATE users
+      SET department_id = ?
+      WHERE email = ?
+        AND company_id = ?
+        AND role = 'lideranca'
+    `).run(department.id, DEMO_LEADERSHIP_EMAIL, company.id);
+  } finally {
+    db.close();
+  }
 }
 
 async function expectRhDashboard(page: Page): Promise<void> {
@@ -883,6 +971,7 @@ test.describe('Final visual promotion smoke @visual-smoke', () => {
 
   test.beforeAll(async ({ request }) => {
     await ensureDemoRhUser(request);
+    await ensureDemoLeadershipUser(request);
     ensureNr1VisualFixtures();
   });
 
@@ -964,25 +1053,30 @@ test.describe('Final visual promotion smoke @visual-smoke', () => {
     expect(failures).toEqual([]);
   });
 
-  test('mobile sidebar top bottom and bottom nav geometry are guarded', async ({ browser }) => {
-    test.setTimeout(120000);
+  test('sidebar top bottom and bottom nav geometry are guarded', async ({ browser }) => {
+    test.setTimeout(240000);
 
     const issues: string[] = [];
-    const sidebarViewports = VISUAL_SMOKE_VIEWPORTS.slice(0, 2);
+    const sidebarViewports = VISUAL_SMOKE_VIEWPORTS;
 
     for (const viewport of sidebarViewports) {
       for (const role of VISUAL_SMOKE_ROLES) {
         const credentials = loginCredentialsForRole(role);
         const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
-        const homeRoute = role === 'admin' ? '/admin' : role === 'rh' ? '/dashboard' : '/colaboradora';
+        const homeRoute = role === 'admin' ? '/admin' : role === 'colaboradora' ? '/colaboradora' : '/dashboard';
+        const isMobileSidebar = viewport.width <= 768;
 
         try {
           await loginUI(page, credentials.email, credentials.password);
           await page.goto(homeRoute);
           await waitForRouteSettled(page);
-          await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+          if (isMobileSidebar) {
+            await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+          }
 
-          const navigation = page.getByRole('dialog', { name: 'Navegação', exact: true });
+          const navigation = isMobileSidebar
+            ? page.getByRole('dialog', { name: 'Navegação', exact: true })
+            : page.locator('aside[aria-label="Navegação principal"]').first();
           await expect(navigation).toBeVisible();
           await waitForSidebarMotion(page);
 
@@ -1004,8 +1098,10 @@ test.describe('Final visual promotion smoke @visual-smoke', () => {
             fullPage: true,
           });
 
-          await page.keyboard.press('Escape');
-          await expect(navigation).toBeHidden();
+          if (isMobileSidebar) {
+            await page.keyboard.press('Escape');
+            await expect(navigation).toBeHidden();
+          }
 
           const routeIssues = await collectRouteGeometryIssues(page);
           issues.push(...routeIssues.map((issue) => `${viewport.name} ${role} closed route: ${issue}`));

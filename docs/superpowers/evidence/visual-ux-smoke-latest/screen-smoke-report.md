@@ -1,8 +1,8 @@
 # UniHER visual UX smoke matrix
 
-Generated: 2026-07-27T23:59:31.675Z
-Counts: total 184, PASS 184, FAIL 0
-Routes: 46
+Generated: 2026-07-28T02:20:27.262Z
+Counts: total 192, PASS 192, FAIL 0
+Routes: 48
 Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 
 | Status | Viewport | Role | Screen | Route | Screenshot | Issues |
@@ -37,6 +37,8 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | mobile-375 | rh | rh-viva-sipat | /viva-sipat | mobile-375-rh-rh-viva-sipat.png | - |
 | PASS | mobile-375 | rh | rh-desenvolvimento-humano | /desenvolvimento-humano | mobile-375-rh-rh-desenvolvimento-humano.png | - |
 | PASS | mobile-375 | rh | rh-canal-denuncias | /canal-denuncias | mobile-375-rh-rh-canal-denuncias.png | - |
+| PASS | mobile-375 | lideranca | lideranca-dashboard | /dashboard | mobile-375-lideranca-lideranca-dashboard.png | - |
+| PASS | mobile-375 | lideranca | lideranca-campanhas | /campanhas | mobile-375-lideranca-lideranca-campanhas.png | - |
 | PASS | mobile-375 | colaboradora | colab-home | /colaboradora | mobile-375-colaboradora-colab-home.png | - |
 | PASS | mobile-375 | colaboradora | colab-semaforo | /semaforo | mobile-375-colaboradora-colab-semaforo.png | - |
 | PASS | mobile-375 | colaboradora | colab-agenda | /agenda | mobile-375-colaboradora-colab-agenda.png | - |
@@ -83,6 +85,8 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | tablet-768 | rh | rh-viva-sipat | /viva-sipat | tablet-768-rh-rh-viva-sipat.png | - |
 | PASS | tablet-768 | rh | rh-desenvolvimento-humano | /desenvolvimento-humano | tablet-768-rh-rh-desenvolvimento-humano.png | - |
 | PASS | tablet-768 | rh | rh-canal-denuncias | /canal-denuncias | tablet-768-rh-rh-canal-denuncias.png | - |
+| PASS | tablet-768 | lideranca | lideranca-dashboard | /dashboard | tablet-768-lideranca-lideranca-dashboard.png | - |
+| PASS | tablet-768 | lideranca | lideranca-campanhas | /campanhas | tablet-768-lideranca-lideranca-campanhas.png | - |
 | PASS | tablet-768 | colaboradora | colab-home | /colaboradora | tablet-768-colaboradora-colab-home.png | - |
 | PASS | tablet-768 | colaboradora | colab-semaforo | /semaforo | tablet-768-colaboradora-colab-semaforo.png | - |
 | PASS | tablet-768 | colaboradora | colab-agenda | /agenda | tablet-768-colaboradora-colab-agenda.png | - |
@@ -129,6 +133,8 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | desktop-1366 | rh | rh-viva-sipat | /viva-sipat | desktop-1366-rh-rh-viva-sipat.png | - |
 | PASS | desktop-1366 | rh | rh-desenvolvimento-humano | /desenvolvimento-humano | desktop-1366-rh-rh-desenvolvimento-humano.png | - |
 | PASS | desktop-1366 | rh | rh-canal-denuncias | /canal-denuncias | desktop-1366-rh-rh-canal-denuncias.png | - |
+| PASS | desktop-1366 | lideranca | lideranca-dashboard | /dashboard | desktop-1366-lideranca-lideranca-dashboard.png | - |
+| PASS | desktop-1366 | lideranca | lideranca-campanhas | /campanhas | desktop-1366-lideranca-lideranca-campanhas.png | - |
 | PASS | desktop-1366 | colaboradora | colab-home | /colaboradora | desktop-1366-colaboradora-colab-home.png | - |
 | PASS | desktop-1366 | colaboradora | colab-semaforo | /semaforo | desktop-1366-colaboradora-colab-semaforo.png | - |
 | PASS | desktop-1366 | colaboradora | colab-agenda | /agenda | desktop-1366-colaboradora-colab-agenda.png | - |
@@ -175,6 +181,8 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | desktop-wide-1920 | rh | rh-viva-sipat | /viva-sipat | desktop-wide-1920-rh-rh-viva-sipat.png | - |
 | PASS | desktop-wide-1920 | rh | rh-desenvolvimento-humano | /desenvolvimento-humano | desktop-wide-1920-rh-rh-desenvolvimento-humano.png | - |
 | PASS | desktop-wide-1920 | rh | rh-canal-denuncias | /canal-denuncias | desktop-wide-1920-rh-rh-canal-denuncias.png | - |
+| PASS | desktop-wide-1920 | lideranca | lideranca-dashboard | /dashboard | desktop-wide-1920-lideranca-lideranca-dashboard.png | - |
+| PASS | desktop-wide-1920 | lideranca | lideranca-campanhas | /campanhas | desktop-wide-1920-lideranca-lideranca-campanhas.png | - |
 | PASS | desktop-wide-1920 | colaboradora | colab-home | /colaboradora | desktop-wide-1920-colaboradora-colab-home.png | - |
 | PASS | desktop-wide-1920 | colaboradora | colab-semaforo | /semaforo | desktop-wide-1920-colaboradora-colab-semaforo.png | - |
 | PASS | desktop-wide-1920 | colaboradora | colab-agenda | /agenda | desktop-wide-1920-colaboradora-colab-agenda.png | - |

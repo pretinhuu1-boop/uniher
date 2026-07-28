@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const boundary = vi.hoisted(() => ({
   db: null as Database.Database | null,
   nanoCounter: 0,
+  auditEntries: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock('nanoid', () => ({
@@ -37,7 +38,11 @@ vi.mock('@/lib/security/rate-limit', () => ({
 vi.mock('@/lib/gamification/containment', () => ({
   toSafeUserProjection: <T>(value: T) => value,
 }));
-vi.mock('@/lib/audit', () => ({ logAudit: async () => undefined }));
+vi.mock('@/lib/audit', () => ({
+  logAudit: vi.fn(async (entry: Record<string, unknown>) => {
+    boundary.auditEntries.push(entry);
+  }),
+}));
 vi.mock('@/lib/mail', () => ({ sendEmailAsync: vi.fn() }));
 vi.mock('@/lib/mail/templates', () => ({ inviteEmailHtml: () => '<p>invite</p>' }));
 vi.mock('@/repositories/notification.repository', () => ({
@@ -170,6 +175,7 @@ function createDatabase() {
 beforeEach(() => {
   boundary.db = createDatabase();
   boundary.nanoCounter = 0;
+  boundary.auditEntries = [];
 });
 
 afterEach(() => {
@@ -203,6 +209,38 @@ describe('tenant and role hardening for direct APIs', () => {
 
     expect(response.status).toBe(404);
     expect(boundary.db!.prepare('SELECT approved FROM users WHERE id = ?').get('collab-b')).toEqual({ approved: 0 });
+  });
+
+  it('rejects malformed leader approval payloads before target lookup', async () => {
+    const response = await postLeaderTeam(
+      request('http://localhost/api/leader/team', { action: 'approve', targetUserId: 42 }) as any,
+      context('leader-a', 'lideranca') as any,
+    );
+
+    expect(response.status).toBe(422);
+    expect(boundary.db!.prepare('SELECT approved FROM users WHERE id = ?').get('collab-a')).toEqual({ approved: 0 });
+    expect(boundary.auditEntries).toEqual([]);
+  });
+
+  it('audits leadership approval of a department-scoped collaborator', async () => {
+    const response = await postLeaderTeam(
+      request('http://localhost/api/leader/team', { action: 'approve', targetUserId: 'collab-a' }) as any,
+      context('leader-a', 'lideranca') as any,
+    );
+
+    expect(response.status).toBe(200);
+    expect(boundary.db!.prepare('SELECT approved FROM users WHERE id = ?').get('collab-a')).toEqual({ approved: 1 });
+    expect(boundary.auditEntries).toEqual([
+      expect.objectContaining({
+        actorId: 'leader-a',
+        actorRole: 'lideranca',
+        action: 'user_edit',
+        entityType: 'user',
+        entityId: 'collab-a',
+        entityLabel: 'Ana A',
+        details: expect.objectContaining({ action: 'leader_team_approve' }),
+      }),
+    ]);
   });
 
   it('rejects RH assignment to a department from another company', async () => {
