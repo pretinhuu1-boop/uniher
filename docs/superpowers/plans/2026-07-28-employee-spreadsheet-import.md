@@ -459,11 +459,11 @@ Expected: all tests pass.
 - Create evidence screenshots under `docs/superpowers/evidence/employee-import-*`.
 - Modify tests only for final smoke support if needed.
 
-- [ ] **Step 1: Start local app**
+- [x] **Step 1: Start local app**
 
 Run the local dev server or production build/start, using a free port if `3000` is occupied.
 
-- [ ] **Step 2: Capture screenshots**
+- [x] **Step 2: Capture screenshots**
 
 Capture desktop and mobile screenshots of `Gestao de Colaboradoras` showing:
 - `Importar planilha`
@@ -471,7 +471,7 @@ Capture desktop and mobile screenshots of `Gestao de Colaboradoras` showing:
 - preview state
 - validation error state
 
-- [ ] **Step 3: Run final gates**
+- [x] **Step 3: Run final gates**
 
 Run:
 
@@ -482,6 +482,23 @@ git diff --check
 ```
 
 Expected: all pass.
+
+**Wave 6 visual evidence:**
+- Local app: `http://localhost:3000` with dev JWT secrets and insecure local cookies enabled for localhost only.
+- Database preflight: `npm run db:migrate` applied migrations `065_employee_identity_imports.sql` and `066_employee_import_batch_idempotency.sql`.
+- Valid desktop preview: `docs/superpowers/evidence/employee-import-wave6-desktop.png`.
+- Valid mobile preview: `docs/superpowers/evidence/employee-import-wave6-mobile.png`.
+- Validation error state: `docs/superpowers/evidence/employee-import-wave6-debug.png`.
+- Manual screenshot review: desktop and mobile render `Importar planilha`, `Baixar modelo`, masked preview, totals and collaborator list without raw CPF/RG. The error screenshot renders blocked confirmation and masked error context.
+
+**Wave 6 final gates:**
+- `npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts tests/unit/employee-import-ui.test.ts tests/unit/privacy/employee-import-privacy.test.ts tests/unit/tenant-api-hardening.test.ts tests/unit/invite-leadership-capability.test.ts tests/unit/community-company-setting-audit.test.ts tests/unit/privacy/gamification-safe-projection.test.ts` -> PASS, 54/54 tests.
+- `npx tsc --noEmit --pretty false` -> PASS.
+- `git diff --check` -> PASS, CRLF warning only for `src/app/(platform)/colaboradoras-gestao/page.tsx`.
+- `rg -n 'Ã|Â|â'` on changed import files -> only valid Portuguese headers `NOME MÃE`/`ÓRGÃO EMISSOR` and historical plan receipts; no mojibake `Â`/`â` introduced by Wave 6.
+- Sensitive exposure scan for `CPF|RG|TELEFONE|LOGRADOURO|cpf|rg|phone|address` -> reviewed. Hits are expected in parser/repository/migrations/DSAR/tests and generic existing app files; preview and commit API responses remain masked or aggregate-only, and tests assert no raw CPF/RG/phone/address in import responses/audit.
+
+**Claude Wave 6 final review result:** PASS. No Critical/High/Medium findings for tenant isolation, RH/admin role checks, LGPD/PII exposure, preview/commit, idempotency, DSAR/safe projection or `colaboradoras-gestao` UI. Claude did not edit files.
 
 ## Governance Gates
 

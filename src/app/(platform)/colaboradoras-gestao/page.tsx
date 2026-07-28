@@ -579,7 +579,14 @@ export default function ColaboradorasGestaoPage() {
 
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full table-fixed text-sm">
+                <colgroup>
+                  <col className="w-[34%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[24%]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-border-1">
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Colaboradora</th>
@@ -650,13 +657,13 @@ export default function ColaboradorasGestaoPage() {
                           </span>
                         </td>
                         <td className="px-6 py-3">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex flex-wrap items-center justify-end gap-1.5">
                             {u.role !== 'rh' && (
                               <button
                                 onClick={() => doAction(u.id, isBlocked ? 'unblock' : 'block')}
                                 disabled={loading === blockKey}
                                 className={cn(
-                                  'px-2.5 py-1 rounded-md text-[11px] font-bold transition-all',
+                                  'px-2 py-1 rounded-md text-[10px] font-bold transition-all',
                                   isBlocked
                                     ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                                     : 'bg-red-50 text-red-700 hover:bg-red-100',
@@ -668,13 +675,13 @@ export default function ColaboradorasGestaoPage() {
                             )}
                             <button
                               onClick={() => { setChangeDeptUser(changeDeptUser === u.id ? null : u.id); setChangeDeptValue(u.department_id || ''); }}
-                              className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
+                              className="px-2 py-1 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
                             >
                               Setor
                             </button>
                             <button
                               onClick={() => openEditModal(u)}
-                              className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-gold-50 text-gold-700 hover:bg-gold-100 transition-all"
+                              className="px-2 py-1 rounded-md text-[10px] font-bold bg-gold-50 text-gold-700 hover:bg-gold-100 transition-all"
                             >
                               Editar
                             </button>
