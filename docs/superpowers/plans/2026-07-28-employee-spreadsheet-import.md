@@ -416,15 +416,15 @@ Expected: focused import tests pass; RH smoke still passes or any visual gap is 
 - Modify: `src/lib/gamification/containment.ts` only if new sensitive keys need generic projection blocking.
 - Test: `tests/unit/employee-import.test.ts` or `tests/unit/privacy/employee-import-privacy.test.ts`
 
-- [ ] **Step 1: Write failing privacy tests**
+- [x] **Step 1: Write failing privacy tests**
 
 Assert the collaborator's own export includes her employee identity profile, while RH/leadership/team/list projections do not expose CPF hash, RG, phone, address, mother name, or health plan.
 
-- [ ] **Step 2: Implement DSAR export section**
+- [x] **Step 2: Implement DSAR export section**
 
 Add an `employeeIdentityProfile` section filtered by `user_id = ?` or equivalent self-owned link. Do not add any RH/admin bulk export.
 
-- [ ] **Step 3: Run privacy gates**
+- [x] **Step 3: Run privacy gates**
 
 Run:
 
@@ -433,6 +433,25 @@ npx vitest run tests/unit/employee-import.test.ts tests/unit/privacy/gamificatio
 ```
 
 Expected: all tests pass.
+
+**Wave 5 RED/GREEN:**
+- RED: `npx vitest run tests/unit/privacy/employee-import-privacy.test.ts` failed because DSAR did not include the imported self-profile and generic safe projection did not remove imported identity fields.
+- GREEN: `npx vitest run tests/unit/privacy/employee-import-privacy.test.ts` passed 2/2 after adding `employeeIdentityProfile` to DSAR and expanding the projection denylist for CPF/RG hashes/last4, mother name, birth date, marital status, health plan, phone and address fields.
+
+**Claude Wave 5 initial review result:** PASS with one Medium finding: safe projection still allowed `sex`, address `number`, `city`, and `uf` if an imported identity object was accidentally projected.
+
+**Wave 5.1 privacy fix:**
+- Added `sex`, `number`, `city`, and `uf` to `FORBIDDEN_PROJECTION_KEYS`.
+- Extended `tests/unit/privacy/employee-import-privacy.test.ts` to assert those fields do not appear in generic safe projections.
+
+**Wave 5.1 gates:**
+- `npx vitest run tests/unit/privacy/employee-import-privacy.test.ts tests/unit/privacy/gamification-safe-projection.test.ts` -> PASS, 18/18 tests.
+- `npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts tests/unit/employee-import-ui.test.ts tests/unit/privacy/employee-import-privacy.test.ts tests/unit/tenant-api-hardening.test.ts tests/unit/invite-leadership-capability.test.ts tests/unit/community-company-setting-audit.test.ts tests/unit/privacy/gamification-safe-projection.test.ts` -> PASS, 54/54 tests.
+- `npx tsc --noEmit --pretty false` -> PASS.
+- `git diff --check` -> PASS, CRLF warnings only.
+- `rg -n 'Ã|Â|â'` on Wave 5 files -> PASS, no matches.
+
+**Claude re-review result:** Wave 5/5.1 PASS. No Critical/High/Medium findings. Claude could not run tests directly due local permission, but reviewed code and accepted the Medium resolution; local tests above are the source-of-truth gate.
 
 ## Task 6 / Wave 6: Visual Evidence And Final Hardening
 

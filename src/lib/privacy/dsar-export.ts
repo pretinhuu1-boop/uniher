@@ -169,7 +169,22 @@ export function* createDsarExportJsonChunks(
     'SELECT id, name, email, role, department_id, company_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
   ).get(userId);
 
-  yield `{"exportedAt":${serializeJson(exportedAt)},"user":${serializeJson(user)},"quizResults":`;
+  yield `{"exportedAt":${serializeJson(exportedAt)},"user":${serializeJson(user)},"employeeIdentityProfile":`;
+  const employeeIdentityProfile = tableExists(db, 'employee_identity_profiles')
+    ? db.prepare(`
+        SELECT id, company_id, full_name, mother_name, cpf_last4,
+               rg_last4, rg_issuer, birth_date, sex, marital_status,
+               health_plan, cep, street_type, street, number, complement,
+               neighborhood, city, uf, email, ddd, phone, source,
+               created_at, updated_at
+        FROM employee_identity_profiles
+        WHERE user_id = ? AND deleted_at IS NULL
+        ORDER BY updated_at DESC, id DESC
+        LIMIT 1
+      `).get(userId)
+    : null;
+  yield serializeJson(employeeIdentityProfile ?? null);
+  yield ',"quizResults":';
   yield* streamPaginatedJsonArray<StableIdCursor>((cursor) => {
     const statement = cursor === null
       ? db.prepare<unknown[], DsarRow>(`
