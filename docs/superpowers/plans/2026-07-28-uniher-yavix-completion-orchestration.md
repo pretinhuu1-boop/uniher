@@ -14,7 +14,7 @@
 
 - Coordenador: `C:\Users\user\Documents\uniher-app-audit\.worktrees\uniher-wave3-collaborator-nr1`
 - Branch coordenadora: `codex/uniher-wave3-collaborator-nr1`
-- Base atual apos revisao Claude: `4b1a99c`
+- Base ao iniciar esta orquestracao: `9dae8d2`
 - Plano anterior das 9 frentes: `docs/superpowers/plans/2026-07-27-uniher-nine-fronts-orchestration-goal.md`
 - Scorecard integrado: `docs/superpowers/audits/2026-07-27-uniher-nine-fronts-integration-scorecard.md`
 - Revisao Claude externa: `docs/superpowers/audits/2026-07-27-uniher-claude-external-review.md`
@@ -71,6 +71,12 @@ O output do Claude e evidencia auxiliar, nao promocao automatica. O coordenador 
 | 07 | `.worktrees\finish-visual-leadership-demo` | `codex/uniher-finish-visual-leadership-demo` | fixture visual lideranca + screenshots demo controlado | visual smoke + screenshots + Claude |
 | 08 | `.worktrees\finish-release-demo-package` | `codex/uniher-finish-release-demo-package` | release/demo packet final, env gate, mensagem Dra. Paola | full gate + Claude + HOLD prod |
 
+## Progress Ledger
+
+| Wave | Status | Branch commit | Coordenador commit | Evidencia |
+| --- | --- | --- | --- | --- |
+| 00 Yavix contract packet | PASS integrado | `31a382e docs: prepare Yavix contract packet` | `411705f docs: prepare Yavix contract packet` | `docs/superpowers/audits/2026-07-28-yavix-contract-packet-scorecard.md` |
+
 ## Task 00: Yavix Contract Packet
 
 **Files:**
@@ -78,17 +84,17 @@ O output do Claude e evidencia auxiliar, nao promocao automatica. O coordenador 
 - Create: `docs/superpowers/audits/YYYY-MM-DD-yavix-contract-intake-checklist.md`
 - Create: `docs/superpowers/prompts/YYYY-MM-DD-yavix-outbound-message.md`
 
-- [ ] **Step 1: Criar worktree**
+- [x] **Step 1: Criar worktree**
 
 ```powershell
 git worktree add .worktrees\finish-yavix-contract-packet -b codex/uniher-finish-yavix-contract-packet
 ```
 
-- [ ] **Step 2: Preparar versao enviavel**
+- [x] **Step 2: Preparar versao enviavel**
 
 Remover ou separar qualquer trecho marcado como interno, principalmente `Anexo - Decisoes internas (Nelson - NAO enviar a Yavix)` de `docs/PERGUNTAS_YAVIX_INTEGRACAO.md`.
 
-- [ ] **Step 3: Checklist de intake**
+- [x] **Step 3: Checklist de intake**
 
 O checklist deve exigir, no minimo:
 
@@ -103,7 +109,7 @@ O checklist deve exigir, no minimo:
 - Upsert por CPF e comportamento `REMOVER=Sim`.
 - Retencao/exclusao, controlador/operador e aceite de termos.
 
-- [ ] **Step 4: Gate**
+- [x] **Step 4: Gate**
 
 ```powershell
 git diff --check
@@ -112,7 +118,7 @@ rg -n "NAO enviar|NÃO enviar|senha de cada|laudo pronto|compliance pronta" docs
 
 Expected: sem texto interno no pacote enviavel; nenhuma promessa de laudo/compliance.
 
-- [ ] **Step 5: Claude review**
+- [x] **Step 5: Claude review**
 
 Rodar o contrato Claude desta planilha. Promocao esperada: `PASS` ou `PASS COM RESSALVAS`.
 
@@ -322,4 +328,3 @@ Atualizar scorecard final com:
 Comecar pela **Wave 00** imediatamente: ela nao depende de codigo e gera o material certo para chamar a Yavix. Em paralelo, Wave 01 e Wave 02 podem fechar P1 tecnicos ja conhecidos, porque nao dependem de contrato externo e reduzem risco antes de qualquer piloto.
 
 Waves 03 a 06 ficam bloqueadas ate a Yavix responder os itens de contrato. Se a Yavix nao fornecer auth servidor-a-servidor/SSO, a UniHER nao deve implementar proxy A2 real; deve seguir com redirect/SSO ou XLSX controlado como MVP.
-
