@@ -62,8 +62,15 @@ cp -R public .next/standalone/public
 echo "[5/6] Migracoes e seed base..."
 npm run db:seed
 
+echo "[5.1/6] Preflight de release..."
+npm run check:release-env
+
 echo "[6/6] Reiniciando app..."
-pm2 startOrReload ecosystem.config.cjs --env production
+if pm2 describe uniher --no-color 2>/dev/null | grep -E 'script path[[:space:]]*.*npm' >/dev/null; then
+  echo "Processo PM2 antigo usa npm/next start; recriando para standalone..."
+  pm2 delete uniher || true
+fi
+pm2 startOrReload ecosystem.config.cjs --env production --update-env
 pm2 save
 
 echo "[6.1/6] Aguardando app responder..."

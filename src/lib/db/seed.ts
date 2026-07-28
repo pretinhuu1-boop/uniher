@@ -56,6 +56,8 @@ async function seed() {
       const demoCompanyId = 'company_demo_visual';
       const demoRhId = 'user_demo_rh';
       const demoRhEmail = 'rh.visual@eduardaeyurimarketingltda.com.br';
+      const demoNr1Id = 'user_demo_nr1_collaborator';
+      const demoNr1Email = 'nr1.visual@eduardaeyurimarketingltda.com.br';
       if (!existingDemo) {
         console.log('[seed] Criando empresa demo + RH para testes visuais...');
         db.prepare(`
@@ -125,6 +127,47 @@ async function seed() {
           color = excluded.color
       `).run(resolvedDemoCompanyId);
 
+      const existingDemoNr1 = db.prepare(`
+        SELECT id FROM users
+        WHERE email = ? OR id = ?
+        ORDER BY CASE WHEN email = ? THEN 0 ELSE 1 END
+        LIMIT 1
+      `).get(demoNr1Email, demoNr1Id, demoNr1Email) as { id: string } | undefined;
+      const resolvedDemoNr1Id = existingDemoNr1?.id ?? demoNr1Id;
+
+      if (existingDemoNr1) {
+        db.prepare(`
+          UPDATE users
+          SET company_id = ?,
+              department_id = 'dept_demo_visual_ops',
+              name = 'NR-1 Colaboradora',
+              email = ?,
+              password_hash = ?,
+              role = 'colaboradora',
+              approved = 1,
+              must_change_password = 0,
+              also_collaborator = 0,
+              updated_at = datetime('now')
+          WHERE id = ?
+        `).run(resolvedDemoCompanyId, demoNr1Email, adminPassword, resolvedDemoNr1Id);
+      } else {
+        db.prepare(`
+          INSERT INTO users (
+            id, company_id, department_id, name, email, password_hash, role,
+            approved, level, points, must_change_password, also_collaborator
+          )
+          VALUES (?, ?, 'dept_demo_visual_ops', 'NR-1 Colaboradora', ?, ?, 'colaboradora', 1, 1, 0, 0, 0)
+        `).run(resolvedDemoNr1Id, resolvedDemoCompanyId, demoNr1Email, adminPassword);
+      }
+
+      db.prepare(`
+        INSERT INTO user_preferences (user_id, pref_key, pref_value, updated_at)
+        VALUES (?, 'first_access_tour_completed', '1', datetime('now'))
+        ON CONFLICT(user_id, pref_key) DO UPDATE SET
+          pref_value = excluded.pref_value,
+          updated_at = excluded.updated_at
+      `).run(resolvedDemoNr1Id);
+
       db.prepare(`
         INSERT INTO invites (
           id, company_id, email, role, department_id, token, status, invited_by, expires_at
@@ -154,6 +197,7 @@ async function seed() {
       console.log('[seed] ✅ Seed base concluído!');
       console.log('[seed] Admin: admin@uniher.com.br / Admin@2026');
       console.log(`[seed] Demo RH: ${demoRhEmail} / Admin@2026`);
+      console.log(`[seed] Demo NR-1 colaboradora: ${demoNr1Email} / Admin@2026`);
     })();
     db.pragma('foreign_keys = ON');
   });

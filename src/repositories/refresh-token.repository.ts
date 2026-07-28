@@ -17,7 +17,7 @@ function hashToken(token: string): string {
 export function findByTokenHash(tokenHash: string): RefreshTokenRow | undefined {
   const db = getReadDb();
   return db.prepare(
-    'SELECT * FROM refresh_tokens WHERE token_hash = ? AND expires_at > datetime("now")'
+    "SELECT * FROM refresh_tokens WHERE token_hash = ? AND expires_at > datetime('now')"
   ).get(tokenHash) as RefreshTokenRow | undefined;
 }
 
@@ -61,6 +61,6 @@ export async function cleanExpiredTokens(): Promise<void> {
   const writeQueue = getWriteQueue();
 
   await writeQueue.enqueue((db) => {
-    db.prepare('DELETE FROM refresh_tokens WHERE expires_at <= datetime("now")').run();
+    db.prepare("DELETE FROM refresh_tokens WHERE expires_at <= datetime('now')").run();
   });
 }

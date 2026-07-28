@@ -109,11 +109,42 @@ if (tokenBlacklistBackend === 'memory') {
       'in-memory access token blacklist is acceptable only for local/homologation',
     );
   }
+} else if (tokenBlacklistBackend === 'sqlite') {
+  if (!env.DATABASE_PATH) {
+    record('ACCESS_TOKEN_BLACKLIST', 'FAIL', 'sqlite backend requires DATABASE_PATH');
+  } else {
+    const dbPath = path.resolve(repoRoot, env.DATABASE_PATH);
+    if (!fs.existsSync(dbPath)) {
+      record('ACCESS_TOKEN_BLACKLIST', 'HOLD', `sqlite backend declared; database file not present yet: ${dbPath}`);
+    } else {
+      try {
+        const Database = require('better-sqlite3');
+        const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+        try {
+          const table = db.prepare(`
+            SELECT 1 AS exists_flag
+            FROM sqlite_master
+            WHERE type = 'table' AND name = 'access_token_blacklist'
+            LIMIT 1
+          `).get();
+          if (table) {
+            record('ACCESS_TOKEN_BLACKLIST', 'PASS', 'sqlite access token blacklist table is present');
+          } else {
+            record('ACCESS_TOKEN_BLACKLIST', 'FAIL', 'sqlite backend declared but access_token_blacklist table is missing; run migrations');
+          }
+        } finally {
+          db.close();
+        }
+      } catch (error) {
+        record('ACCESS_TOKEN_BLACKLIST', 'HOLD', `cannot inspect sqlite blacklist backend: ${error.message}`);
+      }
+    }
+  }
 } else {
   record(
     'ACCESS_TOKEN_BLACKLIST',
     'FAIL',
-    `${tokenBlacklistBackend} backend is declared, but the current runtime adapter is still in-memory only`,
+    `${tokenBlacklistBackend} backend is not supported; use memory for local/homologation or sqlite for production`,
   );
 }
 
