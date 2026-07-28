@@ -78,6 +78,7 @@ O output do Claude e evidencia auxiliar, nao promocao automatica. O coordenador 
 | 00 Yavix contract packet | PASS integrado | `31a382e docs: prepare Yavix contract packet` | `411705f docs: prepare Yavix contract packet` | `docs/superpowers/audits/2026-07-28-yavix-contract-packet-scorecard.md` |
 | 01 Security prod hardening | PASS integrado | `141d3bf fix: harden auth proxy release gates` | `8288da2 fix: harden auth proxy release gates` | `docs/superpowers/audits/2026-07-28-security-prod-hardening-scorecard.md` |
 | 02 NR-1 consent gates | PASS integrado | `5970b0e fix: require NR-1 consent before COPSOQ bootstrap` | `b26665e fix: require NR-1 consent before COPSOQ bootstrap` | `docs/superpowers/audits/2026-07-28-nr1-consent-gates-scorecard.md` |
+| 07 Visual leadership demo | PASS integrado | `a19ee90 fix: add leadership visual coverage and scope gates` | `30abf93 fix: add leadership visual coverage and scope gates` | `docs/superpowers/audits/2026-07-28-uniher-leadership-visual-scorecard.md` |
 
 ## Task 00: Yavix Contract Packet
 
@@ -263,11 +264,11 @@ Sem laudo, scoring, GRO/PGR ou conformidade comercial sem evidencia oficial.
 - Evidence: `docs/superpowers/evidence/visual-ux-smoke-latest/`
 - Audit: `docs/superpowers/audits/YYYY-MM-DD-uniher-leadership-visual-scorecard.md`
 
-- [ ] **Step 1: Adicionar fixture visual de lideranca**
+- [x] **Step 1: Adicionar fixture visual de lideranca**
 
 Cobrir desktop/mobile e estados principais sem ampliar dados sensiveis.
 
-- [ ] **Step 2: Gate**
+- [x] **Step 2: Gate**
 
 ```powershell
 npm run test:visual-ux-smoke
@@ -275,7 +276,7 @@ npm run test:visual-ux-smoke
 
 Expected: matriz PASS, screenshots frescos, sem overlap/sidebar geometry issues.
 
-- [ ] **Step 3: Claude review**
+- [x] **Step 3: Claude review**
 
 Foco: claims visuais, papeis, ausencia de dados individuais sensiveis.
 
