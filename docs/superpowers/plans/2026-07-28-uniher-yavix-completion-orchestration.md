@@ -285,7 +285,7 @@ Foco: claims visuais, papeis, ausencia de dados individuais sensiveis.
 **Files:**
 - Modify/Create: final audit, demo checklist, screenshot index, client-facing note
 
-- [ ] **Step 1: Full technical gate**
+- [x] **Step 1: Full technical gate**
 
 ```powershell
 npm run test:unit
@@ -302,11 +302,11 @@ Expected:
 - Unit/type/build/RH/visual PASS.
 - `check:release-env` pode seguir FAIL esperado se secrets/URL/banco/contas demo ainda nao estiverem provisionados; nesse caso deploy/prod permanece HOLD.
 
-- [ ] **Step 2: Claude final review**
+- [x] **Step 2: Claude final review**
 
 Foco: P0-P3, overpromise, deploy/env, visual human approval.
 
-- [ ] **Step 3: Coordinator closeout**
+- [x] **Step 3: Coordinator closeout**
 
 Atualizar scorecard final com:
 
