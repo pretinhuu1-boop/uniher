@@ -202,13 +202,20 @@ describe('NR-1 runtime entitlement', () => {
     await expect(requireNr1RuntimeEntitlement({ companyId: 'company-enabled' })).resolves.toBeNull();
   });
 
-  it('blocks direct COPSOQ bootstrap unless the company has enabled NR-1', async () => {
+  it('blocks direct COPSOQ bootstrap unless the company has enabled NR-1 and active consent', async () => {
     const blocked = await getBootstrap('company-contract');
     expect(blocked.status).toBe(403);
     await expect(blocked.json()).resolves.toMatchObject({
       error: 'Modulo NR-1 nao habilitado para esta empresa',
     });
 
+    const missingConsent = await getBootstrap('company-enabled');
+    expect(missingConsent.status).toBe(403);
+    await expect(missingConsent.json()).resolves.toMatchObject({
+      error: 'Consentimento NR-1 pendente ou revogado',
+    });
+
+    grantNr1Consent('nr1-user');
     const allowed = await getBootstrap('company-enabled');
     expect(allowed.status).toBe(200);
     await expect(allowed.json()).resolves.toMatchObject({ formName: 'COPSOQ41' });
