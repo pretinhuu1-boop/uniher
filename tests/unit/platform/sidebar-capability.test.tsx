@@ -256,14 +256,16 @@ describe('Sidebar persisted collaborator capability', () => {
     mocks.swrDataByEndpoint.set('/api/company/modules', {
       modules: [
         { module_slug: 'sipat', module_state: 'locked', visible: 1 },
+        { module_slug: 'nr1', module_state: 'enabled', visible: 1 },
         { module_slug: 'concierge', module_state: 'enabled', visible: 1 },
       ],
     });
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /^SIPAT$/i })).not.toBeNull();
-    expect(screen.queryByText('Bloqueado')).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /^NR-1$/i })).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /^SIPAT$/i })).toBeNull();
+    expect(screen.queryByText('Bloqueado')).toBeNull();
     expect(screen.queryByRole('link', { name: /^Concierge$/i })).toBeNull();
   });
 
