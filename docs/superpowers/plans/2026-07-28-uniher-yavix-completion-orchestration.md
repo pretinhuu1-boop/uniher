@@ -76,6 +76,7 @@ O output do Claude e evidencia auxiliar, nao promocao automatica. O coordenador 
 | Wave | Status | Branch commit | Coordenador commit | Evidencia |
 | --- | --- | --- | --- | --- |
 | 00 Yavix contract packet | PASS integrado | `31a382e docs: prepare Yavix contract packet` | `411705f docs: prepare Yavix contract packet` | `docs/superpowers/audits/2026-07-28-yavix-contract-packet-scorecard.md` |
+| 02 NR-1 consent gates | PASS integrado | `5970b0e fix: require NR-1 consent before COPSOQ bootstrap` | `b26665e fix: require NR-1 consent before COPSOQ bootstrap` | `docs/superpowers/audits/2026-07-28-nr1-consent-gates-scorecard.md` |
 
 ## Task 00: Yavix Contract Packet
 
@@ -157,22 +158,22 @@ Foco: auth, secrets, revogacao, multi-instancia, deploy HOLD.
 - Modify: `tests/unit/nr1-runtime-entitlement.test.ts`
 - Optional: `docs/specs/SPEC_YAVIX_COPSOQ_PROXY.md`
 
-- [ ] **Step 1: Escrever teste RED**
+- [x] **Step 1: Escrever teste RED**
 
 Bootstrap deve bloquear colaboradora sem consentimento `nr1_psychosocial` quando o fluxo retorna metadados sensiveis do COPSOQ.
 
-- [ ] **Step 2: Implementar gate**
+- [x] **Step 2: Implementar gate**
 
 Adicionar `requireNr1PsychosocialConsent(auth.userId)` ao bootstrap ou documentar fluxo alternativo seguro onde bootstrap sem consentimento retorna somente termos/tela de consentimento sem perguntas. A opcao mais simples e segura para fechar P1: exigir consentimento antes de retornar perguntas.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 ```powershell
 npm run test:unit -- tests/unit/nr1-runtime-entitlement.test.ts tests/unit/module-shells.test.ts tests/unit/nr1-gamification.test.ts
 npx tsc --noEmit --pretty false
 ```
 
-- [ ] **Step 4: Claude review**
+- [x] **Step 4: Claude review**
 
 Foco: COPSOQ, consentimento, PII, fail-closed, ausencia de ranking/scoring/laudo.
 
