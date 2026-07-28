@@ -4,7 +4,10 @@ import { handleApiError } from '@/lib/errors';
 import { buildBootstrap } from '@/lib/yavix/copsoq.mock';
 import { isYavixMock } from '@/lib/yavix/config';
 import { checkReadRateLimit } from '@/lib/security/rate-limit';
-import { requireNr1RuntimeEntitlement } from '@/lib/nr1/runtime-entitlement';
+import {
+  requireNr1PsychosocialConsent,
+  requireNr1RuntimeEntitlement,
+} from '@/lib/nr1/runtime-entitlement';
 import type { CopsoqBootstrap, Locale } from '@/lib/yavix/copsoq.types';
 
 // GET /api/yavix/copsoq/bootstrap
@@ -15,6 +18,8 @@ export const GET = withRole('colaboradora', 'lideranca')(async (req, { auth }) =
     await checkReadRateLimit(req);
     const entitlementError = await requireNr1RuntimeEntitlement(auth);
     if (entitlementError) return entitlementError;
+    const consentError = await requireNr1PsychosocialConsent(auth.userId);
+    if (consentError) return consentError;
 
     const url = new URL(req.url);
     const localeParam = url.searchParams.get('locale');
