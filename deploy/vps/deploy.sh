@@ -66,11 +66,8 @@ echo "[5.1/6] Preflight de release..."
 npm run check:release-env
 
 echo "[6/6] Reiniciando app..."
-if pm2 describe uniher --no-color 2>/dev/null | grep -E 'script path[[:space:]]*.*npm' >/dev/null; then
-  echo "Processo PM2 antigo usa npm/next start; recriando para standalone..."
-  pm2 delete uniher || true
-fi
-pm2 startOrReload ecosystem.config.cjs --env production --update-env
+pm2 delete uniher >/dev/null 2>&1 || true
+pm2 start ecosystem.config.cjs --env production --update-env
 pm2 save
 
 echo "[6.1/6] Aguardando app responder..."
