@@ -1,0 +1,44 @@
+{
+  "base": "https://www.uniher.com.br",
+  "generatedAt": "2026-07-28T13:08:09.462Z",
+  "results": [
+    {
+      "name": "auth-public",
+      "url": "https://www.uniher.com.br/auth",
+      "status": "PASS",
+      "body": "Ir para conteúdo principal Email Senha Entrar Esqueceu sua senha? Voltar para o início",
+      "errors": [],
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\www-production-smoke-2026-07-28\\auth-public-desktop.png"
+    },
+    {
+      "name": "admin-dashboard",
+      "url": "https://www.uniher.com.br/admin",
+      "expectedPath": "/admin",
+      "current": "/admin",
+      "status": "PASS",
+      "body": "Ir para conteúdo principal UniHER Administrador da Plataforma PRINCIPAL Dashboard geral Visão consolidada de empresas e indicadores da plataforma Visão consolidada Indicadores da plataforma Empresas Empresas, usuários, p",
+      "errors": [],
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\www-production-smoke-2026-07-28\\admin-dashboard-desktop.png"
+    },
+    {
+      "name": "rh-dashboard",
+      "url": "https://www.uniher.com.br/dashboard",
+      "expectedPath": "/dashboard",
+      "current": "/dashboard",
+      "status": "PASS",
+      "body": "Ir para conteúdo principal UniHER RH | Gestão da Saúde e Bem-estar UN UniHER VISUALIZAR COMO Admin Empresa Colaboradora PRINCIPAL Dashboard Visão geral da empresa, indicadores e gráficos protegidos Visão geral da empresa",
+      "errors": [],
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\www-production-smoke-2026-07-28\\rh-dashboard-desktop.png"
+    },
+    {
+      "name": "colaboradora-agenda",
+      "url": "https://www.uniher.com.br/agenda",
+      "expectedPath": "/agenda",
+      "current": "/agenda",
+      "status": "PASS",
+      "body": "Ir para conteúdo principal UniHER Saúde Feminina UN UniHER PRINCIPAL Saúde Primária Semáforo da Saúde Semáforo da Saúde Bloqueado Meu Bem-Estar Check-in e check-out privados do dia Check-in - Como você chega hoje? Check-",
+      "errors": [],
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\www-production-smoke-2026-07-28\\colaboradora-agenda-desktop.png"
+    }
+  ]
+}
