@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import {
   canonicalHeader,
   EMPLOYEE_IMPORT_HEADERS,
@@ -18,7 +18,8 @@ export interface EmployeeImportValidRow {
   motherName: string | null;
   cpfHash: string;
   cpfLast4: string;
-  rg: string | null;
+  rgHash: string | null;
+  rgLast4: string | null;
   rgIssuer: string | null;
   birthDate: string | null;
   sex: string | null;
@@ -102,8 +103,43 @@ function parseBirthDate(value: string | undefined): string | null {
   return iso ? trimmed : null;
 }
 
-function hashCpf(companyId: string, cpfDigits: string): string {
-  return createHash('sha256').update(`${companyId}:${cpfDigits}`).digest('hex');
+const DEV_ONLY_PII_HMAC_SECRET = 'dev-only-employee-import-pii-hmac-secret-please-set-env-in-production';
+
+function getPiiHmacSecret(): string {
+  const secret = process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET
+    || process.env.EMPLOYEE_IMPORT_PII_HMAC_SECRET
+    || '';
+  if (secret.length >= 32) return secret;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET must be set with at least 32 characters');
+  }
+  return DEV_ONLY_PII_HMAC_SECRET;
+}
+
+function hmacIdentifier(companyId: string, kind: 'cpf' | 'rg', value: string): string {
+  return createHmac('sha256', getPiiHmacSecret())
+    .update(`${kind}:${companyId}:${value}`)
+    .digest('hex');
+}
+
+function validateCpf(cpfDigits: string): boolean {
+  if (!/^\d{11}$/.test(cpfDigits)) return false;
+  if (/^(\d)\1{10}$/.test(cpfDigits)) return false;
+
+  const digits = cpfDigits.split('').map(Number);
+  const firstSum = digits.slice(0, 9).reduce((sum, digit, index) => sum + digit * (10 - index), 0);
+  const firstCheck = (firstSum * 10) % 11;
+  const expectedFirst = firstCheck === 10 ? 0 : firstCheck;
+  if (digits[9] !== expectedFirst) return false;
+
+  const secondSum = digits.slice(0, 10).reduce((sum, digit, index) => sum + digit * (11 - index), 0);
+  const secondCheck = (secondSum * 10) % 11;
+  const expectedSecond = secondCheck === 10 ? 0 : secondCheck;
+  return digits[10] === expectedSecond;
+}
+
+function normalizeRg(value: string | undefined): string {
+  return (value ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 }
 
 function makeErrorRow(rowNumber: number, raw: RawRow, errors: string[]): EmployeeImportErrorRow {
@@ -125,6 +161,7 @@ function mapRow(rowNumber: number, raw: RawRow, options: EmployeeImportParseOpti
   const companyName = normalizeOptionalText(raw.EMPRESA);
   const fullName = normalizeOptionalText(raw['NOME COMPLETO']);
   const cpfDigits = normalizeDigits(raw.CPF ?? '');
+  const rgIdentifier = normalizeRg(raw.RG);
   const email = normalizeOptionalText(raw['E-MAIL'])?.toLowerCase() ?? '';
   const birthDate = parseBirthDate(raw['DATA NASC.']);
   const uf = normalizeOptionalText(raw.UF)?.toUpperCase() ?? null;
@@ -134,6 +171,7 @@ function mapRow(rowNumber: number, raw: RawRow, options: EmployeeImportParseOpti
   if (!companyName) errors.push('EMPRESA e obrigatorio');
   if (!fullName) errors.push('NOME COMPLETO e obrigatorio');
   if (cpfDigits.length !== 11) errors.push('CPF deve conter 11 digitos');
+  else if (!validateCpf(cpfDigits)) errors.push('CPF invalido');
   if (!email) errors.push('E-MAIL e obrigatorio');
   if (email && !validateEmail(email)) errors.push('E-MAIL invalido');
   if ((raw['DATA NASC.'] ?? '').trim() && !birthDate) errors.push('DATA NASC. deve usar DD/MM/AAAA');
@@ -147,9 +185,10 @@ function mapRow(rowNumber: number, raw: RawRow, options: EmployeeImportParseOpti
     companyName: companyName!,
     fullName: fullName!,
     motherName: normalizeOptionalText(raw['NOME MÃE']),
-    cpfHash: hashCpf(options.companyId, cpfDigits),
+    cpfHash: hmacIdentifier(options.companyId, 'cpf', cpfDigits),
     cpfLast4: cpfDigits.slice(-4),
-    rg: normalizeOptionalText(raw.RG),
+    rgHash: rgIdentifier ? hmacIdentifier(options.companyId, 'rg', rgIdentifier) : null,
+    rgLast4: rgIdentifier ? rgIdentifier.slice(-4) : null,
     rgIssuer: normalizeOptionalText(raw['ÓRGÃO EMISSOR']),
     birthDate,
     sex: normalizeOptionalText(raw.SEXO)?.toUpperCase() ?? null,

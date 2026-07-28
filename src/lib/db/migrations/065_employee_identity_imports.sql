@@ -1,12 +1,13 @@
 CREATE TABLE IF NOT EXISTS employee_identity_profiles (
   id TEXT PRIMARY KEY,
-  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
   user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
   full_name TEXT NOT NULL,
   mother_name TEXT,
   cpf_hash TEXT NOT NULL,
   cpf_last4 TEXT,
-  rg TEXT,
+  rg_hash TEXT,
+  rg_last4 TEXT,
   rg_issuer TEXT,
   birth_date TEXT,
   sex TEXT,
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS employee_identity_profiles (
   imported_by TEXT REFERENCES users(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  deleted_at TEXT DEFAULT NULL,
   UNIQUE(company_id, cpf_hash)
 );
 
@@ -41,7 +43,7 @@ ON employee_identity_profiles(company_id, email);
 
 CREATE TABLE IF NOT EXISTS employee_import_batches (
   id TEXT PRIMARY KEY,
-  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
   filename TEXT,
   file_sha256 TEXT,
   status TEXT NOT NULL DEFAULT 'previewed' CHECK(status IN ('previewed', 'committed', 'failed')),
@@ -50,7 +52,8 @@ CREATE TABLE IF NOT EXISTS employee_import_batches (
   error_rows INTEGER NOT NULL DEFAULT 0,
   created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  committed_at TEXT
+  committed_at TEXT,
+  deleted_at TEXT DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_employee_import_batches_company_created

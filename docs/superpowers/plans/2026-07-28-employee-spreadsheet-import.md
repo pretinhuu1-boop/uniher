@@ -10,6 +10,82 @@
 
 ---
 
+## Goal Control Plane
+
+**Active goal:** Implementar completamente a importacao segura de planilhas de colaboradoras UniHER, com waves documentadas, guardrails de seguranca/LGPD, revisao do Claude a cada wave, evidencias de testes e screenshot final da implementacao completa.
+
+**Coordinator:** Codex in `C:\Users\user\Documents\uniher-app-audit\.worktrees\uniher-wave3-collaborator-nr1`.
+
+**Current baseline:** `f97218d feat: add employee spreadsheet import foundation`.
+
+**Implementation policy:**
+- TDD first for every behavior-changing wave.
+- Local commits after each closed wave.
+- No push, no deploy, no production mutation unless explicitly approved.
+- Claude Code review after each wave before the wave is accepted as PASS.
+- Screenshot evidence only after the UI is complete and running.
+
+**Write allowlist:**
+- `docs/superpowers/plans/2026-07-28-employee-spreadsheet-import.md`
+- `docs/superpowers/audits/*employee*import*.md`
+- `docs/superpowers/evidence/*employee*import*`
+- `src/lib/employee-import/**`
+- `src/lib/db/migrations/065_employee_identity_imports.sql`
+- `src/app/api/rh/employees/**`
+- `src/app/(platform)/colaboradoras-gestao/page.tsx`
+- `src/app/(platform)/onboarding-rh/page.tsx`
+- `src/app/(platform)/convites/page.tsx`
+- focused unit/e2e tests for employee import, RH UI, tenant/privacy guardrails
+
+**Write denylist:**
+- Semaforo implementation and storage.
+- NR-1/Yavix runtime, provisioning, scoring, or mock contract changes.
+- Liga, ranking, XP, badges, achievements, or legacy gamification behavior.
+- Public landing, auth refresh, sidebar visual redesign, campaign join, P8.
+- Production deploy, database mutation on live VPS, push, merge, rebase.
+- Any audit/log payload that includes raw CPF, RG, phone, full address, plan, mother name, or raw spreadsheet rows.
+
+**Security guardrails:**
+- Persisted actor must be re-read from `users` with `id`, `company_id`, `role`, active/approved/not blocked/not deleted checks.
+- RH/admin company users can only import into their own `company_id`.
+- Master Admin can import for a selected company only through an explicit admin-scoped route or explicit `companyId`; not through RH session inference.
+- CPF must be normalized and stored as `cpf_hash` plus `cpf_last4`; raw CPF must not appear in preview JSON, logs, audit details, screenshots, or generic user projections.
+- Leadership routes must not query or project `employee_identity_profiles`.
+- DSAR must include the collaborator's own identity profile before production release.
+- CSV upload is V1. XLSX is HOLD until a parser dependency and file validation policy are approved.
+
+**Claude review protocol after every wave:**
+
+```powershell
+claude -p "Review the current UniHER employee spreadsheet import wave. Focus on tenant isolation, PII exposure, audit/log leakage, route authorization, tests, and scope drift. Do not edit files. Return findings ordered by severity with file paths and line references when possible."
+```
+
+The wave can pass only when Claude returns no High/Critical unresolved finding, or when a finding is fixed and re-reviewed.
+
+## Wave Map
+
+| Wave | Status | Deliverable | Required gate | Claude review |
+| --- | --- | --- | --- | --- |
+| 0 | In progress | Goal harness, full wave plan, guardrails | Plan updated, worktree clean except intentional plan diff | Required before next code wave |
+| 1 | PASS, commit `f97218d` | Contract, parser, migration foundation | RED/GREEN, 31 focused tests, typecheck, diff check | Needs retrospective Claude review under this goal |
+| 1.1 | PASS | Claude Medium hardening fixes: HMAC secret, CPF validation, RG hash, soft delete/restrict | employee import + tenant/gamification focused tests, typecheck, diff check | PASS, no High/Critical/Medium |
+| 2 | Pending | RH template and preview APIs | API RED/GREEN, tenant denial tests, no raw CPF in responses | Required |
+| 3 | Pending | Commit/import repository and sanitized audit | write transaction tests, duplicate/cross-tenant tests, audit redaction tests | Required |
+| 4 | Pending | RH UI buttons, modal/page, onboarding entrypoint | source/UI tests, manual local smoke | Required |
+| 5 | Pending | DSAR/self export and projection hardening | privacy tests, no leadership/RH broad PII projection | Required |
+| 6 | Pending | Visual evidence and final hardening | Playwright screenshot desktop/mobile, `tsc`, focused suite, `git diff --check` | Required final review |
+
+## Final Evidence Required
+
+- Local commit hash for each wave.
+- Claude review output or summarized finding receipt for each wave.
+- `npx vitest run tests/unit/employee-import.test.ts` and all import API/UI tests.
+- `npx vitest run tests/unit/tenant-api-hardening.test.ts tests/unit/privacy/gamification-safe-projection.test.ts`.
+- `npx tsc --noEmit --pretty false`.
+- `git diff --check`.
+- Screenshot paths for complete UI on desktop and mobile.
+- Final status: PASS, HOLD, or BLOCKED. Production remains HOLD until user approves.
+
 ## Source Of Truth
 
 Approved V1 headers:
@@ -39,7 +115,7 @@ EMPRESA,NOME COMPLETO,NOME MÃE,CPF,RG,ÓRGÃO EMISSOR,DATA NASC.,SEXO,ESTADO CI
 - Test: `tests/unit/employee-import.test.ts`
   - Contract, parser, validation, migration, and no sensitive audit payload.
 
-## Task 1: Contract, Parser, And Migration Foundation
+## Task 1 / Wave 1: Contract, Parser, And Migration Foundation
 
 **Files:**
 - Create: `tests/unit/employee-import.test.ts`
@@ -47,7 +123,7 @@ EMPRESA,NOME COMPLETO,NOME MÃE,CPF,RG,ÓRGÃO EMISSOR,DATA NASC.,SEXO,ESTADO CI
 - Create: `src/lib/employee-import/parser.ts`
 - Create: `src/lib/db/migrations/065_employee_identity_imports.sql`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```ts
 import Database from 'better-sqlite3';
@@ -112,7 +188,7 @@ describe('employee spreadsheet import foundation', () => {
 });
 ```
 
-- [ ] **Step 2: Run tests and verify RED**
+- [x] **Step 2: Run tests and verify RED**
 
 Run:
 
@@ -122,11 +198,11 @@ npx vitest run tests/unit/employee-import.test.ts
 
 Expected: fail because `@/lib/employee-import/contract` does not exist.
 
-- [ ] **Step 3: Implement minimal contract/parser/migration**
+- [x] **Step 3: Implement minimal contract/parser/migration**
 
 Create the files listed above. The parser must return safe preview rows with `cpfHash` and `cpfLast4`, not raw CPF.
 
-- [ ] **Step 4: Run tests and verify GREEN**
+- [x] **Step 4: Run tests and verify GREEN**
 
 Run:
 
@@ -136,7 +212,39 @@ npx vitest run tests/unit/employee-import.test.ts
 
 Expected: all tests pass.
 
-## Task 2: RH Preview API
+Receipt: Wave 1 is committed at `f97218d`. It added `contract.ts`, `parser.ts`, migration `065`, and `tests/unit/employee-import.test.ts`. It passed employee import RED/GREEN, tenant/gamification focused tests, typecheck, mojibake check, and diff check. Retrospective Claude review is still required under the new goal protocol.
+
+## Task 1.1 / Wave 1.1: Claude Medium Finding Fixes
+
+**Claude review command:**
+
+```powershell
+claude -p "Review the current UniHER employee spreadsheet import goal plan and completed Wave 1 foundation at commit f97218d. Focus on tenant isolation, PII exposure, audit/log leakage, route authorization, tests, scope drift, and the plan's Claude-review/visual-evidence protocol. Do not edit files. Return findings ordered by severity with file paths and line references when possible. If no High/Critical issue exists, say so explicitly and list medium/low recommendations."
+```
+
+**Findings:** No High/Critical. Medium findings were unsalted CPF hash, missing soft delete/restrict in migration, RG plaintext in preview/storage, and missing CPF check-digit validation.
+
+**Fixes applied:**
+- `src/lib/employee-import/parser.ts` now hashes CPF/RG with HMAC-SHA256 using `UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET` or `EMPLOYEE_IMPORT_PII_HMAC_SECRET`; production requires a secret with at least 32 characters.
+- `src/lib/employee-import/parser.ts` validates CPF check digits and rejects repeated invalid CPFs.
+- `src/lib/employee-import/parser.ts` returns `rgHash` and `rgLast4`, never raw RG.
+- `src/lib/db/migrations/065_employee_identity_imports.sql` uses `ON DELETE RESTRICT` for company FKs and adds `deleted_at` to profile/batch tables.
+- `tests/unit/employee-import.test.ts` covers HMAC secret variance, invalid CPF rejection, RG non-echoing, soft-delete columns, and company FK restrict behavior.
+
+**Verification:**
+
+```powershell
+npx vitest run tests/unit/employee-import.test.ts
+npx vitest run tests/unit/employee-import.test.ts tests/unit/tenant-api-hardening.test.ts tests/unit/privacy/gamification-safe-projection.test.ts
+npx tsc --noEmit --pretty false
+git diff --check
+```
+
+**Claude re-review result:** Wave 1.1 PASS. All previous Medium findings resolved. No High/Critical/Medium findings remained. Low FK test recommendation was addressed by enabling `PRAGMA foreign_keys = ON` and asserting company deletion is restricted when a profile exists.
+
+**Result:** 6/6 employee import tests passed; 33/33 focused tests passed; typecheck passed; diff check passed with CRLF warnings only.
+
+## Task 2 / Wave 2: RH Preview API
 
 **Files:**
 - Create: `src/app/api/rh/employees/import-template/route.ts`
@@ -161,7 +269,7 @@ npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api
 
 Expected: all tests pass.
 
-## Task 3: Commit API And Audit
+## Task 3 / Wave 3: Commit API And Audit
 
 **Files:**
 - Create: `src/app/api/rh/employees/import-commit/route.ts`
@@ -187,7 +295,7 @@ npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api
 
 Expected: all tests pass.
 
-## Task 4: UI Entry Points
+## Task 4 / Wave 4: UI Entry Points
 
 **Files:**
 - Modify: `src/app/(platform)/colaboradoras-gestao/page.tsx`
@@ -213,6 +321,61 @@ npm run test:rh
 ```
 
 Expected: focused import tests pass; RH smoke still passes or any visual gap is documented.
+
+## Task 5 / Wave 5: DSAR And Projection Hardening
+
+**Files:**
+- Modify: `src/lib/privacy/dsar-export.ts`
+- Modify: `src/lib/gamification/containment.ts` only if new sensitive keys need generic projection blocking.
+- Test: `tests/unit/employee-import.test.ts` or `tests/unit/privacy/employee-import-privacy.test.ts`
+
+- [ ] **Step 1: Write failing privacy tests**
+
+Assert the collaborator's own export includes her employee identity profile, while RH/leadership/team/list projections do not expose CPF hash, RG, phone, address, mother name, or health plan.
+
+- [ ] **Step 2: Implement DSAR export section**
+
+Add an `employeeIdentityProfile` section filtered by `user_id = ?` or equivalent self-owned link. Do not add any RH/admin bulk export.
+
+- [ ] **Step 3: Run privacy gates**
+
+Run:
+
+```powershell
+npx vitest run tests/unit/employee-import.test.ts tests/unit/privacy/gamification-safe-projection.test.ts
+```
+
+Expected: all tests pass.
+
+## Task 6 / Wave 6: Visual Evidence And Final Hardening
+
+**Files:**
+- Create evidence screenshots under `docs/superpowers/evidence/employee-import-*`.
+- Modify tests only for final smoke support if needed.
+
+- [ ] **Step 1: Start local app**
+
+Run the local dev server or production build/start, using a free port if `3000` is occupied.
+
+- [ ] **Step 2: Capture screenshots**
+
+Capture desktop and mobile screenshots of `Gestao de Colaboradoras` showing:
+- `Importar planilha`
+- `Baixar modelo`
+- preview state
+- validation error state
+
+- [ ] **Step 3: Run final gates**
+
+Run:
+
+```powershell
+npx vitest run tests/unit/employee-import.test.ts tests/unit/tenant-api-hardening.test.ts tests/unit/privacy/gamification-safe-projection.test.ts
+npx tsc --noEmit --pretty false
+git diff --check
+```
+
+Expected: all pass.
 
 ## Governance Gates
 
