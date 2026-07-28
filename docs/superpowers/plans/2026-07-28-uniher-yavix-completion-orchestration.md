@@ -78,8 +78,12 @@ O output do Claude e evidencia auxiliar, nao promocao automatica. O coordenador 
 | 00 Yavix contract packet | PASS integrado | `31a382e docs: prepare Yavix contract packet` | `411705f docs: prepare Yavix contract packet` | `docs/superpowers/audits/2026-07-28-yavix-contract-packet-scorecard.md` |
 | 01 Security prod hardening | PASS integrado | `141d3bf fix: harden auth proxy release gates` | `8288da2 fix: harden auth proxy release gates` | `docs/superpowers/audits/2026-07-28-security-prod-hardening-scorecard.md` |
 | 02 NR-1 consent gates | PASS integrado | `5970b0e fix: require NR-1 consent before COPSOQ bootstrap` | `b26665e fix: require NR-1 consent before COPSOQ bootstrap` | `docs/superpowers/audits/2026-07-28-nr1-consent-gates-scorecard.md` |
-| 07 Visual leadership demo | PASS integrado | `a19ee90 fix: add leadership visual coverage and scope gates` | `30abf93 fix: add leadership visual coverage and scope gates` | `docs/superpowers/audits/2026-07-28-uniher-leadership-visual-scorecard.md` |
-| 08 Release demo package | PASS integrado / HOLD prod | `2b1b571 docs: package UniHER release demo evidence` | `13a1ee6 docs: package UniHER release demo evidence` | `docs/superpowers/audits/2026-07-28-uniher-release-demo-final-scorecard.md` |
+| 03 Yavix data model | HOLD integrado | `1c7bc45 docs: hold Yavix data model pending contract` | `b728cda docs: hold Yavix data model pending contract` | `docs/superpowers/audits/2026-07-28-yavix-data-model-hold-scorecard.md` |
+| 04 Yavix provisioning MVP | HOLD integrado | `587b32e docs: hold Yavix provisioning pending contract` | `1f589a0 docs: hold Yavix provisioning pending contract` | `docs/superpowers/audits/2026-07-28-yavix-provisioning-mvp-hold-scorecard.md` |
+| 05 COPSOQ runtime real | HOLD integrado | `54ac661 docs: hold COPSOQ runtime pending auth` | `1999e27 docs: hold COPSOQ runtime pending auth` | `docs/superpowers/audits/2026-07-28-copsoq-runtime-real-hold-scorecard.md` |
+| 06 Yavix results boundary | HOLD integrado | `a9fc070 docs: hold Yavix results pending official scoring` | `9078cab docs: hold Yavix results pending official scoring` | `docs/superpowers/audits/2026-07-28-yavix-results-boundary-hold-scorecard.md` |
+| 07 Visual leadership demo | PASS COM RESSALVAS integrado | `a19ee90 fix: add leadership visual coverage and scope gates` | `30abf93 fix: add leadership visual coverage and scope gates` | `docs/superpowers/audits/2026-07-28-uniher-leadership-visual-scorecard.md` |
+| 08 Release demo package | PASS COM RESSALVAS integrado / HOLD prod | `2b1b571 docs: package UniHER release demo evidence` | `13a1ee6 docs: package UniHER release demo evidence` | `docs/superpowers/audits/2026-07-28-uniher-release-demo-final-scorecard.md` |
 
 ## Task 00: Yavix Contract Packet
 
@@ -182,7 +186,7 @@ Foco: COPSOQ, consentimento, PII, fail-closed, ausencia de ranking/scoring/laudo
 
 ## Task 03: Yavix Data Model
 
-**Status:** HOLD ate Wave 00 receber contrato ou, no minimo, confirmar que o piloto usara XLSX.
+**Status:** HOLD integrado via `docs/superpowers/audits/2026-07-28-yavix-data-model-hold-scorecard.md` ate Wave 00 receber contrato ou, no minimo, confirmar que o piloto usara XLSX.
 
 **Files:**
 - Create/Modify: docs/specs or migrations only after decision
@@ -203,7 +207,7 @@ Nenhuma migration real se a resposta Yavix ainda nao definiu chaves naturais, CP
 
 ## Task 04: Yavix Provisioning MVP
 
-**Status:** HOLD ate Wave 00 responder provisioning.
+**Status:** HOLD integrado via `docs/superpowers/audits/2026-07-28-yavix-provisioning-mvp-hold-scorecard.md` ate Wave 00 responder provisioning.
 
 **Files:**
 - To be defined after contract. Do not infer endpoint names.
@@ -222,7 +226,7 @@ Sem PII em logs, sem endpoints presumidos, sem push automatico de cadastro real.
 
 ## Task 05: COPSOQ Runtime Real
 
-**Status:** HOLD ate Yavix fornecer auth servidor-a-servidor/SSO seguro.
+**Status:** HOLD integrado via `docs/superpowers/audits/2026-07-28-copsoq-runtime-real-hold-scorecard.md` ate Yavix fornecer auth servidor-a-servidor/SSO seguro.
 
 **Files:**
 - Candidate: `src/lib/yavix/*`, `src/app/api/yavix/copsoq/*`, `src/components/copsoq/*`
@@ -241,7 +245,7 @@ Testes devem provar: sem token/CPF/respostas no browser/log, 401/403/404/429 map
 
 ## Task 06: Results, Scoring And Report Boundary
 
-**Status:** HOLD ate Yavix fornecer endpoint de resultado ou matriz oficial com governanca.
+**Status:** HOLD integrado via `docs/superpowers/audits/2026-07-28-yavix-results-boundary-hold-scorecard.md` ate Yavix fornecer endpoint de resultado ou matriz oficial com governanca.
 
 **Files:**
 - To be defined after contract.
