@@ -79,6 +79,7 @@ O output do Claude e evidencia auxiliar, nao promocao automatica. O coordenador 
 | 01 Security prod hardening | PASS integrado | `141d3bf fix: harden auth proxy release gates` | `8288da2 fix: harden auth proxy release gates` | `docs/superpowers/audits/2026-07-28-security-prod-hardening-scorecard.md` |
 | 02 NR-1 consent gates | PASS integrado | `5970b0e fix: require NR-1 consent before COPSOQ bootstrap` | `b26665e fix: require NR-1 consent before COPSOQ bootstrap` | `docs/superpowers/audits/2026-07-28-nr1-consent-gates-scorecard.md` |
 | 07 Visual leadership demo | PASS integrado | `a19ee90 fix: add leadership visual coverage and scope gates` | `30abf93 fix: add leadership visual coverage and scope gates` | `docs/superpowers/audits/2026-07-28-uniher-leadership-visual-scorecard.md` |
+| 08 Release demo package | PASS integrado / HOLD prod | `2b1b571 docs: package UniHER release demo evidence` | `13a1ee6 docs: package UniHER release demo evidence` | `docs/superpowers/audits/2026-07-28-uniher-release-demo-final-scorecard.md` |
 
 ## Task 00: Yavix Contract Packet
 
