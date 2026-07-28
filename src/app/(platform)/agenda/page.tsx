@@ -77,7 +77,7 @@ export default function AgendaPage() {
       setMsg('Evento marcado como realizado!');
       mutate();
     } catch {
-      setMsg('Erro de conexÃ£o ao concluir evento');
+      setMsg('Erro de conexão ao concluir evento');
     }
   }, [mutate]);
 
@@ -93,7 +93,7 @@ export default function AgendaPage() {
       setMsg('Evento cancelado!');
       mutate();
     } catch {
-      setMsg('Erro de conexÃ£o ao cancelar evento');
+      setMsg('Erro de conexão ao cancelar evento');
     }
   }, [mutate]);
 
