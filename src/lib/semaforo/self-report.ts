@@ -5,6 +5,57 @@ import { z } from 'zod';
 export const PERSONAL_SEMAFORO_CONSENT_VERSION = 'personal-semaforo-v1';
 export const PERSONAL_SEMAFORO_RETENTION_DAYS = 180;
 
+export const PERSONAL_SEMAFORO_DIMENSIONS = {
+  prevention: {
+    label: 'Prevenção',
+    icon: 'ShieldCheck',
+    prompt: 'Exames, sinais do corpo e cuidado preventivo.',
+    greenGuide: 'Manter acompanhamento.',
+    yellowGuide: 'Separar um momento para revisar pendências.',
+    redGuide: 'Buscar apoio de confiança ou canal adequado.',
+  },
+  sleep: {
+    label: 'Sono',
+    icon: 'Moon',
+    prompt: 'Descanso, qualidade do sono e recuperação.',
+    greenGuide: 'Preservar sua rotina de descanso.',
+    yellowGuide: 'Observar padrões antes de dormir.',
+    redGuide: 'Reduzir carga e priorizar recuperação.',
+  },
+  energy: {
+    label: 'Energia',
+    icon: 'Battery',
+    prompt: 'Disposição física e mental para o dia.',
+    greenGuide: 'Seguir com pausas leves.',
+    yellowGuide: 'Fazer uma pausa curta e beber água.',
+    redGuide: 'Diminuir ritmo quando possível.',
+  },
+  mind: {
+    label: 'Saúde mental',
+    icon: 'HeartPulse',
+    prompt: 'Emoções, foco e sensação de segurança.',
+    greenGuide: 'Continuar seus rituais de cuidado.',
+    yellowGuide: 'Registrar gatilhos e limites.',
+    redGuide: 'Procurar suporte humano adequado.',
+  },
+  habits: {
+    label: 'Hábitos',
+    icon: 'Sprout',
+    prompt: 'Rotina, alimentação, movimento e hidratação.',
+    greenGuide: 'Repetir o que funcionou hoje.',
+    yellowGuide: 'Escolher uma ação pequena para retomar.',
+    redGuide: 'Simplificar o dia para um cuidado essencial.',
+  },
+  connection: {
+    label: 'Conexão',
+    icon: 'Sparkles',
+    prompt: 'Vínculos, pertencimento e apoio percebido.',
+    greenGuide: 'Valorizar a rede que está funcionando.',
+    yellowGuide: 'Conversar com alguém de confiança.',
+    redGuide: 'Evitar isolamento e pedir apoio seguro.',
+  },
+} as const;
+
 export const PERSONAL_SEMAFORO_SIGNALS = {
   green: {
     label: 'Estou bem',
@@ -31,11 +82,13 @@ export const PERSONAL_SEMAFORO_ENERGY = {
 
 export const semaforoSelfReportSchema = z.object({
   consentAccepted: z.literal(true),
+  dimension: z.enum(['prevention', 'sleep', 'energy', 'mind', 'habits', 'connection']),
   signal: z.enum(['green', 'yellow', 'red']),
   energy: z.enum(['low', 'steady', 'high']),
   note: z.string().trim().max(500).optional().transform((value) => value || null),
 }).strict();
 
+export type PersonalSemaforoDimension = keyof typeof PERSONAL_SEMAFORO_DIMENSIONS;
 export type PersonalSemaforoSignal = keyof typeof PERSONAL_SEMAFORO_SIGNALS;
 export type PersonalSemaforoEnergy = keyof typeof PERSONAL_SEMAFORO_ENERGY;
 
@@ -48,6 +101,7 @@ interface ConsentRow {
 
 interface EntryRow {
   id: string;
+  dimension: PersonalSemaforoDimension;
   signal: PersonalSemaforoSignal;
   energy: PersonalSemaforoEnergy;
   note: string | null;
@@ -65,11 +119,19 @@ function activeConsent(db: Database.Database, userId: string): ConsentRow | unde
 }
 
 function mapEntry(row: EntryRow) {
+  const dimension = PERSONAL_SEMAFORO_DIMENSIONS[row.dimension] ?? PERSONAL_SEMAFORO_DIMENSIONS.prevention;
+  const guideKey = `${row.signal}Guide` as const;
+
   return {
     id: row.id,
+    dimension: row.dimension,
+    dimensionLabel: dimension.label,
+    dimensionPrompt: dimension.prompt,
+    icon: dimension.icon,
     signal: row.signal,
     signalLabel: PERSONAL_SEMAFORO_SIGNALS[row.signal].label,
     tone: PERSONAL_SEMAFORO_SIGNALS[row.signal].tone,
+    guide: dimension[guideKey],
     energy: row.energy,
     energyLabel: PERSONAL_SEMAFORO_ENERGY[row.energy],
     note: row.note,
@@ -81,15 +143,20 @@ function mapEntry(row: EntryRow) {
 
 export function readPersonalSemaforoState(db: Database.Database, userId: string) {
   const consent = activeConsent(db, userId);
-  const latest = db.prepare(`
-    SELECT id, signal, energy, note, consent_version, created_at, expires_at
+  const recentRows = db.prepare(`
+    SELECT id, dimension, signal, energy, note, consent_version, created_at, expires_at
     FROM personal_semaforo_entries
     WHERE user_id = ?
       AND deleted_at IS NULL
       AND expires_at > datetime('now')
     ORDER BY created_at DESC, id DESC
-    LIMIT 1
-  `).get(userId) as EntryRow | undefined;
+    LIMIT 60
+  `).all(userId) as EntryRow[];
+  const latest = recentRows[0];
+  const latestByDimension = new Map<PersonalSemaforoDimension, EntryRow>();
+  for (const row of recentRows) {
+    if (!latestByDimension.has(row.dimension)) latestByDimension.set(row.dimension, row);
+  }
 
   return {
     status: 'private_self_report',
@@ -106,9 +173,18 @@ export function readPersonalSemaforoState(db: Database.Database, userId: string)
       retentionDays: PERSONAL_SEMAFORO_RETENTION_DAYS,
     },
     options: {
+      dimensions: PERSONAL_SEMAFORO_DIMENSIONS,
       signals: PERSONAL_SEMAFORO_SIGNALS,
       energy: PERSONAL_SEMAFORO_ENERGY,
     },
+    dimensions: Object.entries(PERSONAL_SEMAFORO_DIMENSIONS).map(([key, meta]) => {
+      const entry = latestByDimension.get(key as PersonalSemaforoDimension);
+      return {
+        id: key,
+        ...meta,
+        latest: entry ? mapEntry(entry) : null,
+      };
+    }),
     latest: latest ? mapEntry(latest) : null,
   };
 }
@@ -119,7 +195,7 @@ export function listPersonalSemaforoHistory(
   limit = 12,
 ) {
   const rows = db.prepare(`
-    SELECT id, signal, energy, note, consent_version, created_at, expires_at
+    SELECT id, dimension, signal, energy, note, consent_version, created_at, expires_at
     FROM personal_semaforo_entries
     WHERE user_id = ?
       AND deleted_at IS NULL
@@ -133,6 +209,12 @@ export function listPersonalSemaforoHistory(
     diagnostic: false,
     companyVisible: false,
     entries: rows.map(mapEntry),
+    entriesByDimension: Object.keys(PERSONAL_SEMAFORO_DIMENSIONS).reduce((acc, dimension) => {
+      acc[dimension] = rows
+        .filter((row) => row.dimension === dimension)
+        .map(mapEntry);
+      return acc;
+    }, {} as Record<string, ReturnType<typeof mapEntry>[]>),
   };
 }
 
@@ -160,12 +242,13 @@ export function createPersonalSemaforoEntry(
 
   db.prepare(`
     INSERT INTO personal_semaforo_entries (
-      id, user_id, company_id, signal, energy, note, consent_version, created_at, expires_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime(?, '+' || ? || ' days'))
+      id, user_id, company_id, dimension, signal, energy, note, consent_version, created_at, expires_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(?, '+' || ? || ' days'))
   `).run(
     id,
     userId,
     user?.company_id ?? null,
+    input.dimension,
     input.signal,
     input.energy,
     input.note,

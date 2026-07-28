@@ -438,7 +438,7 @@ export function* createDsarExportJsonChunks(
     yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
       const statement = cursor === null
         ? db.prepare<unknown[], DsarRow>(`
-            SELECT id, signal, energy, note, consent_version, created_at, expires_at,
+            SELECT id, dimension, signal, energy, note, consent_version, created_at, expires_at,
                    id AS __dsar_cursor_id,
                    COALESCE(created_at, '') AS __dsar_cursor_timestamp
             FROM personal_semaforo_entries
@@ -447,7 +447,7 @@ export function* createDsarExportJsonChunks(
             LIMIT ?
           `)
         : db.prepare<unknown[], DsarRow>(`
-            SELECT id, signal, energy, note, consent_version, created_at, expires_at,
+            SELECT id, dimension, signal, energy, note, consent_version, created_at, expires_at,
                    id AS __dsar_cursor_id,
                    COALESCE(created_at, '') AS __dsar_cursor_timestamp
             FROM personal_semaforo_entries

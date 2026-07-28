@@ -40,6 +40,7 @@ import * as healthScores from '@/repositories/health-score.repository';
 const root = process.cwd();
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 const selfReportMigrationPath = path.join(root, 'src', 'lib', 'db', 'migrations', '063_personal_semaforo_self_reports.sql');
+const dimensionMigrationPath = path.join(root, 'src', 'lib', 'db', 'migrations', '064_personal_semaforo_dimensions.sql');
 
 const collaboratorAuth = {
   userId: 'user-1',
@@ -107,6 +108,7 @@ function useDatabase() {
     VALUES ('legacy-health-1', 'user-1', 'Sono', 7.7, 'yellow');
   `);
   applyMigration(db, '063_personal_semaforo_self_reports.sql', fs.readFileSync(selfReportMigrationPath, 'utf8'));
+  applyMigration(db, '064_personal_semaforo_dimensions.sql', fs.readFileSync(dimensionMigrationPath, 'utf8'));
   return db;
 }
 
@@ -130,6 +132,10 @@ describe('Semaforo private self-report', () => {
 
     expect(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'personal_semaforo_entries'").get()).toBeTruthy();
     expect(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'personal_semaforo_consents'").get()).toBeTruthy();
+    const dimensionSql = fs.readFileSync(dimensionMigrationPath, 'utf8');
+    expect(applyMigration(db, '064_personal_semaforo_dimensions.sql', dimensionSql)).toBe('applied');
+    expect(applyMigration(db, '064_personal_semaforo_dimensions.sql', dimensionSql)).toBe('skipped');
+    expect(db.prepare("SELECT name FROM pragma_table_info('personal_semaforo_entries') WHERE name = 'dimension'").get()).toBeTruthy();
   });
 
   it('starts empty, creates only self-owned private entries and keeps legacy health_scores untouched', async () => {
@@ -139,18 +145,25 @@ describe('Semaforo private self-report', () => {
     const initial = await call(getSemaforo, new Request('http://localhost/api/collaborator/semaforo'));
     expect(initial.status).toBe(200);
     expect(initial.headers.get('cache-control')).toBe('private, no-store');
-    await expect(initial.json()).resolves.toMatchObject({
+    const initialBody = await initial.json();
+    expect(initialBody).toMatchObject({
       status: 'private_self_report',
       diagnostic: false,
       companyVisible: false,
       consent: { accepted: false, retentionDays: 180 },
       latest: null,
     });
+    expect(initialBody.dimensions).toHaveLength(6);
+    expect(initialBody.dimensions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'prevention', label: 'Prevenção', latest: null }),
+      expect.objectContaining({ id: 'sleep', label: 'Sono', latest: null }),
+      expect.objectContaining({ id: 'mind', label: 'Saúde mental', latest: null }),
+    ]));
 
     const rejected = await call(postSemaforo, new Request('http://localhost/api/collaborator/semaforo', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ consentAccepted: false, signal: 'green', energy: 'steady' }),
+      body: JSON.stringify({ consentAccepted: false, dimension: 'sleep', signal: 'green', energy: 'steady' }),
     }));
     expect(rejected.status).toBe(400);
 
@@ -159,6 +172,7 @@ describe('Semaforo private self-report', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         consentAccepted: true,
+        dimension: 'sleep',
         signal: 'yellow',
         energy: 'low',
         note: 'Semana pesada',
@@ -168,6 +182,8 @@ describe('Semaforo private self-report', () => {
     await expect(created.json()).resolves.toMatchObject({
       consent: { accepted: true, version: 'personal-semaforo-v1' },
       latest: {
+        dimension: 'sleep',
+        dimensionLabel: 'Sono',
         signal: 'yellow',
         signalLabel: 'Preciso observar',
         energy: 'low',
@@ -182,7 +198,10 @@ describe('Semaforo private self-report', () => {
       status: 'private_self_report_history',
       diagnostic: false,
       companyVisible: false,
-      entries: [{ signal: 'yellow', note: 'Semana pesada' }],
+      entries: [{ dimension: 'sleep', dimensionLabel: 'Sono', signal: 'yellow', note: 'Semana pesada' }],
+      entriesByDimension: {
+        sleep: [{ signal: 'yellow', note: 'Semana pesada' }],
+      },
     });
     expect(healthSnapshot(db)).toEqual(before);
   });
@@ -206,7 +225,13 @@ describe('Semaforo private self-report', () => {
     await call(postSemaforo, new Request('http://localhost/api/collaborator/semaforo', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ consentAccepted: true, signal: 'red', energy: 'low', note: 'Apagar depois' }),
+      body: JSON.stringify({
+        consentAccepted: true,
+        dimension: 'mind',
+        signal: 'red',
+        energy: 'low',
+        note: 'Apagar depois',
+      }),
     }));
 
     const deleted = await call(deleteSemaforo, new Request('http://localhost/api/collaborator/semaforo', { method: 'DELETE' }));
@@ -241,9 +266,10 @@ describe('Semaforo private self-report', () => {
 
   it('keeps source boundaries free of score-derived Semaforo UI and RH/Admin readers', () => {
     const page = read('src/app/(platform)/semaforo/page.tsx');
-    expect(page).toContain('Auto-relato privado');
+    expect(page).toContain('auto-relato privado');
     expect(page).toContain('companyVisible: false');
-    expect(page).not.toMatch(/health_scores|score|recalculate|ranking/i);
+    expect(page).toContain('Circuito de autocuidado');
+    expect(page).not.toMatch(/health_scores|score|recalculate|ranking|pontos|\bXP\b|liga/i);
 
     for (const route of [
       'src/app/api/collaborator/semaforo/route.ts',
