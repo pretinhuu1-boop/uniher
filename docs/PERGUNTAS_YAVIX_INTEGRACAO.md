@@ -1,75 +1,120 @@
-# Perguntas para a Yavix — Integração UniHER × COPSOQ41 (NR-1)
+# Perguntas para a Yavix - Integracao UniHER x COPSOQ41 (NR-1)
 
-> **Contexto:** a UniHER vai integrar o questionário psicossocial **COPSOQ41** (NR-1) da Yavix na sua plataforma — a colaboradora responde **dentro do app UniHER**, e o **servidor da UniHER** conversa com a API da Yavix (o navegador nunca fala direto com vocês). Antes de escrever a integração real e de enviar a planilha de cadastro preenchida, precisamos alinhar os pontos abaixo.
+> **Contexto:** a UniHER esta preparando a integracao do questionario psicossocial COPSOQ41 (NR-1) da Yavix dentro da plataforma UniHER. A intencao tecnica e que o navegador fale apenas com a UniHER e que o servidor UniHER converse com a Yavix, sem expor token Yavix no browser. Antes de iniciar integracao real, precisamos confirmar os pontos abaixo.
 >
-> **Prioridade:** 🔴 = bloqueia o início · ⚙️ = necessário para o piloto (cadastro/acesso) · ▶️ = necessário para a fase de runtime.
->
-> _Gerado 2026-06-29. Documento interno UniHER/Axial; a Seção "Anexo" não vai para a Yavix._
+> **Prioridade:** `P0` bloqueia inicio seguro; `P1` e necessario para piloto/cadastro/acesso; `P2` e necessario para runtime e escala.
 
 ---
 
-## 1. Bloqueadores (precisamos destes para começar)
+## 1. Bloqueadores P0
 
-1. 🔴 **Autenticação servidor-a-servidor (B2B).** O manual descreve apenas `POST /auth/login` por **usuário** (CPF/e-mail + senha + tenant). Existe um modo de integração **server-to-server** — *client-credentials*, *API key*, *service account* ou *SSO/OIDC*? **Sem isso, como aplicamos o questionário em escala sem armazenar a senha de cada colaboradora?** (Guardar a senha de cada trabalhador é inviável para nós, por segurança e LGPD.)
+1. **Autenticacao servidor-a-servidor ou SSO.** O material recebido ate agora descreve `POST /auth/login` por usuario com CPF/e-mail, senha e tenant. Existe um modo B2B para integracao, como client credentials, API key, service account, OIDC/SSO ou outro fluxo oficial? Precisamos evitar qualquer desenho que dependa de guardar senhas individuais de colaboradoras.
 
-2. 🔴 **Resultados / laudo.** O manual cobre o **preenchimento** (login → termos → formulário → respostas → enviar), mas **não a leitura dos resultados**. Após `status=DONE`, como obtemos o **scoring das dimensões psicossociais** (para alimentar o PGR/NR-1)? Há endpoint de **resultados por colaborador** e/ou **agregado por empresa/setor**? Se não houver API, a Yavix entrega o laudo por outro canal? *(Sem resultado, a integração não cumpre o objetivo de conformidade.)*
+2. **Resultados, scoring e laudo.** O material atual cobre preenchimento do formulario, mas nao cobre leitura de resultados. Apos `status=DONE`, como a UniHER obtem o scoring das dimensoes psicossociais e/ou o laudo para apoiar PGR/NR-1? Existe endpoint por colaborador, agregado por empresa/setor/GHE, exportacao ou entrega por outro canal?
 
----
-
-## 2. Acesso e ambiente ⚙️
-
-3. **URLs** da `yavix-api` em **produção** e em **homologação/sandbox**.
-4. **Credenciais de teste** + um **tenant de sandbox** para rodarmos o piloto sem afetar dados reais.
-
----
-
-## 3. Cadastros (planilha / provisionamento) ⚙️
-
-5. **Matching no import:** reenviar um **CPF já existente** faz **atualização (upsert)** ou **duplica**? A chave de identidade é o CPF?
-6. **Integridade:** o `CNPJ FILIAL` (aba *Funcionarios*) precisa **existir** na aba *Empresas*? Um colaborador pode ser vinculado direto à **matriz**?
-7. **Tenant:** o tenant lógico é a **matriz (grupo)** com filiais como sub-escopos, ou **cada CNPJ é um tenant isolado**?
-8. **GHE (Grupo Homogêneo de Exposição):** é **obrigatório**? É **lista fechada/catálogo** ou **texto livre**? Como a Yavix usa esse campo? *(No piloto deixaremos em branco até esta definição.)*
-9. **CELULAR:** formato esperado exato — só dígitos com DDD? com o dígito **9**? com **+55**?
-10. **E-mail / primeiro acesso:** o modelo **não tem coluna de e-mail** e o login é por **CPF**. Como é o **primeiro acesso / definição de senha** da colaboradora — via SMS/WhatsApp no celular? O e-mail é dispensável mesmo?
-11. **SEXO:** é **sexo biológico** (eSocial/SST) ou **gênero**? O domínio fica restrito a **F/M**?
-12. **REMOVER = "Sim":** **desativa/bloqueia** o acesso preservando o histórico (soft-delete) ou **exclui** o registro?
-13. **Provisionamento via API:** além da planilha + painel, existe **API** para criação/atualização em massa de empresas e usuários? *(Queremos automatizar a partir do cadastro que já temos na UniHER, em vez de planilha manual por cliente.)*
-14. **Obrigatoriedade por coluna:** quais colunas a Yavix **rejeita** se vierem vazias?
+3. **Contrato tecnico atual.** Voces podem compartilhar OpenAPI, Swagger, Postman Collection ou documento equivalente atualizado para:
+   - API de aplicacao do COPSOQ41;
+   - API de implantacao/provisionamento, caso exista;
+   - ambiente de homologacao/sandbox;
+   - ambiente de producao.
 
 ---
 
-## 4. Fluxo da API (runtime) ▶️
+## 2. Acesso e ambiente P1
 
-15. **Token:** existe **refresh token**, ou é **re-login a cada 8h**?
-16. **Rate-limit:** há limite de requisições/segundo (HTTP **429**)? Qual? *(Vamos enviar muitos `PATCH /form/{id}` — uma resposta por pergunta, por colaboradora.)*
-17. **Reaplicação:** `POST /form` após um questionário `DONE` **reabre**, **cria novo** ou **bloqueia**? Qual a política de **reaplicação periódica** do NR-1?
-18. **RBAC:** quais **roles** podem **responder** vs **administrar**? *(Queremos evitar 403.)* O respondente comum precisa de role específica?
-19. **Índices da resposta:** confirmar a semântica, no `PATCH /form/{id}`, de `value.value` (**1-based?**) vs `value.optionIndex` (**0-based?**), e se o backend valida a coerência entre os dois.
-20. **Termos:** o `id` usado em `PUT /terms/update` é o campo `id` do item de `terms[]` (não o `termsAgreementId`), correto? Quando `isOutdated=true`, basta **reaceitar** pelo mesmo fluxo?
-21. **Idioma:** as perguntas/opções vêm **sempre** com `pt/en/es` preenchidos, ou algum idioma pode faltar? *(Precisamos saber para o fallback.)*
+4. Quais sao as URLs oficiais de homologacao/sandbox e producao?
 
----
+5. Voces conseguem fornecer tenant de sandbox e credenciais de teste sem PII real para validarmos o piloto?
 
-## 5. O instrumento (COPSOQ41)
+6. O token possui refresh token? Se nao houver refresh token, qual e o fluxo recomendado para sessao longa ou expiracao durante preenchimento?
 
-22. O que exatamente é **"COPSOQ41"**? (41 dimensões? itens-núcleo? versão BR adaptada?) Por que os `code` vão até **120**? Há outros `formName`/versões disponíveis?
-23. O **cálculo / cut-offs** das dimensões é responsabilidade da **Yavix** (nossa preferência) ou a UniHER deve calcular? Se for nosso, qual a **matriz oficial** de pontuação?
+7. Existem rate limits documentados, especialmente para muitas chamadas `PATCH /form/{id}`?
 
 ---
 
-## 6. LGPD e tratamento de dados (sensível)
+## 3. Cadastro e provisionamento P1
 
-24. **Contrato de tratamento:** CPF + respostas de saúde mental são **dados sensíveis** (LGPD art. 11). Quem é **controlador** e quem é **operador**? **Onde** os dados residem?
-25. **Aceite de termos:** confirmamos que o aceite (`PUT /terms/update`) deve ser **ação da própria colaboradora** na nossa interface (nunca automatizado pelo servidor em nome dela), certo? Vocês exigem registro de consentimento (IP/timestamp) do lado de vocês?
-26. **Retenção / exclusão:** qual a política de **retenção** do laudo, e qual o efeito de `REMOVER` sobre **respostas históricas**?
+8. Alem da planilha e painel, existe API para criar, atualizar, desativar e reconciliar empresas, filiais e funcionarios?
+
+9. No import por planilha ou API, reenviar CPF existente atualiza o cadastro ou cria duplicidade?
+
+10. A chave de identidade do colaborador na Yavix e CPF? Existe algum identificador externo recomendado para integracao com a UniHER?
+
+11. O `CNPJ FILIAL` precisa existir previamente na aba/entidade de empresas? Um colaborador pode ser vinculado direto a matriz?
+
+12. O tenant representa a matriz/grupo com filiais abaixo, ou cada CNPJ deve ser tenant separado?
+
+13. `REMOVER = Sim` desativa/bloqueia preservando historico ou exclui definitivamente?
+
+14. Quais colunas da planilha sao obrigatorias e quais podem ficar vazias no piloto?
+
+15. GHE e obrigatorio? E catalogo fechado ou texto livre? Como a Yavix usa GHE nos resultados?
+
+16. Qual formato esperado para celular: somente digitos com DDD, com nono digito, com `+55`, ou outro padrao?
+
+17. O modelo recebido nao possui coluna de e-mail. Como funciona o primeiro acesso da colaboradora: SMS, WhatsApp, CPF e senha temporaria, convite por outro canal?
+
+18. O campo sexo usa dominio `F/M` por requisito SST/eSocial ou ha outro dominio?
 
 ---
 
-## Anexo — Decisões internas (Nelson · NÃO enviar à Yavix)
+## 4. Runtime COPSOQ41 P2
 
-- **Arquitetura:** A2 (questionário embutido na UniHER) já decidido — **mas depende do bloqueador #1** (auth de servidor). Sem ele, só A1 (redirect ao portal Yavix) é viável.
-- **i18n:** escopo do multiidioma — só o questionário (recomendado) vs app inteiro.
-- **Laudo:** granularidade exigida — `departamento` já existe no schema; **GHE/unidade/cargo não existem** → entram na migration 047.
-- **Gamificação:** XP só por **participação** (nunca pelo conteúdo das respostas).
-- **Infra:** confirmar host do banco de produção (srv1373909) antes de qualquer import em massa.
-- **Piloto:** preencher esta planilha com o time da UniHER, enviar à Yavix, validar o fluxo via Postman/coleção e a tela `/avaliacao-nr1` antes de escrever a fiação real (Onda 3).
+19. `POST /form` depois de um formulario `DONE` reabre a sessao, cria novo ciclo ou bloqueia?
+
+20. Qual e a politica recomendada para reaplicacao periodica do NR-1?
+
+21. Quais roles podem responder, administrar e visualizar resultado? O respondente precisa de role especifica?
+
+22. No `PATCH /form/{id}`, confirmam que `value.value` e 1-based e `value.optionIndex` e 0-based? O backend valida coerencia entre os dois?
+
+23. O `id` enviado em `PUT /terms/update` e o campo `id` do item retornado em `terms[]`, e nao `termsAgreementId`, correto?
+
+24. Quando `isOutdated=true`, basta repetir o mesmo fluxo de aceite?
+
+25. As labels e opcoes sempre vem com `pt`, `en` e `es`, ou algum idioma pode faltar?
+
+26. Existe identificador de versao/hash do formulario COPSOQ41 para auditoria e compatibilidade entre rascunho e definicao atual?
+
+---
+
+## 5. Instrumento e resultados P0/P2
+
+27. O que exatamente significa `COPSOQ41` no produto Yavix: versao brasileira, quantidade de dimensoes, itens principais ou outro criterio?
+
+28. Os codigos de pergunta podem ir ate 120. Qual e a contagem real de perguntas `QUESTION` no payload ativo?
+
+29. Ha outros `formName` ou versoes alem de `COPSOQ41`?
+
+30. O calculo das dimensoes e cut-offs e responsabilidade da Yavix? Se a UniHER precisar calcular algo, qual matriz oficial, versao e criterio de validacao devem ser usados?
+
+31. O resultado oficial tem granularidade por empresa, filial, setor, GHE, cargo, unidade e/ou lideranca?
+
+---
+
+## 6. LGPD, consentimento e retencao P0/P1
+
+32. Para CPF e respostas psicossociais, quem e controlador e quem e operador dos dados?
+
+33. Onde os dados residem e por quanto tempo ficam retidos?
+
+34. O aceite de termos deve ser sempre acao da propria colaboradora? Quais evidencias voces exigem: IP, user-agent, timestamp, versao do termo ou outro campo?
+
+35. Qual e o efeito de desativacao/remocao do colaborador sobre respostas historicas e laudos ja emitidos?
+
+36. Ha DPA, contrato de tratamento de dados ou clausulas especificas para compartilhamento UniHER x Yavix?
+
+---
+
+## Entregaveis solicitados
+
+Para fecharmos a proxima etapa com seguranca, pedimos:
+
+1. OpenAPI/Postman/documentacao atual da API aplicavel.
+2. URL de homologacao/sandbox e producao.
+3. Tenant e credenciais de teste sem dados reais.
+4. Contrato de autenticacao B2B ou SSO.
+5. Contrato de resultados/scoring/laudo ou explicacao do canal alternativo.
+6. Payload real ou redigido de `GET /form/COPSOQ41`, com versao/hash se existir.
+7. Regras de provisionamento, upsert por CPF, `REMOVER`, GHE, tenant e CNPJ.
+8. Politica de consentimento, LGPD, retencao e exclusao.
