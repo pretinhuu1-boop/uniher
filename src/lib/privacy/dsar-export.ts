@@ -423,6 +423,47 @@ export function* createDsarExportJsonChunks(
     }, getTimestampCursor);
   }
 
+  yield ',"personalSemaforo":';
+  if (!tableExists(db, 'personal_semaforo_entries')) {
+    yield '{"consent":null,"entries":[]}';
+  } else {
+    const consent = tableExists(db, 'personal_semaforo_consents')
+      ? db.prepare(`
+          SELECT consent_version, accepted_at, revoked_at, retention_days, updated_at
+          FROM personal_semaforo_consents
+          WHERE user_id = ?
+        `).get(userId)
+      : null;
+    yield `{"consent":${serializeJson(consent)},"entries":`;
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, signal, energy, note, consent_version, created_at, expires_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM personal_semaforo_entries
+            WHERE user_id = ? AND deleted_at IS NULL
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, signal, energy, note, consent_version, created_at, expires_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM personal_semaforo_entries
+            WHERE user_id = ? AND deleted_at IS NULL
+              AND (COALESCE(created_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+    yield '}';
+  }
+
   yield ',"personalObjectives":';
   if (!tableExists(db, 'personal_objectives')) {
     yield '[]';
