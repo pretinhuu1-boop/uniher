@@ -251,15 +251,15 @@ git diff --check
 - Create: `src/app/api/rh/employees/import-preview/route.ts`
 - Test: `tests/unit/employee-import-api.test.ts`
 
-- [ ] **Step 1: Write failing API tests**
+- [x] **Step 1: Write failing API tests**
 
 Test RH only, persisted actor company validation, template content type, preview rejects collaborator/leader, and preview never echoes raw CPF.
 
-- [ ] **Step 2: Implement template and preview routes**
+- [x] **Step 2: Implement template and preview routes**
 
 Use `withRole('rh', 'admin')`, re-read actor from `users` with `id`, `company_id`, persisted `role`, `deleted_at IS NULL`, `blocked=0`, `approved=1`. Parse `text/csv` or multipart file content into `parseEmployeeImportCsv`.
 
-- [ ] **Step 3: Run focused API tests**
+- [x] **Step 3: Run focused API tests**
 
 Run:
 
@@ -268,6 +268,36 @@ npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api
 ```
 
 Expected: all tests pass.
+
+**Wave 2 initial result:** API template and preview routes were implemented with persisted actor re-checks and collaborator/leadership denials.
+
+**Claude Wave 2 review result:** HOLD. No High/Critical findings, but two Medium findings blocked promotion: preview response exposed direct PII fields from parsed rows, and the parser had no explicit row-count cap.
+
+**Wave 2.1 security fixes:**
+- Preview response now returns only masked DTO fields (`fullNamePreview`, `emailPreview`, CPF/RG last4) plus summary counts.
+- Error rows no longer expose raw email; they use `emailPreview`.
+- Parser rejects files above `MAX_EMPLOYEE_IMPORT_ROWS` before row mapping.
+- HMAC fallback is allowed only under explicit `development` or `test`; staging/production-like runtimes require a 32+ character secret.
+- Preview validates the spreadsheet `EMPRESA` value against the persisted actor company name.
+- Preview audit uses `employee_import_preview` and stores only actor/company/count details, never row payload or direct PII.
+
+**Wave 2.1 RED/GREEN:**
+
+```powershell
+npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts
+```
+
+RED: 5 expected failures for unmasked preview, missing company-name validation, error email exposure, missing row cap, and permissive non-test HMAC fallback.
+
+GREEN: 14/14 tests passed after the security fixes.
+
+**Wave 2.1 gates:**
+- `npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts tests/unit/tenant-api-hardening.test.ts tests/unit/invite-leadership-capability.test.ts tests/unit/community-company-setting-audit.test.ts tests/unit/privacy/gamification-safe-projection.test.ts` -> PASS, 45/45 tests.
+- `npx tsc --noEmit --pretty false` -> PASS.
+- `git diff --check` -> PASS, CRLF warnings only.
+- `rg -n 'Ã|Â|â'` on changed import files -> only valid Portuguese `MÃE`/accented headers; no mojibake such as `Â` or `â`.
+
+**Claude re-review result:** Wave 2.1 PASS. No High/Critical/Medium findings. Previous Medium findings resolved, and the Low audit-IP finding was fixed by recording the first forwarded IP or `x-real-ip` in `employee_import_preview`.
 
 ## Task 3 / Wave 3: Commit API And Audit
 

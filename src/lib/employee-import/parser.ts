@@ -9,6 +9,8 @@ import {
 
 export interface EmployeeImportParseOptions {
   companyId: string;
+  expectedCompanyName?: string;
+  maxRows?: number;
 }
 
 export interface EmployeeImportValidRow {
@@ -41,7 +43,7 @@ export interface EmployeeImportValidRow {
 export interface EmployeeImportErrorRow {
   rowNumber: number;
   cpfLast4: string | null;
-  email: string | null;
+  emailPreview: string | null;
   errors: string[];
 }
 
@@ -51,7 +53,18 @@ export interface EmployeeImportParseResult {
   errorRows: EmployeeImportErrorRow[];
 }
 
+export interface EmployeeImportPreviewRow {
+  rowNumber: number;
+  companyName: string;
+  fullNamePreview: string;
+  cpfLast4: string;
+  rgLast4: string | null;
+  emailPreview: string;
+}
+
 type RawRow = Partial<Record<EmployeeImportHeader, string>>;
+
+export const MAX_EMPLOYEE_IMPORT_ROWS = 1000;
 
 function detectDelimiter(headerLine: string): ',' | ';' {
   const commaCount = (headerLine.match(/,/g) ?? []).length;
@@ -110,7 +123,7 @@ function getPiiHmacSecret(): string {
     || process.env.EMPLOYEE_IMPORT_PII_HMAC_SECRET
     || '';
   if (secret.length >= 32) return secret;
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
     throw new Error('UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET must be set with at least 32 characters');
   }
   return DEV_ONLY_PII_HMAC_SECRET;
@@ -142,12 +155,47 @@ function normalizeRg(value: string | undefined): string {
   return (value ?? '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 }
 
+function normalizeComparableText(value: string): string {
+  return value
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .toUpperCase();
+}
+
+function maskEmail(value: string | null): string | null {
+  if (!value) return null;
+  const [local] = value.split('@');
+  const first = local?.trim().charAt(0).toLowerCase();
+  return first ? `${first}***@***` : null;
+}
+
+function maskName(value: string): string {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}***`)
+    .join(' ');
+}
+
+export function toEmployeeImportPreviewRow(row: EmployeeImportValidRow): EmployeeImportPreviewRow {
+  return {
+    rowNumber: row.rowNumber,
+    companyName: row.companyName,
+    fullNamePreview: maskName(row.fullName),
+    cpfLast4: row.cpfLast4,
+    rgLast4: row.rgLast4,
+    emailPreview: maskEmail(row.email) ?? '',
+  };
+}
+
 function makeErrorRow(rowNumber: number, raw: RawRow, errors: string[]): EmployeeImportErrorRow {
   const cpfDigits = normalizeDigits(raw.CPF ?? '');
   return {
     rowNumber,
     cpfLast4: cpfDigits.length >= 4 ? cpfDigits.slice(-4) : null,
-    email: normalizeOptionalText(raw['E-MAIL'])?.toLowerCase() ?? null,
+    emailPreview: maskEmail(normalizeOptionalText(raw['E-MAIL'])?.toLowerCase() ?? null),
     errors,
   };
 }
@@ -169,6 +217,12 @@ function mapRow(rowNumber: number, raw: RawRow, options: EmployeeImportParseOpti
   const phone = normalizeDigits(raw.TELEFONE ?? '');
 
   if (!companyName) errors.push('EMPRESA e obrigatorio');
+  else if (
+    options.expectedCompanyName
+    && normalizeComparableText(companyName) !== normalizeComparableText(options.expectedCompanyName)
+  ) {
+    errors.push('EMPRESA nao corresponde a empresa autenticada');
+  }
   if (!fullName) errors.push('NOME COMPLETO e obrigatorio');
   if (cpfDigits.length !== 11) errors.push('CPF deve conter 11 digitos');
   else if (!validateCpf(cpfDigits)) errors.push('CPF invalido');
@@ -211,7 +265,7 @@ function mapRow(rowNumber: number, raw: RawRow, options: EmployeeImportParseOpti
 export function parseEmployeeImportCsv(content: string, options: EmployeeImportParseOptions): EmployeeImportParseResult {
   const table = splitCsv(content);
   if (table.length === 0) {
-    return { totalRows: 0, validRows: [], errorRows: [{ rowNumber: 1, cpfLast4: null, email: null, errors: ['Arquivo vazio'] }] };
+    return { totalRows: 0, validRows: [], errorRows: [{ rowNumber: 1, cpfLast4: null, emailPreview: null, errors: ['Arquivo vazio'] }] };
   }
 
   const headerMap = table[0].map((header) => canonicalHeader(header));
@@ -220,7 +274,22 @@ export function parseEmployeeImportCsv(content: string, options: EmployeeImportP
     return {
       totalRows: Math.max(0, table.length - 1),
       validRows: [],
-      errorRows: [{ rowNumber: 1, cpfLast4: null, email: null, errors: [`Colunas obrigatorias ausentes: ${missingHeaders.join(', ')}`] }],
+      errorRows: [{ rowNumber: 1, cpfLast4: null, emailPreview: null, errors: [`Colunas obrigatorias ausentes: ${missingHeaders.join(', ')}`] }],
+    };
+  }
+
+  const totalRows = table.length - 1;
+  const maxRows = options.maxRows ?? MAX_EMPLOYEE_IMPORT_ROWS;
+  if (totalRows > maxRows) {
+    return {
+      totalRows,
+      validRows: [],
+      errorRows: [{
+        rowNumber: 1,
+        cpfLast4: null,
+        emailPreview: null,
+        errors: [`Limite de ${maxRows} linhas excedido`],
+      }],
     };
   }
 
@@ -239,7 +308,7 @@ export function parseEmployeeImportCsv(content: string, options: EmployeeImportP
   }
 
   return {
-    totalRows: table.length - 1,
+    totalRows,
     validRows,
     errorRows,
   };

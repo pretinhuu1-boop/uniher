@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { applyMigration } from '@/lib/db/migrations/runner';
 import {
   EMPLOYEE_IMPORT_HEADERS,
@@ -10,14 +10,19 @@ import {
 } from '@/lib/employee-import/contract';
 import { parseEmployeeImportCsv } from '@/lib/employee-import/parser';
 
+function csvWithDataRow(dataRow: string): string {
+  return `${EMPLOYEE_IMPORT_HEADERS.join(',')}\n${dataRow}`;
+}
+
+const validDataRow = 'Eduarda Eyuri Marketing LTDA,Ana Silva,Maria Silva,123.456.789-09,12.345.678-9,SSP,15/03/1990,F,Solteira,Unimed,01001-000,Rua,Boa Vista,100,Apto 2,Centro,Sao Paulo,sp,ana@example.com,11,99999-0000';
+
 describe('employee spreadsheet import foundation', () => {
   it('generates the approved CSV header exactly once', () => {
     expect(makeEmployeeImportTemplateCsv().split(/\r?\n/)[0]).toBe(EMPLOYEE_IMPORT_HEADERS.join(','));
   });
 
   it('parses approved rows and normalizes sensitive identifiers for safe preview', () => {
-    const csv = `${EMPLOYEE_IMPORT_HEADERS.join(',')}\n`
-      + 'Eduarda Eyuri Marketing LTDA,Ana Silva,Maria Silva,123.456.789-09,12.345.678-9,SSP,15/03/1990,F,Solteira,Unimed,01001-000,Rua,Boa Vista,100,Apto 2,Centro,Sao Paulo,sp,ana@example.com,11,99999-0000';
+    const csv = csvWithDataRow(validDataRow);
 
     const result = parseEmployeeImportCsv(csv, { companyId: 'company-a' });
 
@@ -41,19 +46,19 @@ describe('employee spreadsheet import foundation', () => {
   });
 
   it('rejects missing required fields without echoing raw CPF', () => {
-    const csv = `${EMPLOYEE_IMPORT_HEADERS.join(',')}\n`
-      + 'Empresa Teste,,Mae,123.456.789-09,,,,,,,,,,,,,,,,,';
+    const csv = csvWithDataRow('Empresa Teste,,Mae,123.456.789-09,,,,,,,,,,,,,,,,,');
 
     const result = parseEmployeeImportCsv(csv, { companyId: 'company-a' });
 
     expect(result.validRows).toHaveLength(0);
     expect(result.errorRows[0].errors).toContain('NOME COMPLETO e obrigatorio');
     expect(JSON.stringify(result.errorRows[0])).not.toContain('123.456.789-09');
+    expect(result.errorRows[0]).toHaveProperty('emailPreview');
+    expect(result.errorRows[0]).not.toHaveProperty('email');
   });
 
   it('rejects invalid CPF check digits', () => {
-    const csv = `${EMPLOYEE_IMPORT_HEADERS.join(',')}\n`
-      + 'Empresa Teste,Ana Silva,Mae,111.111.111-11,12.345.678-9,SSP,15/03/1990,F,Solteira,Unimed,01001-000,Rua,Boa Vista,100,Apto 2,Centro,Sao Paulo,SP,ana@example.com,11,99999-0000';
+    const csv = csvWithDataRow('Empresa Teste,Ana Silva,Mae,111.111.111-11,12.345.678-9,SSP,15/03/1990,F,Solteira,Unimed,01001-000,Rua,Boa Vista,100,Apto 2,Centro,Sao Paulo,SP,ana@example.com,11,99999-0000');
 
     const result = parseEmployeeImportCsv(csv, { companyId: 'company-a' });
 
@@ -64,8 +69,7 @@ describe('employee spreadsheet import foundation', () => {
 
   it('uses a server-side HMAC secret for CPF hashes', () => {
     const previous = process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET;
-    const csv = `${EMPLOYEE_IMPORT_HEADERS.join(',')}\n`
-      + 'Empresa Teste,Ana Silva,Mae,123.456.789-09,12.345.678-9,SSP,15/03/1990,F,Solteira,Unimed,01001-000,Rua,Boa Vista,100,Apto 2,Centro,Sao Paulo,SP,ana@example.com,11,99999-0000';
+    const csv = csvWithDataRow(validDataRow);
     try {
       process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET = 'a'.repeat(32);
       const first = parseEmployeeImportCsv(csv, { companyId: 'company-a' }).validRows[0].cpfHash;
@@ -79,6 +83,47 @@ describe('employee spreadsheet import foundation', () => {
       if (previous === undefined) delete process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET;
       else process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET = previous;
     }
+  });
+
+  it('requires an explicit HMAC secret outside test and development', () => {
+    const previousSecret = process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET;
+    const previousFallbackSecret = process.env.EMPLOYEE_IMPORT_PII_HMAC_SECRET;
+    const csv = csvWithDataRow(validDataRow);
+
+    try {
+      delete process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET;
+      delete process.env.EMPLOYEE_IMPORT_PII_HMAC_SECRET;
+      vi.stubEnv('NODE_ENV', 'staging');
+
+      expect(() => parseEmployeeImportCsv(csv, { companyId: 'company-a' })).toThrow(
+        'UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET must be set with at least 32 characters',
+      );
+    } finally {
+      if (previousSecret === undefined) delete process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET;
+      else process.env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET = previousSecret;
+      if (previousFallbackSecret === undefined) delete process.env.EMPLOYEE_IMPORT_PII_HMAC_SECRET;
+      else process.env.EMPLOYEE_IMPORT_PII_HMAC_SECRET = previousFallbackSecret;
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('rejects files above the configured row cap before mapping personal data', () => {
+    const csv = `${EMPLOYEE_IMPORT_HEADERS.join(',')}\n${Array.from({ length: 3 }, () => validDataRow).join('\n')}`;
+
+    const result = parseEmployeeImportCsv(csv, { companyId: 'company-a', maxRows: 2 });
+
+    expect(result.totalRows).toBe(3);
+    expect(result.validRows).toHaveLength(0);
+    expect(result.errorRows).toEqual([
+      {
+        rowNumber: 1,
+        cpfLast4: null,
+        emailPreview: null,
+        errors: ['Limite de 2 linhas excedido'],
+      },
+    ]);
+    expect(JSON.stringify(result)).not.toContain('Ana Silva');
+    expect(JSON.stringify(result)).not.toContain('ana@example.com');
   });
 
   it('creates isolated profile and batch tables with company scoped CPF hash uniqueness', () => {
