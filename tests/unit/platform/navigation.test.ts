@@ -228,7 +228,7 @@ describe('platform navigation', () => {
     expect(routes).not.toContain('/concierge');
     expect(routes.filter((route) => route === '/campanhas')).toHaveLength(1);
     expect(routes.filter((route) => route === '/conquistas')).toHaveLength(1);
-    expect(byLabel['Saúde Primária'].badgeLabel).toBe('Bloqueado');
+    expect(byLabel['Saúde Primária'].badgeLabel).toBeUndefined();
     expect(byLabel.Educação.badgeLabel).toBeUndefined();
     expect(byLabel.Conquistas.badgeLabel).toBeUndefined();
     expect(byLabel['NR-1'].badgeLabel).toBe('Contrato');

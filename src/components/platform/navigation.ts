@@ -344,6 +344,15 @@ function getModuleBadgeLabel(moduleState: CompanyModuleState): string | undefine
   return moduleState === 'enabled' ? undefined : MODULE_STATE_BADGES[moduleState];
 }
 
+function getRepresentedModuleBadgeLabel(
+  role: UserRole,
+  moduleSlug: CompanyModuleSlug,
+  moduleState: CompanyModuleState,
+): string | undefined {
+  if (role === 'colaboradora' && moduleSlug === 'primary_health') return undefined;
+  return getModuleBadgeLabel(moduleState);
+}
+
 function getRepresentedModuleHref(role: UserRole, moduleSlug: CompanyModuleSlug): string | undefined {
   if (moduleSlug === 'primary_health') {
     if (role === 'colaboradora') return '/semaforo';
@@ -455,7 +464,7 @@ function applyModuleMetadataToBaseNavigation(
         ...item,
         moduleSlug: representative.module_slug,
         moduleState: representative.module_state,
-        badgeLabel: getModuleBadgeLabel(representative.module_state),
+        badgeLabel: getRepresentedModuleBadgeLabel(role, representative.module_slug, representative.module_state),
       };
     }),
   }));
