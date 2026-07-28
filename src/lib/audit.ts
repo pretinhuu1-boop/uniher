@@ -8,7 +8,7 @@ export type AuditAction =
   | 'company_create' | 'company_edit' | 'company_block' | 'company_unblock' | 'company_delete'
   | 'company_module_update'
   | 'system_settings_update'
-  | 'employee_import_preview'
+  | 'employee_import_preview' | 'employee_import_commit'
   // User actions (all roles)
   | 'profile_update' | 'quiz_submit' | 'challenge_complete' | 'challenge_create'
   | 'campaign_join' | 'badge_unlock' | 'invite_sent' | 'invite_approved'

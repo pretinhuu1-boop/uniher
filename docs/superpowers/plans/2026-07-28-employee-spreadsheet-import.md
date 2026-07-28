@@ -307,15 +307,15 @@ GREEN: 14/14 tests passed after the security fixes.
 - Modify: `src/lib/audit.ts`
 - Test: `tests/unit/employee-import-api.test.ts`
 
-- [ ] **Step 1: Write failing commit tests**
+- [x] **Step 1: Write failing commit tests**
 
 Cover valid commit, duplicate same-company CPF rejection/upsert, cross-company CPF allowed, department/company mismatch rejection, and sanitized audit details.
 
-- [ ] **Step 2: Implement repository and commit route**
+- [x] **Step 2: Implement repository and commit route**
 
 Persist through WriteQueue. Audit action should store only batch counts, file hash, and status, never CPF, RG, phone, address, or raw row JSON.
 
-- [ ] **Step 3: Run focused commit tests**
+- [x] **Step 3: Run focused commit tests**
 
 Run:
 
@@ -324,6 +324,37 @@ npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api
 ```
 
 Expected: all tests pass.
+
+**Wave 3 RED/GREEN:**
+
+```powershell
+npx vitest run tests/unit/employee-import-api.test.ts
+```
+
+RED: expected failure because `src/app/api/rh/employees/import-commit/route.ts` did not exist.
+
+```powershell
+npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts
+```
+
+GREEN: 17/17 tests passed after adding the shared CSV body reader, commit route, repository transaction, same-company upsert, cross-company allowance, parse-error rejection, and sanitized audit.
+
+**Claude Wave 3 initial review result:** PASS with one Medium advisory for filename sanitization/length bound and extension whitelist. Treated as blocking for zero-finding readiness.
+
+**Wave 3.1 filename hardening:**
+- `readEmployeeImportCsvBody` sanitizes filenames, strips path separators/control characters/dangerous symbols, and caps to 255 characters.
+- Multipart/JSON filenames must end in `.csv` when a filename is present.
+- Stored batch filename and audit entity label receive the sanitized filename only.
+- RED: `npx vitest run tests/unit/employee-import-api.test.ts` failed on unsafe filename persistence.
+- GREEN: `npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts` passed 18/18 tests.
+
+**Wave 3.1 gates:**
+- `npx vitest run tests/unit/employee-import.test.ts tests/unit/employee-import-api.test.ts tests/unit/tenant-api-hardening.test.ts tests/unit/invite-leadership-capability.test.ts tests/unit/community-company-setting-audit.test.ts tests/unit/privacy/gamification-safe-projection.test.ts` -> PASS, 49/49 tests.
+- `npx tsc --noEmit --pretty false` -> PASS.
+- `git diff --check` -> PASS, CRLF warnings only.
+- `rg -n 'Ã|Â|â'` on changed import files -> only valid Portuguese `MÃE`/accented headers and this receipt; no mojibake `Â`/`â`.
+
+**Claude final review result:** Wave 3/3.1 PASS. No Critical/High/Medium findings. Filename stored-XSS advisory resolved with sanitization, length cap, and `.csv` filename whitelist.
 
 ## Task 4 / Wave 4: UI Entry Points
 

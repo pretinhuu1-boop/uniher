@@ -1,7 +1,10 @@
 import Database from 'better-sqlite3';
+import fs from 'node:fs';
+import path from 'node:path';
 import type { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EMPLOYEE_IMPORT_HEADERS } from '@/lib/employee-import/contract';
+import { applyMigration } from '@/lib/db/migrations/runner';
 
 const boundary = vi.hoisted(() => ({
   db: null as Database.Database | null,
@@ -40,6 +43,7 @@ vi.mock('@/lib/audit', () => ({
 }));
 
 import { GET as getImportTemplate } from '@/app/api/rh/employees/import-template/route';
+import { POST as postImportCommit } from '@/app/api/rh/employees/import-commit/route';
 import { POST as postImportPreview } from '@/app/api/rh/employees/import-preview/route';
 
 function context(userId: string, role: string, companyId: string | null = 'company-a') {
@@ -77,6 +81,11 @@ function createDatabase() {
       approved INTEGER DEFAULT 1,
       deleted_at TEXT
     );
+    CREATE TABLE departments (
+      id TEXT PRIMARY KEY,
+      company_id TEXT,
+      name TEXT
+    );
     INSERT INTO companies (id, name, is_active, deleted_at) VALUES
       ('company-a', 'Empresa A', 1, NULL),
       ('company-b', 'Empresa B', 1, NULL),
@@ -90,6 +99,8 @@ function createDatabase() {
       ('rh-blocked', 'company-a', 'Bloqueada RH', 'blocked@example.test', 'rh', 1, 1, NULL),
       ('rh-b', 'company-b', 'Rita RH B', 'rh-b@example.test', 'rh', 0, 1, NULL);
   `);
+  const migrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '065_employee_identity_imports.sql');
+  applyMigration(db, '065_employee_identity_imports.sql', fs.readFileSync(migrationPath, 'utf8'));
   return db;
 }
 
@@ -236,5 +247,170 @@ describe('employee import RH APIs', () => {
 
     expect(blocked.status).toBe(403);
     expect(oversized.status).toBe(413);
+  });
+
+  it('commits valid rows into tenant-scoped identity profiles without returning PII', async () => {
+    const response = await postImportCommit(
+      apiRequest('http://localhost/api/rh/employees/import-commit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-real-ip': '198.51.100.5' },
+        body: JSON.stringify({ csv: validCsv(), filename: 'colaboradoras.csv' }),
+      }),
+      context('rh-a', 'rh'),
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.summary).toEqual({
+      totalRows: 1,
+      validRows: 1,
+      errorRows: 0,
+      insertedRows: 1,
+      updatedRows: 0,
+    });
+    expect(body.batchId).toEqual(expect.any(String));
+    expect(body.fileSha256).toEqual(expect.stringMatching(/^[a-f0-9]{64}$/));
+
+    const profile = boundary.db!.prepare(`
+      SELECT company_id, full_name, mother_name, cpf_hash, cpf_last4, rg_hash, rg_last4, email, phone, imported_by
+      FROM employee_identity_profiles
+      WHERE company_id = 'company-a'
+    `).get() as Record<string, unknown>;
+    expect(profile).toMatchObject({
+      company_id: 'company-a',
+      full_name: 'Ana Silva',
+      mother_name: 'Maria Silva',
+      cpf_last4: '8909',
+      rg_last4: '6789',
+      email: 'ana@example.com',
+      phone: '999990000',
+      imported_by: 'rh-a',
+    });
+    expect(profile.cpf_hash).toEqual(expect.stringMatching(/^[a-f0-9]{64}$/));
+    expect(profile.rg_hash).toEqual(expect.stringMatching(/^[a-f0-9]{64}$/));
+
+    const batch = boundary.db!.prepare('SELECT company_id, filename, status, total_rows, valid_rows, error_rows, created_by FROM employee_import_batches').get();
+    expect(batch).toMatchObject({
+      company_id: 'company-a',
+      filename: 'colaboradoras.csv',
+      status: 'committed',
+      total_rows: 1,
+      valid_rows: 1,
+      error_rows: 0,
+      created_by: 'rh-a',
+    });
+
+    const serialized = JSON.stringify(body);
+    expect(serialized).not.toContain('Ana Silva');
+    expect(serialized).not.toContain('Maria Silva');
+    expect(serialized).not.toContain('123.456.789-09');
+    expect(serialized).not.toContain('12.345.678-9');
+    expect(serialized).not.toContain('ana@example.com');
+    expect(serialized).not.toContain('999990000');
+    expect(boundary.auditEntries.at(-1)).toMatchObject({
+      actorId: 'rh-a',
+      action: 'employee_import_commit',
+      entityType: 'employee_import_batch',
+      entityId: body.batchId,
+      details: {
+        status: 'committed',
+        totalRows: 1,
+        validRows: 1,
+        errorRows: 0,
+        insertedRows: 1,
+        updatedRows: 0,
+      },
+      ip: '198.51.100.5',
+    });
+    expect(JSON.stringify(boundary.auditEntries.at(-1))).not.toContain('Ana Silva');
+    expect(JSON.stringify(boundary.auditEntries.at(-1))).not.toContain('ana@example.com');
+  });
+
+  it('sanitizes stored filenames and rejects non-CSV multipart uploads', async () => {
+    const unsafeName = '../<script>alert(1)</script>-' + 'a'.repeat(300) + '.csv';
+    const response = await postImportCommit(
+      apiRequest('http://localhost/api/rh/employees/import-commit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ csv: validCsv(), filename: unsafeName }),
+      }),
+      context('rh-a', 'rh'),
+    );
+
+    expect(response.status).toBe(200);
+    const batch = boundary.db!.prepare('SELECT filename FROM employee_import_batches').get() as { filename: string };
+    expect(batch.filename).toContain('scriptalert1script-');
+    expect(batch.filename).toMatch(/\.csv$/);
+    expect(batch.filename.length).toBeLessThanOrEqual(255);
+    expect(batch.filename).not.toContain('..');
+    expect(batch.filename).not.toContain('/');
+    expect(batch.filename).not.toContain('<');
+
+    const form = new FormData();
+    form.set('file', new File([validCsv()], 'colaboradoras.exe', { type: 'text/csv' }));
+    const rejected = await postImportCommit(
+      apiRequest('http://localhost/api/rh/employees/import-commit', {
+        method: 'POST',
+        body: form,
+      }),
+      context('rh-a', 'rh'),
+    );
+
+    expect(rejected.status).toBe(422);
+    await expect(rejected.json()).resolves.toMatchObject({ error: 'Arquivo deve ter extensao .csv.' });
+  });
+
+  it('upserts duplicate CPF within a company and allows the same CPF in another company', async () => {
+    const first = await postImportCommit(
+      apiRequest('http://localhost/api/rh/employees/import-commit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ csv: validCsv(), filename: 'first.csv' }),
+      }),
+      context('rh-a', 'rh'),
+    );
+    const second = await postImportCommit(
+      apiRequest('http://localhost/api/rh/employees/import-commit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ csv: validCsv().replace('Ana Silva', 'Ana Atualizada'), filename: 'second.csv' }),
+      }),
+      context('rh-a', 'rh'),
+    );
+    const otherCompany = await postImportCommit(
+      apiRequest('http://localhost/api/rh/employees/import-commit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ csv: validCsv().replace('Empresa A', 'Empresa B'), filename: 'company-b.csv' }),
+      }),
+      context('rh-b', 'rh', 'company-b'),
+    );
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect((await second.json()).summary).toMatchObject({ insertedRows: 0, updatedRows: 1 });
+    expect(otherCompany.status).toBe(200);
+    expect(boundary.db!.prepare('SELECT COUNT(*) AS count FROM employee_identity_profiles').get()).toEqual({ count: 2 });
+    expect(boundary.db!.prepare("SELECT full_name FROM employee_identity_profiles WHERE company_id = 'company-a'").get())
+      .toEqual({ full_name: 'Ana Atualizada' });
+  });
+
+  it('refuses commit when the CSV has validation errors or a mismatched company', async () => {
+    const response = await postImportCommit(
+      apiRequest('http://localhost/api/rh/employees/import-commit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ csv: validCsv().replace('Empresa A', 'Empresa B'), filename: 'wrong-company.csv' }),
+      }),
+      context('rh-a', 'rh'),
+    );
+
+    expect(response.status).toBe(422);
+    const body = await response.json();
+    expect(body.summary).toEqual({ totalRows: 1, validRows: 0, errorRows: 1 });
+    expect(body.errorRows[0].errors).toEqual(['EMPRESA nao corresponde a empresa autenticada']);
+    expect(boundary.db!.prepare('SELECT COUNT(*) AS count FROM employee_identity_profiles').get()).toEqual({ count: 0 });
+    expect(JSON.stringify(body)).not.toContain('ana@example.com');
+    expect(JSON.stringify(boundary.auditEntries.at(-1))).not.toContain('ana@example.com');
   });
 });
