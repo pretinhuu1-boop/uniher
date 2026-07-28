@@ -175,6 +175,7 @@ function checkDemoAccounts(dbPath) {
   const expectedEmails = [
     'admin@uniher.com.br',
     'rh.visual@eduardaeyurimarketingltda.com.br',
+    'lideranca.visual@eduardaeyurimarketingltda.com.br',
     'nr1.visual@eduardaeyurimarketingltda.com.br',
   ];
 
@@ -205,7 +206,7 @@ function checkDemoAccounts(dbPath) {
       return;
     }
 
-    record('DEMO_ACCOUNTS', 'PASS', 'admin, RH visual and NR-1 collaborator demo accounts are present and login-ready');
+    record('DEMO_ACCOUNTS', 'PASS', 'admin, RH visual, Leadership visual and NR-1 collaborator demo accounts are present and login-ready');
   } finally {
     db.close();
   }

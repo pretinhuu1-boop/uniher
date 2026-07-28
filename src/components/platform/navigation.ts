@@ -404,13 +404,19 @@ function getExistingRoutes(groups: readonly NavigationGroup[]): Set<string> {
   return new Set(groups.flatMap((group) => group.items.map((item) => item.href)));
 }
 
+function canShowModuleNavigationItem(role: UserRole, module: NavigationModuleRow): boolean {
+  if (module.visible !== 1) return false;
+  if (role === 'colaboradora' && module.module_state !== 'enabled') return false;
+  return true;
+}
+
 function getModuleNavigationItems(
   role: UserRole,
   companyModules: readonly NavigationModuleRow[],
   existingRoutes: ReadonlySet<string>,
 ): NavigationItem[] {
   return companyModules.flatMap((module) => {
-    if (module.visible !== 1) return [];
+    if (!canShowModuleNavigationItem(role, module)) return [];
 
     const definition = COMPANY_MODULE_DEFINITIONS.find((item) => item.slug === module.module_slug);
     if (!definition || !definition.visibleForRoles.includes(role)) return [];

@@ -53,6 +53,7 @@ test('release env accepts sqlite access token blacklist with login-ready demo ac
     INSERT INTO users (email, role, approved, deleted_at, must_change_password) VALUES
       ('admin@uniher.com.br', 'admin', 1, NULL, 0),
       ('rh.visual@eduardaeyurimarketingltda.com.br', 'rh', 1, NULL, 0),
+      ('lideranca.visual@eduardaeyurimarketingltda.com.br', 'lideranca', 1, NULL, 0),
       ('nr1.visual@eduardaeyurimarketingltda.com.br', 'colaboradora', 1, NULL, 0);
   `);
   db.close();

@@ -4,6 +4,7 @@ Data: 2026-07-28
 Host auditado: `https://www.uniher.com.br`
 Branch live: `codex/uniher-wave3-collaborator-nr1`
 HEAD live: `cc4f95e`
+Candidate local: fixture de Lideranca + navegacao final da colaboradora endurecida, validado localmente e pendente de deploy.
 
 ## Decisao
 
@@ -17,7 +18,8 @@ HEAD live: `cc4f95e`
 - VPS `srv1373909`: `HEAD=cc4f95e`.
 - `npm run check:release-env` no host: PASS 8, HOLD 0, FAIL 0.
 - Smoke autenticado por perfil: Admin, RH e Colaboradora responderam 200 nas rotas de menu auditadas.
-- Smoke de Lideranca no host live: HOLD nesta auditoria. A conta esperada `lideranca.visual@eduardaeyurimarketingltda.com.br` nao existe no banco live; contas QA de lideranca existem, mas nao autenticaram com a senha padrao de homologacao.
+- Smoke de Lideranca no host live: HOLD no `cc4f95e`. Candidate local cria `lideranca.visual@eduardaeyurimarketingltda.com.br` no seed e o preflight `DEMO_ACCOUNTS` passa com Lideranca incluida; falta deploy + smoke live.
+- Navegacao final da colaboradora: candidate local oculta modulos gated (`/nr1`, `/viva-sipat`, `/desenvolvimento-humano`, `/canal-denuncias`) enquanto mantem previews honestos para RH/Admin.
 - Semaforo privado: live em `/semaforo`, sem badge "Bloqueado" no link da rota, com formulario e exclusao disponiveis.
 - `npm audit --audit-level=high --json`: 26 vulnerabilidades, 8 high, 16 moderate, 2 low.
 
@@ -26,7 +28,7 @@ HEAD live: `cc4f95e`
 | Area | Estado | Condicao de liberacao |
 | --- | --- | --- |
 | Auth/login/logout/sessao | Liberavel | Manter preflight de release e smoke por perfil antes de novos deploys. |
-| Plataforma autenticada por perfis | Liberavel parcial | Admin, RH e Colaboradora navegaveis no host live. Lideranca fica fora da promessa de liberacao imediata ate existir conta validada e smoke dedicado. |
+| Plataforma autenticada por perfis | Liberavel parcial | Admin, RH e Colaboradora navegaveis no host live. Lideranca pode entrar na promessa somente depois do deploy do candidate e smoke live dedicado. |
 | Dashboard RH/Admin agregado | Liberavel | Apenas indicadores agregados/protegidos; nao prometer dado individual sensivel. |
 | Gestao RH operacional | Liberavel | Colaboradoras, departamentos, convites, perfil da empresa e notificacoes. |
 | Campanhas/educacao | Liberavel | Pode ser vendido como campanhas e conteudos; manter join e tenant gates. |
@@ -65,7 +67,7 @@ Politica anti-finding: preview honesto pode ficar visivel em demo/roadmap. Para 
 
 - Corrigir/triagear supply chain: `next`, `postcss`, `sharp`, `undici`, `vite`, `ws`, `brace-expansion`, `fast-uri` aparecem entre vulnerabilidades high.
 - Reexecutar smoke visual completo desktop/mobile/tablet/wide no host live depois de qualquer upgrade.
-- Criar/resetar conta de Lideranca demonstravel e fazer smoke dedicado no host live antes de incluir Lideranca na promessa da release.
+- Fazer deploy do candidate que cria/reset a conta de Lideranca demonstravel e rodar smoke dedicado no host live antes de incluir Lideranca na promessa da release.
 - Revisar copy comercial para nao prometer modulos gated como operacionais.
 - Criar runbook de rollback/backup/restore e monitoramento pos-deploy.
 
@@ -175,8 +177,8 @@ Gates:
 ## Ordem recomendada
 
 1. Manter live controlado atual.
-2. Corrigir fixture/smoke de Lideranca ou remover Lideranca da narrativa comercial imediata.
-3. Definir politica de visibilidade para modulos gated em cliente real: demo visivel, producao real preferencialmente oculto.
+2. Deployar candidate com fixture de Lideranca e navegacao final da colaboradora sem modulos gated.
+3. Rodar smoke live de Lideranca e smoke de navegacao da colaboradora.
 4. Hardening de dependencias.
 5. Visual/product acceptance.
 6. Denuncias partner-managed.

@@ -204,7 +204,7 @@ describe('platform navigation', () => {
     expect(getModuleAwareNavigationForRole('colaboradora', [])).toEqual(getNavigationForRole('colaboradora'));
   });
 
-  it('adds visible module rows with honest state badges without duplicating existing routes', () => {
+  it('keeps collaborator navigation focused on enabled/personal surfaces without duplicating existing routes', () => {
     const items = flatItems(getModuleAwareNavigationForRole('colaboradora', [
       moduleRow('education', 'enabled'),
       moduleRow('achievements', 'enabled'),
@@ -220,20 +220,47 @@ describe('platform navigation', () => {
 
     expect(new Set(routes).size).toBe(routes.length);
     expect(routes).toContain('/semaforo');
-    expect(routes).toContain('/nr1');
+    expect(routes).not.toContain('/nr1');
     expect(routes).not.toContain('/avaliacao-nr1');
-    expect(routes).toContain('/viva-sipat');
-    expect(routes).toContain('/desenvolvimento-humano');
-    expect(routes).toContain('/canal-denuncias');
+    expect(routes).not.toContain('/viva-sipat');
+    expect(routes).not.toContain('/desenvolvimento-humano');
+    expect(routes).not.toContain('/canal-denuncias');
     expect(routes).not.toContain('/concierge');
     expect(routes.filter((route) => route === '/campanhas')).toHaveLength(1);
     expect(routes.filter((route) => route === '/conquistas')).toHaveLength(1);
     expect(byLabel['Saúde Primária'].badgeLabel).toBeUndefined();
     expect(byLabel.Educação.badgeLabel).toBeUndefined();
     expect(byLabel.Conquistas.badgeLabel).toBeUndefined();
-    expect(byLabel['NR-1'].badgeLabel).toBe('Contrato');
-    expect(byLabel.SIPAT.badgeLabel).toBe('Bloqueado');
-    expect(byLabel['Canal de Den\u00fancias'].badgeLabel).toBe('Parceiro');
+  });
+
+  it('keeps gated module previews visible for RH while hiding them from collaborator final navigation', () => {
+    const rows = [
+      moduleRow('nr1', 'requires_contract'),
+      moduleRow('sipat', 'locked'),
+      moduleRow('human_development', 'requires_contract'),
+      moduleRow('denunciation', 'partner_managed'),
+    ];
+    const rhItems = flatItems(getModuleAwareNavigationForRole('rh', rows));
+    const collaboratorRoutes = flatItems(getModuleAwareNavigationForRole('colaboradora', rows))
+      .map((item) => item.href);
+    const rhByHref = Object.fromEntries(rhItems.map((item) => [item.href, item]));
+    const rhRoutes = rhItems.map((item) => item.href);
+
+    expect(rhRoutes).toEqual(expect.arrayContaining([
+      '/nr1',
+      '/viva-sipat',
+      '/desenvolvimento-humano',
+      '/canal-denuncias',
+    ]));
+    expect(rhByHref['/nr1'].badgeLabel).toBe('Contrato');
+    expect(rhByHref['/viva-sipat'].badgeLabel).toBe('Bloqueado');
+    expect(rhByHref['/canal-denuncias'].badgeLabel).toBe('Parceiro');
+    expect(collaboratorRoutes).not.toEqual(expect.arrayContaining([
+      '/nr1',
+      '/viva-sipat',
+      '/desenvolvimento-humano',
+      '/canal-denuncias',
+    ]));
   });
 
   it('applies honest module state badges to represented RH base rows', () => {
