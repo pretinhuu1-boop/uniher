@@ -76,6 +76,7 @@ O output do Claude e evidencia auxiliar, nao promocao automatica. O coordenador 
 | Wave | Status | Branch commit | Coordenador commit | Evidencia |
 | --- | --- | --- | --- | --- |
 | 00 Yavix contract packet | PASS integrado | `31a382e docs: prepare Yavix contract packet` | `411705f docs: prepare Yavix contract packet` | `docs/superpowers/audits/2026-07-28-yavix-contract-packet-scorecard.md` |
+| 01 Security prod hardening | PASS integrado | `141d3bf fix: harden auth proxy release gates` | `8288da2 fix: harden auth proxy release gates` | `docs/superpowers/audits/2026-07-28-security-prod-hardening-scorecard.md` |
 | 02 NR-1 consent gates | PASS integrado | `5970b0e fix: require NR-1 consent before COPSOQ bootstrap` | `b26665e fix: require NR-1 consent before COPSOQ bootstrap` | `docs/superpowers/audits/2026-07-28-nr1-consent-gates-scorecard.md` |
 
 ## Task 00: Yavix Contract Packet
@@ -131,15 +132,15 @@ Rodar o contrato Claude desta planilha. Promocao esperada: `PASS` ou `PASS COM R
 - Test: `tests/unit/auth-session-revocation.test.ts`
 - Test: add focused proxy secret validation test if no current coverage exists
 
-- [ ] **Step 1: Escrever testes negativos**
+- [x] **Step 1: Escrever testes negativos**
 
 Cobrir `JWT_SECRET` ausente/curto no proxy e registrar decisao para blacklist persistente em producao. Se a implementacao persistente ficar fora do escopo, o gate de release deve falhar explicitamente quando `NODE_ENV=production` sem backend persistente de revogacao.
 
-- [ ] **Step 2: Implementar menor hardening**
+- [x] **Step 2: Implementar menor hardening**
 
 Reutilizar a validacao canonica de segredo ou extrair helper seguro compartilhado. Nao aceitar `"undefined"` como chave.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 ```powershell
 npm run test:unit -- tests/unit/auth-session-revocation.test.ts
@@ -147,7 +148,7 @@ npx tsc --noEmit --pretty false
 git diff --check
 ```
 
-- [ ] **Step 4: Claude review**
+- [x] **Step 4: Claude review**
 
 Foco: auth, secrets, revogacao, multi-instancia, deploy HOLD.
 
