@@ -1428,7 +1428,7 @@ export default function DailyLesson({ onComplete: onCompleteProp }: DailyLessonP
           <p className="text-[10px] font-bold uppercase tracking-wide mb-0.5" style={{ color: themeColor }}>
             {themeEmoji} {TYPE_LABELS[lesson.type] || 'Lição'}
           </p>
-          <h3 className="font-display font-bold text-uni-text-900 text-sm leading-tight truncate">
+          <h3 className="font-display font-bold text-uni-text-900 text-sm leading-tight break-words">
             {lesson.title}
           </h3>
         </div>
