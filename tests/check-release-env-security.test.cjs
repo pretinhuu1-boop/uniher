@@ -15,6 +15,7 @@ test('release env fails production while access token blacklist is in-memory', (
     NODE_ENV: 'production',
     JWT_SECRET: 'access-secret-at-least-32-characters-for-test',
     JWT_REFRESH_SECRET: 'refresh-secret-at-least-32-characters-for-test',
+    UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET: 'employee-import-hmac-secret-at-least-32-chars',
     NEXT_PUBLIC_APP_URL: 'https://uniher.example.test',
     DATABASE_PATH: path.join(tempDir, 'missing-demo.db'),
   };
@@ -30,6 +31,53 @@ test('release env fails production while access token blacklist is in-memory', (
 
   assert.match(output, /FAIL\s+ACCESS_TOKEN_BLACKLIST:/);
   assert.match(output, /in-memory access token blacklist/i);
+  assert.equal(result.status, 1);
+});
+
+test('release env fails production without employee import HMAC secret', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'uniher-release-env-'));
+  const dbPath = path.join(tempDir, 'release.db');
+  const db = new Database(dbPath);
+  db.exec(`
+    CREATE TABLE access_token_blacklist (
+      token_hash TEXT PRIMARY KEY,
+      expires_at TEXT NOT NULL,
+      created_at TEXT
+    );
+    CREATE TABLE users (
+      email TEXT PRIMARY KEY,
+      role TEXT,
+      approved INTEGER,
+      deleted_at TEXT,
+      must_change_password INTEGER
+    );
+    INSERT INTO users (email, role, approved, deleted_at, must_change_password) VALUES
+      ('rh.visual@eduardaeyurimarketingltda.com.br', 'rh', 1, NULL, 0);
+  `);
+  db.close();
+
+  const env = {
+    ...process.env,
+    NODE_ENV: 'production',
+    JWT_SECRET: 'access-secret-at-least-32-characters-for-test',
+    JWT_REFRESH_SECRET: 'refresh-secret-at-least-32-characters-for-test',
+    NEXT_PUBLIC_APP_URL: 'https://uniher.example.test',
+    DATABASE_PATH: dbPath,
+    ACCESS_TOKEN_BLACKLIST_BACKEND: 'sqlite',
+    UNIHER_RELEASE_SMOKE_ACCOUNTS: 'rh.visual@eduardaeyurimarketingltda.com.br:rh',
+  };
+  delete env.ALLOW_INSECURE_HTTP_COOKIES;
+  delete env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET;
+  delete env.EMPLOYEE_IMPORT_PII_HMAC_SECRET;
+
+  const result = spawnSync(process.execPath, ['scripts/check-release-env.cjs'], {
+    cwd: repoRoot,
+    env,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.match(output, /FAIL\s+UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET:/);
   assert.equal(result.status, 1);
 });
 
@@ -58,6 +106,7 @@ test('release env fails production without configured operational smoke accounts
     NODE_ENV: 'production',
     JWT_SECRET: 'access-secret-at-least-32-characters-for-test',
     JWT_REFRESH_SECRET: 'refresh-secret-at-least-32-characters-for-test',
+    UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET: 'employee-import-hmac-secret-at-least-32-chars',
     NEXT_PUBLIC_APP_URL: 'https://uniher.example.test',
     DATABASE_PATH: dbPath,
     ACCESS_TOKEN_BLACKLIST_BACKEND: 'sqlite',
@@ -107,6 +156,7 @@ test('release env accepts sqlite access token blacklist with configured login-re
     NODE_ENV: 'production',
     JWT_SECRET: 'access-secret-at-least-32-characters-for-test',
     JWT_REFRESH_SECRET: 'refresh-secret-at-least-32-characters-for-test',
+    UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET: 'employee-import-hmac-secret-at-least-32-chars',
     NEXT_PUBLIC_APP_URL: 'https://uniher.example.test',
     DATABASE_PATH: dbPath,
     ACCESS_TOKEN_BLACKLIST_BACKEND: 'sqlite',

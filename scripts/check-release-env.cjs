@@ -56,6 +56,23 @@ function checkSecret(name) {
   record(name, 'PASS', `present (${value.length} chars; value redacted)`);
 }
 
+function checkEmployeeImportSecret() {
+  const value = env.UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET || env.EMPLOYEE_IMPORT_PII_HMAC_SECRET || '';
+  if (!value) {
+    record('UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET', 'FAIL', 'missing');
+    return;
+  }
+  if (value.length < 32) {
+    record('UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET', 'FAIL', `too short (${value.length} chars; expected >= 32)`);
+    return;
+  }
+  if (isPlaceholder(value)) {
+    record('UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET', 'FAIL', 'looks like placeholder/example text');
+    return;
+  }
+  record('UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET', 'PASS', `present (${value.length} chars; value redacted)`);
+}
+
 function parseSmokeAccounts(rawValue) {
   if (!rawValue) return [];
   return rawValue
@@ -70,6 +87,7 @@ function parseSmokeAccounts(rawValue) {
 
 checkSecret('JWT_SECRET');
 checkSecret('JWT_REFRESH_SECRET');
+checkEmployeeImportSecret();
 
 if (env.JWT_SECRET && env.JWT_REFRESH_SECRET && env.JWT_SECRET === env.JWT_REFRESH_SECRET) {
   record('JWT_SECRET_PAIR', 'FAIL', 'access and refresh secrets must differ');
