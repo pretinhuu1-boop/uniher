@@ -24,6 +24,7 @@ import type {
   ProtectedDashboardProjection,
   ProtectedDepartmentMetric,
   ProtectedSeriesMetric,
+  ProtectedWellbeingSeriesMetric,
   SafeCommunicationAction,
 } from '@/types/platform';
 import type { ProtectedMetric } from '@/types/privacy';
@@ -33,6 +34,7 @@ const ISO_DATE_TIME = z.string().datetime({ offset: true });
 export const dashboardQuerySchema = z.object({
   period: z.enum(DASHBOARD_PERIODS).default('1m'),
   departmentId: z.string().trim().min(1).max(128).optional(),
+  companyId: z.string().trim().min(1).max(128).optional(),
 }).strict();
 
 export const communicationsQuerySchema = z.object({
@@ -58,6 +60,10 @@ interface ParticipantRow {
 
 interface PeriodParticipantRow extends ParticipantRow {
   period: string;
+}
+
+interface WellbeingParticipantRow extends PeriodParticipantRow {
+  event_type: WellbeingEventType;
 }
 
 interface DepartmentRow {
@@ -86,6 +92,7 @@ interface CommunicationWindow {
 }
 
 type SafeCommunicationType = 'campaign' | 'lesson';
+type WellbeingEventType = 'check_in' | 'check_out';
 
 interface SafeCommunicationDefinition {
   type: SafeCommunicationType;
@@ -106,7 +113,7 @@ export const SAFE_COMMUNICATION_ACTIONS: readonly SafeCommunicationDefinition[] 
       type: 'lesson',
       source: 'lesson_delivery',
       action: 'lesson_delivery',
-      label: 'Entregas de li\u00e7\u00e3o',
+      label: 'Entregas de lição',
     }),
   ]);
 
@@ -137,10 +144,15 @@ const PERIOD_DAYS: Record<CommunicationPeriod, number> = {
   '90': 90,
 };
 
+const WELLBEING_EVENT_TYPES: readonly WellbeingEventType[] = Object.freeze([
+  'check_in',
+  'check_out',
+]);
+
 function normalizedNow(now?: string): string {
   const candidate = now ?? new Date().toISOString();
   const result = ISO_DATE_TIME.safeParse(candidate);
-  if (!result.success) throw new Error('Data interna inv\u00e1lida para proje\u00e7\u00e3o protegida.');
+  if (!result.success) throw new Error('Data interna inválida para projeção protegida.');
   return new Date(result.data).toISOString();
 }
 
@@ -204,6 +216,16 @@ function publicMetric<T>(cell: AggregateCell<T> | undefined): ProtectedMetric<T>
   return { status: 'suppressed', reason: cell.reason, message: cell.message };
 }
 
+function tableExists(db: Database.Database, table: string): boolean {
+  const row = db.prepare(`
+    SELECT 1 AS exists_flag
+    FROM sqlite_master
+    WHERE type = 'table' AND name = ?
+    LIMIT 1
+  `).get(table) as { exists_flag: number } | undefined;
+  return row !== undefined;
+}
+
 function validateDepartment(
   db: Database.Database,
   companyId: string,
@@ -213,7 +235,7 @@ function validateDepartment(
   const department = db.prepare(
     'SELECT id FROM departments WHERE id = ? AND company_id = ?',
   ).get(departmentId, companyId);
-  if (!department) throw new Error('Departamento inv\u00e1lido para esta empresa.');
+  if (!department) throw new Error('Departamento inválido para esta empresa.');
 }
 
 function getExamActivityMetric(
@@ -344,6 +366,153 @@ function getExamSeries(
     period,
     metric: metrics.get(period) ?? protectMetric(0, 0),
   }));
+}
+
+function emptyWellbeingProjection(): {
+  checkIn: ProtectedMetric<number>;
+  checkOut: ProtectedMetric<number>;
+  series: ProtectedWellbeingSeriesMetric[];
+} {
+  return {
+    checkIn: notComputableMetric(),
+    checkOut: notComputableMetric(),
+    series: [],
+  };
+}
+
+function getWellbeingParticipants(
+  db: Database.Database,
+  companyId: string,
+  departmentId: string | undefined,
+  start: string,
+  end: string,
+): WellbeingParticipantRow[] {
+  return db.prepare(`
+    SELECT
+      strftime('%Y-%m', we.day) AS period,
+      we.event_type,
+      we.user_id AS participant_id
+    FROM wellbeing_events we
+    JOIN users u ON u.id = we.user_id
+    WHERE we.company_id = ?
+      AND u.company_id = ?
+      AND ${eligibleContributorSql()}
+      AND date(we.day) >= date(?)
+      AND date(we.day) <= date(?)
+      AND we.event_type IN ('check_in', 'check_out')
+      ${departmentClause(departmentId)}
+    GROUP BY period, we.event_type, we.user_id
+    ORDER BY period ASC, we.event_type ASC, we.user_id ASC
+  `).all(
+    companyId,
+    companyId,
+    start,
+    end,
+    ...departmentParams(departmentId),
+  ) as WellbeingParticipantRow[];
+}
+
+function getProtectedWellbeingProjection(
+  db: Database.Database,
+  companyId: string,
+  departmentId: string | undefined,
+  start: string,
+  end: string,
+): {
+  checkIn: ProtectedMetric<number>;
+  checkOut: ProtectedMetric<number>;
+  series: ProtectedWellbeingSeriesMetric[];
+} {
+  if (!tableExists(db, 'wellbeing_events')) return emptyWellbeingProjection();
+
+  const rows = getWellbeingParticipants(db, companyId, departmentId, start, end);
+  const participantsByType = new Map<WellbeingEventType, Set<string>>(
+    WELLBEING_EVENT_TYPES.map((type) => [type, new Set<string>()]),
+  );
+  const participantsByPeriod = new Map<string, Map<WellbeingEventType, Set<string>>>();
+
+  for (const row of rows) {
+    participantsByType.get(row.event_type)?.add(row.participant_id);
+    const periodMap = participantsByPeriod.get(row.period)
+      ?? new Map<WellbeingEventType, Set<string>>(
+        WELLBEING_EVENT_TYPES.map((type) => [type, new Set<string>()]),
+      );
+    periodMap.get(row.event_type)?.add(row.participant_id);
+    participantsByPeriod.set(row.period, periodMap);
+  }
+
+  const totalCells: AggregateCell<number>[] = WELLBEING_EVENT_TYPES.map((type) => {
+    const participants = participantsByType.get(type) ?? new Set<string>();
+    return {
+      id: `wellbeing:total:${type}`,
+      ...protectMetric(participants.size, participants.size),
+    };
+  });
+  const protectedTotals = new Map(
+    applyComplementarySuppression(totalCells, [{
+      id: 'wellbeing:total:check-in-check-out',
+      kind: 'series',
+      cellIds: totalCells.map(({ id }) => id),
+    }]).map((cell) => [cell.id, cell]),
+  );
+
+  const periods = getFixedMonthBuckets(start, end);
+  const metricsByPeriodAndType = new Map<string, ProtectedMetric<number>>();
+  for (const period of periods) {
+    const periodMap = participantsByPeriod.get(period);
+    for (const type of WELLBEING_EVENT_TYPES) {
+      const participants = periodMap?.get(type) ?? new Set<string>();
+      metricsByPeriodAndType.set(
+        `${period}:${type}`,
+        protectMetric(participants.size, participants.size),
+      );
+    }
+  }
+
+  for (let index = 1; index < periods.length; index += 1) {
+    const previousPeriod = periods[index - 1];
+    const currentPeriod = periods[index];
+    for (const type of WELLBEING_EVENT_TYPES) {
+      const previousParticipants = participantsByPeriod.get(previousPeriod)?.get(type) ?? new Set<string>();
+      const currentParticipants = participantsByPeriod.get(currentPeriod)?.get(type) ?? new Set<string>();
+      const protectedPair = protectTemporalPair(
+        { value: previousParticipants.size, participantIds: previousParticipants },
+        { value: currentParticipants.size, participantIds: currentParticipants },
+      );
+      if (protectedPair.previous.status === 'suppressed') {
+        metricsByPeriodAndType.set(`${previousPeriod}:${type}`, protectedPair.previous);
+      }
+      if (protectedPair.current.status === 'suppressed') {
+        metricsByPeriodAndType.set(`${currentPeriod}:${type}`, protectedPair.current);
+      }
+    }
+  }
+
+  const series: ProtectedWellbeingSeriesMetric[] = periods.map((period) => {
+    const cells: AggregateCell<number>[] = WELLBEING_EVENT_TYPES.map((type) => ({
+      id: `wellbeing:${period}:${type}`,
+      ...(metricsByPeriodAndType.get(`${period}:${type}`) ?? protectMetric(0, 0)),
+    }));
+    const protectedCells = new Map(
+      applyComplementarySuppression(cells, [{
+        id: `wellbeing:${period}:check-in-check-out`,
+        kind: 'series',
+        cellIds: cells.map(({ id }) => id),
+      }]).map((cell) => [cell.id, cell]),
+    );
+
+    return {
+      period,
+      checkIn: publicMetric(protectedCells.get(`wellbeing:${period}:check_in`)),
+      checkOut: publicMetric(protectedCells.get(`wellbeing:${period}:check_out`)),
+    };
+  });
+
+  return {
+    checkIn: publicMetric(protectedTotals.get('wellbeing:total:check_in')),
+    checkOut: publicMetric(protectedTotals.get('wellbeing:total:check_out')),
+    series,
+  };
 }
 
 function getDepartments(
@@ -490,6 +659,13 @@ export function getProtectedDashboardProjection(
     parsed.departmentId,
     now,
   );
+  const wellbeing = getProtectedWellbeingProjection(
+    db,
+    input.companyId,
+    parsed.departmentId,
+    start,
+    now,
+  );
 
   return {
     filters: {
@@ -504,6 +680,8 @@ export function getProtectedDashboardProjection(
         start,
         now,
       ),
+      wellbeingCheckIn: wellbeing.checkIn,
+      wellbeingCheckOut: wellbeing.checkOut,
       engagement: notComputableMetric(),
       healthRisk: notComputableMetric(),
       campaignParticipation: notComputableMetric(),
@@ -518,6 +696,7 @@ export function getProtectedDashboardProjection(
       start,
       now,
     ),
+    wellbeingSeries: wellbeing.series,
   };
 }
 

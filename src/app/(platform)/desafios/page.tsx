@@ -19,19 +19,19 @@ type ChallengesPayload = {
 const fetcher = async (url: string): Promise<ChallengesPayload> => {
   const response = await fetch(url);
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error ?? 'Nao foi possivel carregar seus desafios');
+  if (!response.ok) throw new Error(payload.error ?? 'Não foi possível carregar seus desafios');
   return payload;
 };
 
 function statusLabel(status: CompanyChallengeView['status']): string {
-  if (status === 'completed') return 'Concluido';
+  if (status === 'completed') return 'Concluído';
   if (status === 'left') return 'Encerrado';
   return 'Em andamento';
 }
 
 function modeLabel(challenge: CompanyChallengeCatalogItem): string {
-  if (challenge.mode === 'content_items') return `${challenge.target} conteudos`;
-  if (challenge.mode === 'sessions') return `${challenge.target} sessoes`;
+  if (challenge.mode === 'content_items') return `${challenge.target} conteúdos`;
+  if (challenge.mode === 'sessions') return `${challenge.target} sessões`;
   return `${challenge.target} dias`;
 }
 
@@ -72,13 +72,13 @@ export default function DesafiosPage() {
       const response = await action();
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage(payload.error ?? 'Nao foi possivel atualizar o desafio.');
+        setMessage(payload.error ?? 'Não foi possível atualizar o desafio.');
         return;
       }
       setMessage(successMessage);
       await mutate();
     } catch {
-      setMessage('Nao foi possivel conectar agora.');
+      setMessage('Não foi possível conectar agora.');
     } finally {
       setBusyKey(null);
     }
@@ -113,7 +113,7 @@ export default function DesafiosPage() {
       <FeedbackState
         kind="loading"
         title="Carregando desafios"
-        description="Estamos preparando apenas o catalogo seguro da sua empresa."
+        description="Estamos preparando apenas o catálogo seguro da sua empresa."
       />
     );
   }
@@ -122,8 +122,8 @@ export default function DesafiosPage() {
     return (
       <FeedbackState
         kind="denied"
-        title="Desafios indisponiveis"
-        description="Este perfil nao possui acesso persistido a experiencia de colaboradora."
+        title="Desafios indisponíveis"
+        description="Este perfil não possui acesso persistido à experiência de colaboradora."
       />
     );
   }
@@ -132,7 +132,7 @@ export default function DesafiosPage() {
     return (
       <FeedbackState
         kind="error"
-        title="Nao foi possivel abrir desafios"
+        title="Não foi possível abrir desafios"
         description={error.message}
       />
     );
@@ -143,15 +143,15 @@ export default function DesafiosPage() {
       <PageHeader
         context="Desafios"
         title="Desafios da empresa"
-        description="Entre voluntariamente em acoes educativas e gerais, registre progresso deliberado e saia quando quiser."
+        description="Entre voluntariamente em ações educativas e gerais, registre progresso deliberado e saia quando quiser."
       />
 
       <SummaryBand
         label="Resumo privado"
         items={[
           { label: 'Em andamento', value: joined.length },
-          { label: 'Concluidos', value: completed.length },
-          { label: 'Progresso medio', value: averageProgress, detail: '%' },
+          { label: 'Concluídos', value: completed.length },
+          { label: 'Progresso médio', value: averageProgress, detail: '%' },
         ]}
       />
 

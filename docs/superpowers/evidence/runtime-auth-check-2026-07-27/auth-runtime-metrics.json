@@ -1,0 +1,57 @@
+{
+  "metrics": {
+    "title": "UniHER — Saúde Feminina Corporativa | Gamificação & ROI para RH",
+    "bodyBackground": "rgb(250, 247, 242)",
+    "bodyFont": "Montserrat, \"Montserrat Fallback\"",
+    "bodyMargin": "0px",
+    "mainClass": "min-h-screen bg-cream-50 flex items-center justify-center p-6 relative overflow-hidden",
+    "mainDisplay": "flex",
+    "inputWidth": "382px",
+    "h1Text": null,
+    "h1FontSize": null,
+    "buttons": [
+      {
+        "text": "",
+        "bg": "rgba(0, 0, 0, 0)",
+        "width": "36px"
+      },
+      {
+        "text": "Entrar",
+        "bg": "rgb(185, 134, 67)",
+        "width": "382px"
+      },
+      {
+        "text": "Esqueceu sua senha?",
+        "bg": "rgba(0, 0, 0, 0)",
+        "width": "129.109px"
+      },
+      {
+        "text": "Voltar para o início",
+        "bg": "rgba(0, 0, 0, 0)",
+        "width": "126.422px"
+      }
+    ],
+    "nextCssLinks": [
+      "http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__0~bkzo7._.css"
+    ],
+    "bodyTextSample": "Ir para conteúdo principal\nEmail\nSenha\nEntrar\nEsqueceu sua senha?\nVoltar para o início"
+  },
+  "bad": [
+    {
+      "status": 401,
+      "url": "http://localhost:3000/api/auth/me"
+    },
+    {
+      "status": 401,
+      "url": "http://localhost:3000/api/auth/me"
+    },
+    {
+      "status": 401,
+      "url": "http://localhost:3000/api/auth/me"
+    },
+    {
+      "status": 401,
+      "url": "http://localhost:3000/api/auth/me"
+    }
+  ]
+}

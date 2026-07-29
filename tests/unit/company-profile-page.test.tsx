@@ -4,8 +4,21 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import CompanyProfilePage from '@/app/(platform)/company-profile/page';
-import { AuthContext } from '@/hooks/useAuth';
-import type { MockUser } from '@/types/platform';
+
+const mocks = vi.hoisted(() => ({
+  auth: {
+    user: { id: 'rh-a', role: 'rh', companyId: 'company-a' } as {
+      id: string;
+      role: string;
+      companyId?: string;
+    },
+    isLoading: false,
+  },
+}));
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => mocks.auth,
+}));
 
 const company = {
   id: 'company-a',
@@ -40,39 +53,14 @@ function deferredResponse() {
   return { promise, resolve: (response: Response) => resolve?.(response) };
 }
 
-const rhUser: MockUser = {
-  id: 'user-rh',
-  name: 'RH Teste',
-  email: 'rh@example.test',
-  role: 'rh',
-  companyId: 'company-a',
-  joinedAt: '2025-01-01T00:00:00.000Z',
-};
-
-function renderWithAuth(user: MockUser | null = rhUser) {
-  return render(
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: Boolean(user),
-        isLoading: false,
-        approved: true,
-        login: vi.fn(),
-        register: vi.fn(),
-        selectRole: vi.fn(),
-        logout: vi.fn(),
-        refreshUser: vi.fn(),
-      }}
-    >
-      <CompanyProfilePage />
-    </AuthContext.Provider>
-  );
-}
-
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  mocks.auth = {
+    user: { id: 'rh-a', role: 'rh', companyId: 'company-a' },
+    isLoading: false,
+  };
 });
 
 describe('company profile editing', () => {
@@ -89,7 +77,7 @@ describe('company profile editing', () => {
     });
     vi.stubGlobal('fetch', fetcher);
 
-    renderWithAuth();
+    render(<CompanyProfilePage />);
     fireEvent.click(await screen.findByRole('button', { name: 'Editar Dados' }));
 
     const save = screen.getByRole('button', { name: 'Salvar' });
@@ -118,7 +106,7 @@ describe('company profile editing', () => {
   it('exposes switch semantics, state, visible focus, and a 44px touch target', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ company })));
 
-    renderWithAuth();
+    render(<CompanyProfilePage />);
     const switchControl = await screen.findByRole('switch', { name: 'Feed da comunidade da empresa' });
 
     expect(switchControl.getAttribute('aria-checked')).toBe('false');
@@ -132,21 +120,18 @@ describe('company profile editing', () => {
     expect(switchControl.getAttribute('aria-checked')).toBe('true');
   });
 
-  it('does not fetch company data for a master admin without a company', async () => {
+  it('keeps Admin Master without company on the company selection state', async () => {
+    mocks.auth = {
+      user: { id: 'admin-master', role: 'admin', companyId: undefined },
+      isLoading: false,
+    };
     const fetcher = vi.fn();
     vi.stubGlobal('fetch', fetcher);
 
-    renderWithAuth({
-      id: 'user-admin',
-      name: 'Admin UniHER',
-      email: 'admin@uniher.com.br',
-      role: 'admin',
-      companyId: undefined,
-      isMasterAdmin: true,
-      joinedAt: '2025-01-01T00:00:00.000Z',
-    });
+    render(<CompanyProfilePage />);
 
-    expect(await screen.findByRole('heading', { name: 'Perfil por empresa' })).toBeTruthy();
-    expect(fetcher).not.toHaveBeenCalledWith('/api/company');
+    expect(await screen.findByText('Perfil por empresa')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Voltar ao painel' }).getAttribute('href')).toBe('/admin');
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });

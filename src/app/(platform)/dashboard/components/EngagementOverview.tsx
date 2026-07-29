@@ -21,7 +21,7 @@ export function EngagementOverview({ metric }: { metric: ProtectedMetric<never> 
     <section className={styles.surface} aria-labelledby="engagement-title">
       <div className={styles.sectionHeader}>
         <div>
-          <p className={styles.eyebrow}>Participa\u00e7\u00e3o</p>
+          <p className={styles.eyebrow}>Participação</p>
           <h2 id="engagement-title" className={styles.sectionTitle}>Engajamento</h2>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { mutate, unstable_serialize } from 'swr';
 import { cache } from 'swr/_internal';
 import {
   DashboardHttpError,
+  buildDashboardEndpoint,
   dashboardFetcher,
 } from '@/hooks/useDashboard';
 import {
@@ -17,6 +18,13 @@ afterEach(() => {
 });
 
 describe('dashboardFetcher', () => {
+  it('builds an explicit selected-company endpoint for Admin Master reports', () => {
+    expect(buildDashboardEndpoint('3m', 'dept-a', 'company-a')).toBe(
+      '/api/dashboard?period=3m&departmentId=dept-a&companyId=company-a',
+    );
+    expect(buildDashboardEndpoint('1m')).toBe('/api/dashboard?period=1m');
+  });
+
   it('returns JSON for a successful dashboard response', async () => {
     const body = { kpis: [], departments: [], campaigns: [] };
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(body), {

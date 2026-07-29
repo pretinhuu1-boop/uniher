@@ -18,7 +18,7 @@ const PROTECTED_HEADERS = {
 const UNAVAILABLE_HISTORY: UnavailableHistoryProjection = {
   status: 'unavailable',
   reason: 'eligible_ledger_required',
-  message: 'Hist\u00f3rico indispon\u00edvel at\u00e9 existir um registro eleg\u00edvel e protegido.',
+  message: 'Histórico indisponível até existir um registro elegível e protegido.',
 };
 
 export const GET = withRole('rh', 'admin', 'lideranca')(
@@ -29,7 +29,7 @@ export const GET = withRole('rh', 'admin', 'lideranca')(
     });
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Filtros de hist\u00f3rico inv\u00e1lidos.' },
+        { error: 'Filtros de histórico inválidos.' },
         { status: 400, headers: PROTECTED_HEADERS },
       );
     }

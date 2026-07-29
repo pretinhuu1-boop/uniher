@@ -226,6 +226,9 @@
   color: var(--text-700);
   border-bottom: 1px solid var(--border-1);
   vertical-align: middle;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .tr:last-child .td {
@@ -368,6 +371,7 @@
   .td {
     border-bottom: none;
     padding: 4px 0;
+    line-height: 1.45;
   }
 
   .td::before {
@@ -378,5 +382,16 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-right: 4px;
+  }
+
+  .rowActions {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-top: 6px;
+  }
+
+  .rowBtn {
+    white-space: normal;
+    text-align: center;
   }
 }

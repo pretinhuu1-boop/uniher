@@ -34,6 +34,20 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
     return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
   }
 
+  const actor = db.prepare(`
+    SELECT id, company_id, role
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'rh'
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(context.auth.userId, companyId) as { id: string; company_id: string; role: string } | undefined;
+  if (!actor || actor.role !== context.auth.role) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
+
   // Verify user belongs to same company
   const targetUser = db.prepare(
     'SELECT id, name, email, role, company_id, blocked FROM users WHERE id = ? AND deleted_at IS NULL'
@@ -52,9 +66,16 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
   }
 
-  const { action, department_id, role } = parsed.data;
+  const { action, department_id, role, name } = parsed.data;
   const wq = getWriteQueue();
   const ip = req.headers.get('x-forwarded-for') ?? undefined;
+
+  if ((action === 'change_department' || (action === 'update_profile' && department_id !== undefined)) && department_id) {
+    const dept = db.prepare('SELECT id FROM departments WHERE id = ? AND company_id = ?').get(department_id, companyId);
+    if (!dept) {
+      return NextResponse.json({ error: 'Departamento não encontrado' }, { status: 404 });
+    }
+  }
 
   switch (action) {
     case 'block': {
@@ -62,7 +83,8 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         return NextResponse.json({ error: 'Não é possível bloquear este usuário' }, { status: 403 });
       }
       await wq.enqueue((db) => {
-        db.prepare('UPDATE users SET blocked = 1, updated_at = datetime(\'now\') WHERE id = ?').run(userId);
+        db.prepare('UPDATE users SET blocked = 1, updated_at = datetime(\'now\') WHERE id = ? AND company_id = ?')
+          .run(userId, companyId);
       });
       await logAudit({
         actorId: context.auth.userId,
@@ -79,7 +101,8 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
     }
     case 'unblock': {
       await wq.enqueue((db) => {
-        db.prepare('UPDATE users SET blocked = 0, updated_at = datetime(\'now\') WHERE id = ?').run(userId);
+        db.prepare('UPDATE users SET blocked = 0, updated_at = datetime(\'now\') WHERE id = ? AND company_id = ?')
+          .run(userId, companyId);
       });
       await logAudit({
         actorId: context.auth.userId,
@@ -103,8 +126,8 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         }
       }
       await wq.enqueue((db) => {
-        db.prepare('UPDATE users SET department_id = ?, updated_at = datetime(\'now\') WHERE id = ?')
-          .run(department_id || null, userId);
+        db.prepare('UPDATE users SET department_id = ?, updated_at = datetime(\'now\') WHERE id = ? AND company_id = ?')
+          .run(department_id || null, userId, companyId);
       });
       await logAudit({
         actorId: context.auth.userId,
@@ -128,7 +151,8 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         return NextResponse.json({ error: 'Não é possível alterar o papel deste usuário' }, { status: 403 });
       }
       await wq.enqueue((db) => {
-        db.prepare('UPDATE users SET role = ?, updated_at = datetime(\'now\') WHERE id = ?').run(role, userId);
+        db.prepare('UPDATE users SET role = ?, updated_at = datetime(\'now\') WHERE id = ? AND company_id = ?')
+          .run(role, userId, companyId);
       });
       await logAudit({
         actorId: context.auth.userId,
@@ -146,16 +170,16 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
     case 'update_profile': {
       const updates: string[] = ["updated_at = datetime('now')"];
       const values: any[] = [];
-      if (body.name) { updates.push('name = ?'); values.push(body.name); }
-      if (body.role && ['lideranca', 'colaboradora'].includes(body.role) && targetUser.role !== 'rh') {
-        updates.push('role = ?'); values.push(body.role);
+      if (name) { updates.push('name = ?'); values.push(name); }
+      if (role && ['lideranca', 'colaboradora'].includes(role) && targetUser.role !== 'rh') {
+        updates.push('role = ?'); values.push(role);
       }
-      if (body.department_id !== undefined) {
-        updates.push('department_id = ?'); values.push(body.department_id || null);
+      if (department_id !== undefined) {
+        updates.push('department_id = ?'); values.push(department_id || null);
       }
-      values.push(userId);
+      values.push(userId, companyId);
       await wq.enqueue((db) => {
-        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ? AND company_id = ?`).run(...values);
       });
       await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'user_edit', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: { action: 'update_profile', changes: body }, ip });
       break;
@@ -171,7 +195,8 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
       tempPass = tempPass.slice(0, 8) + 'A1a@' + tempPass.slice(8);
       const hash = await hashPassword(tempPass);
       await wq.enqueue((db) => {
-        db.prepare("UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = datetime('now') WHERE id = ?").run(hash, userId);
+        db.prepare("UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = datetime('now') WHERE id = ? AND company_id = ?")
+          .run(hash, userId, companyId);
       });
       await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });
       return NextResponse.json({ success: true, temporaryPassword: tempPass });
@@ -200,7 +225,8 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
             actorId: context.auth.userId,
             erasedAt: new Date().toISOString(),
           });
-          db.prepare("UPDATE users SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(userId);
+          db.prepare("UPDATE users SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ? AND company_id = ?")
+            .run(userId, companyId);
         });
         removeUser.immediate();
       });

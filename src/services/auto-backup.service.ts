@@ -9,14 +9,18 @@ const HOUR_KEY = 'auto_backup_hour';
 const DEFAULT_RETENTION = 10;
 const DEFAULT_HOUR = 2;
 
+function projectPath(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ process.cwd(), ...segments);
+}
+
 function getDbPath(): string {
   const configured = process.env.DATABASE_PATH;
-  if (!configured) return path.join(process.cwd(), 'data', 'uniher.db');
-  return path.isAbsolute(configured) ? configured : path.join(process.cwd(), configured);
+  if (!configured) return projectPath('data', 'uniher.db');
+  return path.isAbsolute(configured) ? configured : projectPath(configured);
 }
 
 function getBackupsDir(): string {
-  return path.join(process.cwd(), 'data', 'backups');
+  return projectPath('data', 'backups');
 }
 
 function localDayKey(now = new Date()): string {
@@ -37,8 +41,8 @@ function localStamp(now = new Date()): string {
 }
 
 function pruneBackups(backupsDir: string, keep = DEFAULT_RETENTION): number {
-  if (!fs.existsSync(backupsDir)) return 0;
-  const files = fs.readdirSync(backupsDir)
+  if (!fs.existsSync(/* turbopackIgnore: true */ backupsDir)) return 0;
+  const files = fs.readdirSync(/* turbopackIgnore: true */ backupsDir)
     .filter((f) => f.endsWith('.db'))
     .map((f) => {
       const full = path.join(backupsDir, f);
@@ -104,11 +108,11 @@ export function createDatabaseBackup(prefix = 'uniher-auto'): { name: string; si
   const dbPath = getDbPath();
   const backupsDir = getBackupsDir();
 
-  if (!fs.existsSync(dbPath)) {
+  if (!fs.existsSync(/* turbopackIgnore: true */ dbPath)) {
     throw new Error(`Banco não encontrado em ${dbPath}`);
   }
-  if (!fs.existsSync(backupsDir)) {
-    fs.mkdirSync(backupsDir, { recursive: true });
+  if (!fs.existsSync(/* turbopackIgnore: true */ backupsDir)) {
+    fs.mkdirSync(/* turbopackIgnore: true */ backupsDir, { recursive: true });
   }
 
   const name = `${prefix}-${localStamp()}.db`;

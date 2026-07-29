@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/hooks/useAuth';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import styles from './convites.module.css';
 
 type Tab = 'invites' | 'pending';
@@ -14,12 +15,6 @@ const ROLE_OPTIONS = [
   { value: 'lideranca', label: 'Liderança', hint: 'Gestora de equipe — tudo da colaboradora + visão dos indicadores do departamento' },
   { value: 'rh', label: 'Admin Empresa', hint: 'Administradora da empresa — gerencia colaboradoras, campanhas e configurações' },
 ];
-
-const ROLE_LABELS: Record<string, string> = {
-  colaboradora: 'Colaboradora',
-  lideranca: 'Liderança',
-  rh: 'Admin',
-};
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   pending:  { label: 'Pendente',  className: styles.statusPending },
@@ -328,7 +323,7 @@ export default function ConvitesPage() {
                     </td>
                     <td className={styles.td} data-label="Email">{u.email}</td>
                     <td className={styles.td} data-label="Papel">
-                      <span className={styles.roleBadge}>{ROLE_LABELS[u.role] ?? u.role}</span>
+                      <span className={styles.roleBadge}>{getUserRoleLabel(u.role)}</span>
                     </td>
                     <td className={styles.td} data-label="Setor">
                       {u.department_name ?? <span style={{ color: 'var(--text-400)' }}>—</span>}
@@ -647,7 +642,7 @@ export default function ConvitesPage() {
                     <span style={{ fontWeight: 600 }}>{inv.email}</span>
                   </td>
                   <td className={styles.td} data-label="Papel">
-                    <span className={styles.roleBadge}>{ROLE_LABELS[inv.role] ?? inv.role}</span>
+                    <span className={styles.roleBadge}>{getUserRoleLabel(inv.role)}</span>
                   </td>
                   <td className={styles.td} data-label="Setor">
                     {inv.department_name ?? <span style={{ color: 'var(--text-400)' }}>—</span>}

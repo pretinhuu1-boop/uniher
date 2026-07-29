@@ -32,8 +32,8 @@ describe('RH dashboard spacing contract', () => {
 
   it('uses fluid desktop filters without hiding horizontal overflow', () => {
     const pageRule = css.match(/\.page\s*\{([\s\S]*?)\}/)?.[1] ?? '';
-    const desktopRules = css.match(/@media \(min-width: 960px\)\s*\{([\s\S]*?)@media/)?.[1]
-      ?? css.slice(css.indexOf('@media (min-width: 960px)'));
+    const desktopRules = css.match(/@media \(min-width: 1200px\)\s*\{([\s\S]*?)@media/)?.[1]
+      ?? css.slice(css.indexOf('@media (min-width: 1200px)'));
 
     expect(pageRule).not.toMatch(/overflow-x:\s*(?:clip|hidden)/);
     expect(desktopRules).toMatch(/\.detailsHeading\s*\{[\s\S]*?flex-wrap:\s*wrap;/);

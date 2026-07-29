@@ -1,0 +1,16 @@
+{
+  "metrics": {
+    "title": "UniHER — Saúde Feminina Corporativa | Gamificação & ROI para RH",
+    "bodyBackground": "rgb(250, 247, 242)",
+    "bodyFont": "Montserrat, \"Montserrat Fallback\"",
+    "bodyMargin": "0px",
+    "inputWidth": "382px",
+    "submitBackground": "rgb(185, 134, 67)",
+    "submitWidth": "382px",
+    "cssLinks": [
+      "http://localhost:3000/_next/static/chunks/0g_uahqp4si.y.css"
+    ],
+    "text": "Ir para conteúdo principal\nEmail\nSenha\nEntrar\nEsqueceu sua senha?\nVoltar para o início"
+  },
+  "bad": []
+}

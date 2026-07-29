@@ -2,7 +2,11 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { WriteQueue } from './write-queue';
 
-const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'uniher.db');
+function projectPath(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ process.cwd(), ...segments);
+}
+
+const DB_PATH = process.env.DATABASE_PATH || projectPath('data', 'uniher.db');
 
 let _db: Database.Database | null = null;
 let _writeQueue: WriteQueue | null = null;

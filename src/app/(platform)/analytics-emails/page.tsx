@@ -31,7 +31,7 @@ function renderMetric(metric: ProtectedMetric<number>): string {
 
 async function communicationsFetcher(endpoint: string): Promise<ProtectedCommunicationsProjection> {
   const response = await fetch(endpoint, { cache: 'no-store' });
-  if (!response.ok) throw new Error('N\u00e3o foi poss\u00edvel consultar as comunica\u00e7\u00f5es protegidas.');
+  if (!response.ok) throw new Error('Não foi possível consultar as comunicações protegidas.');
   return response.json() as Promise<ProtectedCommunicationsProjection>;
 }
 
@@ -55,12 +55,12 @@ export default function AnalyticsEmailsPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        context="Opera\u00e7\u00e3o \u00b7 RH"
-        title="Entregas de comunica\u00e7\u00e3o"
-        description="Somente metadados operacionais agregados e protegidos s\u00e3o exibidos."
+        context="Operação · RH"
+        title="Entregas de comunicação"
+        description="Somente metadados operacionais agregados e protegidos são exibidos."
       />
       <label>
-        Per\u00edodo
+        Período
         <select value={period} onChange={(event) => setPeriod(event.target.value as CommunicationPeriod)}>
           {COMMUNICATION_PERIODS.map((value) => (
             <option key={value} value={value}>{value} dias</option>
@@ -71,16 +71,16 @@ export default function AnalyticsEmailsPage() {
         <FeedbackState
           kind="loading"
           title="Preparando metadados protegidos"
-          description="Aplicando o limiar de privacidade ao per\u00edodo selecionado."
+          description="Aplicando o limiar de privacidade ao período selecionado."
         />
       ) : error ? (
         <FeedbackState
           kind="error"
-          title="N\u00e3o foi poss\u00edvel carregar as entregas"
-          description="Atualize a p\u00e1gina para tentar novamente."
+          title="Não foi possível carregar as entregas"
+          description="Atualize a página para tentar novamente."
         />
       ) : (
-        <section aria-label="M\u00e9tricas operacionais protegidas">
+        <section aria-label="Métricas operacionais protegidas">
           {data?.actions.map((item) => (
             <article key={item.action}>
               <h2>{item.label}</h2>

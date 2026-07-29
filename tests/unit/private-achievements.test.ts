@@ -114,9 +114,16 @@ describe('private achievements wave 8 contract', () => {
       '2026-07-22T13:00:00.000Z',
     );
     const completedAchievement = companyA.find((row) => row.achievement_key === 'first-challenge-completed');
+    const repeatedSync = achievements(db).sync(
+      { userId: 'user-a', companyId: 'company-a' },
+      '2026-07-22T14:00:00.000Z',
+    );
+    const repeatedCompletedAchievement = repeatedSync.find((row) => row.achievement_key === 'first-challenge-completed');
 
     expect(completedAchievement?.status).toBe('revoked');
     expect(completedAchievement?.progress).toBe(0);
+    expect(repeatedCompletedAchievement?.status).toBe('revoked');
+    expect(repeatedCompletedAchievement?.progress).toBe(0);
     expect(companyB.every((row) => row.status === 'in_progress')).toBe(true);
   });
 

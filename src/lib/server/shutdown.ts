@@ -3,9 +3,13 @@ import path from 'path';
 
 let shutdownRegistered = false;
 
+function projectPath(...segments: string[]): string {
+  return path.join(/* turbopackIgnore: true */ process.cwd(), ...segments);
+}
+
 function logToFile(message: string) {
   try {
-    const logPath = path.join(process.cwd(), 'data', 'server.log');
+    const logPath = projectPath('data', 'server.log');
     const timestamp = new Date().toISOString();
     fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
   } catch {

@@ -125,7 +125,7 @@ npm run db:seed
 Usuários padrão do seed:
 
 - Admin: `admin@uniher.com.br / Admin@2026`
-- RH demo: `contabilidade@eduardaeyurimarketingltda.com.br / Admin@2026`
+- RH demo: `rh.visual@eduardaeyurimarketingltda.com.br / Admin@2026`
 
 Troque essas senhas depois do primeiro acesso.
 

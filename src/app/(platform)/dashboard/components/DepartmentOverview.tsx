@@ -1,6 +1,7 @@
 import { FeedbackState } from '@/components/ui/FeedbackState';
 import type { ProtectedDepartmentMetric } from '@/types/platform';
 import type { ProtectedMetric } from '@/types/privacy';
+import type { CSSProperties } from 'react';
 import styles from '../dashboard.module.css';
 
 function assertNever(value: never): never {
@@ -18,13 +19,28 @@ function renderMetric(metric: ProtectedMetric<number>): string {
   }
 }
 
+function visibleValue(metric: ProtectedMetric<number>): number | null {
+  return metric.status === 'visible' ? metric.value : null;
+}
+
+function chartScale(value: number | null, maxValue: number): CSSProperties {
+  return {
+    '--chart-scale': value === null || maxValue <= 0 ? 0 : Math.max(0.04, value / maxValue),
+  } as CSSProperties;
+}
+
 export function DepartmentOverview({ departments }: { departments: ProtectedDepartmentMetric[] }) {
+  const visibleValues = departments
+    .map((department) => visibleValue(department.metric))
+    .filter((value): value is number => value !== null);
+  const maxValue = Math.max(1, ...visibleValues);
+
   return (
     <section className={`${styles.surface} ${styles.wide}`} aria-labelledby="departments-title">
       <div className={styles.sectionHeader}>
         <div>
           <p className={styles.eyebrow}>Departamentos</p>
-          <h3 id="departments-title" className={styles.sectionTitle}>Contribuintes ativos por \u00e1rea</h3>
+          <h3 id="departments-title" className={styles.sectionTitle}>Contribuintes ativos por área</h3>
         </div>
       </div>
       {departments.length === 0 ? (
@@ -34,11 +50,19 @@ export function DepartmentOverview({ departments }: { departments: ProtectedDepa
           description="Ajuste o filtro para consultar outro escopo."
         />
       ) : (
-        <ul className={styles.dataList}>
+        <ul className={styles.dataList} aria-label="Gráfico protegido de contribuintes por área">
           {departments.map((department) => (
             <li key={department.id} className={styles.departmentRow}>
-              <strong>{department.name}</strong>
-              <span>{renderMetric(department.metric)}</span>
+              <div className={styles.rowHeading}>
+                <strong>{department.name}</strong>
+                <span className={styles.rowMetric}>{renderMetric(department.metric)}</span>
+              </div>
+              <span className={styles.chartTrack} aria-hidden="true">
+                <span
+                  className={department.metric.status === 'visible' ? styles.chartFill : styles.chartProtected}
+                  style={chartScale(visibleValue(department.metric), maxValue)}
+                />
+              </span>
             </li>
           ))}
         </ul>

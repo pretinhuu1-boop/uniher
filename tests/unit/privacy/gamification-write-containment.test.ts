@@ -47,7 +47,21 @@ function useWriteDatabase() {
   const db = new Database(':memory:');
   runtime.db = db;
   db.exec(`
-    CREATE TABLE users (id TEXT PRIMARY KEY, points INTEGER, level INTEGER, streak INTEGER, last_active TEXT, updated_at TEXT);
+    CREATE TABLE users (
+      id TEXT PRIMARY KEY,
+      company_id TEXT,
+      role TEXT NOT NULL DEFAULT 'colaboradora',
+      also_collaborator INTEGER DEFAULT 0,
+      approved INTEGER DEFAULT 1,
+      blocked INTEGER DEFAULT 0,
+      deleted_at TEXT,
+      points INTEGER,
+      level INTEGER,
+      streak INTEGER,
+      last_active TEXT,
+      updated_at TEXT
+    );
+    CREATE TABLE companies (id TEXT PRIMARY KEY);
     CREATE TABLE user_leagues (id TEXT PRIMARY KEY, user_id TEXT, league TEXT, week_points INTEGER, week_start TEXT);
     CREATE TABLE custom_league_members (id TEXT PRIMARY KEY, league_id TEXT, user_id TEXT, week_points INTEGER);
     CREATE TABLE user_badges (user_id TEXT, badge_id TEXT, unlocked_at TEXT);
@@ -62,8 +76,39 @@ function useWriteDatabase() {
     CREATE TABLE user_lesson_progress (id TEXT PRIMARY KEY, user_id TEXT, lesson_id TEXT, completed INTEGER, score INTEGER, xp_earned INTEGER, completed_at TEXT, UNIQUE(user_id, lesson_id));
     CREATE TABLE gamification_config (company_id TEXT PRIMARY KEY, hearts_enabled INTEGER, hearts_refill_hours INTEGER);
     CREATE TABLE user_hearts (user_id TEXT PRIMARY KEY, hearts INTEGER, max_hearts INTEGER);
+    CREATE TABLE campaigns (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      month TEXT NOT NULL,
+      color TEXT NOT NULL,
+      status TEXT DEFAULT 'next',
+      status_label TEXT,
+      company_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      start_date TEXT,
+      end_date TEXT,
+      theme TEXT,
+      theme_color TEXT
+    );
     CREATE TABLE user_campaigns (user_id TEXT, campaign_id TEXT, progress INTEGER, PRIMARY KEY(user_id, campaign_id));
-    INSERT INTO users VALUES ('user-1', 731, 8, 4, NULL, '2026-01-01');
+    CREATE TABLE wellbeing_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      mood TEXT NOT NULL,
+      day TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, event_type, day)
+    );
+    INSERT INTO companies VALUES ('company-1');
+    INSERT INTO users (
+      id, company_id, role, also_collaborator, approved, blocked, deleted_at,
+      points, level, streak, last_active, updated_at
+    ) VALUES ('user-1', 'company-1', 'colaboradora', 0, 1, 0, NULL, 731, 8, 4, NULL, '2026-01-01');
+    INSERT INTO campaigns (id, name, month, color, status, status_label, company_id, start_date, end_date)
+    VALUES ('campaign-1', 'Campanha segura', 'Jul', '#3E7D5A', 'active', 'Ativa', 'company-1', '2026-01-01', '2026-12-31');
     INSERT INTO user_leagues VALUES ('league-1', 'user-1', 'ouro', 99, '2026-01-01');
     INSERT INTO custom_league_members VALUES ('custom-1', 'custom-league-1', 'user-1', 88);
     INSERT INTO user_badges VALUES ('user-1', 'badge-1', '2026-01-01');
@@ -477,6 +522,7 @@ describe('legacy gamification write containment', () => {
   it('keeps only private point-free presence and educational/campaign progress', () => {
     const pointFreeRoutes = [
       'src/app/api/gamification/check-in/route.ts',
+      'src/app/api/wellbeing/check-out/route.ts',
       'src/app/api/gamification/daily-lesson/route.ts',
       'src/app/api/gamification/daily-missions/[id]/complete/route.ts',
       'src/app/api/campaigns/join/route.ts',

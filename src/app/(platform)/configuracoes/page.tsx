@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollaboratorSaved } from '@/hooks/useCollaborator';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import type { CollaboratorSavedSessionKey } from '@/hooks/useCollaborator';
 import type { CommunityFeedItem, CommunityTopic } from '@/types/community';
 import styles from './config.module.css';
@@ -19,12 +20,12 @@ interface TogglePref {
 }
 
 const NOTIFICATION_PREFS: TogglePref[] = [
-  { id: 'campaigns', label: 'Campanhas', description: 'Notificar sobre novas campanhas e atualizacoes', defaultOn: true },
+  { id: 'campaigns', label: 'Campanhas', description: 'Notificar sobre novas campanhas e atualizações', defaultOn: true },
   { id: 'email', label: 'Resumo por e-mail', description: 'Receber resumo semanal por e-mail', defaultOn: false },
 ];
 
 const PRIVACY_PREFS: TogglePref[] = [
-  { id: 'profile', label: 'Perfil visivel', description: 'Outros colaboradoras podem ver seu perfil', defaultOn: true },
+  { id: 'profile', label: 'Perfil visível', description: 'Outras colaboradoras podem ver seu perfil', defaultOn: true },
   { id: 'analytics', label: 'Dados anonimizados', description: 'Permitir uso de dados anonimizados para melhoria', defaultOn: true },
   {
     id: 'communitySupporterName',
@@ -468,7 +469,7 @@ export default function ConfiguracoesPage() {
           setNickname(user.nickname || '');
           setEmailVal(user.email || '');
           setDeptName(user.department_name || '');
-          setCargo(user.role === 'rh' ? 'Admin Empresa' : user.role === 'lideranca' ? 'Liderança' : 'Colaboradora');
+          setCargo(getUserRoleLabel(user.role));
           setEmergencyName(user.emergency_contact_name || '');
           setEmergencyPhone(user.emergency_contact_phone || '');
         }
@@ -1235,36 +1236,28 @@ export default function ConfiguracoesPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--border-1)' }}>
-              <div>
-                <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-900)' }}>Exportar meus dados</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-400)' }}>Baixe uma cópia de todos os seus dados em formato JSON</div>
+          <div className={styles.lgpdActions}>
+            <div className={styles.lgpdItem}>
+              <div className={styles.lgpdCopy}>
+                <div className={styles.lgpdItemTitle}>Exportar meus dados</div>
+                <div className={styles.lgpdItemDesc}>Baixe uma cópia de todos os seus dados em formato JSON</div>
               </div>
               <button
                 onClick={handleExportData}
-                style={{
-                  padding: '8px 18px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem',
-                  fontWeight: 600, border: '1px solid var(--border-2)', background: 'white',
-                  color: 'var(--text-700)', cursor: 'pointer', whiteSpace: 'nowrap',
-                }}
+                className={styles.lgpdButton}
               >
                 {exportLabel}
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0' }}>
-              <div>
-                <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-900)' }}>Solicitar exclusão da conta</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-400)' }}>Sua conta será removida em até 15 dias úteis após análise</div>
+            <div className={styles.lgpdItem}>
+              <div className={styles.lgpdCopy}>
+                <div className={styles.lgpdItemTitle}>Solicitar exclusão da conta</div>
+                <div className={styles.lgpdItemDesc}>Sua conta será removida em até 15 dias úteis após análise</div>
               </div>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                style={{
-                  padding: '8px 18px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem',
-                  fontWeight: 600, border: '1px solid #fca5a5', background: '#fff1f2',
-                  color: '#dc2626', cursor: 'pointer', whiteSpace: 'nowrap',
-                }}
+                className={`${styles.lgpdButton} ${styles.lgpdDangerButton}`}
               >
                 {deleteLabel}
               </button>

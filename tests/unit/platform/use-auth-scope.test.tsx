@@ -47,6 +47,7 @@ describe('useAuthState privacy scope revalidation', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
+    window.history.pushState({}, '', '/');
     mocks.pathname = '/dashboard';
     mocks.router.push.mockReset();
     mocks.mutate.mockReset();
@@ -57,6 +58,34 @@ describe('useAuthState privacy scope revalidation', () => {
     cleanup();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+
+  it('skips the session check on public auth without a stored user or redirect', async () => {
+    mocks.pathname = '/auth';
+    window.history.pushState({}, '', '/auth');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useAuthState());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.current.user).toBeNull();
+  });
+
+  it('checks the cookie session on auth when a safe redirect is present', async () => {
+    mocks.pathname = '/auth';
+    window.history.pushState({}, '', '/auth?redirect=%2Fadmin');
+    const fetchMock = vi.fn<(input: string, init?: RequestInit) => Promise<Response>>()
+      .mockResolvedValueOnce(authResponse('user-a', 'company-a'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useAuthState());
+
+    await waitFor(() => expect(result.current.user?.id).toBe('user-a'));
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/me', expect.objectContaining({
+      signal: expect.any(AbortSignal),
+    }));
   });
 
   it('discards an older auth response after pathname revalidation starts', async () => {

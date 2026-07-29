@@ -1,20 +1,21 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { clearProtectedReportCaches, useAuth } from '@/hooks/useAuth';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import { Avatar, Badge } from '@/components/ui/AvatarBadge';
-import SidebarNavItem, { NavIcon } from './SidebarNavItem';
+import SidebarNavItem, { NavIcon, type SidebarNavVariant } from './SidebarNavItem';
 import {
-  getNavigationForRole,
+  getModuleAwareNavigationForRole,
   getRoleHome,
   isNavigationItemActive,
   normalizeUserRole,
   resolveActiveView,
 } from './navigation';
 import type { NavigationGroup, NavigationItem } from './navigation';
+import type { CompanyModuleNavigationRecord } from '@/types/modules';
 import type { UserRole } from '@/types/platform';
 import styles from './Sidebar.module.css';
 
@@ -24,38 +25,84 @@ const scopedFetcher = (key: ScopedApiKey) => (
   fetch(key[0]).then(response => response.json())
 );
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Master',
-  rh: 'Admin',
-  lideranca: 'Liderança',
-  colaboradora: 'Colaboradora',
+const PERSONAL_NOTIFICATIONS_ITEM = {
+  href: '/notificacoes',
+  label: 'Notificações',
+  icon: 'notifications',
+  description: 'Alertas e avisos do sistema para você',
+} as const satisfies NavigationItem;
+
+const PERSONAL_SETTINGS_ITEM = {
+  href: '/configuracoes',
+  label: 'Configurações',
+  icon: 'config',
+  description: 'Preferências pessoais, senha e notificações',
+} as const satisfies NavigationItem;
+
+const PERSONAL_ACCOUNT_ITEM = {
+  href: '/configuracoes',
+  label: 'Conta pessoal',
+  icon: 'config',
+  description: 'Preferências pessoais, senha e notificações',
+} as const satisfies NavigationItem;
+
+function getPersonalNavigationGroups(role: UserRole): readonly NavigationGroup[] {
+  if (role === 'colaboradora') {
+    return [{
+      label: 'Minha Conta',
+      items: [PERSONAL_NOTIFICATIONS_ITEM, PERSONAL_SETTINGS_ITEM],
+    }];
+  }
+
+  if (role === 'admin') {
+    return [{
+      label: 'Minha Conta',
+      items: [PERSONAL_NOTIFICATIONS_ITEM, PERSONAL_ACCOUNT_ITEM],
+    }];
+  }
+
+  return [{
+    label: 'Minha Conta',
+    items: [PERSONAL_ACCOUNT_ITEM],
+  }];
+}
+
+const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readonly<Record<string, readonly string[]>>>> = {
+  collaborator: {
+    '/semaforo': ['Semáforo da Saúde'],
+    '/colaboradora': ['Check-in - Como você chega hoje?', 'Check-out - Como você encerra o seu dia?'],
+    '/objetivos': ['Pessoal', 'Auto-iniciado', 'Sem comparação'],
+    '/desafios': ['Voluntário', 'Empresa', 'Sem Liga'],
+    '/conquistas': ['Privado', 'Eventos elegíveis', 'Sem ranking'],
+  },
+  manager: {
+    '/dashboard': ['Visão geral da empresa', 'Todos os indicadores e gráficos', 'Check-in x Check-out'],
+    '/dashboard?section=saude-primaria': ['Semáforo da Saúde', 'Concierge'],
+    '/campanhas': ['Campanhas de saúde', 'Conteúdos publicados'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas em revisão'],
+  },
+  admin: {
+    '/admin': ['Visão consolidada', 'Indicadores da plataforma'],
+    '/admin?tab=empresas': ['Empresas', 'Usuários', 'Módulos contratados'],
+    '/dashboard?section=saude-primaria': ['Sem\u00e1foro consolidado', 'Indicadores por empresa'],
+    '/dashboard?section=exames': ['Exames em dia', 'Indicadores de preven\u00e7\u00e3o'],
+    '/produtos-modulos': ['Controle de m\u00f3dulos contratados', 'Ativa\u00e7\u00e3o de funcionalidades sob gate'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Sem ranking ativo'],
+  },
+  personal: {},
 };
 
-const PERSONAL_NAVIGATION_GROUPS = [
-  {
-    label: 'Pessoal',
-    items: [
-      {
-        href: '/notificacoes',
-        label: 'Notificações',
-        icon: 'notifications',
-        description: 'Alertas e avisos do sistema para você',
-      },
-      {
-        href: '/configuracoes',
-        label: 'Configurações',
-        icon: 'config',
-        description: 'Preferências pessoais, senha e notificações',
-      },
-    ],
-  },
-] as const satisfies readonly NavigationGroup[];
+function getPresentationDetails(item: NavigationItem, variant: SidebarNavVariant): readonly string[] {
+  return NAVIGATION_PRESENTATION_DETAILS[variant][item.href] ?? [];
+}
 
 interface SidebarNavigationGroupsProps {
   groups: readonly NavigationGroup[];
   pathname: string;
   onNavigate: () => void;
   idPrefix: string;
+  variant?: SidebarNavVariant;
+  showChevron?: boolean | 'first-group';
   renderItemChildren?: (item: NavigationItem) => ReactNode;
 }
 
@@ -64,8 +111,14 @@ export function SidebarNavigationGroups({
   pathname,
   onNavigate,
   idPrefix,
+  variant = 'collaborator',
+  showChevron = false,
   renderItemChildren,
 }: SidebarNavigationGroupsProps) {
+  const browserLocation = typeof window === 'undefined'
+    ? pathname
+    : `${window.location.pathname}${window.location.search}`;
+
   return groups.map((group, groupIndex) => {
     const headingId = `${idPrefix}-${groupIndex}`;
 
@@ -73,20 +126,32 @@ export function SidebarNavigationGroups({
       <section key={group.label} className={styles.navSection} aria-labelledby={headingId}>
         <h2 id={headingId} className={styles.navLabel}>{group.label}</h2>
         <ul className={styles.navList}>
-          {group.items.map(item => (
-            <li key={item.href}>
-              <SidebarNavItem
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                description={item.description}
-                isActive={isNavigationItemActive(pathname, item.href)}
-                onClick={onNavigate}
-              >
-                {renderItemChildren?.(item)}
-              </SidebarNavItem>
-            </li>
-          ))}
+          {group.items.map((item) => {
+            const shouldShowChevron = showChevron === true || (showChevron === 'first-group' && groupIndex === 0);
+
+            return (
+              <li key={item.href}>
+                <SidebarNavItem
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  description={item.description}
+                  variant={variant}
+                  details={getPresentationDetails(item, variant)}
+                  showChevron={shouldShowChevron}
+                  isActive={
+                    isNavigationItemActive(pathname, item.href)
+                    || isNavigationItemActive(browserLocation, item.href)
+                  }
+                  onClick={onNavigate}
+                >
+                  {renderItemChildren?.(item) ?? (item.badgeLabel ? (
+                    <Badge variant="secondary" size="sm" className={styles.navBadge}>{item.badgeLabel}</Badge>
+                  ) : null)}
+                </SidebarNavItem>
+              </li>
+            );
+          })}
         </ul>
       </section>
     );
@@ -101,6 +166,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const sidebarRef = useRef<HTMLElement>(null);
   const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
@@ -205,8 +271,44 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, [isMobileDialogOpen, onClose]);
 
   const role = activeView;
-  const navigationGroups = getNavigationForRole(role);
-  const roleLabel = ROLE_LABELS[role];
+  const roleLabel = getUserRoleLabel(role);
+  const menuVariant: SidebarNavVariant = role === 'admin'
+    ? 'admin'
+    : role === 'rh' || role === 'lideranca'
+      ? 'manager'
+      : 'collaborator';
+  const brandSubtitle = role === 'admin'
+    ? 'Administrador da Plataforma'
+    : role === 'rh' || role === 'lideranca'
+      ? 'RH | Gestão da Saúde e Bem-estar'
+      : 'Saúde Feminina';
+  const search = searchParams.toString();
+  const currentLocation = search ? `${pathname}?${search}` : pathname;
+
+  useEffect(() => {
+    const navigation = sidebarRef.current?.querySelector<HTMLElement>('nav');
+    const activeLink = navigation?.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (!navigation || !activeLink) return;
+
+    const keepActiveLinkVisible = () => {
+      const navigationRect = navigation.getBoundingClientRect();
+      const activeRect = activeLink.getBoundingClientRect();
+
+      if (activeRect.bottom > navigationRect.bottom) {
+        navigation.scrollTop += activeRect.bottom - navigationRect.bottom + 12;
+      } else if (activeRect.top < navigationRect.top) {
+        navigation.scrollTop -= navigationRect.top - activeRect.top + 12;
+      }
+    };
+
+    const frame = window.requestAnimationFrame(keepActiveLinkVisible);
+    const followUp = window.setTimeout(keepActiveLinkVisible, 400);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(followUp);
+    };
+  }, [currentLocation, role]);
 
   const handleSwitchView = async (view: UserRole, closeAfterNavigation: boolean) => {
     if (view === activeView) {
@@ -220,9 +322,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (closeAfterNavigation) onClose();
   };
 
-  const skipCompanyFetch = role === 'admin' || pathname === '/primeiro-acesso';
-  const companyCacheKey = !skipCompanyFetch && user?.companyId
-    ? ['/api/company', user.companyId, realRole] as const
+  const companyEndpoint = (() => {
+    if (pathname === '/primeiro-acesso' || role === 'admin' || !user?.companyId) return null;
+    if (realRole === 'rh') return '/api/company';
+    if (realRole === 'colaboradora' || alsoCollab) return '/api/collaborator/company';
+    return null;
+  })();
+  const companyCacheKey = companyEndpoint && user?.companyId
+    ? [companyEndpoint, user.id, user.companyId, realRole] as const
     : null;
   const { data: companyData } = useSWR<{
     company: {
@@ -238,6 +345,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   );
   const company = companyData?.company;
 
+  const moduleCacheKey = pathname !== '/primeiro-acesso' && user?.companyId
+    ? ['/api/company/modules', user.id, user.companyId, role] as const
+    : null;
+  const { data: moduleData } = useSWR<{ modules: CompanyModuleNavigationRecord[] }>(
+    moduleCacheKey,
+    scopedFetcher,
+    { revalidateOnFocus: false },
+  );
+  const navigationGroups = getModuleAwareNavigationForRole(role, moduleData?.modules ?? []);
+
   const notificationCacheKey = pathname !== '/primeiro-acesso' && user
     ? ['/api/notifications/count', user.id, user.companyId ?? null, realRole] as const
     : null;
@@ -247,6 +364,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { refreshInterval: 30000, dedupingInterval: 5000, revalidateOnFocus: true },
   );
   const unreadCount = notificationData?.unread ?? 0;
+  const personalNavigationGroups = getPersonalNavigationGroups(role);
+  const logoutLabel = role === 'admin' ? 'Sair da Plataforma' : 'Sair da Conta';
 
   const initials = user?.name
     ? user.name.split(' ').map(word => word[0]).join('').slice(0, 2).toUpperCase()
@@ -258,6 +377,50 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const closeAfterMobileNavigation = () => {
     if (isMobile) onClose();
+  };
+
+  const renderNavigationBadge = (item: NavigationItem) => {
+    if (item.href === '/notificacoes' && unreadCount > 0) {
+      return <Badge variant="alert" size="sm" className={styles.navBadge}>{unreadCount}</Badge>;
+    }
+
+    return item.badgeLabel ? (
+      <Badge variant="secondary" size="sm" className={styles.navBadge}>{item.badgeLabel}</Badge>
+    ) : null;
+  };
+
+  const renderPersonalNavigation = (onNavigate: () => void) => {
+    const group = personalNavigationGroups[0];
+    const headingId = 'platform-navigation-personal-0';
+
+    return (
+      <section className={styles.navSection} aria-labelledby={headingId}>
+        <h2 id={headingId} className={styles.navLabel}>{group.label}</h2>
+        <ul className={styles.navList}>
+          {group.items.map((item) => (
+            <li key={item.href}>
+              <SidebarNavItem
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                description={item.description}
+                variant="personal"
+                isActive={isNavigationItemActive(currentLocation, item.href)}
+                onClick={onNavigate}
+              >
+                {renderNavigationBadge(item)}
+              </SidebarNavItem>
+            </li>
+          ))}
+          <li>
+            <button type="button" className={styles.logoutNav} onClick={performLogout}>
+              <NavIcon name="logout" />
+              {logoutLabel}
+            </button>
+          </li>
+        </ul>
+      </section>
+    );
   };
 
   const renderSidebarContent = (onNavigate: () => void, closeAfterSwitch: boolean) => (
@@ -272,14 +435,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           }}
           aria-label="Ir para o início da UniHER"
         >
-          <Image
-            src="/logo-uniher.png"
-            alt="UniHER"
-            width={140}
-            height={116}
-            className={styles.brandLogo}
-            priority
-          />
+          <span className={styles.brandLogoTile}>
+            <img
+              src="/logo-uniher.png"
+              alt="UniHER"
+              width={140}
+              height={116}
+              className={styles.brandLogo}
+            />
+          </span>
+          <span className={styles.brandIdentity}>
+            <span className={styles.brandName}>UniHER</span>
+            <span className={styles.brandSubtitle}>{brandSubtitle}</span>
+          </span>
         </button>
 
         {company ? (
@@ -314,7 +482,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               onClick={() => handleSwitchView(realRole, closeAfterSwitch)}
               className={`${styles.viewButton} ${activeView === realRole ? styles.viewButtonActive : ''}`}
             >
-              {ROLE_LABELS[realRole]}
+              {getUserRoleLabel(realRole)}
             </button>
             <button
               type="button"
@@ -330,23 +498,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       <nav aria-label="Navegação principal" className={styles.navigation}>
         <SidebarNavigationGroups
           groups={navigationGroups}
-          pathname={pathname}
+          pathname={currentLocation}
           onNavigate={onNavigate}
           idPrefix={`platform-navigation-${role}`}
+          variant={menuVariant}
+          showChevron={role === 'admin' ? 'first-group' : false}
+          renderItemChildren={renderNavigationBadge}
         />
-        <SidebarNavigationGroups
-          groups={PERSONAL_NAVIGATION_GROUPS}
-          pathname={pathname}
-          onNavigate={onNavigate}
-          idPrefix="platform-navigation-personal"
-          renderItemChildren={item => item.href === '/notificacoes' && unreadCount > 0 ? (
-            <Badge variant="alert" size="sm" className={styles.navBadge}>{unreadCount}</Badge>
-          ) : null}
-        />
-        <button type="button" className={styles.logoutNav} onClick={performLogout}>
-          <NavIcon name="logout" />
-          Sair da conta
-        </button>
+        {renderPersonalNavigation(onNavigate)}
       </nav>
 
       <div className={styles.footer}>
@@ -369,7 +528,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             type="button"
             onClick={performLogout}
             className={styles.footerLogout}
-            aria-label="Sair da conta"
+            aria-label={logoutLabel}
           >
             <NavIcon name="logout" />
           </button>

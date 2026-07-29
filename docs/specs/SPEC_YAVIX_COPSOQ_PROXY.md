@@ -4,6 +4,8 @@
 
 ## 1. Objetivo
 
+> **Override de gate (2026-07-27): fail-closed.** Esta spec descreve somente shell/mock tecnico. Fora de `NODE_ENV=development|test` com `YAVIX_MOCK=1`, as rotas devem cair no caminho real bloqueado. O estado atual nao implementa client Yavix real, scoring, laudo, conformidade NR-1, GRO/PGR, CPF/GHE/ciclos, SIPAT, Semaforo ou mutacoes P8. `PATCH /answer` e `PUT /submit` exigem entitlement NR-1 da empresa e consentimento ativo `nr1_psychosocial`. Qualquer criterio antigo que mencione XP, laudo, scoring ou front end "desbloqueado" fica subordinado a este override.
+
 Definir o **contrato das rotas internas do UniHER** que medeiam a aplicação do questionário psicossocial **COPSOQ41** (NR-1) da **Yavix**, na arquitetura **A2 (embutido)**: o front-end do UniHER fala **somente** com `/api/yavix/copsoq/*` (mesma origem); o proxy server-side é quem fala com a API Yavix.
 
 **Decisão de design — "front fino, proxy esperto":** o front envia o mínimo; o proxy absorve TODOS os gotchas da Yavix (login/token, montagem do `value{value,optionIndex,option[snapshot]}`, índice 1-based vs 0-based, checagem de completude, mapeamento de erros 401/403/404/429).
@@ -117,7 +119,7 @@ Erros Yavix → `src/lib/errors`: `401→UnauthorizedError`, `403→ForbiddenErr
 4. **Recovery:** se `bootstrap`/`answer` responder `404`, limpar `sessionId` e refazer `bootstrap`.
 5. **i18n:** renderizar `label[locale]` com **fallback para `pt`** quando faltar `en/es`.
 6. **Paginação:** renderizar **um bloco por vez** (não as ~120 de uma vez). Progresso = respondidas / total de `QUESTION`.
-7. **Gamificação:** creditar XP **só por concluir** (participação) — nunca pelo conteúdo das respostas.
+7. **Gamificação:** o runtime atual não credita XP, badge, ranking ou recompensa por NR-1. Qualquer incentivo futuro exige decisão de produto/jurídico e nunca pode depender do conteúdo das respostas.
 8. **PII:** nunca logar CPF/token/respostas. Dado sensível (saúde mental).
 
 ## 7. Mock (`YAVIX_MOCK=1`)
@@ -130,7 +132,7 @@ Erros Yavix → `src/lib/errors`: `401→UnauthorizedError`, `403→ForbiddenErr
 - [ ] Colaboradora aceita o termo → `hasPendingTerms` vira `false` no próximo bootstrap.
 - [ ] Responder uma pergunta dispara `PATCH /answer` (debounce) e o valor persiste ao recarregar (retomada).
 - [ ] `PUT /submit` com pendências → `422 {missing[]}`; o FE rola até a primeira pendente.
-- [ ] `PUT /submit` completo → `200 {status:'DONE'}`; tela de conclusão + XP.
+- [ ] `PUT /submit` completo → `200 {status:'DONE'}`; tela de conclusão neutra, sem XP, badge, ranking, laudo ou scoring.
 - [ ] Render em `pt` e (com `en`) em ≥2 idiomas a partir de `label{}`.
 - [ ] Nenhum segredo/CPF/token no browser ou em log.
 

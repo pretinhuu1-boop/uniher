@@ -1,0 +1,1744 @@
+{
+  "generatedAt": "2026-07-29T15:41:26.516Z",
+  "counts": {
+    "total": 192,
+    "pass": 192,
+    "fail": 0
+  },
+  "viewports": [
+    "mobile-375",
+    "tablet-768",
+    "desktop-1366",
+    "desktop-wide-1920"
+  ],
+  "results": [
+    {
+      "role": "admin",
+      "name": "admin-visao-geral",
+      "route": "/admin",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-visao-geral.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-empresas",
+      "route": "/admin?tab=empresas",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-empresas.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-usuarios",
+      "route": "/admin?tab=usuarios",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-usuarios.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-master",
+      "route": "/admin?tab=admin",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-master.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-sistema",
+      "route": "/admin?tab=sistema",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-sistema.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-produtos-modulos",
+      "route": "/produtos-modulos",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-produtos-modulos.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-relatorios",
+      "route": "/analytics-emails",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-relatorios.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-saude-primaria",
+      "route": "/dashboard?section=saude-primaria",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-concierge",
+      "route": "/concierge",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-concierge.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-historico",
+      "route": "/dashboard?section=exames",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-historico.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-educacao",
+      "route": "/comunidade/gerenciar",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-educacao.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-gamificacao",
+      "route": "/gamificacao-config",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-gamificacao.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-admin-admin-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-dashboard",
+      "route": "/dashboard",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-colaboradoras",
+      "route": "/colaboradoras-gestao",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-colaboradoras.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-departamentos",
+      "route": "/departamentos",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-departamentos.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-convites",
+      "route": "/convites",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-convites.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-campanhas",
+      "route": "/campanhas",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-company-profile",
+      "route": "/company-profile",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-company-profile.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-notificacoes",
+      "route": "/notificacoes",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-saude-primaria",
+      "route": "/dashboard?section=saude-primaria",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-gamificacao",
+      "route": "/gamificacao-config",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-gamificacao.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-desafios-gerenciar",
+      "route": "/desafios/gerenciar",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-desafios-gerenciar.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-liga-gerenciar",
+      "route": "/liga/gerenciar",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-liga-gerenciar.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-nr1",
+      "route": "/nr1",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-nr1.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-rh-rh-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-dashboard",
+      "route": "/dashboard",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-lideranca-lideranca-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-campanhas",
+      "route": "/campanhas",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-lideranca-lideranca-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-home",
+      "route": "/colaboradora",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-home.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-semaforo",
+      "route": "/semaforo",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-semaforo.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-agenda",
+      "route": "/agenda",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-agenda.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-comunidade",
+      "route": "/comunidade",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-comunidade.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-conquistas",
+      "route": "/conquistas",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-conquistas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-campanhas",
+      "route": "/campanhas",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-notificacoes",
+      "route": "/notificacoes",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-configuracoes",
+      "route": "/configuracoes",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-configuracoes.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-objetivos",
+      "route": "/objetivos",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-objetivos.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-desafios",
+      "route": "/desafios",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-desafios.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-liga",
+      "route": "/liga",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-liga.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-nr1-shell",
+      "route": "/nr1",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-nr1-shell.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-avaliacao-nr1",
+      "route": "/avaliacao-nr1",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-avaliacao-nr1.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "mobile-375",
+      "status": "PASS",
+      "screenshot": "mobile-375-colaboradora-colab-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-visao-geral",
+      "route": "/admin",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-visao-geral.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-empresas",
+      "route": "/admin?tab=empresas",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-empresas.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-usuarios",
+      "route": "/admin?tab=usuarios",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-usuarios.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-master",
+      "route": "/admin?tab=admin",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-master.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-sistema",
+      "route": "/admin?tab=sistema",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-sistema.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-produtos-modulos",
+      "route": "/produtos-modulos",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-produtos-modulos.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-relatorios",
+      "route": "/analytics-emails",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-relatorios.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-saude-primaria",
+      "route": "/dashboard?section=saude-primaria",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-concierge",
+      "route": "/concierge",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-concierge.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-historico",
+      "route": "/dashboard?section=exames",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-historico.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-educacao",
+      "route": "/comunidade/gerenciar",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-educacao.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-gamificacao",
+      "route": "/gamificacao-config",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-gamificacao.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-admin-admin-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-dashboard",
+      "route": "/dashboard",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-colaboradoras",
+      "route": "/colaboradoras-gestao",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-colaboradoras.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-departamentos",
+      "route": "/departamentos",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-departamentos.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-convites",
+      "route": "/convites",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-convites.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-campanhas",
+      "route": "/campanhas",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-company-profile",
+      "route": "/company-profile",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-company-profile.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-notificacoes",
+      "route": "/notificacoes",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-saude-primaria",
+      "route": "/dashboard?section=saude-primaria",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-gamificacao",
+      "route": "/gamificacao-config",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-gamificacao.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-desafios-gerenciar",
+      "route": "/desafios/gerenciar",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-desafios-gerenciar.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-liga-gerenciar",
+      "route": "/liga/gerenciar",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-liga-gerenciar.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-nr1",
+      "route": "/nr1",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-nr1.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-rh-rh-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-dashboard",
+      "route": "/dashboard",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-lideranca-lideranca-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-campanhas",
+      "route": "/campanhas",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-lideranca-lideranca-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-home",
+      "route": "/colaboradora",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-home.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-semaforo",
+      "route": "/semaforo",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-semaforo.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-agenda",
+      "route": "/agenda",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-agenda.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-comunidade",
+      "route": "/comunidade",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-comunidade.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-conquistas",
+      "route": "/conquistas",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-conquistas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-campanhas",
+      "route": "/campanhas",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-notificacoes",
+      "route": "/notificacoes",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-configuracoes",
+      "route": "/configuracoes",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-configuracoes.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-objetivos",
+      "route": "/objetivos",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-objetivos.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-desafios",
+      "route": "/desafios",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-desafios.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-liga",
+      "route": "/liga",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-liga.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-nr1-shell",
+      "route": "/nr1",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-nr1-shell.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-avaliacao-nr1",
+      "route": "/avaliacao-nr1",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-avaliacao-nr1.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "tablet-768",
+      "status": "PASS",
+      "screenshot": "tablet-768-colaboradora-colab-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-visao-geral",
+      "route": "/admin",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-visao-geral.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-empresas",
+      "route": "/admin?tab=empresas",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-empresas.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-usuarios",
+      "route": "/admin?tab=usuarios",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-usuarios.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-master",
+      "route": "/admin?tab=admin",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-master.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-sistema",
+      "route": "/admin?tab=sistema",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-sistema.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-produtos-modulos",
+      "route": "/produtos-modulos",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-produtos-modulos.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-relatorios",
+      "route": "/analytics-emails",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-relatorios.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-saude-primaria",
+      "route": "/dashboard?section=saude-primaria",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-concierge",
+      "route": "/concierge",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-concierge.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-historico",
+      "route": "/dashboard?section=exames",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-historico.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-educacao",
+      "route": "/comunidade/gerenciar",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-educacao.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-gamificacao",
+      "route": "/gamificacao-config",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-gamificacao.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-admin-admin-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-dashboard",
+      "route": "/dashboard",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-colaboradoras",
+      "route": "/colaboradoras-gestao",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-colaboradoras.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-departamentos",
+      "route": "/departamentos",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-departamentos.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-convites",
+      "route": "/convites",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-convites.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-campanhas",
+      "route": "/campanhas",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-company-profile",
+      "route": "/company-profile",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-company-profile.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-notificacoes",
+      "route": "/notificacoes",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-saude-primaria",
+      "route": "/dashboard?section=saude-primaria",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-gamificacao",
+      "route": "/gamificacao-config",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-gamificacao.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-desafios-gerenciar",
+      "route": "/desafios/gerenciar",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-desafios-gerenciar.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-liga-gerenciar",
+      "route": "/liga/gerenciar",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-liga-gerenciar.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-nr1",
+      "route": "/nr1",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-nr1.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-rh-rh-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-dashboard",
+      "route": "/dashboard",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-lideranca-lideranca-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-campanhas",
+      "route": "/campanhas",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-lideranca-lideranca-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-home",
+      "route": "/colaboradora",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-home.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-semaforo",
+      "route": "/semaforo",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-semaforo.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-agenda",
+      "route": "/agenda",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-agenda.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-comunidade",
+      "route": "/comunidade",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-comunidade.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-conquistas",
+      "route": "/conquistas",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-conquistas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-campanhas",
+      "route": "/campanhas",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-notificacoes",
+      "route": "/notificacoes",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-configuracoes",
+      "route": "/configuracoes",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-configuracoes.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-objetivos",
+      "route": "/objetivos",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-objetivos.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-desafios",
+      "route": "/desafios",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-desafios.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-liga",
+      "route": "/liga",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-liga.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-nr1-shell",
+      "route": "/nr1",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-nr1-shell.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-avaliacao-nr1",
+      "route": "/avaliacao-nr1",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-avaliacao-nr1.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "screenshot": "desktop-1366-colaboradora-colab-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-visao-geral",
+      "route": "/admin",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-visao-geral.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-empresas",
+      "route": "/admin?tab=empresas",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-empresas.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-usuarios",
+      "route": "/admin?tab=usuarios",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-usuarios.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-master",
+      "route": "/admin?tab=admin",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-master.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-sistema",
+      "route": "/admin?tab=sistema",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-sistema.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-produtos-modulos",
+      "route": "/produtos-modulos",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-produtos-modulos.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-relatorios",
+      "route": "/analytics-emails",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-relatorios.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-saude-primaria",
+      "route": "/dashboard?section=saude-primaria",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-concierge",
+      "route": "/concierge",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-concierge.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-historico",
+      "route": "/dashboard?section=exames",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-historico.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-educacao",
+      "route": "/comunidade/gerenciar",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-educacao.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-gamificacao",
+      "route": "/gamificacao-config",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-gamificacao.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-admin-admin-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-dashboard",
+      "route": "/dashboard",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-colaboradoras",
+      "route": "/colaboradoras-gestao",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-colaboradoras.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-departamentos",
+      "route": "/departamentos",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-departamentos.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-convites",
+      "route": "/convites",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-convites.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-campanhas",
+      "route": "/campanhas",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-company-profile",
+      "route": "/company-profile",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-company-profile.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-notificacoes",
+      "route": "/notificacoes",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-saude-primaria",
+      "route": "/dashboard?section=saude-primaria",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-gamificacao",
+      "route": "/gamificacao-config",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-gamificacao.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-desafios-gerenciar",
+      "route": "/desafios/gerenciar",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-desafios-gerenciar.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-liga-gerenciar",
+      "route": "/liga/gerenciar",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-liga-gerenciar.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-nr1",
+      "route": "/nr1",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-nr1.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-rh-rh-canal-denuncias.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-dashboard",
+      "route": "/dashboard",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-lideranca-lideranca-dashboard.png",
+      "issues": []
+    },
+    {
+      "role": "lideranca",
+      "name": "lideranca-campanhas",
+      "route": "/campanhas",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-lideranca-lideranca-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-home",
+      "route": "/colaboradora",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-home.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-semaforo",
+      "route": "/semaforo",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-semaforo.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-agenda",
+      "route": "/agenda",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-agenda.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-comunidade",
+      "route": "/comunidade",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-comunidade.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-conquistas",
+      "route": "/conquistas",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-conquistas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-campanhas",
+      "route": "/campanhas",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-campanhas.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-notificacoes",
+      "route": "/notificacoes",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-configuracoes",
+      "route": "/configuracoes",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-configuracoes.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-objetivos",
+      "route": "/objetivos",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-objetivos.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-desafios",
+      "route": "/desafios",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-desafios.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-liga",
+      "route": "/liga",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-liga.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-nr1-shell",
+      "route": "/nr1",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-nr1-shell.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-avaliacao-nr1",
+      "route": "/avaliacao-nr1",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-avaliacao-nr1.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-viva-sipat",
+      "route": "/viva-sipat",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-viva-sipat.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-desenvolvimento-humano",
+      "route": "/desenvolvimento-humano",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-desenvolvimento-humano.png",
+      "issues": []
+    },
+    {
+      "role": "colaboradora",
+      "name": "colab-canal-denuncias",
+      "route": "/canal-denuncias",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
+      "screenshot": "desktop-wide-1920-colaboradora-colab-canal-denuncias.png",
+      "issues": []
+    }
+  ]
+}

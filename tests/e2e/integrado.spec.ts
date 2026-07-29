@@ -136,6 +136,7 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
       'examActivitySeries',
       'filters',
       'metrics',
+      'wellbeingSeries',
     ]);
     expect(body.filters).toEqual({ period: '1m' });
     expect(Object.keys(body.metrics).sort()).toEqual([
@@ -144,9 +145,13 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
       'examActivity',
       'healthRisk',
       'roi',
+      'wellbeingCheckIn',
+      'wellbeingCheckOut',
     ]);
     expect(body.metrics).toEqual({
       examActivity: suppressedMetric('minimum_cohort'),
+      wellbeingCheckIn: suppressedMetric('minimum_cohort'),
+      wellbeingCheckOut: suppressedMetric('minimum_cohort'),
       engagement: suppressedMetric('not_computable'),
       healthRisk: suppressedMetric('not_computable'),
       campaignParticipation: suppressedMetric('not_computable'),
@@ -169,6 +174,12 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
       expect(Object.keys(point).sort()).toEqual(['metric', 'period']);
       expect(point.period).toMatch(/^\d{4}-\d{2}$/);
       expect(point.metric).toEqual(suppressedMetric('minimum_cohort'));
+    }
+    for (const point of body.wellbeingSeries) {
+      expect(Object.keys(point).sort()).toEqual(['checkIn', 'checkOut', 'period']);
+      expect(point.period).toMatch(/^\d{4}-\d{2}$/);
+      expect(point.checkIn).toEqual(suppressedMetric('minimum_cohort'));
+      expect(point.checkOut).toEqual(suppressedMetric('minimum_cohort'));
     }
     expectNoRecursiveKeys(
       body,

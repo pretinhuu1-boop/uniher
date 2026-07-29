@@ -242,14 +242,14 @@ export default function CompanyProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-cream-50 p-6 md:p-10 space-y-8 font-body animate-fadeIn">
+    <div className="min-h-screen bg-cream-50 p-4 md:p-10 space-y-8 font-body animate-fadeIn">
 
       {/* Hero Header */}
-      <div className="bg-white rounded-2xl p-8 border border-border-1 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
+      <div className="bg-white rounded-2xl p-5 sm:p-8 border border-border-1 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div className="flex w-full min-w-0 flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-6">
           <div
             onClick={handleLogoClick}
-            className="w-24 h-24 rounded-2xl border-2 border-dashed border-border-1 bg-cream-50 flex flex-col items-center justify-center text-uni-text-400 text-xs font-medium text-center gap-1 cursor-pointer hover:border-rose-300 hover:text-rose-400 transition-colors group overflow-hidden"
+            className="w-24 h-24 rounded-2xl border-2 border-dashed border-border-1 bg-cream-50 flex flex-col items-center justify-center text-uni-text-400 text-xs font-medium text-center gap-1 cursor-pointer hover:border-rose-300 hover:text-rose-400 transition-colors group overflow-hidden flex-shrink-0"
           >
             {logoUrl ? (
               <img src={logoUrl} alt="Logo" className="w-full h-full object-cover rounded-2xl" />
@@ -268,20 +268,20 @@ export default function CompanyProfilePage() {
             onChange={handleLogoUpload}
             className="hidden"
           />
-          <div>
-            <h1 className="text-3xl font-display font-bold text-uni-text-900">{companyName}</h1>
-            <p className="text-sm text-uni-text-400 mt-1">CNPJ: {cnpj}</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold leading-tight text-uni-text-900 break-words [overflow-wrap:anywhere]">{companyName}</h1>
+            <p className="text-sm leading-5 text-uni-text-400 mt-1 break-words [overflow-wrap:anywhere]">CNPJ: {cnpj}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-shrink-0 sm:justify-end">
           {saveLabel && <span className="text-sm font-bold text-emerald-600 animate-fadeIn">{saveLabel}</span>}
           {isEditing ? (
             <>
-              <button onClick={cancelEditing} disabled={isSaving} className="px-4 py-2 rounded-lg border border-border-1 text-sm font-bold text-uni-text-600 hover:border-uni-text-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed">Cancelar</button>
-              <button onClick={saveEditing} disabled={isSaving} className="px-5 py-2 rounded-lg bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">Salvar</button>
+              <button onClick={cancelEditing} disabled={isSaving} className="flex-1 px-4 py-2 rounded-lg border border-border-1 text-sm font-bold text-uni-text-600 hover:border-uni-text-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed sm:flex-none">Cancelar</button>
+              <button onClick={saveEditing} disabled={isSaving} className="flex-1 px-5 py-2 rounded-lg bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed sm:flex-none">Salvar</button>
             </>
           ) : (
-            <button onClick={startEditing} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-md shadow-rose/20">
+            <button onClick={startEditing} className="flex w-full items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-bold hover:bg-rose-600 transition-all shadow-md shadow-rose/20 sm:w-auto">
               Editar Dados
             </button>
           )}
@@ -312,7 +312,7 @@ export default function CompanyProfilePage() {
           <h2 className="flex items-center gap-2 text-lg font-bold text-uni-text-900 mb-6">
             <span className="text-rose-500">🏛</span> Informacoes da Empresa
           </h2>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
             <EditField label="Razao Social"  value={companyName}  onChange={setCompanyName}  isEditing={isEditing} disabled={isSaving} />
             <EditField label="Nome Fantasia" value={tradeName}    onChange={setTradeName}    isEditing={isEditing} disabled={isSaving} />
             <EditField label="CNPJ"          value={cnpj}         onChange={setCnpj}         isEditing={isEditing} disabled={isSaving} />

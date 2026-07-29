@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   clearProtectedReportCaches: vi.fn<() => Promise<void>>(),
   swrKeys: [] as unknown[],
+  swrDataByEndpoint: new Map<string, unknown>(),
+  searchParams: '',
+  pathname: '/lideranca',
   hasUser: true,
   user: {
     id: 'leadership-common',
@@ -26,8 +29,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/lideranca',
+  usePathname: () => mocks.pathname,
   useRouter: () => ({ push: mocks.push }),
+  useSearchParams: () => new URLSearchParams(mocks.searchParams),
 }));
 vi.mock('next/image', () => ({
   default: ({ priority: _priority, ...props }: ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean }) => (
@@ -37,7 +41,8 @@ vi.mock('next/image', () => ({
 vi.mock('swr', () => ({
   default: (key: unknown) => {
     mocks.swrKeys.push(key);
-    return { data: undefined };
+    const endpoint = Array.isArray(key) && typeof key[0] === 'string' ? key[0] : null;
+    return { data: endpoint ? mocks.swrDataByEndpoint.get(endpoint) : undefined };
   },
 }));
 vi.mock('@/hooks/useAuth', () => ({
@@ -47,6 +52,11 @@ vi.mock('@/hooks/useAuth', () => ({
 
 import Sidebar from '@/components/platform/Sidebar';
 
+function queryLinkByHref(href: string): HTMLElement | null {
+  return screen.queryAllByRole('link')
+    .find((link) => link.getAttribute('href') === href) ?? null;
+}
+
 describe('Sidebar persisted collaborator capability', () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -54,6 +64,9 @@ describe('Sidebar persisted collaborator capability', () => {
     mocks.clearProtectedReportCaches.mockReset();
     mocks.clearProtectedReportCaches.mockResolvedValue();
     mocks.swrKeys.length = 0;
+    mocks.swrDataByEndpoint.clear();
+    mocks.searchParams = '';
+    mocks.pathname = '/lideranca';
     mocks.hasUser = true;
     mocks.user.id = 'leadership-common';
     mocks.user.role = 'lideranca';
@@ -89,9 +102,9 @@ describe('Sidebar persisted collaborator capability', () => {
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     await waitFor(() => expect(screen.queryByRole('link', { name: /Minha agenda/i })).not.toBeNull());
-    expect(screen.queryByRole('link', { name: /^Comunidade$/i })).not.toBeNull();
-    expect(screen.queryByRole('link', { name: /Gerenciar comunidade/i })).toBeNull();
-    expect(screen.queryByRole('link', { name: /Visão geral/i })).toBeNull();
+    expect(queryLinkByHref('/comunidade')?.textContent).toMatch(/Educação/i);
+    expect(queryLinkByHref('/campanhas')?.textContent).toMatch(/Campanhas/i);
+    expect(screen.queryByRole('link', { name: /^Dashboard$/i })).toBeNull();
   });
 
   it('keeps community management in the RH view for a dual-role user', () => {
@@ -100,8 +113,8 @@ describe('Sidebar persisted collaborator capability', () => {
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /Gerenciar comunidade/i })).not.toBeNull();
-    expect(screen.queryByRole('link', { name: /^Comunidade$/i })).toBeNull();
+    expect(queryLinkByHref('/campanhas')?.textContent).toMatch(/Educação/i);
+    expect(queryLinkByHref('/comunidade')).toBeNull();
   });
 
   it.each([
@@ -116,8 +129,52 @@ describe('Sidebar persisted collaborator capability', () => {
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /^Comunidade$/i }) !== null).toBe(feed);
-    expect(screen.queryByRole('link', { name: /Gerenciar comunidade/i }) !== null).toBe(manage);
+    const educationFeed = queryLinkByHref('/comunidade');
+    const educationManagement = role === 'admin'
+      ? queryLinkByHref('/comunidade/gerenciar')
+      : queryLinkByHref('/campanhas')?.textContent?.match(/Educação/i)
+        ? queryLinkByHref('/campanhas')
+        : null;
+
+    expect(educationFeed !== null).toBe(feed);
+    expect(educationManagement !== null).toBe(manage);
+  });
+
+  it.each([
+    'admin',
+    'rh',
+    'lideranca',
+    'colaboradora',
+  ] as const)('does not duplicate visible navigation labels for %s', (role) => {
+    mocks.user.role = role;
+    mocks.user.isMasterAdmin = role === 'admin';
+    mocks.user.also_collaborator = 0;
+    mocks.user.companyId = role === 'admin' ? undefined : 'company-a';
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const labels = screen
+      .getAllByRole('link')
+      .map((link) => link.textContent?.replace(/\s+/g, ' ').trim() ?? '')
+      .filter(Boolean);
+
+    expect(labels).toEqual(Array.from(new Set(labels)));
+  });
+
+  it('uses canonical role labels in the account footer and view switcher', () => {
+    mocks.user.role = 'admin';
+    mocks.user.isMasterAdmin = true;
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+    expect(screen.queryByText('Admin Master')).not.toBeNull();
+
+    cleanup();
+    mocks.user.role = 'rh';
+    mocks.user.isMasterAdmin = false;
+    mocks.user.companyId = 'company-a';
+    mocks.user.also_collaborator = 1;
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+    expect(screen.queryAllByText('Admin Empresa').length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByRole('button', { name: 'Admin Empresa' })).not.toBeNull();
   });
 
   it('clears protected report caches before switching the persisted view', async () => {
@@ -149,19 +206,40 @@ describe('Sidebar persisted collaborator capability', () => {
     expect(mocks.push).not.toHaveBeenCalled();
   });
 
-  it('scopes the company SWR key to the authenticated tenant and role', () => {
+  it('scopes the company SWR key to the authenticated tenant, role and allowed endpoint', () => {
+    mocks.user.role = 'rh';
     const { rerender } = render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     const companyAKey = mocks.swrKeys.find(key => Array.isArray(key) && key[0] === '/api/company');
-    expect(companyAKey).toEqual(['/api/company', 'company-a', 'lideranca']);
+    expect(companyAKey).toEqual(['/api/company', 'leadership-common', 'company-a', 'rh']);
 
     mocks.swrKeys.length = 0;
     mocks.user.companyId = 'company-b';
     rerender(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     const companyBKey = mocks.swrKeys.find(key => Array.isArray(key) && key[0] === '/api/company');
-    expect(companyBKey).toEqual(['/api/company', 'company-b', 'lideranca']);
+    expect(companyBKey).toEqual(['/api/company', 'leadership-common', 'company-b', 'rh']);
     expect(companyBKey).not.toEqual(companyAKey);
+
+    cleanup();
+    mocks.swrKeys.length = 0;
+    mocks.user.companyId = 'company-a';
+    mocks.user.role = 'colaboradora';
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+    expect(mocks.swrKeys).toContainEqual([
+      '/api/collaborator/company',
+      'leadership-common',
+      'company-a',
+      'colaboradora',
+    ]);
+
+    cleanup();
+    mocks.swrKeys.length = 0;
+    mocks.user.role = 'lideranca';
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+    expect(mocks.swrKeys.some(key => Array.isArray(key) && (
+      key[0] === '/api/company' || key[0] === '/api/collaborator/company'
+    ))).toBe(false);
   });
 
   it('does not request company data before the authenticated tenant is known', () => {
@@ -170,6 +248,65 @@ describe('Sidebar persisted collaborator capability', () => {
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
     expect(mocks.swrKeys[0]).toBeNull();
+    expect(mocks.swrKeys[1]).toBeNull();
+  });
+
+  it('uses company module data for module-aware navigation when available', () => {
+    mocks.user.role = 'colaboradora';
+    mocks.swrDataByEndpoint.set('/api/company/modules', {
+      modules: [
+        { module_slug: 'sipat', module_state: 'locked', visible: 1 },
+        { module_slug: 'nr1', module_state: 'enabled', visible: 1 },
+        { module_slug: 'concierge', module_state: 'enabled', visible: 1 },
+      ],
+    });
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    expect(screen.queryByRole('link', { name: /^NR-1$/i })).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /^SIPAT$/i })).toBeNull();
+    expect(screen.queryByText('Bloqueado')).toBeNull();
+    expect(screen.queryByRole('link', { name: /^Concierge$/i })).toBeNull();
+  });
+
+  it('scopes company module requests by user, tenant and active navigation role', async () => {
+    mocks.user.role = 'rh';
+    mocks.user.also_collaborator = 1;
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    expect(mocks.swrKeys).toContainEqual([
+      '/api/company/modules',
+      'leadership-common',
+      'company-a',
+      'rh',
+    ]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Colaboradora' }));
+    await waitFor(() => expect(mocks.swrKeys).toContainEqual([
+      '/api/company/modules',
+      'leadership-common',
+      'company-a',
+      'colaboradora',
+    ]));
+  });
+
+  it('keeps the current route active after module-aware navigation data loads', async () => {
+    mocks.pathname = '/dashboard';
+    mocks.user.role = 'rh';
+    mocks.user.companyId = 'company-a';
+    mocks.swrDataByEndpoint.set('/api/company/modules', {
+      modules: [
+        { module_slug: 'primary_health', module_state: 'locked', visible: 1 },
+        { module_slug: 'nr1', module_state: 'requires_contract', visible: 1 },
+      ],
+    });
+    window.history.pushState({}, '', '/dashboard');
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const dashboardLink = await screen.findByRole('link', { name: /^Dashboard$/i });
+    expect(dashboardLink.getAttribute('aria-current')).toBe('page');
   });
 
   it('scopes notification count by user, tenant and authenticated role', () => {
@@ -218,6 +355,6 @@ describe('Sidebar persisted collaborator capability', () => {
     mocks.hasUser = false;
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(mocks.swrKeys).toEqual([null, null]);
+    expect(mocks.swrKeys).toEqual([null, null, null]);
   });
 });

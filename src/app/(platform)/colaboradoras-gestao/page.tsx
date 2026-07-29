@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import useSWR from 'swr';
+import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 import { cn } from '@/lib/utils';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -35,13 +37,30 @@ interface Department {
   user_count: number;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+interface EmployeeImportSummary {
+  totalRows: number;
+  validRows: number;
+  errorRows: number;
+  insertedRows?: number;
+  updatedRows?: number;
+}
 
-const ROLE_LABELS: Record<string, string> = {
-  rh: 'Admin',
-  lideranca: 'Liderança',
-  colaboradora: 'Colaboradora',
-};
+interface EmployeeImportPreviewRow {
+  rowNumber: number;
+  fullNamePreview: string;
+  emailPreview: string;
+  cpfLast4: string;
+  rgLast4: string | null;
+}
+
+interface EmployeeImportErrorRow {
+  rowNumber: number;
+  cpfLast4: string | null;
+  emailPreview: string | null;
+  errors: string[];
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 20;
 
@@ -75,6 +94,13 @@ export default function ColaboradorasGestaoPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [changeDeptUser, setChangeDeptUser] = useState<string | null>(null);
   const [changeDeptValue, setChangeDeptValue] = useState('');
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importSummary, setImportSummary] = useState<EmployeeImportSummary | null>(null);
+  const [importPreviewRows, setImportPreviewRows] = useState<EmployeeImportPreviewRow[]>([]);
+  const [importErrorRows, setImportErrorRows] = useState<EmployeeImportErrorRow[]>([]);
+  const [importStatus, setImportStatus] = useState<'idle' | 'previewing' | 'ready' | 'committing' | 'done' | 'error'>('idle');
+  const [importMessage, setImportMessage] = useState('');
+  const importCommitInFlight = useRef(false);
 
   // Build query string
   const params = new URLSearchParams();
@@ -118,6 +144,82 @@ export default function ColaboradorasGestaoPage() {
     setChangeDeptUser(null);
     setChangeDeptValue('');
   }, [doAction, changeDeptValue]);
+
+  const handleImportPreview = useCallback(async (file: File | null) => {
+    setImportFile(file);
+    setImportSummary(null);
+    setImportPreviewRows([]);
+    setImportErrorRows([]);
+    setImportMessage('');
+
+    if (!file) {
+      setImportStatus('idle');
+      return;
+    }
+
+    setImportStatus('previewing');
+    const form = new FormData();
+    form.set('file', file);
+
+    try {
+      const res = await fetch('/api/rh/employees/import-preview', {
+        method: 'POST',
+        body: form,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImportStatus('error');
+        setImportMessage(data.error || 'Nao foi possivel ler a planilha.');
+        return;
+      }
+      setImportSummary(data.summary ?? null);
+      setImportPreviewRows(data.validRows ?? []);
+      setImportErrorRows(data.errorRows ?? []);
+      setImportStatus((data.summary?.errorRows ?? 0) > 0 ? 'error' : 'ready');
+      setImportMessage((data.summary?.errorRows ?? 0) > 0
+        ? 'Corrija os erros da planilha antes de confirmar.'
+        : 'Previa validada. Confira os totais e confirme para gravar.');
+    } catch {
+      setImportStatus('error');
+      setImportMessage('Erro de conexao ao validar a planilha.');
+    }
+  }, []);
+
+  const commitImport = useCallback(async () => {
+    if (!importFile || importCommitInFlight.current) return;
+
+    importCommitInFlight.current = true;
+    setImportStatus('committing');
+    setImportMessage('');
+    const form = new FormData();
+    form.set('file', importFile);
+
+    try {
+      const res = await fetch('/api/rh/employees/import-commit', {
+        method: 'POST',
+        body: form,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImportStatus('error');
+        setImportSummary(data.summary ?? importSummary);
+        setImportErrorRows(data.errorRows ?? []);
+        setImportMessage(data.error || 'Nao foi possivel importar a planilha.');
+        return;
+      }
+      setImportSummary(data.summary ?? null);
+      setImportPreviewRows([]);
+      setImportErrorRows([]);
+      setImportStatus('done');
+      setImportMessage('Importacao concluida com seguranca.');
+      mutate();
+    } catch {
+      setImportStatus('error');
+      setImportMessage('Erro de conexao ao importar a planilha.');
+    } finally {
+      importCommitInFlight.current = false;
+    }
+  }, [importFile, importSummary, mutate]);
 
   // ─── Edit modal state ───
   const [editUser, setEditUser] = useState<User | null>(null);
@@ -215,10 +317,112 @@ export default function ColaboradorasGestaoPage() {
   return (
     <div className="p-4 md:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-display font-bold text-uni-text-900">Gestão de Colaboradoras</h1>
-        <p className="text-sm text-uni-text-500 mt-1">Gerencie as colaboradoras e lideranças da sua empresa</p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-xl md:text-2xl font-display font-bold text-uni-text-900">Gestão de Colaboradoras</h1>
+          <p className="text-sm text-uni-text-500 mt-1">Gerencie colaboradoras, lideranças e cadastros importados da sua empresa</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="/api/rh/employees/import-template"
+            download
+            className="inline-flex items-center gap-2 rounded-lg border border-border-1 bg-white px-3 py-2 text-xs font-bold text-uni-text-700 hover:border-rose-200 hover:bg-rose-50 transition-colors"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Baixar modelo
+          </a>
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700 transition-colors">
+            <Upload className="h-4 w-4" aria-hidden="true" />
+            Importar planilha
+            <input
+              type="file"
+              accept=".csv"
+              className="sr-only"
+              onChange={(event) => handleImportPreview(event.target.files?.[0] ?? null)}
+            />
+          </label>
+        </div>
       </div>
+
+      {/* Spreadsheet Import */}
+      <section className="bg-white rounded-xl border border-border-1 overflow-hidden">
+        <div className="px-5 py-4 border-b border-border-1 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <FileSpreadsheet className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-uni-text-900">Importação por planilha</h2>
+              <p className="text-[11px] text-uni-text-500">Preview mascarado antes da gravação. CPF e RG não aparecem na tela.</p>
+            </div>
+          </div>
+          <button
+            onClick={commitImport}
+            disabled={!importFile || importStatus !== 'ready'}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-200 transition-colors"
+          >
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            {importStatus === 'committing' ? 'Importando...' : 'Confirmar importação'}
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="flex flex-col gap-2 text-xs text-uni-text-500 md:flex-row md:items-center md:justify-between">
+            <span className="font-medium text-uni-text-700">
+              {importFile ? importFile.name : 'Nenhum arquivo selecionado'}
+            </span>
+            {importStatus === 'previewing' && <span className="font-semibold text-uni-text-500">Validando planilha...</span>}
+            {importMessage && (
+              <span className={cn(
+                'inline-flex items-center gap-1 font-semibold',
+                importStatus === 'error' ? 'text-amber-700' : 'text-emerald-700'
+              )}>
+                {importStatus === 'error' && <AlertTriangle className="h-4 w-4" aria-hidden="true" />}
+                {importMessage}
+              </span>
+            )}
+          </div>
+
+          {importSummary && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <StatCard label="Linhas" value={importSummary.totalRows} />
+              <StatCard label="Válidas" value={importSummary.validRows} accent="text-emerald-600" />
+              <StatCard label="Erros" value={importSummary.errorRows} accent={importSummary.errorRows > 0 ? 'text-amber-600' : 'text-uni-text-900'} />
+              <StatCard label="Criadas" value={importSummary.insertedRows ?? '-'} />
+              <StatCard label="Atualizadas" value={importSummary.updatedRows ?? '-'} />
+            </div>
+          )}
+
+          {importPreviewRows.length > 0 && (
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-3">
+              <div className="text-[11px] font-bold uppercase text-emerald-800 mb-2">Prévia segura</div>
+              <div className="grid gap-2 md:grid-cols-2">
+                {importPreviewRows.slice(0, 4).map((row) => (
+                  <div key={row.rowNumber} className="rounded-md bg-white border border-emerald-100 p-3 text-xs">
+                    <div className="font-bold text-uni-text-800">{row.fullNamePreview}</div>
+                    <div className="text-uni-text-500">{row.emailPreview}</div>
+                    <div className="mt-1 text-[11px] text-uni-text-400">CPF final {row.cpfLast4} {row.rgLast4 ? `- RG final ${row.rgLast4}` : ''}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {importErrorRows.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <div className="text-[11px] font-bold uppercase text-amber-800 mb-2">Erros para corrigir</div>
+              <div className="space-y-2">
+                {importErrorRows.slice(0, 5).map((row) => (
+                  <div key={`${row.rowNumber}-${row.cpfLast4 ?? 'sem-cpf'}`} className="text-xs text-amber-900">
+                    Linha {row.rowNumber}: {row.errors.join('; ')}
+                    {row.emailPreview && <span className="text-amber-700"> - {row.emailPreview}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Stats */}
       {stats && (
@@ -291,7 +495,7 @@ export default function ColaboradorasGestaoPage() {
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>👩‍💼</div>
             <p style={{ fontWeight: 600, color: '#1a2a4a', fontSize: 16 }}>Nenhuma colaboradora encontrada</p>
-            <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>Envie convites em "Convites" para adicionar colaboradoras, ou ajuste os filtros acima para encontrar quem procura.</p>
+            <p style={{ color: '#8a7a6a', fontSize: 13, marginTop: 4 }}>Importe uma planilha no botão acima, envie convites manuais em "Convites" ou ajuste os filtros para encontrar quem procura.</p>
           </div>
         ) : (
           <>
@@ -304,13 +508,13 @@ export default function ColaboradorasGestaoPage() {
                 return (
                   <div key={u.id} className={cn('p-4 space-y-3', isBlocked && 'bg-red-50/40')}>
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-700 border border-rose-200 flex items-center justify-center text-xs font-bold flex-shrink-0">
                           {initials}
                         </div>
-                        <div>
-                          <div className="font-semibold text-uni-text-900 text-sm">{u.name}</div>
-                          <div className="text-[11px] text-uni-text-400 mt-0.5">{u.email}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-uni-text-900 text-sm leading-snug break-words [overflow-wrap:anywhere]">{u.name}</div>
+                          <div className="text-[11px] text-uni-text-400 mt-0.5 leading-snug break-words [overflow-wrap:anywhere]">{u.email}</div>
                         </div>
                       </div>
                       <span className={cn(
@@ -323,9 +527,9 @@ export default function ColaboradorasGestaoPage() {
                     </div>
                     <div className="flex flex-wrap gap-2 text-[11px] text-uni-text-500">
                       <span className="bg-cream-100 px-2 py-0.5 rounded-full font-bold text-uni-text-600">
-                        {ROLE_LABELS[u.role] ?? u.role}
+                        {getUserRoleLabel(u.role)}
                       </span>
-                      {u.department_name && <span>{u.department_name}</span>}
+                      {u.department_name && <span className="min-w-0 break-words [overflow-wrap:anywhere]">{u.department_name}</span>}
                     </div>
                     <div className="flex gap-2">
                       {u.role !== 'rh' && (
@@ -351,9 +555,9 @@ export default function ColaboradorasGestaoPage() {
                       </button>
                     </div>
                     {changeDeptUser === u.id && (
-                      <div className="flex gap-2 items-center">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <select
-                          className="flex-1 border border-border-1 rounded-lg px-2 py-1.5 text-xs bg-white"
+                          className="min-w-0 flex-1 border border-border-1 rounded-lg px-2 py-1.5 text-xs bg-white"
                           value={changeDeptValue}
                           onChange={(e) => setChangeDeptValue(e.target.value)}
                         >
@@ -375,7 +579,14 @@ export default function ColaboradorasGestaoPage() {
 
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full table-fixed text-sm">
+                <colgroup>
+                  <col className="w-[34%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[24%]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-border-1">
                     <th className="text-left px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider text-uni-text-400">Colaboradora</th>
@@ -433,7 +644,7 @@ export default function ColaboradorasGestaoPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-[11px] font-bold bg-cream-100 text-uni-text-600 px-2 py-0.5 rounded-full">
-                            {ROLE_LABELS[u.role] ?? u.role}
+                            {getUserRoleLabel(u.role)}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center">
@@ -446,13 +657,13 @@ export default function ColaboradorasGestaoPage() {
                           </span>
                         </td>
                         <td className="px-6 py-3">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex flex-wrap items-center justify-end gap-1.5">
                             {u.role !== 'rh' && (
                               <button
                                 onClick={() => doAction(u.id, isBlocked ? 'unblock' : 'block')}
                                 disabled={loading === blockKey}
                                 className={cn(
-                                  'px-2.5 py-1 rounded-md text-[11px] font-bold transition-all',
+                                  'px-2 py-1 rounded-md text-[10px] font-bold transition-all',
                                   isBlocked
                                     ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                                     : 'bg-red-50 text-red-700 hover:bg-red-100',
@@ -464,13 +675,13 @@ export default function ColaboradorasGestaoPage() {
                             )}
                             <button
                               onClick={() => { setChangeDeptUser(changeDeptUser === u.id ? null : u.id); setChangeDeptValue(u.department_id || ''); }}
-                              className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
+                              className="px-2 py-1 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
                             >
                               Setor
                             </button>
                             <button
                               onClick={() => openEditModal(u)}
-                              className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-gold-50 text-gold-700 hover:bg-gold-100 transition-all"
+                              className="px-2 py-1 rounded-md text-[10px] font-bold bg-gold-50 text-gold-700 hover:bg-gold-100 transition-all"
                             >
                               Editar
                             </button>
@@ -540,7 +751,7 @@ export default function ColaboradorasGestaoPage() {
                 <label className="block text-[11px] font-bold text-uni-text-600 mb-1 uppercase tracking-wide">Setor</label>
                 <select value={editForm.department_id} onChange={e => setEditForm(f => ({ ...f, department_id: e.target.value }))} className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm bg-white">
                   <option value="">— Nenhum —</option>
-                  {departments.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  {departments.map((d: Department) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
             </div>

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     // Blacklist current access token so it can't be reused
     const accessToken = await getAccessToken();
     if (accessToken) {
-      blacklistToken(accessToken);
+      await blacklistToken(accessToken);
     }
 
     await logout();

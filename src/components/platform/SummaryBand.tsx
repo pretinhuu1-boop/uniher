@@ -27,17 +27,17 @@ export function SummaryBand({ label, items }: SummaryBandProps) {
       aria-label={label}
       className="rounded-[var(--platform-radius-surface)] bg-[var(--platform-group)] px-4 py-3"
     >
-      <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => {
           const state = item.state || 'neutral';
 
           return (
-            <div key={item.label} data-state={state} className="min-w-0 px-3 py-2 first:pl-0 last:pr-0">
+            <div key={item.label} data-state={state} className="min-w-0 px-2 py-2 sm:px-3 sm:first:pl-0 sm:last:pr-0">
               <dt className="text-xs font-medium text-[var(--platform-muted)]">{item.label}</dt>
-              <dd className={cn('mt-1 text-xl font-semibold', stateClasses[state])}>
-                {item.value}
+              <dd className={cn('mt-1 flex min-w-0 flex-col gap-1 text-xl font-semibold leading-tight', stateClasses[state])}>
+                <span className="min-w-0 break-words">{item.value}</span>
                 {item.detail && (
-                  <span className="ml-2 text-xs font-normal text-[var(--platform-muted)]">
+                  <span className="text-xs font-normal leading-snug text-[var(--platform-muted)]">
                     {item.detail}
                   </span>
                 )}

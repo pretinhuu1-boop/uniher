@@ -1,17 +1,17 @@
+import { createHash } from 'crypto';
+import { getReadDb, getWriteQueue } from '@/lib/db';
+
 /**
- * In-memory blacklist for revoked access tokens.
- * Tokens are auto-removed after their natural expiry (15 min).
+ * Blacklist for revoked access tokens.
  *
- * Uses globalThis so the same Map instance survives Next.js hot-module
- * reloads in dev mode (otherwise each route bundle gets its own copy
- * and the blacklist written by /logout is invisible to /auth/me).
- *
- * In production with multiple instances, replace with Redis.
+ * Default remains in-memory for dev/local. Production can set
+ * ACCESS_TOKEN_BLACKLIST_BACKEND=sqlite to persist token hashes in the app DB.
  */
 
 type GlobalStore = typeof globalThis & {
   __uniherTokenBlacklist?: Map<string, number>;
   __uniherTokenBlacklistCleanup?: ReturnType<typeof setInterval>;
+  __uniherTokenBlacklistSqliteCleanupAt?: number;
 };
 
 const g = globalThis as GlobalStore;
@@ -22,9 +22,9 @@ if (!g.__uniherTokenBlacklist) {
 
 const blacklist = g.__uniherTokenBlacklist;
 
-const CLEANUP_INTERVAL = 5 * 60 * 1000; // cleanup every 5 min
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+const DEFAULT_TTL_MS = 15 * 60 * 1000;
 
-// Periodic cleanup — create only once per process lifetime
 if (!g.__uniherTokenBlacklistCleanup) {
   g.__uniherTokenBlacklistCleanup = setInterval(() => {
     const now = Date.now();
@@ -35,12 +35,49 @@ if (!g.__uniherTokenBlacklistCleanup) {
   g.__uniherTokenBlacklistCleanup.unref();
 }
 
+function backend(): string {
+  return (process.env.ACCESS_TOKEN_BLACKLIST_BACKEND || 'memory').toLowerCase();
+}
+
+function tokenHash(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function expiryFromTtl(ttlMs: number): string {
+  return new Date(Date.now() + ttlMs).toISOString();
+}
+
+async function cleanupExpiredSqliteTokens(now = new Date()): Promise<void> {
+  const lastCleanup = g.__uniherTokenBlacklistSqliteCleanupAt ?? 0;
+  if (Date.now() - lastCleanup < CLEANUP_INTERVAL) return;
+
+  await getWriteQueue().enqueue((db) => {
+    db.prepare('DELETE FROM access_token_blacklist WHERE expires_at <= ?')
+      .run(now.toISOString());
+  }, 'auth.access-token-blacklist.cleanup');
+  g.__uniherTokenBlacklistSqliteCleanupAt = Date.now();
+}
+
 /**
  * Add a token to the blacklist.
  * @param token - The JWT access token to revoke
- * @param ttlMs - Time to keep in blacklist (default: 15 min, matching JWT expiry)
+ * @param ttlMs - Time to keep in blacklist, defaulting to the JWT access-token expiry.
  */
-export function blacklistToken(token: string, ttlMs = 15 * 60 * 1000): void {
+export async function blacklistToken(token: string, ttlMs = DEFAULT_TTL_MS): Promise<void> {
+  if (backend() === 'sqlite') {
+    await cleanupExpiredSqliteTokens();
+    await getWriteQueue().enqueue((db) => {
+      db.prepare(`
+        INSERT INTO access_token_blacklist (token_hash, expires_at)
+        VALUES (?, ?)
+        ON CONFLICT(token_hash) DO UPDATE SET
+          expires_at = excluded.expires_at
+      `)
+        .run(tokenHash(token), expiryFromTtl(ttlMs));
+    }, 'auth.access-token-blacklist.insert');
+    return;
+  }
+
   blacklist.set(token, Date.now() + ttlMs);
 }
 
@@ -48,6 +85,24 @@ export function blacklistToken(token: string, ttlMs = 15 * 60 * 1000): void {
  * Check if a token has been revoked.
  */
 export function isTokenBlacklisted(token: string): boolean {
+  if (backend() === 'sqlite') {
+    try {
+      const hash = tokenHash(token);
+      const row = getReadDb()
+        .prepare('SELECT expires_at FROM access_token_blacklist WHERE token_hash = ?')
+        .get(hash) as { expires_at: string } | undefined;
+
+      if (!row) return false;
+      if (new Date(row.expires_at).getTime() <= Date.now()) {
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('[auth] sqlite access token blacklist unavailable; failing closed:', error);
+      return true;
+    }
+  }
+
   const expiry = blacklist.get(token);
   if (expiry === undefined) return false;
   if (expiry < Date.now()) {

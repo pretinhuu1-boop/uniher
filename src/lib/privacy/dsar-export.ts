@@ -169,7 +169,22 @@ export function* createDsarExportJsonChunks(
     'SELECT id, name, email, role, department_id, company_id, avatar_url, created_at, updated_at FROM users WHERE id = ?',
   ).get(userId);
 
-  yield `{"exportedAt":${serializeJson(exportedAt)},"user":${serializeJson(user)},"quizResults":`;
+  yield `{"exportedAt":${serializeJson(exportedAt)},"user":${serializeJson(user)},"employeeIdentityProfile":`;
+  const employeeIdentityProfile = tableExists(db, 'employee_identity_profiles')
+    ? db.prepare(`
+        SELECT id, company_id, full_name, mother_name, cpf_last4,
+               rg_last4, rg_issuer, birth_date, sex, marital_status,
+               health_plan, cep, street_type, street, number, complement,
+               neighborhood, city, uf, email, ddd, phone, source,
+               created_at, updated_at
+        FROM employee_identity_profiles
+        WHERE user_id = ? AND deleted_at IS NULL
+        ORDER BY updated_at DESC, id DESC
+        LIMIT 1
+      `).get(userId)
+    : null;
+  yield serializeJson(employeeIdentityProfile ?? null);
+  yield ',"quizResults":';
   yield* streamPaginatedJsonArray<StableIdCursor>((cursor) => {
     const statement = cursor === null
       ? db.prepare<unknown[], DsarRow>(`
@@ -391,7 +406,180 @@ export function* createDsarExportJsonChunks(
     return materializePage(statement.iterate(...params));
   }, getTimestampCursor);
 
-  yield '},"personalObjectives":';
+  yield '},"wellbeingEvents":';
+  if (!tableExists(db, 'wellbeing_events')) {
+    yield '[]';
+  } else {
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, event_type, mood, day, created_at, updated_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM wellbeing_events
+            WHERE user_id = ?
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, event_type, mood, day, created_at, updated_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM wellbeing_events
+            WHERE user_id = ?
+              AND (COALESCE(created_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+  }
+
+  yield ',"healthEvents":';
+  if (!tableExists(db, 'health_events')) {
+    yield '[]';
+  } else {
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, title, type, date, time, notes, status,
+                   reminder_sent, created_at, updated_at, deleted_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM health_events
+            WHERE user_id = ?
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, company_id, title, type, date, time, notes, status,
+                   reminder_sent, created_at, updated_at, deleted_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM health_events
+            WHERE user_id = ?
+              AND (COALESCE(created_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+  }
+
+  yield ',"userConsents":';
+  if (!tableExists(db, 'user_consents')) {
+    yield '[]';
+  } else {
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, consent_type, granted, ip_address, user_agent,
+                   granted_at, revoked_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(granted_at, '') AS __dsar_cursor_timestamp
+            FROM user_consents
+            WHERE user_id = ?
+            ORDER BY COALESCE(granted_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, consent_type, granted, ip_address, user_agent,
+                   granted_at, revoked_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(granted_at, '') AS __dsar_cursor_timestamp
+            FROM user_consents
+            WHERE user_id = ?
+              AND (COALESCE(granted_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(granted_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+  }
+
+  yield ',"userUploads":';
+  if (!tableExists(db, 'user_uploads')) {
+    yield '[]';
+  } else {
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, file_path, file_size, category, created_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM user_uploads
+            WHERE user_id = ?
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, file_path, file_size, category, created_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM user_uploads
+            WHERE user_id = ?
+              AND (COALESCE(created_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+  }
+
+  yield ',"personalSemaforo":';
+  if (!tableExists(db, 'personal_semaforo_entries')) {
+    yield '{"consent":null,"entries":[]}';
+  } else {
+    const consent = tableExists(db, 'personal_semaforo_consents')
+      ? db.prepare(`
+          SELECT consent_version, accepted_at, revoked_at, retention_days, updated_at
+          FROM personal_semaforo_consents
+          WHERE user_id = ?
+        `).get(userId)
+      : null;
+    yield `{"consent":${serializeJson(consent)},"entries":`;
+    yield* streamPaginatedJsonArray<TimestampCursor>((cursor) => {
+      const statement = cursor === null
+        ? db.prepare<unknown[], DsarRow>(`
+            SELECT id, dimension, signal, energy, note, consent_version, created_at, expires_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM personal_semaforo_entries
+            WHERE user_id = ? AND deleted_at IS NULL
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `)
+        : db.prepare<unknown[], DsarRow>(`
+            SELECT id, dimension, signal, energy, note, consent_version, created_at, expires_at,
+                   id AS __dsar_cursor_id,
+                   COALESCE(created_at, '') AS __dsar_cursor_timestamp
+            FROM personal_semaforo_entries
+            WHERE user_id = ? AND deleted_at IS NULL
+              AND (COALESCE(created_at, ''), id) < (?, ?)
+            ORDER BY COALESCE(created_at, '') DESC, id DESC
+            LIMIT ?
+          `);
+      const params = cursor === null
+        ? [userId, DSAR_EXPORT_BATCH_SIZE]
+        : [userId, cursor.timestamp, cursor.id, DSAR_EXPORT_BATCH_SIZE];
+      return materializePage(statement.iterate(...params));
+    }, getTimestampCursor);
+    yield '}';
+  }
+
+  yield ',"personalObjectives":';
   if (!tableExists(db, 'personal_objectives')) {
     yield '[]';
   } else {

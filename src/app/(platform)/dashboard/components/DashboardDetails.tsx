@@ -4,6 +4,7 @@ import type { DashboardViewModel } from '../dashboard-view-model';
 import styles from '../dashboard.module.css';
 import { AgeOverview } from './AgeOverview';
 import { DepartmentOverview } from './DepartmentOverview';
+import { WellbeingOverview } from './WellbeingOverview';
 
 export interface DashboardFilters {
   period: DashboardPeriod;
@@ -25,7 +26,7 @@ export function DashboardDetails({ model, filters, onFiltersChange }: DashboardD
           <h2 id="details-title" className={styles.sectionTitle}>Indicadores protegidos</h2>
         </div>
         <div className={styles.filters} aria-label="Filtros do dashboard">
-          <div className={styles.periodGroup} aria-label="Per\u00edodo">
+          <div className={styles.periodGroup} aria-label="Período">
             {DASHBOARD_PERIODS.map((period) => (
               <button
                 key={period}
@@ -50,6 +51,7 @@ export function DashboardDetails({ model, filters, onFiltersChange }: DashboardD
         </div>
       </div>
       <div className={styles.detailsGrid}>
+        <WellbeingOverview series={model.wellbeingSeries} />
         <DepartmentOverview departments={model.departments} />
         <AgeOverview data={model.ageDistribution} />
       </div>

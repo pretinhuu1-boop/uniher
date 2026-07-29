@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NAVIGATION_ICONS,
   USER_ROLES,
+  getModuleAwareNavigationForRole,
   getNavigationForRole,
   getRoleHome,
   isNavigationItemActive,
@@ -11,201 +12,88 @@ import {
 } from '@/components/platform/navigation';
 import type { NavigationGroup, NavigationIcon } from '@/components/platform/navigation';
 import type { UserRole } from '@/types/platform';
+import type { CompanyModuleRecord } from '@/types/modules';
 
-const EXPECTED_NAVIGATION = {
+const EXPECTED_NAVIGATION_CONTRACT = {
   admin: [
     {
-      label: 'Operação',
+      label: 'Principal',
       items: [
-        {
-          href: '/admin',
-          label: 'Visão geral',
-          icon: 'companies',
-          description: 'Exceções, empresas e integridade da plataforma',
-        },
-        {
-          href: '/comunidade/gerenciar',
-          label: 'Gerenciar comunidade',
-          icon: 'community',
-          description: 'Conteúdos editoriais das comunidades das empresas',
-        },
-        {
-          href: '/analytics-emails',
-          label: 'Analytics global',
-          icon: 'analytics',
-          description: 'Comunicação e atividade agregada',
-        },
+        ['/admin', 'Dashboard geral'],
+        ['/admin?tab=empresas', 'Empresas'],
+        ['/dashboard?section=saude-primaria', 'Sa\u00fade Prim\u00e1ria'],
+        ['/concierge', 'Concierge'],
+        ['/dashboard?section=exames', 'Dashboard de exames'],
+        ['/comunidade/gerenciar', 'Educa\u00e7\u00e3o'],
+        ['/gamificacao-config', 'Objetivos e Desafios'],
+        ['/produtos-modulos', 'Produtos e M\u00f3dulos'],
+        ['/analytics-emails', 'Relat\u00f3rios'],
+        ['/admin?tab=sistema', 'Configura\u00e7\u00f5es'],
+      ],
+    },
+    {
+      label: 'Administra\u00e7\u00e3o',
+      items: [
+        ['/admin?tab=admin', 'Administradores UniHER'],
+        ['/admin?tab=usuarios', 'Permiss\u00f5es de Acesso'],
+        ['/admin?tab=sistema&section=gerais', 'Configura\u00e7\u00f5es Gerais'],
       ],
     },
   ],
   rh: [
     {
-      label: 'Visão geral',
+      label: 'Principal',
       items: [
-        {
-          href: '/dashboard',
-          label: 'Início',
-          icon: 'dashboard',
-          description: 'Atenção, ações e impacto',
-        },
+        ['/dashboard', 'Dashboard'],
+        ['/dashboard?section=saude-primaria', 'Sa\u00fade Prim\u00e1ria'],
+        ['/campanhas', 'Educa\u00e7\u00e3o'],
+        ['/gamificacao-config', 'Objetivos e Desafios'],
       ],
     },
     {
-      label: 'Pessoas e cuidado',
+      label: 'Configura\u00e7\u00f5es',
       items: [
-        {
-          href: '/colaboradoras-gestao',
-          label: 'Colaboradoras',
-          icon: 'colaboradoras',
-          description: 'Aprovações, perfis e status',
-        },
-        {
-          href: '/departamentos',
-          label: 'Departamentos',
-          icon: 'departamentos',
-          description: 'Estrutura e participação por setor',
-        },
-        {
-          href: '/convites',
-          label: 'Convites',
-          icon: 'invite',
-          description: 'Entrada de novas colaboradoras',
-        },
-      ],
-    },
-    {
-      label: 'Engajamento',
-      items: [
-        {
-          href: '/campanhas',
-          label: 'Campanhas',
-          icon: 'campanhas',
-          description: 'Planejar e acompanhar campanhas',
-        },
-        {
-          href: '/comunidade/gerenciar',
-          label: 'Gerenciar comunidade',
-          icon: 'community',
-          description: 'Publicar e organizar conteúdos da comunidade',
-        },
-        {
-          href: '/desafios/gerenciar',
-          label: 'Desafios',
-          icon: 'desafios',
-          description: 'Configuração de desafios',
-        },
-      ],
-    },
-    {
-      label: 'Gestão',
-      items: [
-        {
-          href: '/historico',
-          label: 'Histórico',
-          icon: 'historico',
-          description: 'Relatórios e evolução',
-        },
-        {
-          href: '/analytics-emails',
-          label: 'Comunicação',
-          icon: 'analytics',
-          description: 'Entrega e leitura de mensagens',
-        },
-        {
-          href: '/company-profile',
-          label: 'Perfil da empresa',
-          icon: 'profile',
-          description: 'Dados e identidade corporativa',
-        },
-        {
-          href: '/gamificacao-config',
-          label: 'Gamificação',
-          icon: 'config',
-          description: 'Configuração em revisão de privacidade',
-        },
+        ['/company-profile', 'Configura\u00e7\u00f5es da Empresa'],
+        ['/colaboradoras-gestao', 'Usu\u00e1rias e Permiss\u00f5es'],
+        ['/departamentos', 'Departamentos'],
+        ['/convites', 'Convites'],
+        ['/notificacoes', 'Notifica\u00e7\u00f5es'],
       ],
     },
   ],
   lideranca: [
     {
-      label: 'Equipe',
+      label: 'Dashboard',
       items: [
-        {
-          href: '/dashboard',
-          label: 'Início',
-          icon: 'dashboard',
-          description: 'Resumo da equipe',
-        },
-        {
-          href: '/campanhas',
-          label: 'Campanhas',
-          icon: 'campanhas',
-          description: 'Campanhas disponíveis',
-        },
+        ['/dashboard', 'Dashboard da equipe'],
+      ],
+    },
+    {
+      label: 'Educa\u00e7\u00e3o',
+      items: [
+        ['/campanhas', 'Campanhas e trilhas'],
       ],
     },
   ],
   colaboradora: [
     {
-      label: 'Minha jornada',
+      label: 'Principal',
       items: [
-        {
-          href: '/colaboradora',
-          label: 'Hoje',
-          icon: 'dashboard',
-          description: 'Seu foco e suas próximas ações',
-        },
-        {
-          href: '/comunidade',
-          label: 'Comunidade',
-          icon: 'community',
-          description: 'Conteúdos editoriais da sua empresa',
-        },
-        {
-          href: '/semaforo',
-          label: 'Meu semáforo',
-          icon: 'semaforo',
-          description: 'Sua leitura de cuidado',
-        },
-        {
-          href: '/agenda',
-          label: 'Minha agenda',
-          icon: 'agenda',
-          description: 'Exames, consultas e lembretes',
-        },
-      ],
-    },
-    {
-      label: 'Evolução',
-      items: [
-        {
-          href: '/campanhas',
-          label: 'Campanhas',
-          icon: 'campanhas',
-          description: 'Conteúdos e ações disponíveis',
-        },
-        {
-          href: '/objetivos',
-          label: 'Objetivos',
-          icon: 'objetivos',
-          description: 'Metas de bem-estar',
-        },
-        {
-          href: '/desafios',
-          label: 'Desafios',
-          icon: 'desafios',
-          description: 'Atividades em andamento',
-        },
-        {
-          href: '/conquistas',
-          label: 'Conquistas',
-          icon: 'conquistas',
-          description: 'Marcos da sua jornada',
-        },
+        ['/semaforo', 'Sa\u00fade Prim\u00e1ria'],
+        ['/colaboradora', 'Meu Bem-Estar'],
+        ['/agenda', 'Minha Agenda de Exames'],
+        ['/comunidade', 'Educa\u00e7\u00e3o'],
+        ['/objetivos', 'Objetivos'],
+        ['/desafios', 'Desafios'],
+        ['/conquistas', 'Conquistas'],
+        ['/campanhas', 'Campanhas'],
       ],
     },
   ],
-} as const satisfies Record<UserRole, readonly NavigationGroup[]>;
+} as const satisfies Record<UserRole, readonly {
+  readonly label: string;
+  readonly items: readonly (readonly [href: string, label: string])[];
+}[]>;
 
 const ADMIN_DENIED_ROUTES = [
   '/dashboard',
@@ -221,25 +109,229 @@ const ADMIN_DENIED_ROUTES = [
   '/liga',
   '/liga/gerenciar',
   '/agenda',
-  '/historico',
   '/company-profile',
-  '/gamificacao-config',
   '/convites',
   '/comunidade',
 ] as const;
 
+function moduleRow(
+  module_slug: CompanyModuleRecord['module_slug'],
+  module_state: CompanyModuleRecord['module_state'],
+  visible: 0 | 1 = 1,
+): Pick<CompanyModuleRecord, 'module_slug' | 'module_state' | 'visible'> {
+  return { module_slug, module_state, visible };
+}
+
+function flatItems(groups: readonly NavigationGroup[]) {
+  return groups.flatMap((group) => group.items);
+}
+
+function navigationContract(role: UserRole) {
+  return getNavigationForRole(role).map((group) => ({
+    label: group.label,
+    items: group.items.map((item) => [item.href, item.label] as const),
+  }));
+}
+
 describe('platform navigation', () => {
   it('keeps the exhaustive role registry aligned with the navigation table', () => {
-    expect(USER_ROLES).toEqual(Object.keys(EXPECTED_NAVIGATION));
+    expect(USER_ROLES).toEqual(Object.keys(EXPECTED_NAVIGATION_CONTRACT));
   });
 
-  it.each(USER_ROLES)('returns the exact navigation table for %s', (role) => {
-    expect(getNavigationForRole(role)).toEqual(EXPECTED_NAVIGATION[role]);
+  it.each(USER_ROLES)('returns the approved Paola navigation contract for %s', (role) => {
+    expect(navigationContract(role)).toEqual(EXPECTED_NAVIGATION_CONTRACT[role]);
+  });
+
+  it('regroups existing Paola surfaces without adding base navigation routes', () => {
+    const routesFor = (role: UserRole) => getNavigationForRole(role)
+      .flatMap((group) => group.items.map((item) => item.href));
+    const groupLabelsFor = (role: UserRole) => getNavigationForRole(role)
+      .map((group) => group.label);
+
+    expect(routesFor('rh')).toEqual([
+      '/dashboard',
+      '/dashboard?section=saude-primaria',
+      '/campanhas',
+      '/gamificacao-config',
+      '/company-profile',
+      '/colaboradoras-gestao',
+      '/departamentos',
+      '/convites',
+      '/notificacoes',
+    ]);
+    expect(groupLabelsFor('rh')).toEqual(['Principal', 'Configurações']);
+
+    expect(routesFor('colaboradora')).toEqual([
+      '/semaforo',
+      '/colaboradora',
+      '/agenda',
+      '/comunidade',
+      '/objetivos',
+      '/desafios',
+      '/conquistas',
+      '/campanhas',
+    ]);
+    expect(groupLabelsFor('colaboradora')).toEqual(['Principal']);
+  });
+
+  it('covers the Admin Master taxonomy requested by Paola with safe existing destinations', () => {
+    const groups = getNavigationForRole('admin');
+    const labels = groups.map((group) => group.label);
+    const routes = flatItems(groups).map((item) => item.href);
+
+    expect(labels).toEqual([
+      'Principal',
+      'Administração',
+    ]);
+    expect(routes).toEqual([
+      '/admin',
+      '/admin?tab=empresas',
+      '/dashboard?section=saude-primaria',
+      '/concierge',
+      '/dashboard?section=exames',
+      '/comunidade/gerenciar',
+      '/gamificacao-config',
+      '/produtos-modulos',
+      '/analytics-emails',
+      '/admin?tab=sistema',
+      '/admin?tab=admin',
+      '/admin?tab=usuarios',
+      '/admin?tab=sistema&section=gerais',
+    ]);
+  });
+
+  it('keeps module-aware navigation identical when no company module rows exist', () => {
+    expect(getModuleAwareNavigationForRole('colaboradora', [])).toEqual(getNavigationForRole('colaboradora'));
+  });
+
+  it('keeps collaborator navigation focused on enabled/personal surfaces without duplicating existing routes', () => {
+    const items = flatItems(getModuleAwareNavigationForRole('colaboradora', [
+      moduleRow('education', 'enabled'),
+      moduleRow('achievements', 'enabled'),
+      moduleRow('primary_health', 'locked'),
+      moduleRow('nr1', 'requires_contract'),
+      moduleRow('sipat', 'locked'),
+      moduleRow('human_development', 'requires_contract'),
+      moduleRow('denunciation', 'partner_managed'),
+      moduleRow('concierge', 'requires_contract'),
+    ]));
+    const routes = items.map((item) => item.href);
+    const byLabel = Object.fromEntries(items.map((item) => [item.label, item]));
+
+    expect(new Set(routes).size).toBe(routes.length);
+    expect(routes).toContain('/semaforo');
+    expect(routes).not.toContain('/nr1');
+    expect(routes).not.toContain('/avaliacao-nr1');
+    expect(routes).not.toContain('/viva-sipat');
+    expect(routes).not.toContain('/desenvolvimento-humano');
+    expect(routes).not.toContain('/canal-denuncias');
+    expect(routes).not.toContain('/concierge');
+    expect(routes.filter((route) => route === '/campanhas')).toHaveLength(1);
+    expect(routes.filter((route) => route === '/conquistas')).toHaveLength(1);
+    expect(byLabel['Saúde Primária'].badgeLabel).toBeUndefined();
+    expect(byLabel.Educação.badgeLabel).toBeUndefined();
+    expect(byLabel.Conquistas.badgeLabel).toBeUndefined();
+  });
+
+  it('keeps gated module previews visible for RH while hiding them from collaborator final navigation', () => {
+    const rows = [
+      moduleRow('nr1', 'requires_contract'),
+      moduleRow('sipat', 'locked'),
+      moduleRow('human_development', 'requires_contract'),
+      moduleRow('denunciation', 'partner_managed'),
+    ];
+    const rhItems = flatItems(getModuleAwareNavigationForRole('rh', rows));
+    const collaboratorRoutes = flatItems(getModuleAwareNavigationForRole('colaboradora', rows))
+      .map((item) => item.href);
+    const rhByHref = Object.fromEntries(rhItems.map((item) => [item.href, item]));
+    const rhRoutes = rhItems.map((item) => item.href);
+
+    expect(rhRoutes).toEqual(expect.arrayContaining([
+      '/nr1',
+      '/viva-sipat',
+      '/desenvolvimento-humano',
+      '/canal-denuncias',
+    ]));
+    expect(rhByHref['/nr1'].badgeLabel).toBe('Contrato');
+    expect(rhByHref['/viva-sipat'].badgeLabel).toBe('Bloqueado');
+    expect(rhByHref['/canal-denuncias'].badgeLabel).toBe('Parceiro');
+    expect(collaboratorRoutes).not.toEqual(expect.arrayContaining([
+      '/nr1',
+      '/viva-sipat',
+      '/desenvolvimento-humano',
+      '/canal-denuncias',
+    ]));
+  });
+
+  it('applies honest module state badges to represented RH base rows', () => {
+    const items = flatItems(getModuleAwareNavigationForRole('rh', [
+      moduleRow('primary_health', 'enabled'),
+      moduleRow('concierge', 'requires_contract'),
+      moduleRow('education', 'locked'),
+      moduleRow('achievements', 'coming_soon'),
+    ]));
+    const byLabel = Object.fromEntries(items.map((item) => [item.label, item]));
+
+    expect(byLabel['Saúde Primária'].badgeLabel).toBe('Contrato');
+    expect(byLabel.Educação.badgeLabel).toBe('Bloqueado');
+    expect(byLabel['Objetivos e Desafios'].badgeLabel).toBe('Em breve');
+  });
+
+  it('routes explicitly enabled NR-1 to the COPSOQ runtime while keeping gated rows on the locked shell', () => {
+    const gatedRoutes = flatItems(getModuleAwareNavigationForRole('rh', [
+      moduleRow('nr1', 'requires_contract'),
+    ])).map((item) => item.href);
+    const enabledRoutes = flatItems(getModuleAwareNavigationForRole('rh', [
+      moduleRow('nr1', 'enabled'),
+    ])).map((item) => item.href);
+    const collaboratorRoutes = flatItems(getModuleAwareNavigationForRole('colaboradora', [
+      moduleRow('nr1', 'enabled'),
+    ])).map((item) => item.href);
+
+    expect(gatedRoutes).toContain('/nr1');
+    expect(gatedRoutes).not.toContain('/avaliacao-nr1');
+    expect(enabledRoutes).toContain('/nr1');
+    expect(enabledRoutes).not.toContain('/avaliacao-nr1');
+    expect(collaboratorRoutes).toContain('/avaliacao-nr1');
+    expect(collaboratorRoutes).not.toContain('/nr1');
+  });
+
+  it('keeps role visibility separate from module access state', () => {
+    const rows = [
+      moduleRow('concierge', 'enabled'),
+      moduleRow('nr1', 'enabled'),
+      moduleRow('sipat', 'enabled', 0),
+    ];
+    const leadershipRoutes = flatItems(getModuleAwareNavigationForRole('lideranca', rows))
+      .map((item) => item.href);
+    const rhRoutes = flatItems(getModuleAwareNavigationForRole('rh', rows))
+      .map((item) => item.href);
+
+    expect(leadershipRoutes).not.toContain('/concierge');
+    expect(leadershipRoutes).not.toContain('/avaliacao-nr1');
+    expect(leadershipRoutes).not.toContain('/viva-sipat');
+    expect(rhRoutes).not.toContain('/concierge');
+    expect(rhRoutes).toContain('/nr1');
+    expect(rhRoutes).not.toContain('/avaliacao-nr1');
+    expect(rhRoutes).not.toContain('/viva-sipat');
   });
 
   it('keeps admin navigation free from non-admin destinations', () => {
     const adminRoutes = getNavigationForRole('admin').flatMap((group) => group.items.map((item) => item.href));
     expect(adminRoutes.filter((route) => ADMIN_DENIED_ROUTES.includes(route as typeof ADMIN_DENIED_ROUTES[number]))).toEqual([]);
+  });
+
+  it('keeps sidebar navigation copy free from active ranking or league promises', () => {
+    const forbidden = /(?:ligas?, recompensas, rankings|liga e rankings|ranking sob gate|ranking sob gate de privacidade|gamifica[cç][aã]o aprovada)/i;
+    const surfaces = USER_ROLES.flatMap((role) =>
+      getNavigationForRole(role).flatMap((group) =>
+        group.items.map((item) => `${role}:${item.label}:${item.description}`),
+      ),
+    );
+
+    expect(surfaces).not.toEqual(expect.arrayContaining([
+      expect.stringMatching(forbidden),
+    ]));
   });
 
   it('applies the community role boundary to every navigation table', () => {
@@ -248,7 +340,8 @@ describe('platform navigation', () => {
 
     expect(routesFor('colaboradora')).toContain('/comunidade');
     expect(routesFor('colaboradora')).not.toContain('/comunidade/gerenciar');
-    expect(routesFor('rh')).toContain('/comunidade/gerenciar');
+    expect(routesFor('rh')).toContain('/campanhas');
+    expect(routesFor('rh')).not.toContain('/comunidade/gerenciar');
     expect(routesFor('rh')).not.toContain('/comunidade');
     expect(routesFor('admin')).toContain('/comunidade/gerenciar');
     expect(routesFor('admin')).not.toContain('/comunidade');
@@ -316,9 +409,20 @@ describe('platform navigation', () => {
   it('matches active routes only on path segment boundaries', () => {
     expect(isNavigationItemActive('/desafios', '/desafios')).toBe(true);
     expect(isNavigationItemActive('/desafios/123', '/desafios')).toBe(true);
+    expect(isNavigationItemActive('/desafios?filter=ativas', '/desafios')).toBe(true);
     expect(isNavigationItemActive('/desafios-gerenciar', '/desafios')).toBe(false);
     expect(isNavigationItemActive('/administer', '/admin')).toBe(false);
     expect(isNavigationItemActive('/', '/')).toBe(true);
     expect(isNavigationItemActive('/dashboard', '/')).toBe(false);
+  });
+
+  it('matches Admin tab shortcuts by query string without marking the base dashboard active', () => {
+    expect(isNavigationItemActive('/admin?tab=empresas', '/admin?tab=empresas')).toBe(true);
+    expect(isNavigationItemActive('/admin?tab=empresas&from=sidebar', '/admin?tab=empresas')).toBe(true);
+    expect(isNavigationItemActive('/admin?section=gerais&tab=sistema', '/admin?tab=sistema&section=gerais')).toBe(true);
+    expect(isNavigationItemActive('/admin?tab=sistema', '/admin?tab=empresas')).toBe(false);
+    expect(isNavigationItemActive('/admin?tab=sistema&section=gerais', '/admin?tab=sistema')).toBe(false);
+    expect(isNavigationItemActive('/admin?tab=empresas', '/admin')).toBe(false);
+    expect(isNavigationItemActive('/admin', '/admin?tab=empresas')).toBe(false);
   });
 });

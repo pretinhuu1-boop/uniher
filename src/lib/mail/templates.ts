@@ -1,3 +1,5 @@
+import { getUserRoleLabel } from '@/lib/users/role-label';
+
 const BASE_STYLE = `
   body { margin: 0; padding: 0; background-color: #FAF7F2; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
   .container { max-width: 560px; margin: 0 auto; padding: 40px 24px; }
@@ -36,14 +38,9 @@ export function inviteEmailHtml(data: {
   role: string;
   expiresInDays: number;
 }): string {
-  const roleLabel: Record<string, string> = {
-    rh: 'Admin',
-    lideranca: 'Liderança',
-    colaboradora: 'Colaboradora',
-  };
   return layout(`
     <h1>Você foi convidada!</h1>
-    <p><strong>${data.inviterName}</strong> convidou você para a plataforma <strong>UniHER</strong> da empresa <strong>${data.companyName}</strong> como <strong>${roleLabel[data.role] || data.role}</strong>.</p>
+    <p><strong>${data.inviterName}</strong> convidou você para a plataforma <strong>UniHER</strong> da empresa <strong>${data.companyName}</strong> como <strong>${getUserRoleLabel(data.role)}</strong>.</p>
     <p>A UniHER é uma plataforma de saúde feminina corporativa com desafios, gamificação e acompanhamento personalizado.</p>
     <hr class="divider">
     <p style="text-align:center"><a href="${data.inviteUrl}" class="btn">Aceitar Convite</a></p>

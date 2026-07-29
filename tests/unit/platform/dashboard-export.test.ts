@@ -16,12 +16,16 @@ const notComputable = { status: 'suppressed', reason: 'not_computable', message:
 const model: DashboardViewModel = {
   summary: [
     { label: 'Atividade de exames', metric: suppressed, detail: 'per\u00edodo', state: 'neutral' },
+    { label: 'Check-in', metric: { status: 'visible', value: 10 }, detail: 'per\u00edodo', state: 'neutral' },
+    { label: 'Check-out', metric: suppressed, detail: 'per\u00edodo', state: 'neutral' },
     { label: 'Engajamento', metric: notComputable, detail: 'indispon\u00edvel', state: 'neutral' },
     { label: 'Participa\u00e7\u00e3o em campanha', metric: notComputable, detail: 'indispon\u00edvel', state: 'neutral' },
   ],
   actions: [],
   metrics: {
     examActivity: suppressed,
+    wellbeingCheckIn: { status: 'visible', value: 10 },
+    wellbeingCheckOut: suppressed,
     engagement: notComputable,
     healthRisk: notComputable,
     campaignParticipation: notComputable,
@@ -35,6 +39,9 @@ const model: DashboardViewModel = {
   ],
   examActivitySeries: [
     { period: '2026-07', metric: suppressed },
+  ],
+  wellbeingSeries: [
+    { period: '2026-07', checkIn: { status: 'visible', value: 10 }, checkOut: suppressed },
   ],
 };
 
@@ -56,6 +63,8 @@ describe('RH protected dashboard CSV export', () => {
     expect(csv).toContain(SUPPRESSION_MESSAGE);
     expect(csv).toContain('"\'=SUM(1,1)"');
     expect(csv).toContain('"26-35",12');
+    expect(csv).toContain('"Check-in x Check-out por mês","Check-in","Check-out"');
+    expect(csv).toContain('"2026-07",10,Dados insuficientes para proteger a privacidade');
     expect(csv).not.toMatch(/86421|rawValue|contributorCount|numerator|denominator/);
   });
 

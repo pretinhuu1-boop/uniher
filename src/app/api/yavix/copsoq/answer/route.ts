@@ -5,6 +5,7 @@ import { handleApiError, ValidationError } from '@/lib/errors';
 import { saveAnswer } from '@/lib/yavix/copsoq.mock';
 import { isYavixMock } from '@/lib/yavix/config';
 import { checkWriteRateLimit } from '@/lib/security/rate-limit';
+import { requireNr1PsychosocialConsent, requireNr1RuntimeEntitlement } from '@/lib/nr1/runtime-entitlement';
 import type { CopsoqAnswerInput } from '@/lib/yavix/copsoq.types';
 
 // SPEC §4-A. O FE manda SÓ { code, value }.
@@ -21,6 +22,11 @@ const answerSchema = z.object({
 export const PATCH = withRole('colaboradora', 'lideranca')(async (req, { auth }) => {
   try {
     await checkWriteRateLimit(req);
+    const entitlementError = await requireNr1RuntimeEntitlement(auth);
+    if (entitlementError) return entitlementError;
+    const consentError = await requireNr1PsychosocialConsent(auth.userId);
+    if (consentError) return consentError;
+
     const body = await req.json().catch(() => null);
     const parsed = answerSchema.safeParse(body);
     if (!parsed.success) {

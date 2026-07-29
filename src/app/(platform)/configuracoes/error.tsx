@@ -5,9 +5,9 @@ import Link from 'next/link'
 export default function ConfiguracoesError({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '2rem', textAlign: 'center', background: '#FAF7F2' }}>
-      <h2 style={{ color: '#1A3A6B', fontSize: '1.5rem', marginBottom: '0.5rem' }}>Erro nas Configuracoes</h2>
+      <h2 style={{ color: '#1A3A6B', fontSize: '1.5rem', marginBottom: '0.5rem' }}>Erro nas Configurações</h2>
       <p style={{ color: '#666', marginBottom: '1.5rem', maxWidth: 400 }}>
-        Algo deu errado ao carregar as configuracoes. Tente novamente ou volte mais tarde.
+        Algo deu errado ao carregar as configurações. Tente novamente ou volte mais tarde.
       </p>
       <div style={{ display: 'flex', gap: '1rem' }}>
         <button

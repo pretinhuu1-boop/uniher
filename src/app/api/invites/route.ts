@@ -27,18 +27,41 @@ export const GET = withRole('rh', 'lideranca')(async (_req, context) => {
   const userId = context.auth.userId;
   await initDb();
   const db = getReadDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
+  const user = db.prepare(`
+    SELECT company_id, role, department_id
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role IN ('rh', 'lideranca')
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(userId, context.auth.companyId) as any;
+  if (!user || user.role !== context.auth.role) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
   if (!user?.company_id) return NextResponse.json({ invites: [] });
+
+  if (user.role === 'lideranca' && !user.department_id) {
+    return NextResponse.json({ invites: [] });
+  }
+
+  const conditions = ['i.company_id = ?'];
+  const params: unknown[] = [user.company_id];
+  if (user.role === 'lideranca') {
+    conditions.push('i.department_id = ?');
+    params.push(user.department_id);
+  }
 
   const invites = db.prepare(`
     SELECT i.*, u.name as invited_by_name, d.name as department_name
     FROM invites i
-    LEFT JOIN users u ON u.id = i.invited_by
-    LEFT JOIN departments d ON d.id = i.department_id
-    WHERE i.company_id = ?
+    LEFT JOIN users u ON u.id = i.invited_by AND u.company_id = i.company_id
+    LEFT JOIN departments d ON d.id = i.department_id AND d.company_id = i.company_id
+    WHERE ${conditions.join(' AND ')}
     ORDER BY i.created_at DESC
     LIMIT 100
-  `).all(user.company_id) as any[];
+  `).all(...params) as any[];
 
   return NextResponse.json({ invites });
 });
@@ -48,7 +71,19 @@ export const POST = withRole('rh')(async (req, context) => {
   const userId = context.auth.userId;
   await initDb();
   const db = getReadDb();
-  const user = db.prepare('SELECT company_id, name FROM users WHERE id = ?').get(userId) as any;
+  const user = db.prepare(`
+    SELECT company_id, name, role
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'rh'
+      AND deleted_at IS NULL
+      AND COALESCE(blocked, 0) = 0
+      AND COALESCE(approved, 0) = 1
+  `).get(userId, context.auth.companyId) as any;
+  if (!user || user.role !== context.auth.role) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+  }
   if (!user?.company_id) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
 
   const body = await req.json().catch(() => ({}));
@@ -60,6 +95,12 @@ export const POST = withRole('rh')(async (req, context) => {
   // RH cannot invite other RH users — only admin can
   if (context.auth.role === 'rh' && role === 'rh') {
     return NextResponse.json({ error: 'RH não pode convidar outros usuários RH' }, { status: 403 });
+  }
+
+  if (department_id) {
+    const dept = db.prepare('SELECT id FROM departments WHERE id = ? AND company_id = ?')
+      .get(department_id, user.company_id);
+    if (!dept) return NextResponse.json({ error: 'Departamento nao encontrado' }, { status: 404 });
   }
 
   // Check if already invited and pending (same company)

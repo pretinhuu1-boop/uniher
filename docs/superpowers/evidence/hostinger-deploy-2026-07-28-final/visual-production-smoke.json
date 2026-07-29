@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-07-28T08:20:28.810Z",
+  "baseUrl": "https://uniher.com.br",
+  "results": [
+    {
+      "name": "auth-public-desktop",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "requestedRoute": "/auth",
+      "finalUrl": "https://uniher.com.br/auth",
+      "title": "UniHER — Saúde Feminina Corporativa | Gamificação & ROI para RH",
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\hostinger-deploy-2026-07-28-final\\auth-public-desktop.png",
+      "consoleErrors": [],
+      "failedResponses": []
+    },
+    {
+      "name": "rh-dashboard-desktop",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "requestedRoute": "/dashboard",
+      "finalUrl": "https://uniher.com.br/dashboard",
+      "title": "UniHER — Saúde Feminina Corporativa | Gamificação & ROI para RH",
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\hostinger-deploy-2026-07-28-final\\rh-dashboard-desktop.png",
+      "consoleErrors": [],
+      "failedResponses": []
+    },
+    {
+      "name": "rh-dashboard-mobile",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "requestedRoute": "/dashboard",
+      "finalUrl": "https://uniher.com.br/dashboard",
+      "title": "UniHER — Saúde Feminina Corporativa | Gamificação & ROI para RH",
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\hostinger-deploy-2026-07-28-final\\rh-dashboard-mobile.png",
+      "consoleErrors": [],
+      "failedResponses": []
+    },
+    {
+      "name": "nr1-blocked-desktop",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "requestedRoute": "/avaliacao-nr1",
+      "finalUrl": "https://uniher.com.br/nr1",
+      "title": "UniHER — Saúde Feminina Corporativa | Gamificação & ROI para RH",
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\hostinger-deploy-2026-07-28-final\\nr1-blocked-desktop.png",
+      "consoleErrors": [],
+      "failedResponses": []
+    },
+    {
+      "name": "nr1-blocked-mobile",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "requestedRoute": "/avaliacao-nr1",
+      "finalUrl": "https://uniher.com.br/nr1",
+      "title": "UniHER — Saúde Feminina Corporativa | Gamificação & ROI para RH",
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\hostinger-deploy-2026-07-28-final\\nr1-blocked-mobile.png",
+      "consoleErrors": [],
+      "failedResponses": []
+    }
+  ]
+}

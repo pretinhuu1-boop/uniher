@@ -1,4 +1,6 @@
+import { hasCollaboratorSelfCapability } from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import { AppError } from '@/lib/errors';
 
 export interface CampaignRow {
   id: string;
@@ -18,6 +20,12 @@ export interface CampaignRow {
 export interface UserCampaignRow extends CampaignRow {
   progress: number;
   joined: boolean;
+}
+
+type CampaignJoinRow = Pick<CampaignRow, 'id' | 'status' | 'start_date' | 'end_date'>;
+
+function currentDateKey(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export function getCampaignsByCompany(companyId: string): CampaignRow[] {
@@ -45,16 +53,62 @@ export function getUserCampaigns(userId: string, companyId: string): UserCampaig
 
 export function countActiveCampaigns(companyId: string): number {
   const db = getReadDb();
+  const today = currentDateKey();
   const row = db.prepare(
-    "SELECT COUNT(*) as count FROM campaigns WHERE (company_id = ? OR company_id IS NULL) AND status = 'active'"
-  ).get(companyId) as { count: number };
+    `SELECT COUNT(*) as count
+     FROM campaigns
+     WHERE (company_id = ? OR company_id IS NULL)
+       AND status = 'active'
+       AND (start_date IS NULL OR substr(start_date, 1, 10) <= ?)
+       AND (end_date IS NULL OR substr(end_date, 1, 10) >= ?)`
+  ).get(companyId, today, today) as { count: number };
   return row.count;
 }
 
-export async function joinCampaign(userId: string, campaignId: string): Promise<void> {
+export async function joinCampaign(input: {
+  userId: string;
+  companyId: string;
+  campaignId: string;
+}): Promise<void> {
   const writeQueue = getWriteQueue();
   await writeQueue.enqueue((db) => {
-    db.prepare('INSERT OR IGNORE INTO user_campaigns (user_id, campaign_id, progress) VALUES (?, ?, 0)').run(userId, campaignId);
+    const guardedJoin = db.transaction(() => {
+      if (!hasCollaboratorSelfCapability(input.userId, db)) {
+        throw new AppError('Permissao insuficiente', 403, 'COLLABORATOR_CAPABILITY_REQUIRED');
+      }
+
+      const campaign = db.prepare(`
+        SELECT id, status, start_date, end_date
+        FROM campaigns
+        WHERE id = ?
+          AND (company_id = ? OR company_id IS NULL)
+      `).get(input.campaignId, input.companyId) as CampaignJoinRow | undefined;
+
+      if (!campaign) {
+        throw new AppError('Campanha nao encontrada', 404, 'CAMPAIGN_NOT_FOUND');
+      }
+
+      if (campaign.status !== 'active') {
+        throw new AppError('Campanha indisponivel para adesao', 409, 'CAMPAIGN_NOT_ACTIVE');
+      }
+
+      const today = currentDateKey();
+      const startDate = campaign.start_date?.slice(0, 10);
+      const endDate = campaign.end_date?.slice(0, 10);
+
+      if (startDate && startDate > today) {
+        throw new AppError('Campanha ainda nao iniciou', 409, 'CAMPAIGN_NOT_STARTED');
+      }
+
+      if (endDate && endDate < today) {
+        throw new AppError('Campanha encerrada', 409, 'CAMPAIGN_ENDED');
+      }
+
+      db.prepare('INSERT OR IGNORE INTO user_campaigns (user_id, campaign_id, progress) VALUES (?, ?, 0)')
+        .run(input.userId, input.campaignId);
+    });
+
+    guardedJoin.immediate();
   });
 }
 

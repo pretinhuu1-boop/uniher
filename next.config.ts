@@ -10,6 +10,16 @@ const isTrustworthyOrigin =
 const nextConfig: NextConfig = {
   output: isProd ? 'standalone' : undefined,
   outputFileTracingRoot: projectRoot,
+  outputFileTracingExcludes: {
+    '*': [
+      './data/**/*',
+      'data/**/*',
+    ],
+    '/*': [
+      './data/**/*',
+      'data/**/*',
+    ],
+  },
   turbopack: { root: projectRoot },
   productionBrowserSourceMaps: false,
   poweredByHeader: false,

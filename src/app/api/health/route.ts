@@ -24,7 +24,12 @@ function formatUptime(ms: number): string {
 
 function getDbSize(): number {
   try {
-    const dbPath = path.join(process.cwd(), 'data', 'uniher.db');
+    const configuredDbPath = process.env.DATABASE_PATH;
+    const dbPath = configuredDbPath
+      ? (path.isAbsolute(configuredDbPath)
+        ? configuredDbPath
+        : path.join(/* turbopackIgnore: true */ process.cwd(), configuredDbPath))
+      : path.join(process.cwd(), 'data', 'uniher.db');
     const stats = fs.statSync(dbPath);
     // Also check WAL file
     let walSize = 0;
@@ -59,6 +64,7 @@ export async function GET(req: NextRequest) {
   const uptimeMs = Date.now() - startTime;
   const mem = process.memoryUsage();
   const totalMem = os.totalmem();
+  const dbSize = getDbSize();
 
   return NextResponse.json({
     status: dbStatus === 'ok' ? 'healthy' : 'degraded',
@@ -67,8 +73,8 @@ export async function GET(req: NextRequest) {
     uptimeSeconds: Math.floor(uptimeMs / 1000),
     db: {
       status: dbStatus,
-      sizeBytes: getDbSize(),
-      sizeMB: +(getDbSize() / 1024 / 1024).toFixed(2),
+      sizeBytes: dbSize,
+      sizeMB: +(dbSize / 1024 / 1024).toFixed(2),
       users: userCount,
       companies: companyCount,
       writeQueue: getWriteQueue().getStats(),

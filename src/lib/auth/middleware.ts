@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAccessToken, type TokenPayload } from './jwt';
 import { getAccessToken } from './cookies';
 import { isTokenBlacklisted } from './token-blacklist';
+import { getActiveSessionSubject } from './session-subject';
 
 export interface AuthContext {
   params: Promise<Record<string, string>>;
@@ -69,10 +70,11 @@ export function withAuth(handler: ApiHandler) {
       }
 
       const payload = await verifyAccessToken(accessToken);
+      const { auth } = getActiveSessionSubject(payload.userId);
 
       return applyPrivateCachePolicy(await handler(req, {
         params: segmentData.params,
-        auth: payload,
+        auth,
       }));
     } catch {
       return applyPrivateCachePolicy(NextResponse.json(

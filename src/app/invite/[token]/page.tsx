@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { getUserRoleLabel } from '@/lib/users/role-label';
 
 interface InviteData {
   valid: boolean;
@@ -11,12 +12,6 @@ interface InviteData {
   companyName: string;
   departmentName: string | null;
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  colaboradora: 'Colaboradora',
-  rh: 'Admin Empresa',
-  lideranca: 'Liderança',
-};
 
 export default function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const router = useRouter();
@@ -127,7 +122,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: '#8B7355' }}>Papel</span>
-              <span className="font-bold" style={{ color: '#C9A264' }}>{ROLE_LABELS[invite?.role || ''] || invite?.role}</span>
+              <span className="font-bold" style={{ color: '#C9A264' }}>{getUserRoleLabel(invite?.role)}</span>
             </div>
             {invite?.departmentName && (
               <div className="flex justify-between text-sm">
