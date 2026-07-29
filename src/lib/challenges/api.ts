@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import type Database from 'better-sqlite3';
 import { hasCollaboratorSelfCapability } from '@/lib/auth/collaborator-self';
 import type { ParticipationActor } from '@/services/participation.service';
+import type { CompanyChallengeView } from '@/types/challenges';
+
+export type PublicCompanyChallengeView = Pick<CompanyChallengeView, 'id' | 'catalog_key' | 'status' | 'progress' | 'challenge'>;
 
 export class ChallengeApiError extends Error {
   constructor(
@@ -60,4 +63,14 @@ export function challengeApiErrorResponse(error: unknown): NextResponse {
     }
   }
   throw error;
+}
+
+export function toPublicCompanyChallengeView(challenge: CompanyChallengeView): PublicCompanyChallengeView {
+  return {
+    id: challenge.id,
+    catalog_key: challenge.catalog_key,
+    status: challenge.status,
+    progress: challenge.progress,
+    challenge: { ...challenge.challenge },
+  };
 }

@@ -281,7 +281,7 @@ export default function ColaboradorasGestaoPage() {
       });
       const d = await res.json();
       if (res.ok) {
-        setResetResult(`Nova senha: ${d.temporaryPassword || d.password || 'Enviada por email'}`);
+        setResetResult(d.message || 'Senha redefinida. Entrega segura obrigatória fora da resposta.');
       } else {
         setResetResult(d.error || 'Erro ao resetar');
       }
@@ -784,7 +784,6 @@ export default function ColaboradorasGestaoPage() {
             {resetResult && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
                 <strong>🔑 {resetResult}</strong>
-                <button onClick={() => { navigator.clipboard.writeText(resetResult.replace('Nova senha: ', '')); }} className="ml-2 text-xs text-amber-700 underline">Copiar</button>
               </div>
             )}
           </div>

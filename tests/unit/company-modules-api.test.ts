@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import type { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthContext } from '@/lib/auth/middleware';
-import { COMPANY_MODULE_DEFINITIONS } from '@/types/modules';
+import { COMPANY_MODULE_DEFINITIONS, type CompanyModuleSlug } from '@/types/modules';
 
 const boundary = vi.hoisted(() => ({
   db: null as Database.Database | null,
@@ -219,10 +219,20 @@ describe('company modules API', () => {
     expect(boundary.audit).toEqual([]);
   });
 
-  it('rejects enabling sensitive modules without changing rows or logging audit', async () => {
+  it.each([
+    'primary_health',
+    'concierge',
+    'nr1',
+    'sipat',
+    'human_development',
+    'denunciation',
+  ] as const)('rejects enabling sensitive module %s without changing rows or logging audit', async (moduleSlug) => {
+    const before = boundary.db?.prepare(
+      'SELECT module_state, visible FROM company_modules WHERE company_id = ? AND module_slug = ?',
+    ).get('company-a', moduleSlug as CompanyModuleSlug);
     const response = await patchModule({
       company_id: 'company-a',
-      module_slug: 'nr1',
+      module_slug: moduleSlug,
       module_state: 'enabled',
     });
 
@@ -230,9 +240,10 @@ describe('company modules API', () => {
     await expect(response.json()).resolves.toMatchObject({
       error: 'Modulo sensivel depende de contrato ou fonte aprovada para ser habilitado',
     });
-    expect(boundary.db?.prepare(
-      'SELECT module_state FROM company_modules WHERE company_id = ? AND module_slug = ?',
-    ).get('company-a', 'nr1')).toEqual({ module_state: 'requires_contract' });
+    const after = boundary.db?.prepare(
+      'SELECT module_state, visible FROM company_modules WHERE company_id = ? AND module_slug = ?',
+    ).get('company-a', moduleSlug as CompanyModuleSlug);
+    expect(after).toEqual(before);
     expect(boundary.audit).toEqual([]);
   });
 });

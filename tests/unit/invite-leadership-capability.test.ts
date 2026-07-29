@@ -94,9 +94,22 @@ function setupDb() {
       token_hash TEXT,
       expires_at TEXT
     );
+    CREATE TABLE employee_identity_profiles (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      user_id TEXT,
+      full_name TEXT NOT NULL,
+      cpf_hash TEXT NOT NULL,
+      cpf_last4 TEXT,
+      email TEXT,
+      deleted_at TEXT,
+      updated_at TEXT
+    );
     INSERT INTO companies (id, name) VALUES ('company-1', 'UniHER');
     INSERT INTO invites (id, company_id, email, role, token, status, expires_at)
       VALUES ('invite-1', 'company-1', 'lia@example.test', 'lideranca', 'leader-token', 'pending', datetime('now', '+1 day'));
+    INSERT INTO employee_identity_profiles (id, company_id, user_id, full_name, cpf_hash, cpf_last4, email, deleted_at)
+      VALUES ('profile-1', 'company-1', NULL, 'Lia Lider', 'cpf-secret-hash', '1234', 'lia@example.test', NULL);
   `);
   return db;
 }
@@ -132,6 +145,31 @@ describe('invite acceptance leadership capability', () => {
       email: 'lia@example.test',
       role: 'lideranca',
       also_collaborator: 1,
+    });
+  });
+
+  it('links an imported employee identity profile when the invited account is accepted', async () => {
+    const response = await acceptInvite(
+      new Request('http://localhost/api/invites/leader-token', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'Lia Lider', password: 'Password1!' }),
+      }),
+      { params: Promise.resolve({ token: 'leader-token' }) },
+    );
+
+    expect(response.status).toBe(200);
+    const linked = boundary.db?.prepare(`
+      SELECT p.id, p.user_id
+      FROM employee_identity_profiles p
+      JOIN users u ON u.id = p.user_id
+      WHERE p.id = 'profile-1'
+        AND u.email = 'lia@example.test'
+    `).get();
+
+    expect(linked).toEqual({
+      id: 'profile-1',
+      user_id: 'generated-1',
     });
   });
 });

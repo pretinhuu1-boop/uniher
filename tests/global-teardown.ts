@@ -2,6 +2,7 @@
  * Playwright global teardown — clean test data after all tests
  */
 import type Database from 'better-sqlite3';
+import path from 'node:path';
 
 import playwrightDbSafety from './playwright-db-safety.cjs';
 
@@ -50,12 +51,25 @@ export function closeTeardownDatabase(
 }
 
 export default async function globalTeardown() {
-  if (process.env.BASE_URL?.trim()) {
-    console.log('[Teardown] Skipped local database cleanup for external BASE_URL');
-    return;
+  const externalBaseUrl = process.env.BASE_URL?.trim();
+  let dbPath: string;
+
+  if (externalBaseUrl) {
+    if (process.env.COLLABORATOR_JOURNEY_EXTERNAL_SAME_DATABASE !== '1') {
+      console.log('[Teardown] Skipped local database cleanup for external BASE_URL');
+      return;
+    }
+
+    dbPath = playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env);
+    const attestedPath = process.env.COLLABORATOR_JOURNEY_EXTERNAL_DATABASE_PATH?.trim();
+    if (!attestedPath || path.resolve(attestedPath) !== dbPath) {
+      throw new Error('Refusing external BASE_URL cleanup without collaborator-journey same-database attestation');
+    }
+    console.log('[Teardown] Running cleanup for attested collaborator-journey external BASE_URL');
+  } else {
+    dbPath = playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env);
   }
 
-  const dbPath = playwrightDbSafety.assertSafePlaywrightDatabaseEnvironment(process.env);
   const { default: DatabaseConstructor } = await import('better-sqlite3');
   let db: Database.Database | undefined;
   let previousForeignKeys = 0;
@@ -79,6 +93,8 @@ export default async function globalTeardown() {
       "email LIKE 'api-test-%'",
       "email LIKE 'mobile-%'",
       "email LIKE 'community-feed-test-%'",
+      "email LIKE 'rh-colab-journey-%'",
+      "email LIKE 'colab-journey-%'",
     ];
     const where = testPatterns.join(' OR ');
     const testCompanyWhere = "name LIKE 'Empresa RH%' OR name LIKE 'Empresa Colab%' OR name LIKE 'Empresa Int%' OR name LIKE 'Empresa Seg%' OR name LIKE 'Empresa Mobile%' OR name LIKE 'Community Feed E2E %'";
@@ -98,6 +114,11 @@ export default async function globalTeardown() {
       try { db.prepare(`DELETE FROM refresh_tokens WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM notifications WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM health_events WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM user_exams WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM user_campaigns WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM user_company_challenges WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM eligible_participation_event_revocations WHERE event_id IN (SELECT id FROM eligible_participation_events WHERE user_id IN (${ph}))`).run(...testUserIds); } catch {}
+      try { db.prepare(`DELETE FROM eligible_participation_events WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM alert_preferences WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM notification_preferences WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
       try { db.prepare(`DELETE FROM push_subscriptions WHERE user_id IN (${ph})`).run(...testUserIds); } catch {}
@@ -108,6 +129,8 @@ export default async function globalTeardown() {
 
     // Clean test companies
     for (const c of testCompanies) {
+      try { db.prepare('DELETE FROM user_campaigns WHERE campaign_id IN (SELECT id FROM campaigns WHERE company_id = ?)').run(c.id); } catch {}
+      try { db.prepare('DELETE FROM campaigns WHERE company_id = ?').run(c.id); } catch {}
       try { db.prepare('DELETE FROM departments WHERE company_id = ?').run(c.id); } catch {}
       try { db.prepare('DELETE FROM invites WHERE company_id = ?').run(c.id); } catch {}
       db.prepare('DELETE FROM companies WHERE id = ?').run(c.id);

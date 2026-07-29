@@ -113,14 +113,24 @@ describe('company modules store', () => {
   });
 
   it('does not allow sensitive modules to be marked enabled by the admin module mutation', () => {
-    expect(isSensitiveCompanyModuleSlug('nr1')).toBe(true);
-    expect(isSensitiveCompanyModuleSlug('sipat')).toBe(true);
-    expect(isSensitiveCompanyModuleSlug('concierge')).toBe(true);
-    expect(isSensitiveCompanyModuleSlug('education')).toBe(false);
+    const sensitive: CompanyModuleSlug[] = [
+      'primary_health',
+      'concierge',
+      'nr1',
+      'sipat',
+      'human_development',
+      'denunciation',
+    ];
 
-    expect(canAdminSetCompanyModuleState('nr1', 'enabled')).toBe(false);
-    expect(canAdminSetCompanyModuleState('sipat', 'requires_contract')).toBe(true);
-    expect(canAdminSetCompanyModuleState('denunciation', 'partner_managed')).toBe(true);
+    for (const slug of sensitive) {
+      expect(isSensitiveCompanyModuleSlug(slug), slug).toBe(true);
+      expect(canAdminSetCompanyModuleState(slug, 'enabled'), slug).toBe(false);
+      expect(canAdminSetCompanyModuleState(slug, 'requires_contract'), slug).toBe(true);
+    }
+
+    expect(isSensitiveCompanyModuleSlug('education')).toBe(false);
+    expect(isSensitiveCompanyModuleSlug('achievements')).toBe(false);
     expect(canAdminSetCompanyModuleState('education', 'enabled')).toBe(true);
+    expect(canAdminSetCompanyModuleState('achievements', 'enabled')).toBe(true);
   });
 });

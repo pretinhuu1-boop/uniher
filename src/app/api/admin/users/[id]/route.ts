@@ -75,11 +75,11 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
       return NextResponse.json({ success: true, message: 'Usuário desbloqueado' });
 
     case 'reset_password': {
-      // Generate a temporary password and return it (in production: send by email)
-      const tempPassword = nanoid(10);
-      const hash = await hashPassword(tempPassword);
+      // Generate an internal reset secret; delivery must happen out-of-band.
+      const resetSecret = `${nanoid(12)}A1a@`;
+      const hash = await hashPassword(resetSecret);
       await writeQueue.enqueue((d) => {
-        d.prepare(`UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?`).run(hash, userId);
+        d.prepare(`UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = datetime('now') WHERE id = ?`).run(hash, userId);
       });
       await logAudit({
         actorId: context.auth.userId,
@@ -92,7 +92,14 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
         details: { email: targetUser?.email },
         ip,
       });
-      return NextResponse.json({ success: true, tempPassword, message: 'Senha resetada' });
+      return NextResponse.json({
+        success: true,
+        message: 'Senha redefinida. Entrega segura obrigatória fora da resposta.',
+        passwordReset: {
+          delivery: 'out_of_band_required',
+          mustChangePassword: true,
+        },
+      });
     }
 
     case 'update_role': {

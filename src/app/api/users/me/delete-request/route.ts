@@ -10,9 +10,13 @@ export const POST = withAuth(async (_req, { auth }) => {
     const writeQueue = getWriteQueue();
 
     await writeQueue.enqueue((db) => {
-      // Create a notification to admin about the deletion request
+      // Notify same-company admins and Master Admins so LGPD fulfillment is not orphaned.
       const adminUsers = db.prepare(
-        "SELECT id FROM users WHERE role = 'admin' AND company_id = (SELECT company_id FROM users WHERE id = ?)"
+        `SELECT DISTINCT admin.id
+         FROM users admin
+         JOIN users requester ON requester.id = ?
+         WHERE admin.role = 'admin'
+           AND (admin.company_id = requester.company_id OR admin.company_id IS NULL)`
       ).all(auth.userId) as { id: string }[];
 
       for (const admin of adminUsers) {

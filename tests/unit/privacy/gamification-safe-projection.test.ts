@@ -96,6 +96,7 @@ import { GET as getLeaderTeam } from '@/app/api/leader/team/route';
 import { GET as getRhUsers } from '@/app/api/rh/users/route';
 import { GET as getAdminUsers } from '@/app/api/admin/users/route';
 import { GET as getAdminCompanyUsers } from '@/app/api/admin/companies/[id]/users/route';
+import { POST as sendAdminAlert } from '@/app/api/admin/alerts/send/route';
 import { GET as getNotifications } from '@/app/api/notifications/route';
 import { GET as getNotificationCount } from '@/app/api/notifications/count/route';
 
@@ -711,5 +712,35 @@ describe('safe authenticated projections', () => {
     const adminSource = read('src/app/(platform)/admin/page.tsx');
     expect(adminSource).not.toContain("activeTab === 'Badges'");
     expect(adminSource).not.toMatch(/<span>Nível \{u\.level\}|u\.points\.toLocaleString/);
+  });
+
+  it('keeps Admin surfaces from reopening legacy badges or gamification alert types', () => {
+    const adminSource = read('src/app/(platform)/admin/page.tsx');
+    const adminAlertRoute = read('src/app/api/admin/alerts/send/route.ts');
+
+    expect(adminSource).not.toMatch(/function\s+BadgesTab|Badges Tab|\/api\/admin\/badges|Novo Badge|Criar Badge|Badges da Plataforma|>Pontos</);
+    expect(adminSource).not.toMatch(/value="challenge"|value="gamification"|Gamifica(?:ção|Ã§Ã£o)/);
+    expect(adminAlertRoute).not.toMatch(/'challenge'|'gamification'/);
+  });
+
+  it.each(['challenge', 'gamification'])('rejects legacy Admin alert type %s before DB access', async (notificationType) => {
+    boundary.events = [];
+
+    const response = await sendAdminAlert(new Request('http://localhost/api/admin/alerts/send', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Aviso',
+        message: 'Mensagem segura',
+        company_id: 'company-1',
+        notification_type: notificationType,
+      }),
+    }) as any, {
+      auth: { ...auth, role: 'admin', isMasterAdmin: true, companyId: '' },
+    } as any);
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toBe('Dados inválidos');
+    expect(boundary.events).toEqual([]);
   });
 });

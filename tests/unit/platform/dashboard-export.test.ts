@@ -21,7 +21,13 @@ const model: DashboardViewModel = {
     { label: 'Engajamento', metric: notComputable, detail: 'indispon\u00edvel', state: 'neutral' },
     { label: 'Participa\u00e7\u00e3o em campanha', metric: notComputable, detail: 'indispon\u00edvel', state: 'neutral' },
   ],
-  actions: [],
+  actions: [
+    {
+      label: 'Campanhas',
+      description: 'CANARY_ACTION_DESCRIPTION_NOT_CSV 86421',
+      href: '/campanhas',
+    },
+  ],
   metrics: {
     examActivity: suppressed,
     wellbeingCheckIn: { status: 'visible', value: 10 },
@@ -32,10 +38,10 @@ const model: DashboardViewModel = {
     roi: notComputable,
   },
   departments: [
-    { id: 'd1', name: '=SUM(1,1)', color: '#536444', metric: suppressed },
+    { id: 'CANARY_DEPARTMENT_ID_NOT_CSV', name: '=SUM(1,1)', color: 'CANARY_DEPARTMENT_COLOR_NOT_CSV', metric: suppressed },
   ],
   ageDistribution: [
-    { label: '26-35', color: '#536444', metric: { status: 'visible', value: 12 } },
+    { label: '26-35', color: 'CANARY_AGE_COLOR_NOT_CSV', metric: { status: 'visible', value: 12 } },
   ],
   examActivitySeries: [
     { period: '2026-07', metric: suppressed },
@@ -66,6 +72,7 @@ describe('RH protected dashboard CSV export', () => {
     expect(csv).toContain('"Check-in x Check-out por mês","Check-in","Check-out"');
     expect(csv).toContain('"2026-07",10,Dados insuficientes para proteger a privacidade');
     expect(csv).not.toMatch(/86421|rawValue|contributorCount|numerator|denominator/);
+    expect(csv).not.toMatch(/CANARY_(?:ACTION|DEPARTMENT|AGE)/);
   });
 
   it('formats the filename date in the S\u00e3o Paulo calendar day', () => {

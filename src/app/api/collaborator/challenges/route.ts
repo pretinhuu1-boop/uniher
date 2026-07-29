@@ -7,6 +7,7 @@ import { initDb } from '@/lib/db/init';
 import {
   challengeApiErrorResponse,
   resolveCompanyChallengeActor,
+  toPublicCompanyChallengeView,
 } from '@/lib/challenges/api';
 import { createChallengesRepository } from '@/repositories/challenges.repository';
 import { createParticipationRepository } from '@/repositories/participation.repository';
@@ -26,7 +27,10 @@ export const GET = withAuth(async (_req: NextRequest, context: AuthContext) => {
       createParticipationRepository(db),
     ).list(actor);
 
-    return NextResponse.json(payload);
+    return NextResponse.json({
+      catalog: payload.catalog,
+      challenges: payload.challenges.map(toPublicCompanyChallengeView),
+    });
   } catch (error) {
     return challengeApiErrorResponse(error);
   }
@@ -53,7 +57,7 @@ export const POST = withAuth(async (req: NextRequest, context: AuthContext) => {
       });
     });
 
-    return NextResponse.json({ challenge }, { status: 201 });
+    return NextResponse.json({ challenge: toPublicCompanyChallengeView(challenge) }, { status: 201 });
   } catch (error) {
     return challengeApiErrorResponse(error);
   }

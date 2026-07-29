@@ -38,6 +38,8 @@ interface CollaboratorHomeData {
   examsPercent?: number;
   examsTotal?: number;
   contentViewed?: number;
+  campaignsActive?: number;
+  campaignsTotal?: number;
 }
 
 interface CompanyModulesResponse {
@@ -292,6 +294,7 @@ export default function CollaboratorHomePage() {
         items={[
           { label: 'Conteúdos vistos', value: data?.contentViewed ?? 0 },
           { label: 'Exames em dia', value: data?.examsPercent ?? 0, detail: '%' },
+          { label: 'Campanhas', value: data?.campaignsActive ?? 0, detail: `de ${data?.campaignsTotal ?? 0}` },
         ]}
       />
 

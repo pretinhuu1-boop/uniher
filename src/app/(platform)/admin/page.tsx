@@ -50,17 +50,6 @@ interface AllUser extends CompanyUser {
   company_id: string | null;
 }
 
-interface Badge {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  points: number;
-  rarity: string;
-  holder_count: number;
-  created_at: string;
-}
-
 interface SystemStats {
   companies: number;
   users: number;
@@ -93,13 +82,6 @@ const ROLE_LABELS: Record<string, string> = {
   lideranca: getUserRoleLabel('lideranca'),
   colaboradora: getUserRoleLabel('colaboradora'),
   admin: getUserRoleLabel('admin'),
-};
-
-const RARITY_COLORS: Record<string, string> = {
-  common: 'bg-gray-100 text-gray-600',
-  rare: 'bg-blue-100 text-blue-700',
-  epic: 'bg-purple-100 text-purple-700',
-  legendary: 'bg-amber-100 text-amber-700',
 };
 
 const TABS = ['Visão Geral', 'Empresas', 'Usuários', 'Admin Master', 'Sistema', 'Alertas', 'Auditoria'] as const;
@@ -1709,274 +1691,6 @@ function AdminMasterTab() {
   );
 }
 
-// ─── Badges Tab ───────────────────────────────────────────────────────────────
-
-const RARITY_OPTIONS = ['common', 'rare', 'epic', 'legendary'] as const;
-const RARITY_LABELS: Record<string, string> = {
-  common: 'Comum',
-  rare: 'Raro',
-  epic: 'Épico',
-  legendary: 'Lendário',
-};
-
-const emptyBadgeForm = { name: '', description: '', icon: '🏅', points: 0, rarity: 'common' as const };
-
-function BadgesTab() {
-  const { data, mutate, isLoading } = useSWR<{ badges: Badge[] }>('/api/admin/badges', fetcher, {
-    revalidateOnFocus: false,
-  });
-  const badges = data?.badges ?? [];
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyBadgeForm);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  function openCreate() {
-    setEditingId(null);
-    setForm(emptyBadgeForm);
-    setError(null);
-    setShowForm(true);
-  }
-
-  function openEdit(b: Badge) {
-    setEditingId(b.id);
-    setForm({ name: b.name, description: b.description, icon: b.icon, points: b.points, rarity: b.rarity as typeof emptyBadgeForm.rarity });
-    setError(null);
-    setShowForm(true);
-  }
-
-  function closeForm() {
-    setShowForm(false);
-    setEditingId(null);
-    setError(null);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    try {
-      const url = editingId ? `/api/admin/badges/${editingId}` : '/api/admin/badges';
-      const method = editingId ? 'PATCH' : 'POST';
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.error ?? 'Erro ao salvar badge');
-        return;
-      }
-      mutate();
-      closeForm();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    setDeleting(id);
-    try {
-      const res = await fetch(`/api/admin/badges/${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (!res.ok) {
-        alert(json.error ?? 'Erro ao excluir badge');
-        return;
-      }
-      mutate();
-    } finally {
-      setDeleting(null);
-    }
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Create form */}
-      {showForm && (
-        <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-          <SectionHeader
-            title={editingId ? 'Editar Badge' : 'Novo Badge'}
-            action={
-              <button onClick={closeForm} className="text-uni-text-400 hover:text-uni-text-700 text-sm">
-                Cancelar
-              </button>
-            }
-          />
-          <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Ícone (emoji)</label>
-              <input
-                type="text"
-                value={form.icon}
-                onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                maxLength={4}
-                className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
-                placeholder="🏅"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Nome</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                required
-                className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
-                placeholder="Nome do badge"
-              />
-            </div>
-            <div className="md:col-span-2 space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Descrição</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                required
-                rows={2}
-                className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 resize-none"
-                placeholder="Descreva quando este badge é concedido..."
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Pontos</label>
-              <input
-                type="number"
-                value={form.points}
-                onChange={(e) => setForm((f) => ({ ...f, points: Number(e.target.value) }))}
-                min={0}
-                className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold uppercase tracking-wide text-uni-text-400">Raridade</label>
-              <select
-                value={form.rarity}
-                onChange={(e) => setForm((f) => ({ ...f, rarity: e.target.value as typeof form.rarity }))}
-                className="w-full border border-border-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200"
-              >
-                {RARITY_OPTIONS.map((r) => (
-                  <option key={r} value={r}>
-                    {RARITY_LABELS[r]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {error && (
-              <div className="md:col-span-2 text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-3 py-2">
-                {error}
-              </div>
-            )}
-            <div className="md:col-span-2 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeForm}
-                className="px-4 py-2 rounded-lg text-sm font-semibold border border-border-1 text-uni-text-600 hover:bg-cream-50 transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-all disabled:opacity-50 disabled:cursor-wait"
-              >
-                {saving ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Criar Badge'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Badges list */}
-      <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
-        <SectionHeader
-          title="Badges da Plataforma"
-          count={badges.length}
-          action={
-            !showForm && (
-              <button
-                onClick={openCreate}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500 text-white hover:bg-rose-600 transition-all"
-              >
-                + Novo Badge
-              </button>
-            )
-          }
-        />
-
-        {isLoading ? (
-          <div className="p-12 flex items-center justify-center gap-3 text-sm text-uni-text-400">
-            <Spinner /> Carregando badges...
-          </div>
-        ) : badges.length === 0 ? (
-          <div className="text-center py-12 space-y-3">
-            <span className="text-4xl block">🏅</span>
-            <p className="text-uni-text-700 font-medium">Nenhum badge cadastrado</p>
-            <p className="text-sm text-uni-text-400">Crie badges para reconhecer as conquistas das colaboradoras.</p>
-            <button onClick={() => setShowForm(true)} className="mt-2 px-4 py-2 bg-rose-500 text-white rounded-lg text-sm font-medium hover:bg-rose-600 transition-all">
-              + Criar Badge
-            </button>
-          </div>
-        ) : (
-          <div className="divide-y divide-border-1">
-            {badges.map((b) => (
-              <div key={b.id} className="flex items-center gap-4 px-6 py-4 hover:bg-cream-50/50 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center text-xl flex-shrink-0">
-                  {b.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-uni-text-900 text-sm">{b.name}</span>
-                    <span
-                      className={cn(
-                        'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide',
-                        RARITY_COLORS[b.rarity] ?? 'bg-gray-100 text-gray-600'
-                      )}
-                    >
-                      {RARITY_LABELS[b.rarity] ?? b.rarity}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-uni-text-400 mt-0.5 truncate">{b.description}</div>
-                  <div className="flex items-center gap-3 mt-1 text-[11px] text-uni-text-500">
-                    <span>{b.points} pts</span>
-                    <span>{b.holder_count} detentora{b.holder_count !== 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => openEdit(b)}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(b.id)}
-                    disabled={b.holder_count > 0 || deleting === b.id}
-                    className={cn(
-                      'px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all',
-                      b.holder_count > 0
-                        ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                        : 'bg-red-50 text-red-700 hover:bg-red-100',
-                      deleting === b.id && 'opacity-50 cursor-wait'
-                    )}
-                    title={b.holder_count > 0 ? 'Não é possível excluir: usuárias possuem este badge' : 'Excluir badge'}
-                  >
-                    {deleting === b.id ? '...' : 'Excluir'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── System Tab ───────────────────────────────────────────────────────────────
-
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
@@ -2521,7 +2235,7 @@ interface AdminAlert {
 function AlertasTab() {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [notificationType, setNotificationType] = useState<'alert' | 'system' | 'campaign' | 'challenge' | 'lesson' | 'gamification'>('alert');
+  const [notificationType, setNotificationType] = useState<'alert' | 'system' | 'campaign' | 'lesson'>('alert');
   const [companyId, setCompanyId] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [targetRole, setTargetRole] = useState('');
@@ -2550,9 +2264,7 @@ function AlertasTab() {
     alert: 'Alerta',
     system: 'Sistema',
     campaign: 'Campanha',
-    challenge: 'Desafio',
     lesson: 'Lição',
-    gamification: 'Gamificação',
   };
   const isGlobalAdminAudience = targetRole === 'admin';
   const selectedCompany = companies.find((c: any) => c.id === companyId);
@@ -2631,9 +2343,7 @@ function AlertasTab() {
                 <option value="alert">Alerta</option>
                 <option value="system">Sistema</option>
                 <option value="campaign">Campanha</option>
-                <option value="challenge">Desafio</option>
                 <option value="lesson">Lição</option>
-                <option value="gamification">Gamificação</option>
               </select>
             </div>
             <div>

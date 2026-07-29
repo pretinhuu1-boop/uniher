@@ -257,7 +257,7 @@ export default function CompanyProfilePage() {
               <>
                 <span className="text-3xl group-hover:scale-110 transition-transform">🏢</span>
                 <span className="text-[10px]">Adicionar logo</span>
-                <span className="text-[8px] opacity-60">PNG, JPG ate 2MB</span>
+                <span className="text-[8px] opacity-60">PNG, JPG ou WebP ate 5MB</span>
               </>
             )}
           </div>

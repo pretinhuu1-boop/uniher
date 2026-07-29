@@ -12,7 +12,7 @@ const SendSchema = z.object({
   department_id: z.string().optional(),
   target_role: z.enum(['admin', 'rh', 'lideranca', 'colaboradora']).optional(),
   notification_type: z
-    .enum(['alert', 'system', 'campaign', 'challenge', 'lesson', 'gamification'])
+    .enum(['alert', 'system', 'campaign', 'lesson'])
     .default('alert'),
 });
 
@@ -24,8 +24,6 @@ const roleLabelMap: Record<string, string> = {
 };
 
 export const POST = withRole('admin', 'rh')(async (req: NextRequest, context) => {
-  await initDb();
-
   const body = await req.json().catch(() => ({}));
   const parsed = SendSchema.safeParse(body);
   if (!parsed.success) {
@@ -34,6 +32,8 @@ export const POST = withRole('admin', 'rh')(async (req: NextRequest, context) =>
       { status: 400 },
     );
   }
+
+  await initDb();
 
   const { title, message, company_id, department_id, target_role, notification_type } = parsed.data;
   const db = getReadDb();

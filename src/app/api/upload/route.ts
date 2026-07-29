@@ -3,6 +3,14 @@ import { withAuth } from '@/lib/auth/middleware';
 import { checkUploadRateLimit } from '@/lib/security/rate-limit';
 import { saveUploadedFile } from '@/lib/upload';
 
+function isClientUploadError(message: string): boolean {
+  return message.includes('nao permitido')
+    || message.includes('muito grande')
+    || message.includes('nao corresponde')
+    || message.includes('armazenamento')
+    || message.includes('Nenhum arquivo');
+}
+
 export const POST = withAuth(async (req: NextRequest, context) => {
   try {
     await checkUploadRateLimit(req);
@@ -26,15 +34,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erro ao fazer upload';
-    const status = message.includes('não permitido')
-      || message.includes('não permitido')
-      || message.includes('muito grande')
-      || message.includes('não corresponde')
-      || message.includes('não corresponde')
-      || message.includes('armazenamento')
-      || message.includes('Nenhum arquivo')
-      ? 400
-      : 400;
+    const status = isClientUploadError(message) ? 400 : 500;
 
     return NextResponse.json({ error: message }, { status });
   }

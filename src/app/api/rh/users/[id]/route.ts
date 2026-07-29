@@ -187,19 +187,21 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
     case 'reset_password': {
       const { hashPassword } = await import('@/lib/auth/password');
       const { nanoid } = await import('nanoid');
-      // Generate random password
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$';
-      let tempPass = '';
-      for (let i = 0; i < 12; i++) tempPass += chars[Math.floor(Math.random() * chars.length)];
-      // Ensure it meets requirements
-      tempPass = tempPass.slice(0, 8) + 'A1a@' + tempPass.slice(8);
-      const hash = await hashPassword(tempPass);
+      const resetSecret = `${nanoid(12)}A1a@`;
+      const hash = await hashPassword(resetSecret);
       await wq.enqueue((db) => {
         db.prepare("UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = datetime('now') WHERE id = ? AND company_id = ?")
           .run(hash, userId, companyId);
       });
       await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });
-      return NextResponse.json({ success: true, temporaryPassword: tempPass });
+      return NextResponse.json({
+        success: true,
+        message: 'Senha redefinida. Entrega segura obrigatória fora da resposta.',
+        passwordReset: {
+          delivery: 'out_of_band_required',
+          mustChangePassword: true,
+        },
+      });
     }
     case 'soft_delete': {
       if (targetUser.role === 'rh' || targetUser.role === 'admin') {

@@ -170,7 +170,8 @@ export function* createDsarExportJsonChunks(
   ).get(userId);
 
   yield `{"exportedAt":${serializeJson(exportedAt)},"user":${serializeJson(user)},"employeeIdentityProfile":`;
-  const employeeIdentityProfile = tableExists(db, 'employee_identity_profiles')
+  const userIdentity = user as { company_id?: string | null; email?: string | null } | undefined;
+  const employeeIdentityProfile = tableExists(db, 'employee_identity_profiles') && userIdentity
     ? db.prepare(`
         SELECT id, company_id, full_name, mother_name, cpf_last4,
                rg_last4, rg_issuer, birth_date, sex, marital_status,
@@ -178,10 +179,18 @@ export function* createDsarExportJsonChunks(
                neighborhood, city, uf, email, ddd, phone, source,
                created_at, updated_at
         FROM employee_identity_profiles
-        WHERE user_id = ? AND deleted_at IS NULL
-        ORDER BY updated_at DESC, id DESC
+        WHERE deleted_at IS NULL
+          AND (
+            user_id = ?
+            OR (
+              user_id IS NULL
+              AND company_id = ?
+              AND lower(email) = lower(?)
+            )
+          )
+        ORDER BY CASE WHEN user_id = ? THEN 0 ELSE 1 END, updated_at DESC, id DESC
         LIMIT 1
-      `).get(userId)
+      `).get(userId, userIdentity.company_id ?? null, userIdentity.email ?? null, userId)
     : null;
   yield serializeJson(employeeIdentityProfile ?? null);
   yield ',"quizResults":';

@@ -7,6 +7,7 @@ import { initDb } from '@/lib/db/init';
 import {
   challengeApiErrorResponse,
   resolveCompanyChallengeActor,
+  toPublicCompanyChallengeView,
 } from '@/lib/challenges/api';
 import { createChallengesRepository } from '@/repositories/challenges.repository';
 import { createParticipationRepository } from '@/repositories/participation.repository';
@@ -62,7 +63,7 @@ export const PATCH = withAuth(async (req: NextRequest, context: AuthContext) => 
       });
     });
 
-    return NextResponse.json({ challenge });
+    return NextResponse.json({ challenge: toPublicCompanyChallengeView(challenge) });
   } catch (error) {
     return challengeApiErrorResponse(error);
   }

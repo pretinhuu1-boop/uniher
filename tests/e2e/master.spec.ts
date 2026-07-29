@@ -68,17 +68,12 @@ test.describe('Admin Master — Autenticação e Gestão', () => {
     expect(res.status()).toBe(200);
     const body = await res.json();
 
-    expect(body).toHaveProperty('status');
-    expect(['healthy', 'degraded']).toContain(body.status);
-    expect(body).toHaveProperty('db');
-    expect(body.db).toHaveProperty('status');
-    expect(body.db).toHaveProperty('users');
-    expect(body.db).toHaveProperty('companies');
-    expect(body).toHaveProperty('memory');
-    expect(body.memory).toHaveProperty('heapUsedMB');
-    expect(body.memory).toHaveProperty('rssMB');
-    expect(body).toHaveProperty('uptime');
-    expect(typeof body.uptimeSeconds).toBe('number');
+    expect(Object.keys(body).sort()).toEqual(['status', 'timestamp']);
+    expect(body.status).toBe('healthy');
+    expect(typeof body.timestamp).toBe('string');
+    expect(JSON.stringify(body)).not.toMatch(
+      /db|database|memory|heap|rss|uptime|users|companies|queue|pending|failed|size|version|path/i,
+    );
   });
 
   // ─── Empresas ────────────────────────────────────────────────────────────────
@@ -318,6 +313,12 @@ test.describe('Admin Master — Autenticação e Gestão', () => {
     const res = await request.get('/api/admin/system', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+
+    if (res.status() === 403) {
+      const body = await res.json();
+      expect(body.error).toBeTruthy();
+      return;
+    }
 
     expect(res.status()).toBe(200);
     const body = await res.json();

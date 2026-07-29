@@ -496,5 +496,12 @@ test.describe('Segurança — Testes de Proteção', () => {
   test('Health check NÃO requer autenticação', async ({ request }) => {
     const res = await request.get('/api/health');
     expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(Object.keys(body).sort()).toEqual(['status', 'timestamp']);
+    expect(body.status).toBe('healthy');
+    expect(typeof body.timestamp).toBe('string');
+    expect(JSON.stringify(body)).not.toMatch(
+      /db|database|memory|heap|rss|uptime|users|companies|queue|pending|failed|size|version|path/i,
+    );
   });
 });

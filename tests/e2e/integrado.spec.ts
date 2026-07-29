@@ -320,8 +320,15 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
     expect(res.status()).toBe(200);
     expectPrivateResponse(res);
     const body = await res.json();
-    expect(Object.keys(body).sort()).toEqual(['checkedInToday', 'streak']);
+    expect(Object.keys(body).sort()).toEqual([
+      'checkInMood',
+      'checkOutMood',
+      'checkedInToday',
+      'checkedOutToday',
+      'streak',
+    ]);
     expect(body.checkedInToday).toBe(true);
+    expect(typeof body.checkedOutToday).toBe('boolean');
     expect(body.streak).toBeGreaterThanOrEqual(1);
     expectNoRecursiveKeys(
       body,
@@ -364,9 +371,11 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
 
     expect(res.status()).toBe(200);
     const body = await res.json();
+    expect(Object.keys(body).sort()).toEqual(['status', 'timestamp']);
     expect(body.status).toBe('healthy');
-    expect(body.db.status).toBe('ok');
-    expect(body.db.users).toBeGreaterThanOrEqual(3); // admin + rh + colab
-    expect(body.db.companies).toBeGreaterThanOrEqual(1);
+    expect(typeof body.timestamp).toBe('string');
+    expect(JSON.stringify(body)).not.toMatch(
+      /db|database|memory|heap|rss|uptime|users|companies|queue|pending|failed|size|version|path/i,
+    );
   });
 });
