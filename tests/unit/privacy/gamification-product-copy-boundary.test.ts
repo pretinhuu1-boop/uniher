@@ -16,9 +16,16 @@ describe('gamification product copy boundary', () => {
     expect(source).not.toMatch(/conte[uú]do di[aá]rio e gamifica(?:cao|ção)|ranking|leaderboard|loja de recompensas|recompensas dispon[ií]veis|resgatar|ganh[ae] pontos|\bxp\b|badges?/i);
   });
 
+  it('keeps education management active without operational rewards or ranking', () => {
+    const educationSource = read('src/app/(platform)/gamificacao-config/page.tsx');
+
+    expect(educationSource).toContain('/api/rh/lessons');
+    expect(educationSource).toContain('Editor ativo de licoes');
+    expect(educationSource).not.toMatch(/\/api\/gamification\/(?:rewards|league)|xp_reward|loja de recompensas|recompensas dispon[iÃ­]veis|resgatar|comprar recompensa|ranking geral|leaderboard|ganh[ae] pontos|xp ganho/i);
+  });
+
   it('keeps review routes explicit about HOLD instead of operational rewards or ranking', () => {
     const reviewSources = [
-      read('src/app/(platform)/gamificacao-config/page.tsx'),
       read('src/app/(platform)/liga/page.tsx'),
       read('src/app/(platform)/liga/gerenciar/page.tsx'),
     ].join('\n');

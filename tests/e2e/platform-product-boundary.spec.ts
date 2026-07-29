@@ -67,12 +67,6 @@ const containedRoutes = [
 const reviewRoutes = [
   {
     role: 'rh',
-    path: '/gamificacao-config',
-    title: /Gamifica..o em revis.o/i,
-    anchors: [/Pontuacao e classificacao estao em revisao/i],
-  },
-  {
-    role: 'rh',
     path: '/liga/gerenciar',
     title: /Gest.o de ligas em revis.o/i,
     anchors: [/Pontuacao e classificacao estao em revisao/i],
@@ -91,6 +85,12 @@ const reviewRoutes = [
 }>;
 
 const safeUsefulRoutes = [
+  {
+    role: 'rh',
+    path: '/gamificacao-config',
+    title: /Conteudos educativos/i,
+    anchors: [/Editor ativo de licoes/i, /Pontuacao, ranking, premios e Liga seguem desativados/i],
+  },
   {
     role: 'colaboradora',
     path: '/desafios',

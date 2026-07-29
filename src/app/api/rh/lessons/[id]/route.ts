@@ -5,6 +5,7 @@ import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { privacyReviewResponse } from '@/lib/privacy/api-response';
+import { hasForbiddenLegacyLessonContent } from '@/lib/gamification/lesson-content-guard';
 
 const LESSON_TYPES = [
   'pilula',
@@ -180,6 +181,10 @@ export const PATCH = withRole('rh', 'admin')(async (req, { auth, params }) => {
       }
 
       data.content_json = normalized;
+    }
+
+    if (data.content_json && hasForbiddenLegacyLessonContent(data.content_json)) {
+      return privacyReviewResponse();
     }
 
     const fields: string[] = [];

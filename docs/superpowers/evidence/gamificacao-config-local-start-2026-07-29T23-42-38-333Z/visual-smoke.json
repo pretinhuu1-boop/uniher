@@ -1,0 +1,24 @@
+{
+  "outDir": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\gamificacao-config-local-start-2026-07-29T23-42-38-333Z",
+  "beforeCount": 1057,
+  "afterCount": 1057,
+  "mutatedByView": false,
+  "results": [
+    {
+      "name": "desktop-1366",
+      "url": "http://127.0.0.1:3000/gamificacao-config",
+      "overflow": false,
+      "errors": [],
+      "readonlyButtons": 0,
+      "textSample": "Ir para conteúdo principal UniHER RH | Gestão da Saúde e Bem-estar UN UniHER VISUALIZAR COMO Admin Empresa Colaboradora PRINCIPAL Dashboard Visão geral da empresa, indicadores e gráficos protegidos Visão geral da empresa Todos os indicadores e gráficos Check-in x Check-out Saúde Primária Semáforo da saúde e Concierge sob gates clínicos e contratuais Semáforo da Saúde Concierge Bloqueado Educação Campanhas e conteúdos educativos publicados para a empresa Campanhas de saúde Conteúdos publicados Objetivos e Desafios Objetivos, desafios e conquistas em governança, sem ranking ou liga ativa Objetivos Desafios Conquistas em revisão NR-1 Avaliação psicossocial NR-1 sob contrato e gates Yavix Viva S"
+    },
+    {
+      "name": "mobile-390",
+      "url": "http://127.0.0.1:3000/gamificacao-config",
+      "overflow": false,
+      "errors": [],
+      "readonlyButtons": 0,
+      "textSample": "Ir para conteúdo principal Conteudos educativos Editor ativo de licoes para RH. Pontuacao, ranking, premios e Liga seguem desativados. ED Biblioteca educativa Liste, filtre, crie e mantenha licoes da empresa usando o contrato real de conteudo educativo. Licoes globais ou ja vencidas podem aparecer como somente leitura. Controle competitivo continua fora desta tela: nenhum campo de pontuacao, classificacao, loja, premio ou Liga e enviado. Todos os temas Hidratacao Sono Prevencao Nutricao Saude mental Ciclo Geral Todos os tipos Pilula educativa Quiz Reflexao Lacuna Verdadeiro ou falso Ordenar Parear Historia Flashcard Imagem Desafio do dia Nova licao S1 Pilula educativa Hidratacao Global Pende"
+    }
+  ]
+}
