@@ -9,13 +9,57 @@ Continue the authenticated UniHER recovery until screens do not show specs, plac
 ## Anti-regression rules
 
 - Public landing remains unchanged. Every wave checks the landing denylist before edits and before commit.
+- Public landing path denylist: `src/app/page.tsx`, `src/components/landing`, `src/app/(public)`, `public`.
+- Landing guard is required before edit, before commit, before push and before deploy: `landing_worktree_diff_count=0`.
 - Sensitive products remain fail-closed: NR-1/Yavix real, Liga/ranking/rewards, Concierge operations, Canal de Denuncias intake, SIPAT operations and Desenvolvimento Humano trails.
 - Existing real products are reused before rebuilding: community editorial, lessons, campaigns, collaborator objectives, challenges, achievements, agenda and notifications.
 - RED/GREEN is required for each promoted surface: add a focused regression canary that fails on the current spec/shell, then implement the smallest safe UI/API bridge.
 - Visual evidence is required for UI waves on desktop and mobile before deployment claims.
 - Commit/push only explicit wave files after diff review. Deploy only after local gates pass.
+- No wave can pass only by fixing the route it touched. The current authenticated route matrix must stay explicit enough to prove that no reachable authenticated screen is still rendering specs in place of recoverable product.
 
-## Completed wave target
+## Active Wave
+
+Create and maintain the global authenticated no-spec matrix before the next product edit.
+
+Required matrix columns:
+
+| Column | Meaning |
+| --- | --- |
+| Route | Authenticated route or compatibility URL. |
+| Role | `admin`, `rh`, `lideranca`, `colaboradora` or `all authenticated`. |
+| Current decision | `PROMOTE`, `COPY_FIX`, `COMPAT_REDIRECT`, `HOLD_HIDDEN`, `PASS_REAL_PRODUCT`. |
+| Recoverable product source | Existing page/API/module/previous implementation to reuse, or `none`. |
+| Forbidden rendered terms | Terms that must not appear for that route/role. |
+| Contract/governance status | `approved`, `safe existing`, `missing`, `sensitive hold`, or `source gated`. |
+| Visual gate | Desktop/mobile viewport screenshots, plus viewport/DOM geometry when fixed navigation is involved. |
+| Verification command/evidence | Focused test, scan, screenshot path and deployment receipt. |
+
+The next implementation wave must be selected from this matrix. If a route has no approved product source, the only safe decisions are `COMPAT_REDIRECT` or `HOLD_HIDDEN`.
+
+## Wave Ledger
+
+| Surface | Decision | Status |
+| --- | --- | --- |
+| `/produtos-modulos` | Real module status/limited governance UI | Done |
+| `/historico` | Compatibility redirect | Done |
+| `/desafios/gerenciar` | Compatibility redirect | Done |
+| Authenticated navigation shell links | Hide runtime-unready sensitive modules | Done |
+| `/liga`, `/liga/gerenciar` | Compatibility redirects | Done |
+| `/colaboradora` gamification review banner | Private journey links to existing surfaces | Done |
+| `/colaboradora` campaign summary | Read-only company campaigns card | Done |
+| `/concierge`, `/canal-denuncias`, `/viva-sipat`, `/desenvolvimento-humano`, `/nr1` | Direct-shell compatibility routing/fail-closed | Done |
+| `/avaliacao-nr1` | Fail-closed unless explicit mock runtime is active | Done |
+| `/objetivos`, `/desafios`, `/conquistas`, navigation copy | Internal contract/governance wording removed from real product surfaces | Done |
+| Global authenticated no-spec matrix | Required before the next product edit | Active |
+| Concierge operations | Operational contract, SLA, data governance | HOLD |
+| Canal de Denuncias intake | Partner/legal/DPO workflow | HOLD |
+| SIPAT operations | Approved source package | HOLD |
+| Desenvolvimento Humano trails | Approved content/trail contract | HOLD |
+| Real NR-1/Yavix/COPSOQ | Contract/runtime/intake/scoring/legal gates | HOLD |
+| Liga/ranking/rewards | Privacy product policy and reward governance | HOLD |
+
+## Completed Produtos e Modulos Recovery
 
 `/produtos-modulos` is recoverable now. It currently renders a static `ContainedSurfacePreview`, but `/api/company/modules` and the `company_modules` store already exist. The safe implementation is a real company module status surface:
 
@@ -24,7 +68,7 @@ Continue the authenticated UniHER recovery until screens do not show specs, plac
 - sensitive modules display HOLD and cannot be enabled from this UI;
 - no landing, public route, NR-1 runtime, Liga, rewards, Denuncias intake, Concierge case workflow, SIPAT content or DH trail behavior is introduced.
 
-## Current wave target
+## Completed Compatibility Routing: Historico And Challenge Management
 
 `/historico` and `/desafios/gerenciar` were authenticated spec/review routes with no safe standalone product contract. The safe implementation is compatibility routing:
 
@@ -33,7 +77,7 @@ Continue the authenticated UniHER recovery until screens do not show specs, plac
 - unauthenticated users keep the auth redirect with the original target;
 - no history API productization, challenge-admin workflow, ranking, rewards or Liga behavior is introduced.
 
-## Current navigation containment wave
+## Completed Navigation Containment
 
 Authenticated navigation must not lead users into shell/spec pages that have no approved contract. The safe implementation is:
 
@@ -43,7 +87,7 @@ Authenticated navigation must not lead users into shell/spec pages that have no 
 - keep `/produtos-modulos` as the visible governance/status surface for those modules;
 - keep direct URLs fail-closed for audit and deep-link containment, without promoting the module as usable product.
 
-## Current Liga compatibility wave
+## Completed Liga Compatibility
 
 `/liga` and `/liga/gerenciar` were privacy-review/spec screens for a product that still has no approved ranking/reward contract. The safe implementation is compatibility routing only:
 
@@ -52,7 +96,7 @@ Authenticated navigation must not lead users into shell/spec pages that have no 
 - unauthenticated users keep auth redirects with the original targets;
 - no Liga product, leaderboard, rewards, points, XP, scoring, group comparison or redemption behavior is introduced.
 
-## Current collaborator private journey copy wave
+## Completed Collaborator Private Journey Copy
 
 The collaborator home and manager sidebar still surfaced legacy review/spec copy around gamification. The safe implementation is copy and link cleanup only:
 
@@ -60,7 +104,7 @@ The collaborator home and manager sidebar still surfaced legacy review/spec copy
 - manager sidebar replaces `Conquistas em revisão` with `Conquistas privadas`;
 - no scoring, ranking, points, XP, rewards, league, badges or comparative behavior is introduced.
 
-## Current collaborator campaign recovery wave
+## Completed Collaborator Campaign Recovery
 
 The collaborator home had a recoverable company campaigns affordance in the previous product and should not degrade to only an abstract summary number. The safe implementation is a read-only campaign card on `/colaboradora`:
 
@@ -69,7 +113,7 @@ The collaborator home had a recoverable company campaigns affordance in the prev
 - keep the card free of XP, ranking, points, rewards, league, badges or comparison copy;
 - do not introduce a new campaign API, join flow or management behavior from this wave.
 
-## Current module direct-shell hiding wave
+## Completed Module Direct-Shell Hiding
 
 Direct module URLs for products without approved runtime contracts were still showing contained spec/HOLD shells. The safe implementation is compatibility routing only:
 
@@ -78,7 +122,7 @@ Direct module URLs for products without approved runtime contracts were still sh
 - unauthenticated users keep auth redirects with the original targets;
 - no Concierge case workflow, Denuncias intake, SIPAT operation, Desenvolvimento Humano trail or NR-1/Yavix runtime behavior is introduced.
 
-## Current NR-1 technical preview hiding wave
+## Completed NR-1 Technical Preview Hiding
 
 `/avaliacao-nr1` still had a renderable technical preview/unavailable screen when a company was entitled but the Yavix mock/runtime was not active. The safe implementation is fail-closed routing:
 
@@ -89,7 +133,7 @@ Direct module URLs for products without approved runtime contracts were still sh
 - only explicitly mocked dev/test runtime can render `CopsoqFlow`;
 - no production COPSOQ, Yavix integration, laudo, scoring, GRO/PGR or technical unavailable shell is introduced.
 
-## Current Produtos e Modulos copy hardening wave
+## Completed Produtos e Modulos Copy Hardening
 
 `/produtos-modulos` is already the real company module status surface, but the authenticated UI still exposed internal implementation/governance jargon. The safe implementation is copy hardening only:
 
@@ -118,4 +162,34 @@ Direct module URLs for products without approved runtime contracts were still sh
 
 ## Wave gate
 
-PASS requires focused unit tests, typecheck, `git diff --check`, denylist check, desktop/mobile authenticated screenshots for promoted/compatibility surfaces, explicit commit, push, deploy, and production health/smoke. If any non-technical gate is missing, the release state remains HOLD for that surface.
+PASS requires focused unit tests, typecheck, `git diff --check`, landing denylist check, desktop/mobile authenticated screenshots for promoted/compatibility surfaces, explicit commit, push, deploy, and production health/smoke. If any non-technical gate is missing, the release state remains HOLD for that surface.
+
+## Visual regression guard
+
+Mobile screenshots that use Playwright `fullPage: true` can show the fixed collaborator bottom navigation in the middle of the long capture. Full-page captures are auxiliary evidence and must be labeled as such. A mobile navigation overlap becomes a blocker when at least one viewport/DOM gate fails:
+
+- the bottom navigation escapes the viewport;
+- a bottom navigation item escapes or overlaps another item;
+- the main/workspace bottom padding is lower than the rendered navigation height;
+- a required heading, control or terminal content cannot be scrolled above the navigation in a normal viewport screenshot.
+
+Required evidence for collaborator mobile UI waves:
+
+- viewport screenshots at top, mid-scroll and bottom;
+- optional full-page screenshot labeled as auxiliary;
+- DOM geometry check proving final meaningful content or CTA can sit above `MobileBottomNav`;
+- padding check proving main/workspace bottom padding is at least the rendered navigation height plus safe-area inset.
+
+Current evidence on 2026-07-30: `cd tests; npx playwright test --config=playwright.config.ts --project=visual-ux --grep "sidebar top bottom and bottom nav geometry are guarded"` passed. Keep this gate in the anti-regression set before changing `AppLayout`, `MobileBottomNav` or collaborator mobile pages.
+
+## Active next-wave loop
+
+1. Scan rendered authenticated routes for visible `spec`, `placeholder`, `preview`, internal contract/governance jargon or recovered-product regressions.
+2. For each finding, classify it as:
+   - `PROMOTE`: real implementation already exists and can be safely wired or linked;
+   - `COPY_FIX`: real product exists but the UI still exposes spec/internal language;
+   - `COMPAT_REDIRECT`: no standalone product contract exists, but a consolidated safe surface exists;
+   - `HOLD_HIDDEN`: sensitive or source-gated module with no approved contract/runtime.
+3. Open only one small write set per wave and add/update a focused canary before the fix when behavior changes.
+4. Run the gates, capture desktop/mobile evidence, commit explicit files, push, then deploy only a green commit.
+5. Do not close this goal while any authenticated user can still reach a spec/shell instead of a recoverable product or an explicit fail-closed route.

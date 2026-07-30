@@ -32,6 +32,11 @@ PASS
   - PASS: 5 authenticated useful-surface tests.
 - Local authenticated screenshots for `/objetivos`, `/desafios`, `/conquistas`
   - PASS: desktop/mobile captures, forbidden technical terms absent.
+- Production authenticated screenshots for `/objetivos`, `/desafios`, `/conquistas` on commit `6317adb`
+  - PASS: desktop/mobile captures, forbidden technical terms absent.
+- Mobile bottom navigation geometry guard:
+  - PASS: `cd tests; npx playwright test --config=playwright.config.ts --project=visual-ux --grep "sidebar top bottom and bottom nav geometry are guarded"`.
+  - Note: mobile full-page screenshots show the fixed bottom navigation in the middle of long captures; the viewport/DOM geometry gate did not find real occlusion.
 - `git diff --check`
   - PASS.
 - Landing guard:
@@ -44,11 +49,18 @@ PASS
 - `docs/superpowers/evidence/private-journey-copy-wave-local-2026-07-30/mobile-390-objetivos.png`
 - `docs/superpowers/evidence/private-journey-copy-wave-local-2026-07-30/mobile-390-desafios.png`
 - `docs/superpowers/evidence/private-journey-copy-wave-local-2026-07-30/mobile-390-conquistas.png`
+- `docs/superpowers/evidence/production-private-journey-copy-6317adb-2026-07-30/desktop-1366-objetivos.png`
+- `docs/superpowers/evidence/production-private-journey-copy-6317adb-2026-07-30/desktop-1366-desafios.png`
+- `docs/superpowers/evidence/production-private-journey-copy-6317adb-2026-07-30/desktop-1366-conquistas.png`
+- `docs/superpowers/evidence/production-private-journey-copy-6317adb-2026-07-30/mobile-390-objetivos.png`
+- `docs/superpowers/evidence/production-private-journey-copy-6317adb-2026-07-30/mobile-390-desafios.png`
+- `docs/superpowers/evidence/production-private-journey-copy-6317adb-2026-07-30/mobile-390-conquistas.png`
 
 ## Drift / Risk
 - The changed routes keep real APIs and privacy boundaries; no backend behavior was altered.
 - Sensitive modules still require fail-closed treatment: NR-1/Yavix/COPSOQ, Concierge, SIPAT, Desenvolvimento Humano, Canal de Denuncias, Liga/ranking/rewards.
 - Remaining copy audit should continue against NR-1 preview wording and any authenticated route not yet covered by rendered scans.
+- Full-page visual captures with fixed mobile navigation can be misleading; future mobile visual reviews must include the viewport/DOM geometry guard before classifying overlap as a code regression.
 
 ## Next Wave
 - Smallest next step: audit NR-1 collaborator journey and module-hold copy for rendered preview/spec wording, preserving fail-closed behavior.
