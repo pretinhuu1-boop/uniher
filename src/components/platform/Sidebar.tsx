@@ -79,7 +79,7 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
     '/dashboard': ['Visão geral da empresa', 'Todos os indicadores e gráficos', 'Check-in x Check-out'],
     '/dashboard?section=saude-primaria': ['Semáforo da Saúde', 'Indicadores agregados'],
     '/campanhas': ['Campanhas de saúde', 'Conteúdos publicados'],
-    '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas em revisão'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas privadas'],
   },
   admin: {
     '/admin': ['Visão consolidada', 'Indicadores da plataforma'],

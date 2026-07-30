@@ -57,4 +57,16 @@ describe('Collaborator home summary parity', () => {
     expect(within(summary).getByText('de 5')).not.toBeNull();
     expect(summary.textContent).not.toMatch(/\b(?:XP|ranking|pontos?)\b/i);
   });
+
+  it('renders private journey links instead of a legacy gamification review banner', () => {
+    render(<CollaboratorHomePage />);
+
+    expect(screen.getByRole('heading', { name: /Jornada privada/i })).not.toBeNull();
+    expect(screen.getByRole('link', { name: /Abrir objetivos/i }).getAttribute('href')).toBe('/objetivos');
+    expect(screen.getByRole('link', { name: /Abrir desafios/i }).getAttribute('href')).toBe('/desafios');
+    expect(screen.getByRole('link', { name: /Abrir conquistas/i }).getAttribute('href')).toBe('/conquistas');
+    expect(screen.queryByText(/Pontua/i)).toBeNull();
+    expect(screen.queryByText(/classifica/i)).toBeNull();
+    expect(screen.queryByText(/em revis/i)).toBeNull();
+  });
 });

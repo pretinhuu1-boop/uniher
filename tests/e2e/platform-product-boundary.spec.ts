@@ -406,6 +406,36 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-liga-redirect-conquistas.png'), fullPage: true });
   });
 
+  test('collaborator home replaces legacy gamification review with private journey links', async ({ page, context, request, baseURL }) => {
+    assertProductBoundaryHostIsLoopback(baseURL);
+    await authenticatedPage(page, context, request, baseURL!, 'colaboradora');
+
+    const evidenceDir = path.resolve(__dirname, '..', '..', 'docs', 'superpowers', 'evidence', 'collaborator-home-private-journey-local-2026-07-30');
+    fs.mkdirSync(evidenceDir, { recursive: true });
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto('/colaboradora');
+    await expect(page.getByRole('heading', { name: /Jornada privada/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Abrir objetivos/i })).toHaveAttribute('href', '/objetivos');
+    await expect(page.getByRole('link', { name: /Abrir desafios/i })).toHaveAttribute('href', '/desafios');
+    await expect(page.getByRole('link', { name: /Abrir conquistas/i })).toHaveAttribute('href', '/conquistas');
+    await expect(page.locator('body')).not.toContainText(/Pontuacao e classificacao em revisao|Pontua.o e classifica.o em revis.o/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-colaboradora-private-journey.png'), fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/colaboradora');
+    await expect(page.getByRole('heading', { name: /Jornada privada/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Abrir objetivos/i })).toHaveAttribute('href', '/objetivos');
+    await expect(page.getByRole('link', { name: /Abrir desafios/i })).toHaveAttribute('href', '/desafios');
+    await expect(page.getByRole('link', { name: /Abrir conquistas/i })).toHaveAttribute('href', '/conquistas');
+    await expect(page.locator('body')).not.toContainText(/Pontuacao e classificacao em revisao|Pontua.o e classifica.o em revis.o/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-colaboradora-private-journey.png'), fullPage: true });
+  });
+
   test('authenticated navigation hides module shells without approved contracts', async ({ page, context, request, baseURL }) => {
     assertProductBoundaryHostIsLoopback(baseURL);
     const evidenceDir = path.resolve(__dirname, '..', '..', 'docs', 'superpowers', 'evidence', 'shell-navigation-hidden-local-2026-07-30');

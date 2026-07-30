@@ -52,6 +52,14 @@ Authenticated navigation must not lead users into shell/spec pages that have no 
 - unauthenticated users keep auth redirects with the original targets;
 - no Liga product, leaderboard, rewards, points, XP, scoring, group comparison or redemption behavior is introduced.
 
+## Current collaborator private journey copy wave
+
+The collaborator home and manager sidebar still surfaced legacy review/spec copy around gamification. The safe implementation is copy and link cleanup only:
+
+- collaborator home replaces `Pontuação e classificação em revisão` with a `Jornada privada` card linking to `/objetivos`, `/desafios` and `/conquistas`;
+- manager sidebar replaces `Conquistas em revisão` with `Conquistas privadas`;
+- no scoring, ranking, points, XP, rewards, league, badges or comparative behavior is introduced.
+
 ## Remaining authenticated spec inventory
 
 | Surface | Decision |
@@ -65,6 +73,7 @@ Authenticated navigation must not lead users into shell/spec pages that have no 
 | `/liga`, `/liga/gerenciar` | Compatibility redirects; Liga/ranking/rewards product remains HOLD_PRIVACY_PRODUCT |
 | `/desafios/gerenciar` | Compatibility redirect; governed challenge admin remains HOLD |
 | `/historico` | Compatibility redirect; dedicated history product remains HOLD_PRODUCTIZE_HISTORY |
+| `/colaboradora` gamification review banner | Promoted: real private journey links to existing objetivos/desafios/conquistas surfaces |
 
 ## Wave gate
 

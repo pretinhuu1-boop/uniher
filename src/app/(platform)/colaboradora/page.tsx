@@ -17,7 +17,6 @@ import { FeedbackState } from '@/components/ui/FeedbackState';
 import { Button } from '@/components/ui/Button';
 import PageHeader from '@/components/platform/PageHeader';
 import { SummaryBand } from '@/components/platform/SummaryBand';
-import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
 import { getNr1PreviewState, isNr1RuntimeEntitled, type Nr1PreviewState } from '@/lib/nr1/preview-state';
 import type { CompanyModuleNavigationRecord } from '@/types/modules';
 
@@ -366,11 +365,42 @@ export default function CollaboratorHomePage() {
         </ol>
       </section>
 
-      <FeedbackState
-        kind="denied"
-        title="Pontuação e classificação em revisão"
-        description={LEGACY_GAMIFICATION_STATE.message}
-      />
+      <section
+        aria-labelledby="private-journey-title"
+        className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+              <ShieldCheck size={21} strokeWidth={1.7} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--platform-action-strong)]">Sem competição</p>
+              <h2 id="private-journey-title" className="mt-1 text-lg font-semibold text-[var(--platform-ink)]">Jornada privada</h2>
+              <p className="mt-1 max-w-2xl text-sm text-[var(--platform-muted)]">
+                Continue pelos objetivos, desafios voluntários e marcos privados derivados somente de eventos elegíveis.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <Link href="/objetivos" aria-label="Abrir objetivos" className={actionLinkClass}>
+            <ClipboardCheck size={17} strokeWidth={1.8} aria-hidden="true" />
+            Objetivos
+            <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
+          </Link>
+          <Link href="/desafios" aria-label="Abrir desafios" className={actionLinkClass}>
+            <Check size={17} strokeWidth={1.8} aria-hidden="true" />
+            Desafios
+            <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
+          </Link>
+          <Link href="/conquistas" aria-label="Abrir conquistas" className={actionLinkClass}>
+            <LockKeyhole size={17} strokeWidth={1.8} aria-hidden="true" />
+            Marcos privados
+            <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
 
       <DailyLesson />
 

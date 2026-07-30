@@ -269,6 +269,17 @@ describe('Sidebar persisted collaborator capability', () => {
     expect(screen.queryByRole('link', { name: /^Concierge$/i })).toBeNull();
   });
 
+  it('keeps manager motivation navigation copy useful instead of review/spec language', () => {
+    mocks.user.role = 'rh';
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const objectivesLink = queryLinkByHref('/gamificacao-config');
+    expect(objectivesLink?.textContent).toMatch(/Objetivos e Desafios/i);
+    expect(objectivesLink?.textContent).toMatch(/Conquistas privadas/i);
+    expect(objectivesLink?.textContent).not.toMatch(/revis/i);
+  });
+
   it('scopes company module requests by user, tenant and active navigation role', async () => {
     mocks.user.role = 'rh';
     mocks.user.also_collaborator = 1;
