@@ -40,6 +40,7 @@ Current active implementation target:
 - status: PASS after unit canary, typecheck, source scan, landing guard, local desktop/mobile Playwright evidence, VPS deploy and production desktop/mobile render smoke;
 - receipt: `docs/superpowers/audits/2026-07-30-uniher-admin-sidebar-copy-wave.md`;
 - keep the same denylist: public landing, permissions, APIs, database contracts, ranking/rewards/Liga behavior, NR-1/Yavix/COPSOQ, Concierge, Denuncias, SIPAT and Desenvolvimento Humano.
+- follow-up rendered production sweep on commit `4031d32` is PASS: 75 role/routes, 75 PASS, 0 REVIEW, 0 ERROR.
 
 Required matrix columns for ongoing maintenance:
 
@@ -74,6 +75,7 @@ The next implementation wave must be selected from this matrix. If a route has n
 | `/gamificacao-config` copy hardening | Remove internal governance/spec vocabulary from a real RH/Admin surface | Done |
 | Rendered authenticated route sweep | Selected admin sidebar copy leak from production commit `af74ecc` | Done |
 | Admin sidebar `/gamificacao-config` presentation details | Remove `Governanca privada` from rendered admin sidebar | Done |
+| Rendered authenticated route sweep after admin sidebar fix | Confirm no visible review hit remains in the current 75-route matrix | Done |
 | Concierge operations | Operational contract, SLA, data governance | HOLD |
 | Canal de Denuncias intake | Partner/legal/DPO workflow | HOLD |
 | SIPAT operations | Approved source package | HOLD |
@@ -215,3 +217,5 @@ Current evidence on 2026-07-30: `cd tests; npx playwright test --config=playwrig
 3. Open only one small write set per wave and add/update a focused canary before the fix when behavior changes.
 4. Run the gates, capture desktop/mobile evidence, commit explicit files, push, then deploy only a green commit.
 5. Do not close this goal while any authenticated user can still reach a spec/shell instead of a recoverable product or an explicit fail-closed route.
+
+Current production sweep evidence after the admin sidebar fix: `docs/superpowers/evidence/production-authenticated-route-sweep-4031d32-2026-07-30T10-30-11-409Z/summary.json`.

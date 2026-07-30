@@ -75,9 +75,10 @@ This is not final product completion. It is the coordinator map for the next imp
 
 1. `/gamificacao-config` page copy hardening is PASS after `2026-07-30-uniher-gamificacao-config-copy-wave.md`, production deploy and production render smoke on commit `8efcdc3`.
 2. Rendered production route sweep on commit `af74ecc` visited 75 authenticated role/routes and found 22 admin-only `REVIEW` hits from sidebar copy `Governanca privada`; `COPY_FIX` is PASS after `2026-07-30-uniher-admin-sidebar-copy-wave.md`, VPS deploy on commit `eb16d42` and production desktop/mobile render smoke.
-3. Coverage gap: `/onboarding-rh` is a real helper surface but is not currently in `VISUAL_SMOKE_ROUTES`; before any visual PASS for that route, add or run a focused desktop/mobile authenticated capture.
-4. Coverage gap: `/primeiro-acesso` is covered by auth flow E2E but not by the broad visual smoke list. That is acceptable for auth flow correctness, but visual PASS for first-access changes needs dedicated desktop/mobile screenshots.
-5. False-positive rule: `placeholder` attributes on inputs are allowed when they are examples/help text. A finding requires a rendered screen that acts as a substitute for product, not normal form placeholder attributes.
+3. Follow-up rendered production route sweep on commit `4031d32` visited the same 75 authenticated role/routes and is PASS: 75 PASS, 0 REVIEW, 0 ERROR. Evidence: `docs/superpowers/evidence/production-authenticated-route-sweep-4031d32-2026-07-30T10-30-11-409Z/summary.json`.
+4. Coverage gap: `/onboarding-rh` is a real helper surface but is not currently in `VISUAL_SMOKE_ROUTES`; before any visual PASS for that route, add or run a focused desktop/mobile authenticated capture.
+5. Coverage gap: `/primeiro-acesso` is covered by auth flow E2E but not by the broad visual smoke list. That is acceptable for auth flow correctness, but visual PASS for first-access changes needs dedicated desktop/mobile screenshots.
+6. False-positive rule: `placeholder` attributes on inputs are allowed when they are examples/help text. A finding requires a rendered screen that acts as a substitute for product, not normal form placeholder attributes.
 
 ## Commands To Keep As Matrix Gate
 
