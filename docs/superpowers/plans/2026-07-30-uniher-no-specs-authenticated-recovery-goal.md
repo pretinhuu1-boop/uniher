@@ -20,9 +20,21 @@ Continue the authenticated UniHER recovery until screens do not show specs, plac
 
 ## Active Wave
 
-Create and maintain the global authenticated no-spec matrix before the next product edit.
+Use the authenticated no-spec matrix to run the next product edit wave.
 
-Required matrix columns:
+Matrix artifact:
+
+- `docs/superpowers/audits/2026-07-30-uniher-authenticated-no-spec-matrix.md`
+
+Next implementation target:
+
+- `/gamificacao-config` copy hardening.
+- Decision: `COPY_FIX`.
+- Reason: the route is a real RH/Admin education/private journey surface, but the source scan still finds rendered internal governance vocabulary.
+- Boundary: copy-only unless a focused RED/GREEN canary proves a real behavior gap.
+- Denylist: public landing, permissions, APIs, database contracts, ranking/rewards/Liga behavior, NR-1/Yavix/COPSOQ, Concierge, Denuncias, SIPAT and Desenvolvimento Humano.
+
+Required matrix columns for ongoing maintenance:
 
 | Column | Meaning |
 | --- | --- |
@@ -51,7 +63,8 @@ The next implementation wave must be selected from this matrix. If a route has n
 | `/concierge`, `/canal-denuncias`, `/viva-sipat`, `/desenvolvimento-humano`, `/nr1` | Direct-shell compatibility routing/fail-closed | Done |
 | `/avaliacao-nr1` | Fail-closed unless explicit mock runtime is active | Done |
 | `/objetivos`, `/desafios`, `/conquistas`, navigation copy | Internal contract/governance wording removed from real product surfaces | Done |
-| Global authenticated no-spec matrix | Required before the next product edit | Active |
+| Global authenticated no-spec matrix | Required before the next product edit | Done |
+| `/gamificacao-config` copy hardening | Remove internal governance/spec vocabulary from a real RH/Admin surface | Active |
 | Concierge operations | Operational contract, SLA, data governance | HOLD |
 | Canal de Denuncias intake | Partner/legal/DPO workflow | HOLD |
 | SIPAT operations | Approved source package | HOLD |
