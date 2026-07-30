@@ -114,6 +114,8 @@ describe('Paola P3 locked module shells', () => {
     const source = read('src/app/(platform)/avaliacao-nr1/page.tsx');
 
     expect(source).toContain('getNr1RuntimeEntitlementForCurrentRequest');
+    expect(source).toContain("description: 'Avaliacao NR-1 disponivel conforme liberacao autorizada.'");
+    expect(source).not.toContain('runtime autorizado');
     expect(source).toContain("redirect('/nr1')");
     expect(source).toContain("if (!isYavixMock()) redirect('/nr1')");
     expect(source.indexOf('getNr1RuntimeEntitlementForCurrentRequest')).toBeLessThan(source.indexOf('<CopsoqFlow'));

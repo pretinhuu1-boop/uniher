@@ -6,7 +6,7 @@ import { isYavixMock } from '@/lib/yavix/config';
 
 export const metadata: Metadata = {
   title: 'Avaliacao NR-1 - UniHER',
-  description: 'Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.',
+  description: 'Avaliacao NR-1 disponivel conforme liberacao autorizada.',
 };
 
 export const dynamic = 'force-dynamic';
