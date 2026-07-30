@@ -7,10 +7,15 @@ import { createAchievementsRepository } from '@/repositories/achievements.reposi
 import { createParticipationRepository } from '@/repositories/participation.repository';
 import { createParticipationService } from '@/services/participation.service';
 import { createPrivateAchievementsService } from '@/services/private-achievements.service';
+import { listPrivateAchievementCatalog } from '@/lib/achievements/catalog';
 
 const databases: Database.Database[] = [];
 const participationMigrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '056_eligible_participation_ledger.sql');
 const achievementsMigrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '059_private_achievements.sql');
+const foldText = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 
 function createDatabase(): Database.Database {
   const db = new Database(':memory:');
@@ -57,6 +62,12 @@ afterEach(() => {
 });
 
 describe('private achievements wave 8 contract', () => {
+  it('keeps the public achievement catalog copy free of internal containment terms', () => {
+    const catalogCopy = foldText(JSON.stringify(listPrivateAchievementCatalog()));
+
+    expect(catalogCopy).not.toMatch(/pontuacao|ranking|badges?|classificacao|legad[oa]s?|wave/i);
+  });
+
   it('syncs private achievements from non-revoked eligible events only', () => {
     const db = createDatabase();
     participation(db).recordObjectiveStarted({

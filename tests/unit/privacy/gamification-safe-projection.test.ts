@@ -102,6 +102,10 @@ import { GET as getNotificationCount } from '@/app/api/notifications/count/route
 
 const root = process.cwd();
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), 'utf8');
+const foldText = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 const forbiddenKeys = new Set([
   'password_hash', 'points', 'level', 'league', 'streak', 'week_points', 'points_spent', 'xp', 'xp_reward', 'badges', 'user_badges',
   'pointsnextlevel', 'achievementcount', 'levelinfo', 'pointsearned', 'currentleague', 'weekpoints',
@@ -709,6 +713,18 @@ describe('safe authenticated projections', () => {
     ].map(read).join('\n');
     expect(approvedParticipationPages).not.toMatch(/week_points|points_spent|xp_reward|pontos totais|subir de nível|ranking semanal|exibir no ranking/i);
     expect(approvedParticipationPages).not.toMatch(/user_badges|user_leagues|custom_league_members|health_scores/);
+    expect(foldText(approvedParticipationPages)).not.toMatch(/\bwave\s+\d+\b|legad[oa]s?|ranking|badges?|classificacao|pontuacao|liga|semaforo|nr-1/i);
+
+    const dashboardViewModel = read('src/app/(platform)/dashboard/dashboard-view-model.ts');
+    expect(foldText(dashboardViewModel)).not.toMatch(/fonte legada|classificacao de sensibilidade/i);
+
+    const sidebarSource = read('src/components/platform/Sidebar.tsx');
+    const collaboratorStart = sidebarSource.indexOf('collaborator: {');
+    const collaboratorEnd = sidebarSource.indexOf('  manager:', collaboratorStart);
+    const collaboratorNavigationDetails = sidebarSource.slice(collaboratorStart, collaboratorEnd);
+    expect(collaboratorNavigationDetails).not.toBe('');
+    expect(foldText(collaboratorNavigationDetails)).not.toMatch(/sem compara|sem liga|sem ranking/i);
+    expect(foldText(read('src/components/platform/navigation.ts'))).not.toMatch(/sem pontua/i);
 
     const reachablePages = [
       'src/app/(platform)/colaboradora/page.tsx',

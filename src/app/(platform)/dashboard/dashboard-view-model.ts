@@ -75,13 +75,13 @@ export function createDashboardViewModel(
       {
         label: 'Engajamento',
         metric: source.metrics.engagement,
-        detail: 'fonte legada não computável',
+        detail: 'indicador agregado protegido',
         state: 'neutral',
       },
       {
         label: 'Participação em campanha',
         metric: source.metrics.campaignParticipation,
-        detail: 'aguardando classificação de sensibilidade',
+        detail: 'indicador protegido por privacidade',
         state: 'neutral',
       },
     ],

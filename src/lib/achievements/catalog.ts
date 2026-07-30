@@ -10,7 +10,7 @@ const PRIVATE_ACHIEVEMENT_CATALOG = Object.freeze([
   {
     key: 'first-objective-completed',
     title: 'Primeiro objetivo concluido',
-    description: 'Voce concluiu um objetivo pessoal sem pontos ou ranking.',
+    description: 'Voce concluiu um objetivo pessoal com registro privado.',
     requiredEvent: 'objective_completed',
   },
   {
@@ -22,7 +22,7 @@ const PRIVATE_ACHIEVEMENT_CATALOG = Object.freeze([
   {
     key: 'first-challenge-completed',
     title: 'Primeiro desafio concluido',
-    description: 'Voce concluiu um desafio da empresa sem gerar classificacao.',
+    description: 'Voce concluiu um desafio da empresa com registro privado.',
     requiredEvent: 'challenge_completed',
   },
 ] satisfies PrivateAchievementCatalogItem[]);

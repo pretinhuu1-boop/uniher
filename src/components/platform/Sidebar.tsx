@@ -71,9 +71,9 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
   collaborator: {
     '/semaforo': ['Semáforo da Saúde'],
     '/colaboradora': ['Check-in - Como você chega hoje?', 'Check-out - Como você encerra o seu dia?'],
-    '/objetivos': ['Pessoal', 'Auto-iniciado', 'Sem comparação'],
-    '/desafios': ['Voluntário', 'Empresa', 'Sem Liga'],
-    '/conquistas': ['Privado', 'Eventos elegíveis', 'Sem ranking'],
+    '/objetivos': ['Pessoal', 'Auto-iniciado', 'Privado'],
+    '/desafios': ['Voluntário', 'Empresa', 'Educativo'],
+    '/conquistas': ['Privado', 'Eventos elegíveis', 'Jornada pessoal'],
   },
   manager: {
     '/dashboard': ['Visão geral da empresa', 'Todos os indicadores e gráficos', 'Check-in x Check-out'],
@@ -87,7 +87,7 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
     '/dashboard?section=saude-primaria': ['Sem\u00e1foro consolidado', 'Indicadores por empresa'],
     '/dashboard?section=exames': ['Exames em dia', 'Indicadores de preven\u00e7\u00e3o'],
     '/produtos-modulos': ['Controle de m\u00f3dulos contratados', 'Ativa\u00e7\u00e3o de funcionalidades sob gate'],
-    '/gamificacao-config': ['Objetivos', 'Desafios', 'Sem ranking ativo'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Governança privada'],
   },
   personal: {},
 };

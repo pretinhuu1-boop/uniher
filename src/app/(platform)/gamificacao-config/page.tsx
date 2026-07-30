@@ -341,7 +341,7 @@ export default function EducationalLessonsManagerPage() {
     <div className={styles.page}>
       <h1 className={styles.title}>Conteudos educativos</h1>
       <p className={styles.subtitle}>
-        Editor ativo de licoes para RH. Pontuacao, ranking, premios e Liga seguem desativados.
+        Editor ativo de licoes para RH, com publicacao educativa e governanca privada.
       </p>
 
       <div className={styles.sections}>
@@ -357,7 +357,7 @@ export default function EducationalLessonsManagerPage() {
           </p>
 
           <span className={styles.lessonWarning}>
-            Controle competitivo continua fora desta tela: nenhum campo de pontuacao, classificacao, loja, premio ou Liga e enviado.
+            A publicacao usa somente campos editoriais aprovados para conteudo educativo.
           </span>
 
           {message && (

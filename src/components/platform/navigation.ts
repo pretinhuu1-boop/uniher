@@ -85,7 +85,7 @@ const NAVIGATION = {
           href: '/gamificacao-config',
           label: 'Objetivos e Desafios',
           icon: 'conquistas',
-          description: 'Governança de objetivos, desafios e conquistas sem ranking ou liga ativa',
+          description: 'Governanca privada de objetivos, desafios e conquistas',
         },
         {
           href: '/produtos-modulos',
@@ -163,7 +163,7 @@ const NAVIGATION = {
           href: '/gamificacao-config',
           label: 'Objetivos e Desafios',
           icon: 'conquistas',
-          description: 'Objetivos, desafios e conquistas em governança, sem ranking ou liga ativa',
+          description: 'Objetivos, desafios e conquistas em governanca privada',
         },
       ],
     },
@@ -265,7 +265,7 @@ const NAVIGATION = {
           href: '/desafios',
           label: 'Desafios',
           icon: 'desafios',
-          description: 'Desafios voluntários da empresa sem pontuação competitiva',
+          description: 'Desafios voluntarios e educativos da empresa',
         },
         {
           href: '/conquistas',
@@ -309,7 +309,7 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   achievements: {
     href: '/conquistas',
     icon: 'conquistas',
-    description: 'Objetivos, desafios e conquistas sem ranking ou liga ativa',
+    description: 'Objetivos, desafios e conquistas privadas',
   },
   nr1: {
     href: '/avaliacao-nr1',

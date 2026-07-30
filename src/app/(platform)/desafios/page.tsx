@@ -169,13 +169,13 @@ export default function DesafiosPage() {
             </span>
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase text-[var(--platform-action-strong)]">
-                Wave 7 ativa
+                Participacao voluntaria
               </p>
               <h2 id="challenge-privacy-title" className="mt-2 text-xl font-semibold text-[var(--platform-ink)]">
-                Convite voluntario, sem ranking
+                Convite educativo da empresa
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">
-                Esta tela usa o dominio novo de desafios da empresa. O progresso fica no fluxo da propria colaboradora e nao reativa pontos, badges ou classificacao.
+                Esta tela usa desafios aprovados da empresa. O progresso fica no fluxo da propria colaboradora e pode ser encerrado a qualquer momento.
               </p>
             </div>
           </div>
@@ -188,8 +188,8 @@ export default function DesafiosPage() {
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--platform-muted)]">
             <li className="flex gap-3"><DoorOpen size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Entrar e sair e sempre voluntario.</span></li>
-            <li className="flex gap-3"><UsersRound size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>RH nao ve nomes nem progresso individual nesta wave.</span></li>
-            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Sem Semaforo, NR-1, agenda, exames, pontos ou Liga.</span></li>
+            <li className="flex gap-3"><UsersRound size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>A participacao individual fica restrita a colaboradora e aos recibos de privacidade.</span></li>
+            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Somente acoes educativas e gerais aprovadas entram neste fluxo.</span></li>
           </ul>
         </div>
       </section>
@@ -284,7 +284,7 @@ export default function DesafiosPage() {
             Catalogo aprovado
           </h2>
           <p className="mt-1 text-sm text-[var(--platform-muted)]">
-            Opcoes neutras, sem fonte sensivel, sem recompensas e sem comparacao.
+            Opcoes neutras e aprovadas para a rotina da empresa.
           </p>
         </div>
         <div className="grid gap-4 p-5 sm:p-6 lg:grid-cols-3">

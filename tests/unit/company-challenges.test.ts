@@ -11,6 +11,10 @@ import { createCompanyChallengesService } from '@/services/company-challenges.se
 const databases: Database.Database[] = [];
 const participationMigrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '056_eligible_participation_ledger.sql');
 const challengesMigrationPath = path.join(process.cwd(), 'src', 'lib', 'db', 'migrations', '058_company_challenges_v2.sql');
+const foldText = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 
 function createDatabase(): Database.Database {
   const db = new Database(':memory:');
@@ -68,6 +72,12 @@ afterEach(() => {
 });
 
 describe('company challenges wave 7 contract', () => {
+  it('keeps the public challenge catalog copy free of internal containment terms', () => {
+    const catalogCopy = foldText(JSON.stringify(listCompanyChallengeCatalog()));
+
+    expect(catalogCopy).not.toMatch(/pontuacao|ranking|badges?|classificacao|legad[oa]s?|wave/i);
+  });
+
   it('joins approved catalog challenges and writes eligible participation events only', () => {
     const db = createDatabase();
     const challenges = service(db);

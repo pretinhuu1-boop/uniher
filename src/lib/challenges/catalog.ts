@@ -4,7 +4,7 @@ const COMPANY_CHALLENGE_CATALOG = Object.freeze([
   {
     key: 'learning-sprint',
     title: 'Sprint de aprendizagem',
-    description: 'Concluir conteudos educativos selecionados pela empresa, sem pontuacao ou ranking.',
+    description: 'Concluir conteudos educativos selecionados pela empresa para apoiar a rotina de aprendizagem.',
     mode: 'content_items',
     target: 3,
     startsAt: '2026-01-01T00:00:00.000Z',
