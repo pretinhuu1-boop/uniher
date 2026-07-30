@@ -38,4 +38,10 @@ describe('gamification product copy boundary', () => {
     expect(compatibilitySources).not.toMatch(/em revis|LEGACY_GAMIFICATION_STATE|ContainedSurfacePreview|FeedbackState/);
     expect(compatibilitySources).not.toMatch(/loja de recompensas|recompensas dispon|resgatar|comprar recompensa|ranking geral|leaderboard|ganh[ae] pontos|xp ganho/i);
   });
+
+  it('keeps authenticated navigation copy free of visible spec-like wording', () => {
+    const navigationSource = read('src/components/platform/navigation.ts');
+
+    expect(navigationSource).not.toMatch(/liberacao especifica|placeholder|mock|wireframe|contrato real|em implementacao/i);
+  });
 });

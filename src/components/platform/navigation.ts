@@ -329,7 +329,7 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   denunciation: {
     href: '/canal-denuncias',
     icon: 'config',
-    description: 'Canal parceiro para denuncias quando houver liberacao especifica',
+    description: 'Canal parceiro para denuncias quando houver liberacao aprovada',
   },
 };
 
