@@ -79,7 +79,7 @@ const EXPECTED_NAVIGATION_CONTRACT = {
     {
       label: 'Principal',
       items: [
-        ['/semaforo', 'Sa\u00fade Prim\u00e1ria'],
+        ['/semaforo', 'Sem\u00e1foro da Sa\u00fade'],
         ['/colaboradora', 'Meu Bem-Estar'],
         ['/agenda', 'Minha Agenda de Exames'],
         ['/comunidade', 'Educa\u00e7\u00e3o'],
@@ -228,7 +228,7 @@ describe('platform navigation', () => {
     expect(routes).not.toContain('/concierge');
     expect(routes.filter((route) => route === '/campanhas')).toHaveLength(1);
     expect(routes.filter((route) => route === '/conquistas')).toHaveLength(1);
-    expect(byLabel['Saúde Primária'].badgeLabel).toBeUndefined();
+    expect(byLabel['Semáforo da Saúde'].badgeLabel).toBeUndefined();
     expect(byLabel.Educação.badgeLabel).toBeUndefined();
     expect(byLabel.Conquistas.badgeLabel).toBeUndefined();
   });

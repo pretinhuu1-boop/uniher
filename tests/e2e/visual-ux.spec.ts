@@ -836,6 +836,43 @@ test.describe('Admin Empresa — Visual UX', () => {
     await expect(page.locator('text=Semáforo').first()).toBeVisible({ timeout: 10000 });
   });
 
+  test('Semáforo expõe quiz, resultado e rota de Concierge no menu da colaboradora', async () => {
+    await openRhDashboard(page);
+    await page.getByRole('button', { name: 'Colaboradora', exact: true }).click();
+    await expect(page).toHaveURL(/\/colaboradora$/);
+
+    await page.goto('/semaforo');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('link', { name: 'Semáforo da Saúde', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'Resultado personalizado e rota de apoio', exact: true })).toBeVisible();
+    await expect(page.getByText('Quiz do Semaforo', { exact: true })).toBeVisible();
+
+    const retake = page.getByRole('button', { name: /Refazer quiz/i });
+    if (await retake.count()) {
+      await retake.click();
+    } else {
+      await page.getByRole('button', { name: /Comecar quiz do Semaforo/i }).click();
+    }
+    for (const value of [25, 25, 0, 25, 25, 25]) {
+      const slider = page.locator('input[type="range"]').first();
+      await slider.focus();
+      await page.keyboard.press('Home');
+      for (let current = 0; current < value; current += 25) {
+        await page.keyboard.press('ArrowRight');
+      }
+
+      const nextButton = page.getByRole('button', { name: /Proxima pergunta|Ver resultado/i });
+      await nextButton.click();
+    }
+
+    await expect(page.getByRole('heading', { name: 'Guardiã da Estabilidade', exact: true })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Semaforo por dimensao', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Solicitar Concierge UniHER/i })).toBeVisible();
+
+    await page.screenshot({ path: evidencePath('wave3-semaforo-quiz-menu-colaboradora-desktop.png'), fullPage: true });
+  });
+
   test('Troca para Colaboradora funciona', async () => {
     await openRhDashboard(page);
     const colabBtn = page.getByRole('button', { name: 'Colaboradora', exact: true });

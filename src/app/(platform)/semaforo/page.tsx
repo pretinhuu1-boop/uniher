@@ -14,6 +14,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import PageHeader from '@/components/platform/PageHeader';
+import AuthenticatedSemaforoQuiz from '@/components/quiz/AuthenticatedSemaforoQuiz';
 import { FeedbackState } from '@/components/ui/FeedbackState';
 import { cn } from '@/lib/utils';
 
@@ -220,8 +221,10 @@ export default function SemaforoPage() {
       <PageHeader
         context="Saúde primária"
         title="Semáforo da Saúde"
-        description="Jornada privada de autocuidado, não diagnóstica e sem acesso individual por empresa."
+        description="Quiz de perfil, resultado por dimensão e auto-relato privado, sem acesso individual por empresa."
       />
+
+      <AuthenticatedSemaforoQuiz />
 
       <section className="overflow-hidden rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">

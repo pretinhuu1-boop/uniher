@@ -69,12 +69,18 @@ export function calculateArchetype(answers: number[]): ArchetypeResult {
  * Gera o Health Score inicial baseado nas dimensões do quiz.
  */
 export function calculateInitialHealthScore(answers: number[]) {
+  const valueAt = (index: number, fallback: number) => (
+    Number.isFinite(answers[index]) ? answers[index] : fallback
+  );
+  const energy = valueAt(4, 65);
+  const mental = valueAt(5, 75);
+
   return [
-    { dimension: 'Prevenção', score: answers[2] || 70 },
-    { dimension: 'Sono', score: answers[3] || 60 },
-    { dimension: 'Energia', score: answers[4] || 65 },
-    { dimension: 'Saúde Mental', score: answers[5] || 75 },
-    { dimension: 'Hábitos', score: (answers[4] + answers[5]) / 2 },
+    { dimension: 'Prevenção', score: valueAt(2, 70) },
+    { dimension: 'Sono', score: valueAt(3, 60) },
+    { dimension: 'Energia', score: energy },
+    { dimension: 'Saúde Mental', score: mental },
+    { dimension: 'Hábitos', score: (energy + mental) / 2 },
     { dimension: 'Engajamento', score: 100 }
   ];
 }

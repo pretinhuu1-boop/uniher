@@ -233,9 +233,9 @@ const NAVIGATION = {
       items: [
         {
           href: '/semaforo',
-          label: 'Saúde Primária',
+          label: 'Semáforo da Saúde',
           icon: 'semaforo',
-          description: 'Semáforo da Saúde',
+          description: 'Quiz de perfil, resultado por dimensão e sinais privados',
         },
         {
           href: '/colaboradora',
