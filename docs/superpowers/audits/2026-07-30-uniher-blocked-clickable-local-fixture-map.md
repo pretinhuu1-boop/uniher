@@ -48,8 +48,8 @@ The largest repeated groups are global logo/sidebar/session controls, collaborat
 
 Start with the highest-confidence local fixture batch:
 
-1. Global shell/session controls: logo/home button and logout/menu buttons across profiles.
-2. Disabled controls and read-only-looking filters: assert state or reclassify.
+1. Global shell/session controls: logo/home button and logout/menu buttons across profiles. Completed in `docs/superpowers/audits/2026-07-30-uniher-local-clickable-fixture-shell-session.md`.
+2. Disabled controls and read-only-looking filters: initial fixture lane completed with 20 PASS / 5 REVIEW / 0 FAIL; the 5 REVIEW items need seed or focused route-state follow-up.
 3. RH/Admin stateful/mutation controls: invite/edit/export/new content/new lesson/new company/new user.
 4. Collaborator wellbeing controls: check-in/check-out, mood buttons, true/false and register-reading controls.
 

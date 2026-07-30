@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-07-30T13:42:46.708Z",
+  "source": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\blocked-clickable-local-fixture-map-ea64600-2026-07-30\\blocked-controls.json",
+  "scope": "Local fixture validation for global home, session/logout and disabled clickable controls only.",
+  "total": 177,
+  "pass": 172,
+  "review": 5,
+  "fail": 0,
+  "byLane": {
+    "home": {
+      "total": 76,
+      "pass": 76,
+      "review": 0,
+      "fail": 0
+    },
+    "session": {
+      "total": 76,
+      "pass": 76,
+      "review": 0,
+      "fail": 0
+    },
+    "disabled": {
+      "total": 25,
+      "pass": 20,
+      "review": 5,
+      "fail": 0
+    }
+  },
+  "reviewItems": [
+    {
+      "lane": "disabled",
+      "role": "colaboradora",
+      "route": "/campanhas",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "lideranca",
+      "route": "/campanhas",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "lideranca",
+      "route": "/desafios/gerenciar",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "lideranca",
+      "route": "/liga",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "lideranca",
+      "route": "/liga/gerenciar",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    }
+  ],
+  "failures": []
+}
