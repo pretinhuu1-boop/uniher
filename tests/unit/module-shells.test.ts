@@ -127,6 +127,9 @@ describe('Paola P3 locked module shells', () => {
 
     expect(source).toContain("useSWR<CompanyModulesResponse>('/api/company/modules'");
     expect(source).toContain('isNr1RuntimeEntitled(moduleData?.modules)');
+    expect(source).toContain("const showNr1JourneyRow = nr1PreviewState === 'preview_available'");
+    expect(source).toContain('{showNr1JourneyRow && <Nr1JourneyRow step={3} />}');
+    expect(source).not.toContain('Prévia indisponível');
     expect(source).not.toContain('NEXT_PUBLIC_UNIHER_NR1_ENTITLEMENT');
   });
 

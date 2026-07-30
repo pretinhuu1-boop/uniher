@@ -85,6 +85,7 @@ Direct module URLs for products without approved runtime contracts were still sh
 - unauthenticated users keep the auth redirect with the original target;
 - users without explicit NR-1 runtime entitlement continue to `/nr1`, which is already compatibility-routed by role;
 - users with entitlement but without the explicit Yavix mock runtime also return to `/nr1`;
+- collaborator home hides the NR-1 journey row unless the controlled preview is actually available;
 - only explicitly mocked dev/test runtime can render `CopsoqFlow`;
 - no production COPSOQ, Yavix integration, laudo, scoring, GRO/PGR or technical unavailable shell is introduced.
 
@@ -99,6 +100,7 @@ Direct module URLs for products without approved runtime contracts were still sh
 | `/desenvolvimento-humano` | Compatibility redirect; approved content/trail contract remains HOLD |
 | `/nr1` | Compatibility redirect; real Yavix/COPSOQ contract intake remains HOLD |
 | `/avaliacao-nr1` | Compatibility redirect unless explicit mock runtime is active; production NR-1/Yavix remains HOLD |
+| `/colaboradora` NR-1 preview card | Hidden unless controlled NR-1 preview is actually available |
 | `/liga`, `/liga/gerenciar` | Compatibility redirects; Liga/ranking/rewards product remains HOLD_PRIVACY_PRODUCT |
 | `/desafios/gerenciar` | Compatibility redirect; governed challenge admin remains HOLD |
 | `/historico` | Compatibility redirect; dedicated history product remains HOLD_PRODUCTIZE_HISTORY |
