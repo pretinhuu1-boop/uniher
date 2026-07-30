@@ -74,6 +74,7 @@ const VISUAL_SMOKE_ROUTES: readonly VisualSmokeRoute[] = [
   { role: 'rh', name: 'rh-departamentos', route: '/departamentos' },
   { role: 'rh', name: 'rh-convites', route: '/convites' },
   { role: 'rh', name: 'rh-campanhas', route: '/campanhas' },
+  { role: 'rh', name: 'rh-gestao-editorial', route: '/comunidade/gerenciar' },
   { role: 'rh', name: 'rh-company-profile', route: '/company-profile' },
   { role: 'rh', name: 'rh-notificacoes', route: '/notificacoes' },
   { role: 'rh', name: 'rh-saude-primaria', route: '/dashboard?section=saude-primaria' },

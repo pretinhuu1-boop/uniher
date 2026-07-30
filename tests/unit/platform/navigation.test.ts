@@ -46,6 +46,7 @@ const EXPECTED_NAVIGATION_CONTRACT = {
       items: [
         ['/dashboard', 'Dashboard'],
         ['/dashboard?section=saude-primaria', 'Sa\u00fade Prim\u00e1ria'],
+        ['/comunidade/gerenciar', 'Gest\u00e3o editorial'],
         ['/campanhas', 'Educa\u00e7\u00e3o'],
         ['/gamificacao-config', 'Objetivos e Desafios'],
       ],
@@ -142,7 +143,7 @@ describe('platform navigation', () => {
     expect(navigationContract(role)).toEqual(EXPECTED_NAVIGATION_CONTRACT[role]);
   });
 
-  it('regroups existing Paola surfaces without adding base navigation routes', () => {
+  it('regroups existing Paola surfaces and exposes safe editorial management to RH', () => {
     const routesFor = (role: UserRole) => getNavigationForRole(role)
       .flatMap((group) => group.items.map((item) => item.href));
     const groupLabelsFor = (role: UserRole) => getNavigationForRole(role)
@@ -151,6 +152,7 @@ describe('platform navigation', () => {
     expect(routesFor('rh')).toEqual([
       '/dashboard',
       '/dashboard?section=saude-primaria',
+      '/comunidade/gerenciar',
       '/campanhas',
       '/gamificacao-config',
       '/company-profile',
@@ -341,7 +343,7 @@ describe('platform navigation', () => {
     expect(routesFor('colaboradora')).toContain('/comunidade');
     expect(routesFor('colaboradora')).not.toContain('/comunidade/gerenciar');
     expect(routesFor('rh')).toContain('/campanhas');
-    expect(routesFor('rh')).not.toContain('/comunidade/gerenciar');
+    expect(routesFor('rh')).toContain('/comunidade/gerenciar');
     expect(routesFor('rh')).not.toContain('/comunidade');
     expect(routesFor('admin')).toContain('/comunidade/gerenciar');
     expect(routesFor('admin')).not.toContain('/comunidade');

@@ -154,6 +154,12 @@ const NAVIGATION = {
           description: 'Semáforo da saúde e Concierge sob gates clínicos e contratuais',
         },
         {
+          href: '/comunidade/gerenciar',
+          label: 'Gestão editorial',
+          icon: 'community',
+          description: 'Criação, revisão e publicação de conteúdos da comunidade',
+        },
+        {
           href: '/campanhas',
           label: 'Educação',
           icon: 'campanhas',
