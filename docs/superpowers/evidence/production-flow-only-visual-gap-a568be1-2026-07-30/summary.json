@@ -1,0 +1,51 @@
+{
+  "baseURL": "https://www.uniher.com.br",
+  "commit": "a568be1",
+  "generatedAt": "2026-07-30T10:36:50.488Z",
+  "total": 4,
+  "pass": 4,
+  "review": 0,
+  "error": 0,
+  "checks": [
+    {
+      "role": "rh",
+      "route": "/onboarding-rh",
+      "name": "rh-onboarding",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "finalUrl": "/onboarding-rh",
+      "overflow": false,
+      "screenshot": "desktop-1366-rh-onboarding.png"
+    },
+    {
+      "role": "rh",
+      "route": "/onboarding-rh",
+      "name": "rh-onboarding",
+      "viewport": "mobile-390",
+      "status": "PASS",
+      "finalUrl": "/onboarding-rh",
+      "overflow": false,
+      "screenshot": "mobile-390-rh-onboarding.png"
+    },
+    {
+      "role": "admin",
+      "route": "/primeiro-acesso",
+      "name": "admin-primeiro-acesso",
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "finalUrl": "/primeiro-acesso",
+      "overflow": false,
+      "screenshot": "desktop-1366-admin-primeiro-acesso.png"
+    },
+    {
+      "role": "admin",
+      "route": "/primeiro-acesso",
+      "name": "admin-primeiro-acesso",
+      "viewport": "mobile-390",
+      "status": "PASS",
+      "finalUrl": "/primeiro-acesso",
+      "overflow": false,
+      "screenshot": "mobile-390-admin-primeiro-acesso.png"
+    }
+  ]
+}

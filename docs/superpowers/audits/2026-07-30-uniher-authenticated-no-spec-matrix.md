@@ -68,17 +68,16 @@ This is not final product completion. It is the coordinator map for the next imp
 | `/convites` | rh | PASS_REAL_PRODUCT | Invitation management | `spec`, `placeholder screen`, unsafe open invite bypass | safe existing invite flow | `visual-ux`: rh-convites; invite tests |
 | `/notificacoes` | rh, colaboradora | PASS_REAL_PRODUCT | Notifications/alerts surface | `spec`, `placeholder screen`, raw sensitive health detail | safe existing notifications | `visual-ux`: rh-notificacoes, colab-notificacoes |
 | `/configuracoes` | all authenticated | PASS_REAL_PRODUCT | Profile/configuration page | `spec`, `placeholder screen`, role escalation claims | safe existing profile settings | `visual-ux`: colab-configuracoes; auth/profile tests |
-| `/onboarding-rh` | rh, admin | PASS_REAL_PRODUCT | RH onboarding checklist using `/api/rh/onboarding-status` | `spec`, `placeholder screen`, fake completion claims | safe existing onboarding helper | source reviewed; needs next visual inclusion |
-| `/primeiro-acesso` | all authenticated first access | PASS_REAL_PRODUCT | First-access password/tour/welcome flow | `spec`, `placeholder screen`, unsafe redirect claims | approved auth onboarding | `auth-redirect` E2E |
+| `/onboarding-rh` | rh, admin | PASS_REAL_PRODUCT | RH onboarding checklist using `/api/rh/onboarding-status` | `spec`, `placeholder screen`, fake completion claims | safe existing onboarding helper | `2026-07-30-uniher-flow-only-visual-gap-wave.md`; `visual-ux`: rh-onboarding |
+| `/primeiro-acesso` | all authenticated first access | PASS_REAL_PRODUCT | First-access password/tour/welcome flow | `spec`, `placeholder screen`, unsafe redirect claims | approved auth onboarding | `auth-redirect` E2E; `2026-07-30-uniher-flow-only-visual-gap-wave.md`; `visual-ux`: admin-primeiro-acesso |
 
 ## Immediate Findings
 
 1. `/gamificacao-config` page copy hardening is PASS after `2026-07-30-uniher-gamificacao-config-copy-wave.md`, production deploy and production render smoke on commit `8efcdc3`.
 2. Rendered production route sweep on commit `af74ecc` visited 75 authenticated role/routes and found 22 admin-only `REVIEW` hits from sidebar copy `Governanca privada`; `COPY_FIX` is PASS after `2026-07-30-uniher-admin-sidebar-copy-wave.md`, VPS deploy on commit `eb16d42` and production desktop/mobile render smoke.
 3. Follow-up rendered production route sweep on commit `4031d32` visited the same 75 authenticated role/routes and is PASS: 75 PASS, 0 REVIEW, 0 ERROR. Evidence: `docs/superpowers/evidence/production-authenticated-route-sweep-4031d32-2026-07-30T10-30-11-409Z/summary.json`.
-4. Coverage gap: `/onboarding-rh` is a real helper surface but is not currently in `VISUAL_SMOKE_ROUTES`; before any visual PASS for that route, add or run a focused desktop/mobile authenticated capture.
-5. Coverage gap: `/primeiro-acesso` is covered by auth flow E2E but not by the broad visual smoke list. That is acceptable for auth flow correctness, but visual PASS for first-access changes needs dedicated desktop/mobile screenshots.
-6. False-positive rule: `placeholder` attributes on inputs are allowed when they are examples/help text. A finding requires a rendered screen that acts as a substitute for product, not normal form placeholder attributes.
+4. Flow-only visual coverage gap is PASS after `2026-07-30-uniher-flow-only-visual-gap-wave.md`: `/onboarding-rh` and `/primeiro-acesso` are now in `VISUAL_SMOKE_ROUTES`, local matrix result is 204 PASS / 0 FAIL, and production focused desktop/mobile captures are 4 PASS / 0 REVIEW / 0 ERROR.
+5. False-positive rule: `placeholder` attributes on inputs are allowed when they are examples/help text. A finding requires a rendered screen that acts as a substitute for product, not normal form placeholder attributes.
 
 ## Commands To Keep As Matrix Gate
 

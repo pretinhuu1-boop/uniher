@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-07-30T08:16:06.109Z",
+  "generatedAt": "2026-07-30T10:43:23.720Z",
   "counts": {
-    "total": 196,
-    "pass": 196,
+    "total": 204,
+    "pass": 204,
     "fail": 0
   },
   "viewports": [
@@ -18,7 +18,6 @@
       "route": "/admin",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-visao-geral.png",
       "issues": []
     },
     {
@@ -27,7 +26,6 @@
       "route": "/admin?tab=empresas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-empresas.png",
       "issues": []
     },
     {
@@ -36,7 +34,6 @@
       "route": "/admin?tab=usuarios",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-usuarios.png",
       "issues": []
     },
     {
@@ -45,7 +42,6 @@
       "route": "/admin?tab=admin",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-master.png",
       "issues": []
     },
     {
@@ -54,7 +50,6 @@
       "route": "/admin?tab=sistema",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-sistema.png",
       "issues": []
     },
     {
@@ -63,7 +58,6 @@
       "route": "/produtos-modulos",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-produtos-modulos.png",
       "issues": []
     },
     {
@@ -72,7 +66,6 @@
       "route": "/analytics-emails",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-relatorios.png",
       "issues": []
     },
     {
@@ -81,7 +74,14 @@
       "route": "/dashboard?section=saude-primaria",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-primeiro-acesso",
+      "route": "/primeiro-acesso",
+      "viewport": "mobile-375",
+      "status": "PASS",
       "issues": []
     },
     {
@@ -91,7 +91,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-concierge.png",
       "issues": []
     },
     {
@@ -100,7 +99,6 @@
       "route": "/dashboard?section=exames",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-historico.png",
       "issues": []
     },
     {
@@ -109,7 +107,6 @@
       "route": "/comunidade/gerenciar",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-educacao.png",
       "issues": []
     },
     {
@@ -118,7 +115,6 @@
       "route": "/gamificacao-config",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-gamificacao.png",
       "issues": []
     },
     {
@@ -128,7 +124,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-viva-sipat.png",
       "issues": []
     },
     {
@@ -138,7 +133,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -148,7 +142,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-admin-admin-canal-denuncias.png",
       "issues": []
     },
     {
@@ -157,7 +150,6 @@
       "route": "/dashboard",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-dashboard.png",
       "issues": []
     },
     {
@@ -166,7 +158,6 @@
       "route": "/colaboradoras-gestao",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-colaboradoras.png",
       "issues": []
     },
     {
@@ -175,7 +166,6 @@
       "route": "/departamentos",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-departamentos.png",
       "issues": []
     },
     {
@@ -184,7 +174,6 @@
       "route": "/convites",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-convites.png",
       "issues": []
     },
     {
@@ -193,7 +182,6 @@
       "route": "/campanhas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-campanhas.png",
       "issues": []
     },
     {
@@ -202,7 +190,6 @@
       "route": "/comunidade/gerenciar",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-gestao-editorial.png",
       "issues": []
     },
     {
@@ -211,7 +198,6 @@
       "route": "/company-profile",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-company-profile.png",
       "issues": []
     },
     {
@@ -220,7 +206,14 @@
       "route": "/notificacoes",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-onboarding",
+      "route": "/onboarding-rh",
+      "viewport": "mobile-375",
+      "status": "PASS",
       "issues": []
     },
     {
@@ -229,7 +222,6 @@
       "route": "/dashboard?section=saude-primaria",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-saude-primaria.png",
       "issues": []
     },
     {
@@ -238,7 +230,6 @@
       "route": "/gamificacao-config",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-gamificacao.png",
       "issues": []
     },
     {
@@ -248,7 +239,6 @@
       "expectedPath": "/gamificacao-config",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-desafios-gerenciar.png",
       "issues": []
     },
     {
@@ -258,7 +248,6 @@
       "expectedPath": "/gamificacao-config",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-liga-gerenciar.png",
       "issues": []
     },
     {
@@ -268,7 +257,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-nr1.png",
       "issues": []
     },
     {
@@ -278,7 +266,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-viva-sipat.png",
       "issues": []
     },
     {
@@ -288,7 +275,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -298,7 +284,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-rh-rh-canal-denuncias.png",
       "issues": []
     },
     {
@@ -307,7 +292,6 @@
       "route": "/dashboard",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-lideranca-lideranca-dashboard.png",
       "issues": []
     },
     {
@@ -316,7 +300,6 @@
       "route": "/campanhas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-lideranca-lideranca-campanhas.png",
       "issues": []
     },
     {
@@ -325,7 +308,6 @@
       "route": "/colaboradora",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-home.png",
       "issues": []
     },
     {
@@ -334,7 +316,6 @@
       "route": "/semaforo",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-semaforo.png",
       "issues": []
     },
     {
@@ -343,7 +324,6 @@
       "route": "/agenda",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-agenda.png",
       "issues": []
     },
     {
@@ -352,7 +332,6 @@
       "route": "/comunidade",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-comunidade.png",
       "issues": []
     },
     {
@@ -361,7 +340,6 @@
       "route": "/conquistas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-conquistas.png",
       "issues": []
     },
     {
@@ -370,7 +348,6 @@
       "route": "/campanhas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-campanhas.png",
       "issues": []
     },
     {
@@ -379,7 +356,6 @@
       "route": "/notificacoes",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-notificacoes.png",
       "issues": []
     },
     {
@@ -388,7 +364,6 @@
       "route": "/configuracoes",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-configuracoes.png",
       "issues": []
     },
     {
@@ -397,7 +372,6 @@
       "route": "/objetivos",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-objetivos.png",
       "issues": []
     },
     {
@@ -406,7 +380,6 @@
       "route": "/desafios",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-desafios.png",
       "issues": []
     },
     {
@@ -416,7 +389,6 @@
       "expectedPath": "/conquistas",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-liga.png",
       "issues": []
     },
     {
@@ -426,7 +398,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-nr1-redirect.png",
       "issues": []
     },
     {
@@ -436,7 +407,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-avaliacao-nr1.png",
       "issues": []
     },
     {
@@ -446,7 +416,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-viva-sipat.png",
       "issues": []
     },
     {
@@ -456,7 +425,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -466,7 +434,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "mobile-375",
       "status": "PASS",
-      "screenshot": "mobile-375-colaboradora-colab-canal-denuncias.png",
       "issues": []
     },
     {
@@ -475,7 +442,6 @@
       "route": "/admin",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-visao-geral.png",
       "issues": []
     },
     {
@@ -484,7 +450,6 @@
       "route": "/admin?tab=empresas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-empresas.png",
       "issues": []
     },
     {
@@ -493,7 +458,6 @@
       "route": "/admin?tab=usuarios",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-usuarios.png",
       "issues": []
     },
     {
@@ -502,7 +466,6 @@
       "route": "/admin?tab=admin",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-master.png",
       "issues": []
     },
     {
@@ -511,7 +474,6 @@
       "route": "/admin?tab=sistema",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-sistema.png",
       "issues": []
     },
     {
@@ -520,7 +482,6 @@
       "route": "/produtos-modulos",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-produtos-modulos.png",
       "issues": []
     },
     {
@@ -529,7 +490,6 @@
       "route": "/analytics-emails",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-relatorios.png",
       "issues": []
     },
     {
@@ -538,7 +498,14 @@
       "route": "/dashboard?section=saude-primaria",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-primeiro-acesso",
+      "route": "/primeiro-acesso",
+      "viewport": "tablet-768",
+      "status": "PASS",
       "issues": []
     },
     {
@@ -548,7 +515,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-concierge.png",
       "issues": []
     },
     {
@@ -557,7 +523,6 @@
       "route": "/dashboard?section=exames",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-historico.png",
       "issues": []
     },
     {
@@ -566,7 +531,6 @@
       "route": "/comunidade/gerenciar",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-educacao.png",
       "issues": []
     },
     {
@@ -575,7 +539,6 @@
       "route": "/gamificacao-config",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-gamificacao.png",
       "issues": []
     },
     {
@@ -585,7 +548,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-viva-sipat.png",
       "issues": []
     },
     {
@@ -595,7 +557,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -605,7 +566,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-admin-admin-canal-denuncias.png",
       "issues": []
     },
     {
@@ -614,7 +574,6 @@
       "route": "/dashboard",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-dashboard.png",
       "issues": []
     },
     {
@@ -623,7 +582,6 @@
       "route": "/colaboradoras-gestao",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-colaboradoras.png",
       "issues": []
     },
     {
@@ -632,7 +590,6 @@
       "route": "/departamentos",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-departamentos.png",
       "issues": []
     },
     {
@@ -641,7 +598,6 @@
       "route": "/convites",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-convites.png",
       "issues": []
     },
     {
@@ -650,7 +606,6 @@
       "route": "/campanhas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-campanhas.png",
       "issues": []
     },
     {
@@ -659,7 +614,6 @@
       "route": "/comunidade/gerenciar",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-gestao-editorial.png",
       "issues": []
     },
     {
@@ -668,7 +622,6 @@
       "route": "/company-profile",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-company-profile.png",
       "issues": []
     },
     {
@@ -677,7 +630,14 @@
       "route": "/notificacoes",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-onboarding",
+      "route": "/onboarding-rh",
+      "viewport": "tablet-768",
+      "status": "PASS",
       "issues": []
     },
     {
@@ -686,7 +646,6 @@
       "route": "/dashboard?section=saude-primaria",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-saude-primaria.png",
       "issues": []
     },
     {
@@ -695,7 +654,6 @@
       "route": "/gamificacao-config",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-gamificacao.png",
       "issues": []
     },
     {
@@ -705,7 +663,6 @@
       "expectedPath": "/gamificacao-config",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-desafios-gerenciar.png",
       "issues": []
     },
     {
@@ -715,7 +672,6 @@
       "expectedPath": "/gamificacao-config",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-liga-gerenciar.png",
       "issues": []
     },
     {
@@ -725,7 +681,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-nr1.png",
       "issues": []
     },
     {
@@ -735,7 +690,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-viva-sipat.png",
       "issues": []
     },
     {
@@ -745,7 +699,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -755,7 +708,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-rh-rh-canal-denuncias.png",
       "issues": []
     },
     {
@@ -764,7 +716,6 @@
       "route": "/dashboard",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-lideranca-lideranca-dashboard.png",
       "issues": []
     },
     {
@@ -773,7 +724,6 @@
       "route": "/campanhas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-lideranca-lideranca-campanhas.png",
       "issues": []
     },
     {
@@ -782,7 +732,6 @@
       "route": "/colaboradora",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-home.png",
       "issues": []
     },
     {
@@ -791,7 +740,6 @@
       "route": "/semaforo",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-semaforo.png",
       "issues": []
     },
     {
@@ -800,7 +748,6 @@
       "route": "/agenda",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-agenda.png",
       "issues": []
     },
     {
@@ -809,7 +756,6 @@
       "route": "/comunidade",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-comunidade.png",
       "issues": []
     },
     {
@@ -818,7 +764,6 @@
       "route": "/conquistas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-conquistas.png",
       "issues": []
     },
     {
@@ -827,7 +772,6 @@
       "route": "/campanhas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-campanhas.png",
       "issues": []
     },
     {
@@ -836,7 +780,6 @@
       "route": "/notificacoes",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-notificacoes.png",
       "issues": []
     },
     {
@@ -845,7 +788,6 @@
       "route": "/configuracoes",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-configuracoes.png",
       "issues": []
     },
     {
@@ -854,7 +796,6 @@
       "route": "/objetivos",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-objetivos.png",
       "issues": []
     },
     {
@@ -863,7 +804,6 @@
       "route": "/desafios",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-desafios.png",
       "issues": []
     },
     {
@@ -873,7 +813,6 @@
       "expectedPath": "/conquistas",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-liga.png",
       "issues": []
     },
     {
@@ -883,7 +822,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-nr1-redirect.png",
       "issues": []
     },
     {
@@ -893,7 +831,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-avaliacao-nr1.png",
       "issues": []
     },
     {
@@ -903,7 +840,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-viva-sipat.png",
       "issues": []
     },
     {
@@ -913,7 +849,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -923,7 +858,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "tablet-768",
       "status": "PASS",
-      "screenshot": "tablet-768-colaboradora-colab-canal-denuncias.png",
       "issues": []
     },
     {
@@ -932,7 +866,6 @@
       "route": "/admin",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-visao-geral.png",
       "issues": []
     },
     {
@@ -941,7 +874,6 @@
       "route": "/admin?tab=empresas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-empresas.png",
       "issues": []
     },
     {
@@ -950,7 +882,6 @@
       "route": "/admin?tab=usuarios",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-usuarios.png",
       "issues": []
     },
     {
@@ -959,7 +890,6 @@
       "route": "/admin?tab=admin",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-master.png",
       "issues": []
     },
     {
@@ -968,7 +898,6 @@
       "route": "/admin?tab=sistema",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-sistema.png",
       "issues": []
     },
     {
@@ -977,7 +906,6 @@
       "route": "/produtos-modulos",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-produtos-modulos.png",
       "issues": []
     },
     {
@@ -986,7 +914,6 @@
       "route": "/analytics-emails",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-relatorios.png",
       "issues": []
     },
     {
@@ -995,7 +922,14 @@
       "route": "/dashboard?section=saude-primaria",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-primeiro-acesso",
+      "route": "/primeiro-acesso",
+      "viewport": "desktop-1366",
+      "status": "PASS",
       "issues": []
     },
     {
@@ -1005,7 +939,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-concierge.png",
       "issues": []
     },
     {
@@ -1014,7 +947,6 @@
       "route": "/dashboard?section=exames",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-historico.png",
       "issues": []
     },
     {
@@ -1023,7 +955,6 @@
       "route": "/comunidade/gerenciar",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-educacao.png",
       "issues": []
     },
     {
@@ -1032,7 +963,6 @@
       "route": "/gamificacao-config",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-gamificacao.png",
       "issues": []
     },
     {
@@ -1042,7 +972,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-viva-sipat.png",
       "issues": []
     },
     {
@@ -1052,7 +981,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -1062,7 +990,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-admin-admin-canal-denuncias.png",
       "issues": []
     },
     {
@@ -1071,7 +998,6 @@
       "route": "/dashboard",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-dashboard.png",
       "issues": []
     },
     {
@@ -1080,7 +1006,6 @@
       "route": "/colaboradoras-gestao",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-colaboradoras.png",
       "issues": []
     },
     {
@@ -1089,7 +1014,6 @@
       "route": "/departamentos",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-departamentos.png",
       "issues": []
     },
     {
@@ -1098,7 +1022,6 @@
       "route": "/convites",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-convites.png",
       "issues": []
     },
     {
@@ -1107,7 +1030,6 @@
       "route": "/campanhas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-campanhas.png",
       "issues": []
     },
     {
@@ -1116,7 +1038,6 @@
       "route": "/comunidade/gerenciar",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-gestao-editorial.png",
       "issues": []
     },
     {
@@ -1125,7 +1046,6 @@
       "route": "/company-profile",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-company-profile.png",
       "issues": []
     },
     {
@@ -1134,7 +1054,14 @@
       "route": "/notificacoes",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-onboarding",
+      "route": "/onboarding-rh",
+      "viewport": "desktop-1366",
+      "status": "PASS",
       "issues": []
     },
     {
@@ -1143,7 +1070,6 @@
       "route": "/dashboard?section=saude-primaria",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-saude-primaria.png",
       "issues": []
     },
     {
@@ -1152,7 +1078,6 @@
       "route": "/gamificacao-config",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-gamificacao.png",
       "issues": []
     },
     {
@@ -1162,7 +1087,6 @@
       "expectedPath": "/gamificacao-config",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-desafios-gerenciar.png",
       "issues": []
     },
     {
@@ -1172,7 +1096,6 @@
       "expectedPath": "/gamificacao-config",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-liga-gerenciar.png",
       "issues": []
     },
     {
@@ -1182,7 +1105,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-nr1.png",
       "issues": []
     },
     {
@@ -1192,7 +1114,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-viva-sipat.png",
       "issues": []
     },
     {
@@ -1202,7 +1123,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -1212,7 +1132,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-rh-rh-canal-denuncias.png",
       "issues": []
     },
     {
@@ -1221,7 +1140,6 @@
       "route": "/dashboard",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-lideranca-lideranca-dashboard.png",
       "issues": []
     },
     {
@@ -1230,7 +1148,6 @@
       "route": "/campanhas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-lideranca-lideranca-campanhas.png",
       "issues": []
     },
     {
@@ -1239,7 +1156,6 @@
       "route": "/colaboradora",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-home.png",
       "issues": []
     },
     {
@@ -1248,7 +1164,6 @@
       "route": "/semaforo",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-semaforo.png",
       "issues": []
     },
     {
@@ -1257,7 +1172,6 @@
       "route": "/agenda",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-agenda.png",
       "issues": []
     },
     {
@@ -1266,7 +1180,6 @@
       "route": "/comunidade",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-comunidade.png",
       "issues": []
     },
     {
@@ -1275,7 +1188,6 @@
       "route": "/conquistas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-conquistas.png",
       "issues": []
     },
     {
@@ -1284,7 +1196,6 @@
       "route": "/campanhas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-campanhas.png",
       "issues": []
     },
     {
@@ -1293,7 +1204,6 @@
       "route": "/notificacoes",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-notificacoes.png",
       "issues": []
     },
     {
@@ -1302,7 +1212,6 @@
       "route": "/configuracoes",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-configuracoes.png",
       "issues": []
     },
     {
@@ -1311,7 +1220,6 @@
       "route": "/objetivos",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-objetivos.png",
       "issues": []
     },
     {
@@ -1320,7 +1228,6 @@
       "route": "/desafios",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-desafios.png",
       "issues": []
     },
     {
@@ -1330,7 +1237,6 @@
       "expectedPath": "/conquistas",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-liga.png",
       "issues": []
     },
     {
@@ -1340,7 +1246,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-nr1-redirect.png",
       "issues": []
     },
     {
@@ -1350,7 +1255,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-avaliacao-nr1.png",
       "issues": []
     },
     {
@@ -1360,7 +1264,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-viva-sipat.png",
       "issues": []
     },
     {
@@ -1370,7 +1273,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -1380,7 +1282,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-1366",
       "status": "PASS",
-      "screenshot": "desktop-1366-colaboradora-colab-canal-denuncias.png",
       "issues": []
     },
     {
@@ -1389,7 +1290,6 @@
       "route": "/admin",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-visao-geral.png",
       "issues": []
     },
     {
@@ -1398,7 +1298,6 @@
       "route": "/admin?tab=empresas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-empresas.png",
       "issues": []
     },
     {
@@ -1407,7 +1306,6 @@
       "route": "/admin?tab=usuarios",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-usuarios.png",
       "issues": []
     },
     {
@@ -1416,7 +1314,6 @@
       "route": "/admin?tab=admin",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-master.png",
       "issues": []
     },
     {
@@ -1425,7 +1322,6 @@
       "route": "/admin?tab=sistema",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-sistema.png",
       "issues": []
     },
     {
@@ -1434,7 +1330,6 @@
       "route": "/produtos-modulos",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-produtos-modulos.png",
       "issues": []
     },
     {
@@ -1443,7 +1338,6 @@
       "route": "/analytics-emails",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-relatorios.png",
       "issues": []
     },
     {
@@ -1452,7 +1346,14 @@
       "route": "/dashboard?section=saude-primaria",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-saude-primaria.png",
+      "issues": []
+    },
+    {
+      "role": "admin",
+      "name": "admin-primeiro-acesso",
+      "route": "/primeiro-acesso",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
       "issues": []
     },
     {
@@ -1462,7 +1363,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-concierge.png",
       "issues": []
     },
     {
@@ -1471,7 +1371,6 @@
       "route": "/dashboard?section=exames",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-historico.png",
       "issues": []
     },
     {
@@ -1480,7 +1379,6 @@
       "route": "/comunidade/gerenciar",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-educacao.png",
       "issues": []
     },
     {
@@ -1489,7 +1387,6 @@
       "route": "/gamificacao-config",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-gamificacao.png",
       "issues": []
     },
     {
@@ -1499,7 +1396,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-viva-sipat.png",
       "issues": []
     },
     {
@@ -1509,7 +1405,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -1519,7 +1414,6 @@
       "expectedPath": "/admin?tab=empresas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-admin-admin-canal-denuncias.png",
       "issues": []
     },
     {
@@ -1528,7 +1422,6 @@
       "route": "/dashboard",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-dashboard.png",
       "issues": []
     },
     {
@@ -1537,7 +1430,6 @@
       "route": "/colaboradoras-gestao",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-colaboradoras.png",
       "issues": []
     },
     {
@@ -1546,7 +1438,6 @@
       "route": "/departamentos",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-departamentos.png",
       "issues": []
     },
     {
@@ -1555,7 +1446,6 @@
       "route": "/convites",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-convites.png",
       "issues": []
     },
     {
@@ -1564,7 +1454,6 @@
       "route": "/campanhas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-campanhas.png",
       "issues": []
     },
     {
@@ -1573,7 +1462,6 @@
       "route": "/comunidade/gerenciar",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-gestao-editorial.png",
       "issues": []
     },
     {
@@ -1582,7 +1470,6 @@
       "route": "/company-profile",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-company-profile.png",
       "issues": []
     },
     {
@@ -1591,7 +1478,14 @@
       "route": "/notificacoes",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-notificacoes.png",
+      "issues": []
+    },
+    {
+      "role": "rh",
+      "name": "rh-onboarding",
+      "route": "/onboarding-rh",
+      "viewport": "desktop-wide-1920",
+      "status": "PASS",
       "issues": []
     },
     {
@@ -1600,7 +1494,6 @@
       "route": "/dashboard?section=saude-primaria",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-saude-primaria.png",
       "issues": []
     },
     {
@@ -1609,7 +1502,6 @@
       "route": "/gamificacao-config",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-gamificacao.png",
       "issues": []
     },
     {
@@ -1619,7 +1511,6 @@
       "expectedPath": "/gamificacao-config",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-desafios-gerenciar.png",
       "issues": []
     },
     {
@@ -1629,7 +1520,6 @@
       "expectedPath": "/gamificacao-config",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-liga-gerenciar.png",
       "issues": []
     },
     {
@@ -1639,7 +1529,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-nr1.png",
       "issues": []
     },
     {
@@ -1649,7 +1538,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-viva-sipat.png",
       "issues": []
     },
     {
@@ -1659,7 +1547,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -1669,7 +1556,6 @@
       "expectedPath": "/produtos-modulos",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-rh-rh-canal-denuncias.png",
       "issues": []
     },
     {
@@ -1678,7 +1564,6 @@
       "route": "/dashboard",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-lideranca-lideranca-dashboard.png",
       "issues": []
     },
     {
@@ -1687,7 +1572,6 @@
       "route": "/campanhas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-lideranca-lideranca-campanhas.png",
       "issues": []
     },
     {
@@ -1696,7 +1580,6 @@
       "route": "/colaboradora",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-home.png",
       "issues": []
     },
     {
@@ -1705,7 +1588,6 @@
       "route": "/semaforo",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-semaforo.png",
       "issues": []
     },
     {
@@ -1714,7 +1596,6 @@
       "route": "/agenda",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-agenda.png",
       "issues": []
     },
     {
@@ -1723,7 +1604,6 @@
       "route": "/comunidade",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-comunidade.png",
       "issues": []
     },
     {
@@ -1732,7 +1612,6 @@
       "route": "/conquistas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-conquistas.png",
       "issues": []
     },
     {
@@ -1741,7 +1620,6 @@
       "route": "/campanhas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-campanhas.png",
       "issues": []
     },
     {
@@ -1750,7 +1628,6 @@
       "route": "/notificacoes",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-notificacoes.png",
       "issues": []
     },
     {
@@ -1759,7 +1636,6 @@
       "route": "/configuracoes",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-configuracoes.png",
       "issues": []
     },
     {
@@ -1768,7 +1644,6 @@
       "route": "/objetivos",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-objetivos.png",
       "issues": []
     },
     {
@@ -1777,7 +1652,6 @@
       "route": "/desafios",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-desafios.png",
       "issues": []
     },
     {
@@ -1787,7 +1661,6 @@
       "expectedPath": "/conquistas",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-liga.png",
       "issues": []
     },
     {
@@ -1797,7 +1670,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-nr1-redirect.png",
       "issues": []
     },
     {
@@ -1807,7 +1679,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-avaliacao-nr1.png",
       "issues": []
     },
     {
@@ -1817,7 +1688,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-viva-sipat.png",
       "issues": []
     },
     {
@@ -1827,7 +1697,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-desenvolvimento-humano.png",
       "issues": []
     },
     {
@@ -1837,7 +1706,6 @@
       "expectedPath": "/colaboradora",
       "viewport": "desktop-wide-1920",
       "status": "PASS",
-      "screenshot": "desktop-wide-1920-colaboradora-colab-canal-denuncias.png",
       "issues": []
     }
   ]
