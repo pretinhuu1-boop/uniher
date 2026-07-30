@@ -313,6 +313,14 @@ describe('CommunityFeed states', () => {
     expect(mocks.feed.retry).toHaveBeenCalledOnce();
   });
 
+  it('keeps the community header free of ranking and spec wording', () => {
+    render(<CommunityFeed />);
+
+    const header = screen.getByText(/Uma sele/i).textContent ?? '';
+    expect(header).toContain('exposição pública');
+    expect(header).not.toMatch(/ranking|leaderboard|preview|spec|placeholder/i);
+  });
+
   it('renders content and the explicit end-of-feed state', () => {
     mocks.feed.items = [post];
     render(<CommunityFeed />);

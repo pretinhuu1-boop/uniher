@@ -20,6 +20,14 @@ describe('employee import UI contract', () => {
     expect(source).toContain('accept=".csv"');
   });
 
+  it('uses product copy for the masked spreadsheet check instead of preview jargon', () => {
+    const source = read('src/app/(platform)/colaboradoras-gestao/page.tsx');
+
+    expect(source).toContain('Conferência mascarada antes da gravação');
+    expect(source).toContain('Conferência segura');
+    expect(source).not.toMatch(/Preview mascarado|Prévia segura/i);
+  });
+
   it('points RH onboarding collaborator setup to the operational management page', () => {
     const source = read('src/app/(platform)/onboarding-rh/page.tsx');
 

@@ -1,0 +1,1466 @@
+{
+  "baseURL": "https://www.uniher.com.br",
+  "commit": "a856440",
+  "generatedAt": "2026-07-30T12:42:20.850Z",
+  "note": "Inventory/classification only. Mutating or ambiguous controls were intentionally not clicked in production.",
+  "routesVisited": 76,
+  "routeErrors": 0,
+  "visibleClickables": 1742,
+  "uniqueClickables": 1570,
+  "safeToClickInProduction": 1086,
+  "blockedFromProductionClick": 656,
+  "byClass": {
+    "in_page_anchor": 76,
+    "unknown_button": 338,
+    "navigation_link": 860,
+    "session": 152,
+    "read_only_ui_control": 150,
+    "mutation_or_submit": 87,
+    "destructive": 27,
+    "stateful_open_or_mutation_risk": 27,
+    "disabled": 25
+  },
+  "blockedUniqueSamples": [
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=admin",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=admin",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=admin",
+      "tag": "button",
+      "label": "+ Novo Admin Master",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=admin",
+      "tag": "button",
+      "label": "Bloquear",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=admin",
+      "tag": "button",
+      "label": "Resetar Senha",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=empresas",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=empresas",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=empresas",
+      "tag": "button",
+      "label": "+ Nova Empresa",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=empresas",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=empresas",
+      "tag": "button",
+      "label": "Suspender",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=sistema",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=sistema",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=sistema",
+      "tag": "button",
+      "label": "Salvar Identidade Visual",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=sistema",
+      "tag": "button",
+      "label": "Atualizar",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=usuarios",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=usuarios",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=usuarios",
+      "tag": "button",
+      "label": "+ Novo usuario",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=usuarios",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=usuarios",
+      "tag": "button",
+      "label": "Bloquear",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=usuarios",
+      "tag": "button",
+      "label": "Resetar Senha",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/analytics-emails",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/analytics-emails",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "+ Nova Empresa",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Suspender",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "+ Nova Empresa",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Suspender",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/comunidade/gerenciar",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/comunidade/gerenciar",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/comunidade/gerenciar",
+      "tag": "button",
+      "label": "Novo conteudo",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "+ Nova Empresa",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Suspender",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=exames",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=exames",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=exames",
+      "tag": "button",
+      "label": "Exportar CSV",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=exames",
+      "tag": "button",
+      "label": "Convidar",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "tag": "button",
+      "label": "Exportar CSV",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "tag": "button",
+      "label": "Convidar",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desafios/gerenciar",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desafios/gerenciar",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desafios/gerenciar",
+      "tag": "button",
+      "label": "Nova licao",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desafios/gerenciar",
+      "tag": "button",
+      "label": "Anterior",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desenvolvimento-humano",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desenvolvimento-humano",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desenvolvimento-humano",
+      "tag": "button",
+      "label": "+ Nova Empresa",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desenvolvimento-humano",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desenvolvimento-humano",
+      "tag": "button",
+      "label": "Suspender",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/gamificacao-config",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/gamificacao-config",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/gamificacao-config",
+      "tag": "button",
+      "label": "Nova licao",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/gamificacao-config",
+      "tag": "button",
+      "label": "Anterior",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/historico",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/historico",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/historico",
+      "tag": "button",
+      "label": "Exportar CSV",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/historico",
+      "tag": "button",
+      "label": "Convidar",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga/gerenciar",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga/gerenciar",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga/gerenciar",
+      "tag": "button",
+      "label": "Nova licao",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga/gerenciar",
+      "tag": "button",
+      "label": "Anterior",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga",
+      "tag": "button",
+      "label": "Nova licao",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga",
+      "tag": "button",
+      "label": "Anterior",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/nr1",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/nr1",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/nr1",
+      "tag": "button",
+      "label": "+ Nova Empresa",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/nr1",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/nr1",
+      "tag": "button",
+      "label": "Suspender",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/primeiro-acesso",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/primeiro-acesso",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/primeiro-acesso",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/primeiro-acesso",
+      "tag": "button",
+      "label": "Entrar na plataforma",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/produtos-modulos",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/produtos-modulos",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/saude-primaria",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/saude-primaria",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/saude-primaria",
+      "tag": "button",
+      "label": "Exportar CSV",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/saude-primaria",
+      "tag": "button",
+      "label": "Convidar",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/viva-sipat",
+      "tag": "button",
+      "label": "UniHERAdministrador da Plataforma",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/viva-sipat",
+      "tag": "button",
+      "label": "Sair da Plataforma",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/viva-sipat",
+      "tag": "button",
+      "label": "+ Nova Empresa",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/viva-sipat",
+      "tag": "button",
+      "label": "Editar",
+      "href": null,
+      "classification": "stateful_open_or_mutation_risk",
+      "reason": "button may open stateful form or workflow"
+    },
+    {
+      "profileRole": "admin",
+      "route": "/viva-sipat",
+      "tag": "button",
+      "label": "Suspender",
+      "href": null,
+      "classification": "destructive",
+      "reason": "destructive or access-changing action"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "UniHERSaude Feminina",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "Sair da Conta",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "+ Novo evento",
+      "href": null,
+      "classification": "mutation_or_submit",
+      "reason": "may create, update, submit, approve, or change user state"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "←",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "→",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "Todos",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "🏥 Exame",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "👩‍⚕️ Consulta",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "tag": "button",
+      "label": "🔔 Lembrete",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "UniHERSaude Feminina",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Sair da Conta",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Fazer check-in",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Muito bem",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Bem",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Neutra",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Cansada",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Sobrecarregada",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Fazer check-out",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "✓ Verdadeiro",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "✗ Falso",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "tag": "button",
+      "label": "Registrar leitura",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/campanhas",
+      "tag": "button",
+      "label": "UniHERSaude Feminina",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/campanhas",
+      "tag": "button",
+      "label": "Sair da Conta",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/campanhas",
+      "tag": "button",
+      "label": "Todas",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/campanhas",
+      "tag": "button",
+      "label": "Ativas",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/campanhas",
+      "tag": "button",
+      "label": "Concluidas",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/campanhas",
+      "tag": "button",
+      "label": "Participar Agora",
+      "href": null,
+      "classification": "disabled",
+      "reason": "disabled control"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "UniHERSaude Feminina",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Sair da Conta",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Fazer check-in",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Muito bem",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Bem",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Neutra",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Cansada",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Sobrecarregada",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Fazer check-out",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "✓ Verdadeiro",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "✗ Falso",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "tag": "button",
+      "label": "Registrar leitura",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "UniHERSaude Feminina",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Sair da Conta",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Fazer check-in",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Muito bem",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Bem",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Neutra",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Cansada",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Sobrecarregada",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Fazer check-out",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "✓ Verdadeiro",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "✗ Falso",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "tag": "button",
+      "label": "Registrar leitura",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/comunidade",
+      "tag": "button",
+      "label": "UniHERSaude Feminina",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/comunidade",
+      "tag": "button",
+      "label": "Sair da Conta",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/comunidade",
+      "tag": "button",
+      "label": "Para voce",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/comunidade",
+      "tag": "button",
+      "label": "Todos",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/comunidade",
+      "tag": "button",
+      "label": "Pausas",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/comunidade",
+      "tag": "button",
+      "label": "Sono",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/comunidade",
+      "tag": "button",
+      "label": "Movimento",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "UniHERSaude Feminina",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Sair da Conta",
+      "href": null,
+      "classification": "session",
+      "reason": "would end the smoke session"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Fazer check-in",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Muito bem",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Bem",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Neutra",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/concierge",
+      "tag": "button",
+      "label": "Cansada",
+      "href": null,
+      "classification": "unknown_button",
+      "reason": "unknown production button; requires local/fixture click test before production click"
+    }
+  ],
+  "errors": []
+}

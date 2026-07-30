@@ -6,6 +6,7 @@ import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
 import { privacyReviewResponse } from '@/lib/privacy/api-response';
+import { hasForbiddenLegacyLessonContent } from '@/lib/gamification/lesson-content-guard';
 
 const LESSON_TYPES = [
   'pilula',
@@ -75,48 +76,6 @@ function normalizeReflectionContent(content: Record<string, unknown>) {
   return { reflection: invalid ? '' : reflection };
 }
 
-async function ensureWeeklyReflections(companyId: string, weekNumber: number) {
-  const db = getReadDb();
-  const writeQueue = getWriteQueue();
-  const existingRows = db.prepare(
-    `SELECT day_of_week FROM daily_lessons
-     WHERE company_id = ? AND week_number = ? AND type = 'reflexao' AND active = 1`
-  ).all(companyId, weekNumber) as { day_of_week: number }[];
-  const existingDays = new Set(existingRows.map((r) => r.day_of_week));
-
-  const defaults = [
-    'Segunda: Qual cuidado simples com sua saude voce quer priorizar hoje?',
-    'Terca: O que te ajudou a manter energia e foco nesta semana?',
-    'Quarta: Qual sinal do seu corpo voce precisa ouvir com mais atencao?',
-    'Quinta: Que pequena pausa pode melhorar seu bem-estar hoje?',
-    'Sexta: Qual conquista de saude voce reconhece nesta semana?',
-    'Sabado: O que voce pode fazer hoje para descansar melhor?',
-    'Domingo: Qual intencao de autocuidado voce leva para a proxima semana?',
-  ];
-
-  for (let day = 1; day <= 7; day++) {
-    if (existingDays.has(day)) continue;
-
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare(
-        `INSERT INTO daily_lessons
-          (id, company_id, title, description, type, theme, week_number, day_of_week,
-           order_index, xp_reward, duration_seconds, active, campaign_context, content_json)
-         VALUES (?, ?, ?, ?, 'reflexao', 'mental', ?, ?, 900, 0, 90, 1, ?, ?)`
-      ).run(
-        nanoid(),
-        companyId,
-        `Reflexao do dia ${day}`,
-        'Reflexao diaria para fortalecer autocuidado e constancia.',
-        weekNumber,
-        day,
-        'Reflexoes diarias',
-        JSON.stringify({ reflection: defaults[day - 1] })
-      );
-    });
-  }
-}
-
 // GET /api/rh/lessons
 export const GET = withRole('rh', 'admin')(async (req, { auth }) => {
   try {
@@ -167,11 +126,6 @@ export const GET = withRole('rh', 'admin')(async (req, { auth }) => {
     if (search) {
       conditions.push('dl.title LIKE ?');
       params.push(`%${search}%`);
-    }
-
-    const weekForProvision = week ? parseInt(week, 10) : getCurrentWeek();
-    if (companyId) {
-      await ensureWeeklyReflections(companyId, weekForProvision);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -268,6 +222,10 @@ export const POST = withRole('rh', 'admin')(async (req, { auth }) => {
       data.type === 'reflexao'
         ? normalizeReflectionContent(data.content_json)
         : data.content_json;
+
+    if (hasForbiddenLegacyLessonContent(contentToSave)) {
+      return privacyReviewResponse();
+    }
 
     if (data.type === 'reflexao' && !contentToSave.reflection) {
       return NextResponse.json(

@@ -86,6 +86,39 @@ describe('employee import privacy surfaces', () => {
     }
   });
 
+  it('includes an imported identity profile that was not linked to the accepted user yet', () => {
+    const db = createDsarDatabase();
+    try {
+      db.exec(`
+        INSERT INTO companies (id, name) VALUES ('company-b', 'Empresa B');
+        UPDATE employee_identity_profiles SET user_id = NULL WHERE id = 'profile-a';
+        INSERT INTO employee_identity_profiles (
+          id, company_id, user_id, full_name, mother_name, cpf_hash, cpf_last4,
+          email, deleted_at
+        )
+        VALUES (
+          'profile-cross-company', 'company-b', NULL, 'Ana Outra Empresa', 'Outra Mae',
+          'cpf-cross-company-secret', '0000', 'ana@example.com', NULL
+        );
+      `);
+
+      const exported = JSON.parse(Array.from(createDsarExportJsonChunks(db, 'user-a', '2026-07-28T00:00:00.000Z')).join(''));
+
+      expect(exported.employeeIdentityProfile).toMatchObject({
+        id: 'profile-a',
+        company_id: 'company-a',
+        full_name: 'Ana Silva',
+        cpf_last4: '8909',
+        email: 'ana@example.com',
+      });
+      expect(JSON.stringify(exported.employeeIdentityProfile)).not.toContain('cpf-secret-hash');
+      expect(JSON.stringify(exported)).not.toContain('profile-cross-company');
+      expect(JSON.stringify(exported)).not.toContain('cpf-cross-company-secret');
+    } finally {
+      db.close();
+    }
+  });
+
   it('removes imported identity fields from generic safe user projections', () => {
     const projected = toSafeUserProjection({
       team: [{

@@ -10,6 +10,7 @@ import {
   Check,
   ClipboardCheck,
   LockKeyhole,
+  Megaphone,
   ShieldCheck,
 } from 'lucide-react';
 import DailyLesson from '@/components/gamification/DailyLesson';
@@ -17,8 +18,7 @@ import { FeedbackState } from '@/components/ui/FeedbackState';
 import { Button } from '@/components/ui/Button';
 import PageHeader from '@/components/platform/PageHeader';
 import { SummaryBand } from '@/components/platform/SummaryBand';
-import { LEGACY_GAMIFICATION_STATE } from '@/lib/gamification/containment';
-import { getNr1PreviewState, isNr1RuntimeEntitled, type Nr1PreviewState } from '@/lib/nr1/preview-state';
+import { getNr1PreviewState, isNr1RuntimeEntitled } from '@/lib/nr1/preview-state';
 import type { CompanyModuleNavigationRecord } from '@/types/modules';
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
@@ -38,6 +38,8 @@ interface CollaboratorHomeData {
   examsPercent?: number;
   examsTotal?: number;
   contentViewed?: number;
+  campaignsActive?: number;
+  campaignsTotal?: number;
 }
 
 interface CompanyModulesResponse {
@@ -46,9 +48,6 @@ interface CompanyModulesResponse {
 
 const actionLinkClass =
   'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[var(--platform-radius-control)] border border-[var(--platform-action)] px-4 py-2 text-sm font-semibold text-[var(--platform-action-strong)] transition-colors duration-[var(--platform-duration-fast)] hover:bg-[var(--platform-group)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--platform-action)] focus-visible:ring-offset-2';
-
-const disabledActionClass =
-  'inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-[var(--platform-radius-control)] border border-[var(--platform-line)] px-4 py-2 text-sm font-semibold text-[var(--platform-muted)]';
 
 const WELLBEING_MOOD_OPTIONS = [
   { value: 'muito_bem', label: 'Muito bem' },
@@ -132,11 +131,7 @@ function WellbeingMoodPicker({
   );
 }
 
-function Nr1JourneyRow({ state, step }: { state: Nr1PreviewState; step: number }) {
-  const available = state === 'preview_available';
-  const stateLabel = state === 'contract_required' ? 'Acesso controlado' : 'Acesso controlado';
-  const actionLabel = available ? 'Abrir prévia' : 'Prévia indisponível';
-
+function Nr1JourneyRow({ step }: { step: number }) {
   return (
     <JourneyRow
       step={step}
@@ -146,7 +141,7 @@ function Nr1JourneyRow({ state, step }: { state: Nr1PreviewState; step: number }
           <span>Avaliação NR-1</span>
           <LockKeyhole size={17} aria-label="Acesso controlado" />
           <span className="rounded-full border border-[var(--platform-positive)] px-2 py-0.5 text-xs font-medium text-[var(--platform-positive)]">
-            {stateLabel}
+            Acesso controlado
           </span>
         </span>
       }
@@ -157,17 +152,10 @@ function Nr1JourneyRow({ state, step }: { state: Nr1PreviewState; step: number }
           <ShieldCheck size={16} className="mt-0.5 shrink-0 text-[var(--platform-positive)]" aria-hidden="true" />
           <span>Esta prévia não gera laudo ou comprovação de conformidade.</span>
         </p>
-        {available ? (
-          <Link href="/avaliacao-nr1" className={`${actionLinkClass} shrink-0`} aria-describedby="nr1-preview-note">
-            {actionLabel}
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-        ) : (
-          <button type="button" className={`${disabledActionClass} shrink-0`} disabled aria-describedby="nr1-preview-note">
-            <LockKeyhole size={16} aria-hidden="true" />
-            {actionLabel}
-          </button>
-        )}
+        <Link href="/avaliacao-nr1" className={`${actionLinkClass} shrink-0`} aria-describedby="nr1-preview-note">
+          Abrir avaliação
+          <ArrowRight size={16} aria-hidden="true" />
+        </Link>
       </div>
     </JourneyRow>
   );
@@ -267,11 +255,18 @@ export default function CollaboratorHomePage() {
 
   const missions = missionData?.missions ?? [];
   const checkInLabel = streak?.checkedInToday ? 'Check-in registrado' : 'Fazer check-in';
+  const campaignsActive = data?.campaignsActive ?? 0;
+  const campaignsTotal = data?.campaignsTotal ?? 0;
+  const campaignSummary = campaignsTotal > 0
+    ? `${campaignsActive} de ${campaignsTotal} campanhas ativas`
+    : 'Nenhuma campanha ativa agora';
   const nr1PreviewState = getNr1PreviewState({
     previewEnabled: process.env.NEXT_PUBLIC_UNIHER_NR1_PREVIEW === '1',
     entitled: isNr1RuntimeEntitled(moduleData?.modules),
     realIntegration: false,
   });
+  const showNr1JourneyRow = nr1PreviewState === 'preview_available';
+  const educationStep = showNr1JourneyRow ? 4 : 3;
 
   return (
     <div className="space-y-6">
@@ -292,8 +287,34 @@ export default function CollaboratorHomePage() {
         items={[
           { label: 'Conteúdos vistos', value: data?.contentViewed ?? 0 },
           { label: 'Exames em dia', value: data?.examsPercent ?? 0, detail: '%' },
+          { label: 'Campanhas', value: campaignsActive, detail: `de ${campaignsTotal}` },
         ]}
       />
+
+      <section
+        aria-labelledby="campaigns-home-title"
+        className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+              <Megaphone size={21} strokeWidth={1.7} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--platform-action-strong)]">Ações abertas</p>
+              <h2 id="campaigns-home-title" className="mt-1 text-lg font-semibold text-[var(--platform-ink)]">Campanhas da empresa</h2>
+              <p className="mt-1 text-sm text-[var(--platform-muted)]">{campaignSummary}</p>
+              <p className="mt-1 max-w-2xl text-sm text-[var(--platform-muted)]">
+                Acompanhe ações disponíveis para sua empresa e participe quando fizer sentido para sua rotina.
+              </p>
+            </div>
+          </div>
+          <Link href="/campanhas" className={`${actionLinkClass} shrink-0`} aria-label="Acompanhar campanhas">
+            Acompanhar campanhas
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
 
       <section aria-labelledby="journey-title" className="overflow-hidden rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
         <div className="border-b border-[var(--platform-line)] px-4 py-5 sm:px-5">
@@ -353,9 +374,9 @@ export default function CollaboratorHomePage() {
               </Button>
             </div>
           </JourneyRow>
-          <Nr1JourneyRow state={nr1PreviewState} step={3} />
+          {showNr1JourneyRow && <Nr1JourneyRow step={3} />}
           <JourneyRow
-            step={4}
+            step={educationStep}
             icon={<BookOpen size={21} strokeWidth={1.7} />}
             title="Conteúdos recomendados"
             description="Acesse conteúdos selecionados para o seu bem-estar e desenvolvimento."
@@ -363,11 +384,42 @@ export default function CollaboratorHomePage() {
         </ol>
       </section>
 
-      <FeedbackState
-        kind="denied"
-        title="Pontuação e classificação em revisão"
-        description={LEGACY_GAMIFICATION_STATE.message}
-      />
+      <section
+        aria-labelledby="private-journey-title"
+        className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+              <ShieldCheck size={21} strokeWidth={1.7} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--platform-action-strong)]">Sem competição</p>
+              <h2 id="private-journey-title" className="mt-1 text-lg font-semibold text-[var(--platform-ink)]">Jornada privada</h2>
+              <p className="mt-1 max-w-2xl text-sm text-[var(--platform-muted)]">
+                Continue pelos objetivos, desafios voluntários e marcos privados derivados somente de eventos elegíveis.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <Link href="/objetivos" aria-label="Abrir objetivos" className={actionLinkClass}>
+            <ClipboardCheck size={17} strokeWidth={1.8} aria-hidden="true" />
+            Objetivos
+            <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
+          </Link>
+          <Link href="/desafios" aria-label="Abrir desafios" className={actionLinkClass}>
+            <Check size={17} strokeWidth={1.8} aria-hidden="true" />
+            Desafios
+            <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
+          </Link>
+          <Link href="/conquistas" aria-label="Abrir conquistas" className={actionLinkClass}>
+            <LockKeyhole size={17} strokeWidth={1.8} aria-hidden="true" />
+            Marcos privados
+            <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
 
       <DailyLesson />
 

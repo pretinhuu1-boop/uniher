@@ -3,23 +3,27 @@ import fs from 'fs';
 import path from 'path';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
-// Magic bytes signatures for validating file content matches declared MIME type
 const MAGIC_BYTES: Record<string, number[][]> = {
-  'image/jpeg': [[0xFF, 0xD8, 0xFF]],
-  'image/png': [[0x89, 0x50, 0x4E, 0x47]],
+  'image/jpeg': [[0xff, 0xd8, 0xff]],
+  'image/png': [[0x89, 0x50, 0x4e, 0x47]],
   'image/webp': [[0x52, 0x49, 0x46, 0x46]], // RIFF header
-  'image/svg+xml': [], // SVG is text-based, validated separately
 };
 
 function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
-  // SVG is XML text — check for opening tag
-  if (mimeType === 'image/svg+xml') {
-    const head = buffer.subarray(0, 256).toString('utf-8').trimStart().toLowerCase();
-    return head.startsWith('<?xml') || head.startsWith('<svg');
+  if (mimeType === 'image/webp') {
+    return buffer.length >= 12
+      && buffer[0] === 0x52
+      && buffer[1] === 0x49
+      && buffer[2] === 0x46
+      && buffer[3] === 0x46
+      && buffer[8] === 0x57
+      && buffer[9] === 0x45
+      && buffer[10] === 0x42
+      && buffer[11] === 0x50;
   }
 
   const signatures = MAGIC_BYTES[mimeType];
@@ -30,7 +34,6 @@ function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
   );
 }
 
-/** Sanitize filename: remove path traversal characters and non-safe chars */
 function sanitizeFilename(name: string): string {
   return name
     .replace(/\.\./g, '')
@@ -60,31 +63,24 @@ export async function saveUploadedFile(
   category: 'avatars' | 'logos' | 'general',
   userId?: string
 ): Promise<{ url: string; filename: string }> {
-  // Validate type
   if (!ALLOWED_TYPES.includes(file.type)) {
-    throw new Error('Tipo de arquivo não permitido. Use: JPG, PNG, WebP ou SVG.');
-  }
-  // Validate size
-  if (file.size > MAX_SIZE) {
-    throw new Error('Arquivo muito grande. Máximo: 5MB.');
+    throw new Error('Tipo de arquivo nao permitido. Use: JPG, PNG ou WebP.');
   }
 
-  // Sanitize original filename and extract extension
+  if (file.size > MAX_SIZE) {
+    throw new Error('Arquivo muito grande. Maximo: 5MB.');
+  }
+
   const safeName = sanitizeFilename(file.name);
   const rawExt = safeName.split('.').pop()?.toLowerCase() || '';
-
-  // Whitelist the extension — fallback to 'jpg' if not allowed
   const ext = ALLOWED_EXTENSIONS.includes(rawExt) ? rawExt : 'jpg';
 
-  // Read file buffer
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  // Validate magic bytes match declared MIME type
   if (!validateMagicBytes(buffer, file.type)) {
-    throw new Error('Conteúdo do arquivo não corresponde ao tipo declarado.');
+    throw new Error('Conteudo do arquivo nao corresponde ao tipo declarado.');
   }
 
-  // Per-user storage limit check
   if (userId) {
     const currentUsage = getUserStorageUsed(userId);
     if (currentUsage + file.size > MAX_USER_STORAGE) {
@@ -92,22 +88,17 @@ export async function saveUploadedFile(
     }
   }
 
-  // Generate unique filename
   const filename = `${nanoid(12)}.${ext}`;
-
-  // Ensure directory exists
   const uploadDir = path.join(process.cwd(), 'public', 'uploads', category);
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
 
-  // Write file
   const filePath = path.join(uploadDir, filename);
   fs.writeFileSync(filePath, buffer);
 
   const url = `/uploads/${category}/${filename}`;
 
-  // Track upload in DB for storage accounting
   if (userId) {
     trackUpload(userId, url, file.size, category);
   }

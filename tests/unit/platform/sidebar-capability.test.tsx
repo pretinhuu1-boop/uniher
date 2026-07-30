@@ -251,6 +251,30 @@ describe('Sidebar persisted collaborator capability', () => {
     expect(mocks.swrKeys[1]).toBeNull();
   });
 
+  it('falls back to company initials when the tenant logo is unavailable', async () => {
+    mocks.user.role = 'rh';
+    mocks.swrDataByEndpoint.set('/api/company', {
+      company: {
+        name: 'Acme Company',
+        trade_name: 'Acme Clinic',
+        logo_url: '/missing-company-logo.png',
+        primary_color: '#2563eb',
+      },
+    });
+
+    const { container } = render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const logo = container.querySelector('img[src="/missing-company-logo.png"]');
+    expect(logo).not.toBeNull();
+
+    fireEvent.error(logo as HTMLImageElement);
+
+    await waitFor(() => {
+      expect(container.querySelector('img[src="/missing-company-logo.png"]')).toBeNull();
+      expect(screen.queryByText('AC')).not.toBeNull();
+    });
+  });
+
   it('uses company module data for module-aware navigation when available', () => {
     mocks.user.role = 'colaboradora';
     mocks.swrDataByEndpoint.set('/api/company/modules', {
@@ -263,10 +287,21 @@ describe('Sidebar persisted collaborator capability', () => {
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /^NR-1$/i })).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /^NR-1$/i })).toBeNull();
     expect(screen.queryByRole('link', { name: /^SIPAT$/i })).toBeNull();
     expect(screen.queryByText('Bloqueado')).toBeNull();
     expect(screen.queryByRole('link', { name: /^Concierge$/i })).toBeNull();
+  });
+
+  it('keeps manager motivation navigation copy useful instead of review/spec language', () => {
+    mocks.user.role = 'rh';
+
+    render(<Sidebar isOpen={false} onClose={vi.fn()} />);
+
+    const objectivesLink = queryLinkByHref('/gamificacao-config');
+    expect(objectivesLink?.textContent).toMatch(/Objetivos e Desafios/i);
+    expect(objectivesLink?.textContent).toMatch(/Conquistas privadas/i);
+    expect(objectivesLink?.textContent).not.toMatch(/revis/i);
   });
 
   it('scopes company module requests by user, tenant and active navigation role', async () => {

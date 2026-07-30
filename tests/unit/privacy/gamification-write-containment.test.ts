@@ -31,6 +31,7 @@ import {
   LEGACY_GAMIFICATION_STATE,
   toSafeLessonProjection,
 } from '@/lib/gamification/containment';
+import { hasForbiddenLegacyLessonContent } from '@/lib/gamification/lesson-content-guard';
 import * as objectivesService from '@/services/objectives.service';
 import * as leagueService from '@/services/league.service';
 import * as activityLogRepository from '@/repositories/activity-log.repository';
@@ -541,12 +542,37 @@ describe('legacy gamification write containment', () => {
   it('allows educational lesson content but removes XP from RH writes and UI promises', () => {
     const createSource = read('src/app/api/rh/lessons/route.ts');
     const updateSource = read('src/app/api/rh/lessons/[id]/route.ts');
+    const getHandler = createSource.slice(createSource.indexOf('// GET /api/rh/lessons'), createSource.indexOf('const createLessonSchema'));
     const createSchema = createSource.slice(createSource.indexOf('const createLessonSchema'), createSource.indexOf('// POST /api/rh/lessons'));
     const updateSchema = updateSource.slice(updateSource.indexOf('const patchLessonSchema'), updateSource.indexOf('function parseLessonRow'));
+    expect(getHandler).not.toContain('getWriteQueue');
+    expect(getHandler).not.toContain('ensureWeeklyReflections');
     expect(createSchema).not.toContain('xp_reward');
     expect(updateSchema).not.toContain('xp_reward');
     expect(createSource).toContain("hasOwnProperty.call(body, 'xp_reward')");
     expect(updateSource).toContain("hasOwnProperty.call(body, 'xp_reward')");
+    expect(createSource).toContain('hasForbiddenLegacyLessonContent');
+    expect(updateSource).toContain('hasForbiddenLegacyLessonContent');
+    expect(read('src/app/(platform)/gamificacao-config/page.tsx')).toContain('/api/rh/lessons');
+    expect(read('src/app/(platform)/gamificacao-config/page.tsx')).not.toMatch(/xp_reward|\/api\/gamification\/(?:rewards|league)|ganh[ae] pontos|xp ganho/i);
     expect(read('src/components/gamification/DailyLesson.tsx')).not.toMatch(/XP ganho|ganhe XP|\+\s*\d+\s*XP|xp_reward/i);
+  });
+
+  it('blocks competitive legacy claims inside RH lesson content while preserving educational wording', () => {
+    expect(hasForbiddenLegacyLessonContent({
+      title: 'Conteudo seguro',
+      key_points: ['pontos de atencao para conversar com a equipe'],
+      nested: { note: 'Respire e registre como se sentiu.' },
+    })).toBe(false);
+
+    expect(hasForbiddenLegacyLessonContent({
+      content: { nested: { xp_reward: 20 } },
+    })).toBe(true);
+    expect(hasForbiddenLegacyLessonContent({
+      text: 'Complete a atividade para ganhar pontos e subir de nivel.',
+    })).toBe(true);
+    expect(hasForbiddenLegacyLessonContent({
+      sections: ['Sem ranking geral nesta experiencia.'],
+    })).toBe(true);
   });
 });

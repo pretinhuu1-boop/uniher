@@ -22,7 +22,6 @@ const EXPECTED_NAVIGATION_CONTRACT = {
         ['/admin', 'Dashboard geral'],
         ['/admin?tab=empresas', 'Empresas'],
         ['/dashboard?section=saude-primaria', 'Sa\u00fade Prim\u00e1ria'],
-        ['/concierge', 'Concierge'],
         ['/dashboard?section=exames', 'Dashboard de exames'],
         ['/comunidade/gerenciar', 'Educa\u00e7\u00e3o'],
         ['/gamificacao-config', 'Objetivos e Desafios'],
@@ -46,6 +45,7 @@ const EXPECTED_NAVIGATION_CONTRACT = {
       items: [
         ['/dashboard', 'Dashboard'],
         ['/dashboard?section=saude-primaria', 'Sa\u00fade Prim\u00e1ria'],
+        ['/comunidade/gerenciar', 'Gest\u00e3o editorial'],
         ['/campanhas', 'Educa\u00e7\u00e3o'],
         ['/gamificacao-config', 'Objetivos e Desafios'],
       ],
@@ -79,7 +79,7 @@ const EXPECTED_NAVIGATION_CONTRACT = {
     {
       label: 'Principal',
       items: [
-        ['/semaforo', 'Sa\u00fade Prim\u00e1ria'],
+        ['/semaforo', 'Sem\u00e1foro da Sa\u00fade'],
         ['/colaboradora', 'Meu Bem-Estar'],
         ['/agenda', 'Minha Agenda de Exames'],
         ['/comunidade', 'Educa\u00e7\u00e3o'],
@@ -142,7 +142,7 @@ describe('platform navigation', () => {
     expect(navigationContract(role)).toEqual(EXPECTED_NAVIGATION_CONTRACT[role]);
   });
 
-  it('regroups existing Paola surfaces without adding base navigation routes', () => {
+  it('regroups existing Paola surfaces and exposes safe editorial management to RH', () => {
     const routesFor = (role: UserRole) => getNavigationForRole(role)
       .flatMap((group) => group.items.map((item) => item.href));
     const groupLabelsFor = (role: UserRole) => getNavigationForRole(role)
@@ -151,6 +151,7 @@ describe('platform navigation', () => {
     expect(routesFor('rh')).toEqual([
       '/dashboard',
       '/dashboard?section=saude-primaria',
+      '/comunidade/gerenciar',
       '/campanhas',
       '/gamificacao-config',
       '/company-profile',
@@ -187,7 +188,6 @@ describe('platform navigation', () => {
       '/admin',
       '/admin?tab=empresas',
       '/dashboard?section=saude-primaria',
-      '/concierge',
       '/dashboard?section=exames',
       '/comunidade/gerenciar',
       '/gamificacao-config',
@@ -228,12 +228,12 @@ describe('platform navigation', () => {
     expect(routes).not.toContain('/concierge');
     expect(routes.filter((route) => route === '/campanhas')).toHaveLength(1);
     expect(routes.filter((route) => route === '/conquistas')).toHaveLength(1);
-    expect(byLabel['Saúde Primária'].badgeLabel).toBeUndefined();
+    expect(byLabel['Semáforo da Saúde'].badgeLabel).toBeUndefined();
     expect(byLabel.Educação.badgeLabel).toBeUndefined();
     expect(byLabel.Conquistas.badgeLabel).toBeUndefined();
   });
 
-  it('keeps gated module previews visible for RH while hiding them from collaborator final navigation', () => {
+  it('hides runtime-unready module shell routes from final navigation for every role', () => {
     const rows = [
       moduleRow('nr1', 'requires_contract'),
       moduleRow('sipat', 'locked'),
@@ -241,22 +241,28 @@ describe('platform navigation', () => {
       moduleRow('denunciation', 'partner_managed'),
     ];
     const rhItems = flatItems(getModuleAwareNavigationForRole('rh', rows));
+    const adminRoutes = flatItems(getModuleAwareNavigationForRole('admin', rows))
+      .map((item) => item.href);
     const collaboratorRoutes = flatItems(getModuleAwareNavigationForRole('colaboradora', rows))
       .map((item) => item.href);
-    const rhByHref = Object.fromEntries(rhItems.map((item) => [item.href, item]));
     const rhRoutes = rhItems.map((item) => item.href);
 
-    expect(rhRoutes).toEqual(expect.arrayContaining([
+    expect(rhRoutes).not.toEqual(expect.arrayContaining([
       '/nr1',
       '/viva-sipat',
       '/desenvolvimento-humano',
       '/canal-denuncias',
     ]));
-    expect(rhByHref['/nr1'].badgeLabel).toBe('Contrato');
-    expect(rhByHref['/viva-sipat'].badgeLabel).toBe('Bloqueado');
-    expect(rhByHref['/canal-denuncias'].badgeLabel).toBe('Parceiro');
+    expect(adminRoutes).not.toEqual(expect.arrayContaining([
+      '/concierge',
+      '/nr1',
+      '/viva-sipat',
+      '/desenvolvimento-humano',
+      '/canal-denuncias',
+    ]));
     expect(collaboratorRoutes).not.toEqual(expect.arrayContaining([
       '/nr1',
+      '/avaliacao-nr1',
       '/viva-sipat',
       '/desenvolvimento-humano',
       '/canal-denuncias',
@@ -272,12 +278,12 @@ describe('platform navigation', () => {
     ]));
     const byLabel = Object.fromEntries(items.map((item) => [item.label, item]));
 
-    expect(byLabel['Saúde Primária'].badgeLabel).toBe('Contrato');
+    expect(byLabel['Saúde Primária'].badgeLabel).toBe('Aguardando liberacao');
     expect(byLabel.Educação.badgeLabel).toBe('Bloqueado');
-    expect(byLabel['Objetivos e Desafios'].badgeLabel).toBe('Em breve');
+    expect(byLabel['Objetivos e Desafios'].badgeLabel).toBe('Planejado');
   });
 
-  it('routes explicitly enabled NR-1 to the COPSOQ runtime while keeping gated rows on the locked shell', () => {
+  it('keeps NR-1 runtime links hidden from navigation until a separate contract promotes the surface', () => {
     const gatedRoutes = flatItems(getModuleAwareNavigationForRole('rh', [
       moduleRow('nr1', 'requires_contract'),
     ])).map((item) => item.href);
@@ -288,11 +294,11 @@ describe('platform navigation', () => {
       moduleRow('nr1', 'enabled'),
     ])).map((item) => item.href);
 
-    expect(gatedRoutes).toContain('/nr1');
+    expect(gatedRoutes).not.toContain('/nr1');
     expect(gatedRoutes).not.toContain('/avaliacao-nr1');
-    expect(enabledRoutes).toContain('/nr1');
+    expect(enabledRoutes).not.toContain('/nr1');
     expect(enabledRoutes).not.toContain('/avaliacao-nr1');
-    expect(collaboratorRoutes).toContain('/avaliacao-nr1');
+    expect(collaboratorRoutes).not.toContain('/avaliacao-nr1');
     expect(collaboratorRoutes).not.toContain('/nr1');
   });
 
@@ -311,7 +317,7 @@ describe('platform navigation', () => {
     expect(leadershipRoutes).not.toContain('/avaliacao-nr1');
     expect(leadershipRoutes).not.toContain('/viva-sipat');
     expect(rhRoutes).not.toContain('/concierge');
-    expect(rhRoutes).toContain('/nr1');
+    expect(rhRoutes).not.toContain('/nr1');
     expect(rhRoutes).not.toContain('/avaliacao-nr1');
     expect(rhRoutes).not.toContain('/viva-sipat');
   });
@@ -341,7 +347,7 @@ describe('platform navigation', () => {
     expect(routesFor('colaboradora')).toContain('/comunidade');
     expect(routesFor('colaboradora')).not.toContain('/comunidade/gerenciar');
     expect(routesFor('rh')).toContain('/campanhas');
-    expect(routesFor('rh')).not.toContain('/comunidade/gerenciar');
+    expect(routesFor('rh')).toContain('/comunidade/gerenciar');
     expect(routesFor('rh')).not.toContain('/comunidade');
     expect(routesFor('admin')).toContain('/comunidade/gerenciar');
     expect(routesFor('admin')).not.toContain('/comunidade');

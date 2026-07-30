@@ -16,9 +16,9 @@ export interface DashboardSummaryItem {
 }
 
 export interface DashboardAction {
-  readonly label: 'Campanhas' | 'Convites' | 'Histórico';
+  readonly label: 'Campanhas' | 'Convites' | 'Dashboard de exames';
   readonly description: string;
-  readonly href: '/campanhas' | '/convites' | '/historico';
+  readonly href: '/campanhas' | '/convites' | '/dashboard?section=exames';
 }
 
 export interface DashboardViewModel {
@@ -43,9 +43,9 @@ const ACTION_BLUEPRINTS: readonly DashboardAction[] = [
     href: '/convites',
   },
   {
-    label: 'Histórico',
-    description: 'Consulte a disponibilidade do registro protegido.',
-    href: '/historico',
+    label: 'Dashboard de exames',
+    description: 'Consulte a superfície consolidada de indicadores protegidos.',
+    href: '/dashboard?section=exames',
   },
 ];
 
@@ -75,13 +75,13 @@ export function createDashboardViewModel(
       {
         label: 'Engajamento',
         metric: source.metrics.engagement,
-        detail: 'fonte legada não computável',
+        detail: 'indicador agregado protegido',
         state: 'neutral',
       },
       {
         label: 'Participação em campanha',
         metric: source.metrics.campaignParticipation,
-        detail: 'aguardando classificação de sensibilidade',
+        detail: 'indicador protegido por privacidade',
         state: 'neutral',
       },
     ],

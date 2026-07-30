@@ -135,11 +135,7 @@ Depois do build, copie os assets públicos para o diretório standalone:
 
 ```bash
 cd /var/www/uniher
-mkdir -p .next/standalone/.next
-rm -rf .next/standalone/.next/static
-cp -R .next/static .next/standalone/.next/static
-rm -rf .next/standalone/public
-cp -R public .next/standalone/public
+npm run prepare:standalone
 ```
 
 ## 8. Subir com PM2

@@ -49,7 +49,7 @@ export function ContainedSurfacePreview({
             </span>
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase text-[var(--platform-action-strong)]">
-                Desenho aprovado para a próxima etapa
+                Desenho preparado para avaliação
               </p>
               <h2 id="surface-intent-title" className="mt-2 text-xl font-semibold text-[var(--platform-ink)]">
                 {intentTitle}

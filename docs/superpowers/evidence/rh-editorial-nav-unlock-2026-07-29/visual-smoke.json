@@ -1,0 +1,14 @@
+{
+  "baseUrl": "http://127.0.0.1:3119",
+  "route": "http://127.0.0.1:3119/comunidade/gerenciar",
+  "linkCount": 1,
+  "visible": true,
+  "linkBox": {
+    "x": 33,
+    "y": 574.71875,
+    "width": 278,
+    "height": 65.546875
+  },
+  "overflow": false,
+  "errors": []
+}

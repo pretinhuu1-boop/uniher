@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
+import { hasCollaboratorSelfCapability } from '@/lib/auth/collaborator-self';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
 import { initDb } from '@/lib/db/init';
@@ -12,6 +13,10 @@ export const GET = withAuth(async (_req: NextRequest, context: any) => {
   await initDb();
   const db = getReadDb();
   const userId = context.auth.userId;
+
+  if (!hasCollaboratorSelfCapability(userId, db)) {
+    return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+  }
 
   const exams = db.prepare(`
     SELECT id, exam_name, status, due_date, completed_date, created_at
@@ -25,7 +30,13 @@ export const GET = withAuth(async (_req: NextRequest, context: any) => {
 
 export const POST = withAuth(async (req: NextRequest, context: any) => {
   await initDb();
+  const db = getReadDb();
   const userId = context.auth.userId;
+
+  if (!hasCollaboratorSelfCapability(userId, db)) {
+    return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+  }
+
   const body = await req.json();
 
   const { exam_name, completed_date, due_date } = body;

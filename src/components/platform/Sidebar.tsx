@@ -71,15 +71,15 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
   collaborator: {
     '/semaforo': ['Semáforo da Saúde'],
     '/colaboradora': ['Check-in - Como você chega hoje?', 'Check-out - Como você encerra o seu dia?'],
-    '/objetivos': ['Pessoal', 'Auto-iniciado', 'Sem comparação'],
-    '/desafios': ['Voluntário', 'Empresa', 'Sem Liga'],
-    '/conquistas': ['Privado', 'Eventos elegíveis', 'Sem ranking'],
+    '/objetivos': ['Pessoal', 'Auto-iniciado', 'Privado'],
+    '/desafios': ['Voluntário', 'Empresa', 'Educativo'],
+    '/conquistas': ['Privado', 'Eventos elegíveis', 'Jornada pessoal'],
   },
   manager: {
     '/dashboard': ['Visão geral da empresa', 'Todos os indicadores e gráficos', 'Check-in x Check-out'],
-    '/dashboard?section=saude-primaria': ['Semáforo da Saúde', 'Concierge'],
+    '/dashboard?section=saude-primaria': ['Semáforo da Saúde', 'Indicadores agregados'],
     '/campanhas': ['Campanhas de saúde', 'Conteúdos publicados'],
-    '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas em revisão'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas privadas'],
   },
   admin: {
     '/admin': ['Visão consolidada', 'Indicadores da plataforma'],
@@ -87,7 +87,7 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
     '/dashboard?section=saude-primaria': ['Sem\u00e1foro consolidado', 'Indicadores por empresa'],
     '/dashboard?section=exames': ['Exames em dia', 'Indicadores de preven\u00e7\u00e3o'],
     '/produtos-modulos': ['Controle de m\u00f3dulos contratados', 'Ativa\u00e7\u00e3o de funcionalidades sob gate'],
-    '/gamificacao-config': ['Objetivos', 'Desafios', 'Sem ranking ativo'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas privadas'],
   },
   personal: {},
 };
@@ -344,6 +344,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { revalidateOnFocus: false },
   );
   const company = companyData?.company;
+  const [failedCompanyLogoUrl, setFailedCompanyLogoUrl] = useState<string | null>(null);
+  const companyDisplayName = company ? (company.trade_name || company.name) : '';
+  const companyLogoUrl = company?.logo_url && company.logo_url !== failedCompanyLogoUrl
+    ? company.logo_url
+    : null;
+  const companyInitials = companyDisplayName.slice(0, 2).toUpperCase() || 'UN';
 
   const moduleCacheKey = pathname !== '/primeiro-acesso' && user?.companyId
     ? ['/api/company/modules', user.id, user.companyId, role] as const
@@ -462,13 +468,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }
                 : undefined}
             >
-              {company.logo_url ? (
-                <img src={company.logo_url} alt="" className={styles.companyLogo} />
+              {companyLogoUrl ? (
+                <img
+                  src={companyLogoUrl}
+                  alt=""
+                  className={styles.companyLogo}
+                  onError={() => setFailedCompanyLogoUrl(companyLogoUrl)}
+                />
               ) : (
-                (company.trade_name || company.name).slice(0, 2).toUpperCase()
+                companyInitials
               )}
             </div>
-            <span className={styles.companyName}>{company.trade_name || company.name}</span>
+            <span className={styles.companyName}>{companyDisplayName}</span>
           </div>
         ) : null}
       </div>

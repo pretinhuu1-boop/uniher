@@ -1,0 +1,698 @@
+{
+  "generatedAt": "2026-07-30T07:10:50.503Z",
+  "baseURL": "https://uniher.com.br",
+  "commit": "483157e",
+  "totalRoutes": 67,
+  "hitCount": 4,
+  "hits": [
+    {
+      "role": "admin",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/admin?tab=empresas",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [
+        {
+          "id": "internal_runtime",
+          "text": "runtime",
+          "snippet": "\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"author\\\",\\\"href\\\":\\\"h"
+        }
+      ],
+      "elapsedMs": 987
+    },
+    {
+      "role": "rh",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/produtos-modulos",
+      "title": "Produtos e Modulos",
+      "status": "ok",
+      "matches": [
+        {
+          "id": "internal_runtime",
+          "text": "runtime",
+          "snippet": "\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"author\\\",\\\"href\\\":\\\"h"
+        }
+      ],
+      "elapsedMs": 980
+    },
+    {
+      "role": "lideranca",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/colaboradora",
+      "title": "Bom dia, Lideranca",
+      "status": "ok",
+      "matches": [
+        {
+          "id": "internal_runtime",
+          "text": "runtime",
+          "snippet": "\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"author\\\",\\\"href\\\":\\\"h"
+        }
+      ],
+      "elapsedMs": 957
+    },
+    {
+      "role": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/colaboradora",
+      "title": "Bom dia, NR-1",
+      "status": "ok",
+      "matches": [
+        {
+          "id": "internal_runtime",
+          "text": "runtime",
+          "snippet": "\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"author\\\",\\\"href\\\":\\\"h"
+        }
+      ],
+      "elapsedMs": 1099
+    }
+  ],
+  "all": [
+    {
+      "role": "admin",
+      "route": "/admin",
+      "finalUrl": "/admin",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1313
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "finalUrl": "/admin?tab=empresas",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1017
+    },
+    {
+      "role": "admin",
+      "route": "/dashboard",
+      "finalUrl": "/dashboard",
+      "title": "Bom dia, Admin.",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1048
+    },
+    {
+      "role": "admin",
+      "route": "/produtos-modulos",
+      "finalUrl": "/produtos-modulos",
+      "title": "",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 31040
+    },
+    {
+      "role": "admin",
+      "route": "/gamificacao-config",
+      "finalUrl": "/gamificacao-config",
+      "title": "Conteudos educativos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 993
+    },
+    {
+      "role": "admin",
+      "route": "/comunidade/gerenciar",
+      "finalUrl": "/comunidade/gerenciar",
+      "title": "Gestao editorial",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 843
+    },
+    {
+      "role": "admin",
+      "route": "/campanhas",
+      "finalUrl": "/campanhas",
+      "title": "Campanhas Tematicas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 829
+    },
+    {
+      "role": "admin",
+      "route": "/analytics-emails",
+      "finalUrl": "/analytics-emails",
+      "title": "Entregas de comunicacao",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 851
+    },
+    {
+      "role": "admin",
+      "route": "/concierge",
+      "finalUrl": "/admin?tab=empresas",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 842
+    },
+    {
+      "role": "admin",
+      "route": "/canal-denuncias",
+      "finalUrl": "/admin?tab=empresas",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 859
+    },
+    {
+      "role": "admin",
+      "route": "/viva-sipat",
+      "finalUrl": "/admin?tab=empresas",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 843
+    },
+    {
+      "role": "admin",
+      "route": "/desenvolvimento-humano",
+      "finalUrl": "/admin?tab=empresas",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1006
+    },
+    {
+      "role": "admin",
+      "route": "/nr1",
+      "finalUrl": "/admin?tab=empresas",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 803
+    },
+    {
+      "role": "admin",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/admin?tab=empresas",
+      "title": "Painel UniHER",
+      "status": "ok",
+      "matches": [
+        {
+          "id": "internal_runtime",
+          "text": "runtime",
+          "snippet": "\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"author\\\",\\\"href\\\":\\\"h"
+        }
+      ],
+      "elapsedMs": 987
+    },
+    {
+      "role": "admin",
+      "route": "/liga",
+      "finalUrl": "/gamificacao-config",
+      "title": "Conteudos educativos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1069
+    },
+    {
+      "role": "admin",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "title": "Conteudos educativos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1082
+    },
+    {
+      "role": "admin",
+      "route": "/historico",
+      "finalUrl": "/dashboard?section=exames",
+      "title": "Bom dia, Admin.",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1114
+    },
+    {
+      "role": "admin",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "title": "Conteudos educativos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1063
+    },
+    {
+      "role": "rh",
+      "route": "/dashboard",
+      "finalUrl": "/dashboard",
+      "title": "Bom dia, Contabilidade.",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1553
+    },
+    {
+      "role": "rh",
+      "route": "/produtos-modulos",
+      "finalUrl": "/produtos-modulos",
+      "title": "Produtos e Modulos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 875
+    },
+    {
+      "role": "rh",
+      "route": "/gamificacao-config",
+      "finalUrl": "/gamificacao-config",
+      "title": "Conteudos educativos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1025
+    },
+    {
+      "role": "rh",
+      "route": "/comunidade/gerenciar",
+      "finalUrl": "/comunidade/gerenciar",
+      "title": "Gestao editorial",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 860
+    },
+    {
+      "role": "rh",
+      "route": "/campanhas",
+      "finalUrl": "/campanhas",
+      "title": "Campanhas Tematicas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 885
+    },
+    {
+      "role": "rh",
+      "route": "/colaboradoras-gestao",
+      "finalUrl": "/colaboradoras-gestao",
+      "title": "Gestao de Colaboradoras",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1151
+    },
+    {
+      "role": "rh",
+      "route": "/departamentos",
+      "finalUrl": "/departamentos",
+      "title": "Departamentos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1086
+    },
+    {
+      "role": "rh",
+      "route": "/convites",
+      "finalUrl": "/convites",
+      "title": "Convites",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1192
+    },
+    {
+      "role": "rh",
+      "route": "/agenda",
+      "finalUrl": "/agenda",
+      "title": "📅 Minha Agenda de Exames",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 848
+    },
+    {
+      "role": "rh",
+      "route": "/notificacoes",
+      "finalUrl": "/notificacoes",
+      "title": "",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 30819
+    },
+    {
+      "role": "rh",
+      "route": "/configuracoes",
+      "finalUrl": "/configuracoes",
+      "title": "Configuracoes",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1071
+    },
+    {
+      "role": "rh",
+      "route": "/concierge",
+      "finalUrl": "/produtos-modulos",
+      "title": "Produtos e Modulos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 922
+    },
+    {
+      "role": "rh",
+      "route": "/canal-denuncias",
+      "finalUrl": "/produtos-modulos",
+      "title": "Produtos e Modulos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 879
+    },
+    {
+      "role": "rh",
+      "route": "/viva-sipat",
+      "finalUrl": "/produtos-modulos",
+      "title": "Produtos e Modulos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 878
+    },
+    {
+      "role": "rh",
+      "route": "/desenvolvimento-humano",
+      "finalUrl": "/produtos-modulos",
+      "title": "Produtos e Modulos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 925
+    },
+    {
+      "role": "rh",
+      "route": "/nr1",
+      "finalUrl": "/produtos-modulos",
+      "title": "Produtos e Modulos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 884
+    },
+    {
+      "role": "rh",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/produtos-modulos",
+      "title": "Produtos e Modulos",
+      "status": "ok",
+      "matches": [
+        {
+          "id": "internal_runtime",
+          "text": "runtime",
+          "snippet": "\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"author\\\",\\\"href\\\":\\\"h"
+        }
+      ],
+      "elapsedMs": 980
+    },
+    {
+      "role": "rh",
+      "route": "/liga",
+      "finalUrl": "/gamificacao-config",
+      "title": "Conteudos educativos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1124
+    },
+    {
+      "role": "rh",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "title": "Conteudos educativos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1039
+    },
+    {
+      "role": "rh",
+      "route": "/historico",
+      "finalUrl": "/dashboard?section=exames",
+      "title": "Bom dia, Contabilidade.",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1137
+    },
+    {
+      "role": "rh",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "title": "Conteudos educativos",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1066
+    },
+    {
+      "role": "lideranca",
+      "route": "/dashboard",
+      "finalUrl": "/dashboard",
+      "title": "Bom dia, Lideranca.",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1401
+    },
+    {
+      "role": "lideranca",
+      "route": "/campanhas",
+      "finalUrl": "/campanhas",
+      "title": "Campanhas Tematicas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 854
+    },
+    {
+      "role": "lideranca",
+      "route": "/comunidade/gerenciar",
+      "finalUrl": "/comunidade/gerenciar",
+      "title": "",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 30771
+    },
+    {
+      "role": "lideranca",
+      "route": "/agenda",
+      "finalUrl": "/agenda",
+      "title": "📅 Minha Agenda de Exames",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 889
+    },
+    {
+      "role": "lideranca",
+      "route": "/notificacoes",
+      "finalUrl": "/notificacoes",
+      "title": "",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 30764
+    },
+    {
+      "role": "lideranca",
+      "route": "/configuracoes",
+      "finalUrl": "/configuracoes",
+      "title": "Configuracoes",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1115
+    },
+    {
+      "role": "lideranca",
+      "route": "/liga",
+      "finalUrl": "/campanhas",
+      "title": "Campanhas Tematicas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1169
+    },
+    {
+      "role": "lideranca",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/campanhas",
+      "title": "Campanhas Tematicas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1024
+    },
+    {
+      "role": "lideranca",
+      "route": "/historico",
+      "finalUrl": "/dashboard?section=exames",
+      "title": "Bom dia, Lideranca.",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1205
+    },
+    {
+      "role": "lideranca",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/campanhas",
+      "title": "Campanhas Tematicas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 884
+    },
+    {
+      "role": "lideranca",
+      "route": "/nr1",
+      "finalUrl": "/colaboradora",
+      "title": "Bom dia, Lideranca",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 942
+    },
+    {
+      "role": "lideranca",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/colaboradora",
+      "title": "Bom dia, Lideranca",
+      "status": "ok",
+      "matches": [
+        {
+          "id": "internal_runtime",
+          "text": "runtime",
+          "snippet": "\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"author\\\",\\\"href\\\":\\\"h"
+        }
+      ],
+      "elapsedMs": 957
+    },
+    {
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "finalUrl": "/colaboradora",
+      "title": "Bom dia, NR-1",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1458
+    },
+    {
+      "role": "colaboradora",
+      "route": "/comunidade",
+      "finalUrl": "/comunidade",
+      "title": "Conteudos da sua empresa",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1035
+    },
+    {
+      "role": "colaboradora",
+      "route": "/campanhas",
+      "finalUrl": "/campanhas",
+      "title": "Campanhas Tematicas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1116
+    },
+    {
+      "role": "colaboradora",
+      "route": "/agenda",
+      "finalUrl": "/agenda",
+      "title": "📅 Minha Agenda de Exames",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 926
+    },
+    {
+      "role": "colaboradora",
+      "route": "/notificacoes",
+      "finalUrl": "/notificacoes",
+      "title": "",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 31130
+    },
+    {
+      "role": "colaboradora",
+      "route": "/configuracoes",
+      "finalUrl": "/configuracoes",
+      "title": "Configuracoes",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1056
+    },
+    {
+      "role": "colaboradora",
+      "route": "/objetivos",
+      "finalUrl": "/objetivos",
+      "title": "Objetivos pessoais",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1147
+    },
+    {
+      "role": "colaboradora",
+      "route": "/desafios",
+      "finalUrl": "/desafios",
+      "title": "Desafios da empresa",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1219
+    },
+    {
+      "role": "colaboradora",
+      "route": "/conquistas",
+      "finalUrl": "/conquistas",
+      "title": "Minhas conquistas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1099
+    },
+    {
+      "role": "colaboradora",
+      "route": "/semaforo",
+      "finalUrl": "/semaforo",
+      "title": "Semaforo da Saude",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 976
+    },
+    {
+      "role": "colaboradora",
+      "route": "/nr1",
+      "finalUrl": "/colaboradora",
+      "title": "Bom dia, NR-1",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 1109
+    },
+    {
+      "role": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/colaboradora",
+      "title": "Bom dia, NR-1",
+      "status": "ok",
+      "matches": [
+        {
+          "id": "internal_runtime",
+          "text": "runtime",
+          "snippet": "\",\\\"1\\\",{\\\"name\\\":\\\"description\\\",\\\"content\\\":\\\"Avaliacao NR-1 disponivel apenas quando o runtime autorizado estiver habilitado.\\\"}],[\\\"$\\\",\\\"link\\\",\\\"2\\\",{\\\"rel\\\":\\\"author\\\",\\\"href\\\":\\\"h"
+        }
+      ],
+      "elapsedMs": 1099
+    },
+    {
+      "role": "colaboradora",
+      "route": "/liga",
+      "finalUrl": "/conquistas",
+      "title": "Minhas conquistas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 903
+    },
+    {
+      "role": "colaboradora",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/conquistas",
+      "title": "Minhas conquistas",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 851
+    },
+    {
+      "role": "colaboradora",
+      "route": "/historico",
+      "finalUrl": "/colaboradora",
+      "title": "Bom dia, NR-1",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 874
+    },
+    {
+      "role": "colaboradora",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/desafios",
+      "title": "Desafios da empresa",
+      "status": "ok",
+      "matches": [],
+      "elapsedMs": 834
+    }
+  ]
+}

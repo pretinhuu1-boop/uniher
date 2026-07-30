@@ -1,0 +1,108 @@
+{
+  "baseURL": "http://127.0.0.1:3117",
+  "commit": "a73780c",
+  "generatedAt": "2026-07-30T04:24:02.094Z",
+  "scanScope": "body.innerText",
+  "results": [
+    {
+      "role": "colaboradora",
+      "route": "/objetivos",
+      "viewport": "desktop-1366",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/objetivos",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\desktop-1366-colaboradora-objetivos.png"
+    },
+    {
+      "role": "colaboradora",
+      "route": "/objetivos",
+      "viewport": "mobile-390",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/objetivos",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\mobile-390-colaboradora-objetivos.png"
+    },
+    {
+      "role": "colaboradora",
+      "route": "/desafios",
+      "viewport": "desktop-1366",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/desafios",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\desktop-1366-colaboradora-desafios.png"
+    },
+    {
+      "role": "colaboradora",
+      "route": "/desafios",
+      "viewport": "mobile-390",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/desafios",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\mobile-390-colaboradora-desafios.png"
+    },
+    {
+      "role": "colaboradora",
+      "route": "/conquistas",
+      "viewport": "desktop-1366",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/conquistas",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\desktop-1366-colaboradora-conquistas.png"
+    },
+    {
+      "role": "colaboradora",
+      "route": "/conquistas",
+      "viewport": "mobile-390",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/conquistas",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\mobile-390-colaboradora-conquistas.png"
+    },
+    {
+      "role": "rh",
+      "route": "/dashboard",
+      "viewport": "desktop-1366",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/dashboard",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\desktop-1366-rh-dashboard.png"
+    },
+    {
+      "role": "rh",
+      "route": "/dashboard",
+      "viewport": "mobile-390",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/dashboard",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\mobile-390-rh-dashboard.png"
+    },
+    {
+      "role": "rh",
+      "route": "/gamificacao-config",
+      "viewport": "desktop-1366",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/gamificacao-config",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\desktop-1366-rh-gamificacao_config.png"
+    },
+    {
+      "role": "rh",
+      "route": "/gamificacao-config",
+      "viewport": "mobile-390",
+      "loginStatus": 200,
+      "status": 200,
+      "finalUrl": "http://127.0.0.1:3117/gamificacao-config",
+      "forbiddenMatch": null,
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\private-journey-copy-clean-local-a73780c-2026-07-30T04-23-37-550Z\\mobile-390-rh-gamificacao_config.png"
+    }
+  ]
+}

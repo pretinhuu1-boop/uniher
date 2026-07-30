@@ -45,7 +45,7 @@ export default function ConquistasPage() {
       <FeedbackState
         kind="loading"
         title="Carregando conquistas"
-        description="Estamos sincronizando apenas seus eventos elegiveis."
+        description="Estamos sincronizando apenas seus marcos privados."
       />
     );
   }
@@ -75,7 +75,7 @@ export default function ConquistasPage() {
       <PageHeader
         context="Conquistas"
         title="Minhas conquistas"
-        description="Veja marcos privados derivados somente de objetivos e desafios elegiveis."
+        description="Veja marcos privados derivados somente de objetivos e desafios aprovados."
       />
 
       <SummaryBand
@@ -95,13 +95,13 @@ export default function ConquistasPage() {
             </span>
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase text-[var(--platform-action-strong)]">
-                Wave 8 ativa
+                Jornada privada
               </p>
               <h2 id="achievements-privacy-title" className="mt-2 text-xl font-semibold text-[var(--platform-ink)]">
-                Privadas, deterministicas e sem badge legado
+                Marcos privados da sua jornada
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">
-                As conquistas nascem apenas de eventos elegiveis nao revogados. Nao ha raridade, ranking, compartilhamento publico ou contagem de titulares.
+                As conquistas nascem apenas de marcos aprovados e nao revogados. A tela mostra seu proprio progresso e mantem tudo no espaco privado da colaboradora.
               </p>
             </div>
           </div>
@@ -110,12 +110,12 @@ export default function ConquistasPage() {
         <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[color-mix(in_srgb,var(--platform-positive)_10%,var(--platform-surface))] p-5 sm:p-6">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--platform-ink)]">
             <ShieldCheck size={19} aria-hidden="true" />
-            Contrato seguro
+            Privacidade da jornada
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--platform-muted)]">
-            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Somente objetivos e desafios elegiveis.</span></li>
-            <li className="flex gap-3"><Lock size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Visivel apenas para voce e para DSAR.</span></li>
-            <li className="flex gap-3"><Sparkles size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Sem pontos, raridade, ranking ou compartilhamento.</span></li>
+            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Somente marcos gerados por objetivos e desafios aprovados.</span></li>
+            <li className="flex gap-3"><Lock size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Visivel apenas para voce.</span></li>
+            <li className="flex gap-3"><Sparkles size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Marcos sem compartilhamento publico.</span></li>
           </ul>
         </div>
       </section>
@@ -126,7 +126,7 @@ export default function ConquistasPage() {
             Marcos privados
           </h2>
           <p className="mt-1 text-sm text-[var(--platform-muted)]">
-            Os estados sao recalculados a partir do ledger elegivel.
+            Os estados acompanham sua jornada privada conforme objetivos e desafios avancam.
           </p>
         </div>
 

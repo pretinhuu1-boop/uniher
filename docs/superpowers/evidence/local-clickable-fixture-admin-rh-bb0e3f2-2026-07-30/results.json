@@ -1,0 +1,110 @@
+{
+  "summary": {
+    "generatedAt": "2026-07-30T14:59:50.635Z",
+    "scope": "Local fixture validation for non-destructive RH/Admin clickables that open forms, accordions, or navigation without submitting production mutations.",
+    "total": 9,
+    "pass": 9,
+    "review": 0,
+    "fail": 0,
+    "byLane": {
+      "admin_forms": {
+        "total": 4,
+        "pass": 4,
+        "review": 0,
+        "fail": 0
+      },
+      "rh_navigation": {
+        "total": 1,
+        "pass": 1,
+        "review": 0,
+        "fail": 0
+      },
+      "rh_forms": {
+        "total": 4,
+        "pass": 4,
+        "review": 0,
+        "fail": 0
+      }
+    },
+    "reviewItems": [],
+    "failures": []
+  },
+  "results": [
+    {
+      "lane": "admin_forms",
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "label": "+ Nova Empresa",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/admin?tab=empresas",
+      "evidence": "Create company form opened and submit remained disabled while empty."
+    },
+    {
+      "lane": "admin_forms",
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "label": "Editar Empresa",
+      "status": "PASS",
+      "evidence": "Existing fixture company edit panel opened without clicking save or suspend."
+    },
+    {
+      "lane": "admin_forms",
+      "role": "admin",
+      "route": "/admin?tab=usuarios",
+      "label": "+ Novo usuario",
+      "status": "PASS",
+      "evidence": "Create user form opened and submit remained disabled while empty."
+    },
+    {
+      "lane": "admin_forms",
+      "role": "admin",
+      "route": "/admin?tab=admin",
+      "label": "+ Novo Admin Master",
+      "status": "PASS",
+      "evidence": "Admin master form opened and submit remained disabled while empty."
+    },
+    {
+      "lane": "rh_navigation",
+      "role": "rh",
+      "route": "/dashboard",
+      "label": "Convidar",
+      "status": "PASS",
+      "beforeUrl": "/dashboard",
+      "afterUrl": "/convites",
+      "evidence": "Dashboard action navigated to the invite management route."
+    },
+    {
+      "lane": "rh_forms",
+      "role": "rh",
+      "route": "/convites",
+      "label": "+ Convidar",
+      "status": "PASS",
+      "evidence": "Invite submit is present but disabled until an email is provided."
+    },
+    {
+      "lane": "rh_forms",
+      "role": "rh",
+      "route": "/convites",
+      "label": "Convidar em massa",
+      "status": "PASS",
+      "evidence": "Bulk invite section expanded without submitting invite data."
+    },
+    {
+      "lane": "rh_forms",
+      "role": "rh",
+      "route": "/departamentos",
+      "label": "+ Novo Departamento",
+      "status": "PASS",
+      "evidence": "Create department form opened and submit remained disabled while empty."
+    },
+    {
+      "lane": "rh_forms",
+      "role": "rh",
+      "route": "/departamentos",
+      "label": "Editar Departamento",
+      "status": "PASS",
+      "evidence": "Existing fixture department edit form opened without saving or deleting."
+    }
+  ]
+}

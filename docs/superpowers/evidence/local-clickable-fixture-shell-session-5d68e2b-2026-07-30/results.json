@@ -1,0 +1,1723 @@
+{
+  "summary": {
+    "generatedAt": "2026-07-30T14:40:50.422Z",
+    "source": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\blocked-clickable-local-fixture-map-ea64600-2026-07-30\\blocked-controls.json",
+    "scope": "Local fixture validation for global home, session/logout, disabled, collaborator wellbeing and reading controls.",
+    "total": 180,
+    "pass": 175,
+    "review": 5,
+    "fail": 0,
+    "byLane": {
+      "home": {
+        "total": 76,
+        "pass": 76,
+        "review": 0,
+        "fail": 0
+      },
+      "session": {
+        "total": 76,
+        "pass": 76,
+        "review": 0,
+        "fail": 0
+      },
+      "disabled": {
+        "total": 25,
+        "pass": 20,
+        "review": 5,
+        "fail": 0
+      },
+      "wellbeing": {
+        "total": 2,
+        "pass": 2,
+        "review": 0,
+        "fail": 0
+      },
+      "education": {
+        "total": 1,
+        "pass": 1,
+        "review": 0,
+        "fail": 0
+      }
+    },
+    "reviewItems": [
+      {
+        "lane": "disabled",
+        "role": "colaboradora",
+        "route": "/campanhas",
+        "label": "Participar Agora",
+        "status": "REVIEW",
+        "beforeUrl": "/campanhas",
+        "afterUrl": "/campanhas",
+        "error": "disabled control from production inventory was not present in the local fixture route"
+      },
+      {
+        "lane": "disabled",
+        "role": "lideranca",
+        "route": "/campanhas",
+        "label": "Participar Agora",
+        "status": "REVIEW",
+        "beforeUrl": "/campanhas",
+        "afterUrl": "/campanhas",
+        "error": "disabled control from production inventory was not present in the local fixture route"
+      },
+      {
+        "lane": "disabled",
+        "role": "lideranca",
+        "route": "/desafios/gerenciar",
+        "label": "Participar Agora",
+        "status": "REVIEW",
+        "beforeUrl": "/campanhas",
+        "afterUrl": "/campanhas",
+        "error": "disabled control from production inventory was not present in the local fixture route"
+      },
+      {
+        "lane": "disabled",
+        "role": "lideranca",
+        "route": "/liga",
+        "label": "Participar Agora",
+        "status": "REVIEW",
+        "beforeUrl": "/campanhas",
+        "afterUrl": "/campanhas",
+        "error": "disabled control from production inventory was not present in the local fixture route"
+      },
+      {
+        "lane": "disabled",
+        "role": "lideranca",
+        "route": "/liga/gerenciar",
+        "label": "Participar Agora",
+        "status": "REVIEW",
+        "beforeUrl": "/campanhas",
+        "afterUrl": "/campanhas",
+        "error": "disabled control from production inventory was not present in the local fixture route"
+      }
+    ],
+    "failures": []
+  },
+  "results": [
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/admin",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/admin?tab=admin",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=admin",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/admin?tab=sistema",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=sistema",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/admin?tab=usuarios",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=usuarios",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/analytics-emails",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/analytics-emails",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/avaliacao-nr1",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/canal-denuncias",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/comunidade/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/comunidade/gerenciar",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/concierge",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/dashboard?section=exames",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/desafios/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/desenvolvimento-humano",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/gamificacao-config",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/historico",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/liga",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/liga/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/nr1",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/primeiro-acesso",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/primeiro-acesso",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/produtos-modulos",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/saude-primaria",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "admin",
+      "route": "/viva-sipat",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/agenda",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/agenda",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/campanhas",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/canal-denuncias",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/comunidade",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/comunidade",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/concierge",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/configuracoes",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/configuracoes",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/conquistas",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/conquistas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/desafios",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/desafios",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/desafios/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/desafios",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/desenvolvimento-humano",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/historico",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/liga",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/conquistas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/liga/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/conquistas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/notificacoes",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/notificacoes",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/nr1",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/objetivos",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/objetivos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/primeiro-acesso",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/primeiro-acesso",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/saude-primaria",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/semaforo",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/semaforo",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/semaforo",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "colaboradora",
+      "route": "/viva-sipat",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "lideranca",
+      "route": "/campanhas",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "lideranca",
+      "route": "/dashboard",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "lideranca",
+      "route": "/desafios/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "lideranca",
+      "route": "/historico",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "lideranca",
+      "route": "/liga",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "lideranca",
+      "route": "/liga/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "lideranca",
+      "route": "/saude-primaria",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/avaliacao-nr1",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/campanhas",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/canal-denuncias",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/colaboradoras-gestao",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/colaboradoras-gestao",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/company-profile",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/company-profile",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/comunidade/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/comunidade/gerenciar",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/concierge",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/convites",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/convites",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/dashboard",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/dashboard?section=exames",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/dashboard?section=saude-primaria",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/departamentos",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/departamentos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/desafios/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/desenvolvimento-humano",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/gamificacao-config",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/historico",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/liga",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/liga/gerenciar",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/notificacoes",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/notificacoes",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/nr1",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/onboarding-rh",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/onboarding-rh",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/produtos-modulos",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/saude-primaria",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "home",
+      "role": "rh",
+      "route": "/viva-sipat",
+      "label": "Ir para o início da UniHER",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/admin",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/admin?tab=admin",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=admin",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/admin?tab=sistema",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=sistema",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/admin?tab=usuarios",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=usuarios",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/analytics-emails",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/analytics-emails",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/avaliacao-nr1",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/canal-denuncias",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/comunidade/gerenciar",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/comunidade/gerenciar",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/concierge",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/dashboard?section=exames",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/desafios/gerenciar",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/desenvolvimento-humano",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/gamificacao-config",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/historico",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/liga",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/liga/gerenciar",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/nr1",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/primeiro-acesso",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/primeiro-acesso",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/produtos-modulos",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/saude-primaria",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "admin",
+      "route": "/viva-sipat",
+      "label": "Sair da Plataforma",
+      "status": "PASS",
+      "beforeUrl": "/admin?tab=empresas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/agenda",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/agenda",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/campanhas",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/canal-denuncias",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/comunidade",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/comunidade",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/concierge",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/configuracoes",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/configuracoes",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/conquistas",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/conquistas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/desafios",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/desafios",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/desafios/gerenciar",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/desafios",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/desenvolvimento-humano",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/historico",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/liga",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/conquistas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/liga/gerenciar",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/conquistas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/notificacoes",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/notificacoes",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/nr1",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/objetivos",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/objetivos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/primeiro-acesso",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/primeiro-acesso",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/saude-primaria",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/semaforo",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/semaforo",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/semaforo",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "colaboradora",
+      "route": "/viva-sipat",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "lideranca",
+      "route": "/campanhas",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "lideranca",
+      "route": "/dashboard",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/dashboard",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "lideranca",
+      "route": "/desafios/gerenciar",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "lideranca",
+      "route": "/historico",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "lideranca",
+      "route": "/liga",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "lideranca",
+      "route": "/liga/gerenciar",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "lideranca",
+      "route": "/saude-primaria",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/avaliacao-nr1",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/campanhas",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/canal-denuncias",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/colaboradoras-gestao",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/colaboradoras-gestao",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/company-profile",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/company-profile",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/comunidade/gerenciar",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/comunidade/gerenciar",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/concierge",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/convites",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/convites",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/dashboard",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/dashboard",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/dashboard?section=exames",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/dashboard?section=saude-primaria",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/departamentos",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/departamentos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/desafios/gerenciar",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/desenvolvimento-humano",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/gamificacao-config",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/historico",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/liga",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/liga/gerenciar",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/notificacoes",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/notificacoes",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/nr1",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/onboarding-rh",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/onboarding-rh",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/produtos-modulos",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/saude-primaria",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "session",
+      "role": "rh",
+      "route": "/viva-sipat",
+      "label": "Sair da Conta",
+      "status": "PASS",
+      "beforeUrl": "/produtos-modulos",
+      "afterUrl": "/ -> /auth?redirect=%2Fadmin"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/comunidade/gerenciar",
+      "label": "Novo conteúdo",
+      "status": "PASS",
+      "beforeUrl": "/comunidade/gerenciar",
+      "afterUrl": "/comunidade/gerenciar"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/dashboard?section=exames",
+      "label": "Exportar CSV",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/dashboard?section=exames"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "label": "Exportar CSV",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/dashboard?section=saude-primaria"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/desafios/gerenciar",
+      "label": "Anterior",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/gamificacao-config",
+      "label": "Anterior",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/historico",
+      "label": "Exportar CSV",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=exames",
+      "afterUrl": "/dashboard?section=exames"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/liga",
+      "label": "Anterior",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/liga/gerenciar",
+      "label": "Anterior",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "disabled",
+      "role": "admin",
+      "route": "/saude-primaria",
+      "label": "Exportar CSV",
+      "status": "PASS",
+      "beforeUrl": "/dashboard?section=saude-primaria",
+      "afterUrl": "/dashboard?section=saude-primaria"
+    },
+    {
+      "lane": "disabled",
+      "role": "colaboradora",
+      "route": "/campanhas",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "colaboradora",
+      "route": "/configuracoes",
+      "label": "Salvar contato",
+      "status": "PASS",
+      "beforeUrl": "/configuracoes",
+      "afterUrl": "/configuracoes"
+    },
+    {
+      "lane": "disabled",
+      "role": "colaboradora",
+      "route": "/saude-primaria",
+      "label": "Salvar Prevenção",
+      "status": "PASS",
+      "beforeUrl": "/semaforo",
+      "afterUrl": "/semaforo"
+    },
+    {
+      "lane": "disabled",
+      "role": "colaboradora",
+      "route": "/semaforo",
+      "label": "Salvar Prevenção",
+      "status": "PASS",
+      "beforeUrl": "/semaforo",
+      "afterUrl": "/semaforo"
+    },
+    {
+      "lane": "disabled",
+      "role": "lideranca",
+      "route": "/campanhas",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "lideranca",
+      "route": "/desafios/gerenciar",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "lideranca",
+      "route": "/liga",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "lideranca",
+      "route": "/liga/gerenciar",
+      "label": "Participar Agora",
+      "status": "REVIEW",
+      "beforeUrl": "/campanhas",
+      "afterUrl": "/campanhas",
+      "error": "disabled control from production inventory was not present in the local fixture route"
+    },
+    {
+      "lane": "disabled",
+      "role": "rh",
+      "route": "/colaboradoras-gestao",
+      "label": "Confirmar importação",
+      "status": "PASS",
+      "beforeUrl": "/colaboradoras-gestao",
+      "afterUrl": "/colaboradoras-gestao"
+    },
+    {
+      "lane": "disabled",
+      "role": "rh",
+      "route": "/company-profile",
+      "label": "Feed da comunidade da empresa",
+      "status": "PASS",
+      "beforeUrl": "/company-profile",
+      "afterUrl": "/company-profile"
+    },
+    {
+      "lane": "disabled",
+      "role": "rh",
+      "route": "/comunidade/gerenciar",
+      "label": "Publicar",
+      "status": "PASS",
+      "beforeUrl": "/comunidade/gerenciar",
+      "afterUrl": "/comunidade/gerenciar"
+    },
+    {
+      "lane": "disabled",
+      "role": "rh",
+      "route": "/convites",
+      "label": "+ Convidar",
+      "status": "PASS",
+      "beforeUrl": "/convites",
+      "afterUrl": "/convites"
+    },
+    {
+      "lane": "disabled",
+      "role": "rh",
+      "route": "/desafios/gerenciar",
+      "label": "Anterior",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "disabled",
+      "role": "rh",
+      "route": "/gamificacao-config",
+      "label": "Anterior",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "disabled",
+      "role": "rh",
+      "route": "/liga",
+      "label": "Anterior",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "disabled",
+      "role": "rh",
+      "route": "/liga/gerenciar",
+      "label": "Anterior",
+      "status": "PASS",
+      "beforeUrl": "/gamificacao-config",
+      "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "wellbeing",
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "label": "Fazer check-in + mood",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/colaboradora"
+    },
+    {
+      "lane": "wellbeing",
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "label": "Fazer check-out + mood",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/colaboradora"
+    },
+    {
+      "lane": "education",
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "label": "Registrar leitura",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/colaboradora"
+    }
+  ]
+}

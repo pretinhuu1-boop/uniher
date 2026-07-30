@@ -99,6 +99,21 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
           updated_at = excluded.updated_at
       `).run(userId);
 
+      const hasEmployeeIdentityProfiles = db.prepare(`
+        SELECT name FROM sqlite_master
+        WHERE type = 'table' AND name = 'employee_identity_profiles'
+      `).get();
+      if (hasEmployeeIdentityProfiles) {
+        db.prepare(`
+          UPDATE employee_identity_profiles
+          SET user_id = ?, updated_at = datetime('now')
+          WHERE user_id IS NULL
+            AND company_id = ?
+            AND lower(email) = lower(?)
+            AND deleted_at IS NULL
+        `).run(userId, invite.company_id, invite.email);
+      }
+
       db.prepare(`UPDATE invites SET status = 'accepted', accepted_at = datetime('now') WHERE token = ?`).run(token);
     });
   } catch (err: any) {

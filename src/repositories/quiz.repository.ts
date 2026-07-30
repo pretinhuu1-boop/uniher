@@ -33,6 +33,11 @@ export function getArchetypeByKey(key: string): ArchetypeRow | undefined {
   return db.prepare('SELECT * FROM archetypes WHERE key = ?').get(key) as ArchetypeRow | undefined;
 }
 
+export function getArchetypeById(id: string): ArchetypeRow | undefined {
+  const db = getReadDb();
+  return db.prepare('SELECT * FROM archetypes WHERE id = ?').get(id) as ArchetypeRow | undefined;
+}
+
 export async function saveQuizResult(data: {
   userId: string;
   archetypeKey: string;

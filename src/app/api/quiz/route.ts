@@ -15,7 +15,7 @@ export const GET = withAuth(async (_req, { auth }) => {
     }
 
     const archetype = result.archetype_id
-      ? quizRepo.getArchetypeByKey(result.archetype_id)
+      ? quizRepo.getArchetypeById(result.archetype_id)
       : null;
 
     return NextResponse.json({

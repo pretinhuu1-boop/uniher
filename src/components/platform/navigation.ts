@@ -61,19 +61,13 @@ const NAVIGATION = {
           href: '/admin?tab=empresas',
           label: 'Empresas',
           icon: 'companies',
-          description: 'Empresas, usuários, permissões e módulos contratados',
+          description: 'Empresas, usuarios, permissoes e produtos disponiveis',
         },
         {
           href: '/dashboard?section=saude-primaria',
           label: 'Saúde Primária',
           icon: 'semaforo',
           description: 'Semáforo consolidado e indicadores por empresa, setor e período',
-        },
-        {
-          href: '/concierge',
-          label: 'Concierge',
-          icon: 'profile',
-          description: 'Gestão de casos somente quando o módulo e contrato estiverem aprovados',
         },
         {
           href: '/dashboard?section=exames',
@@ -91,13 +85,13 @@ const NAVIGATION = {
           href: '/gamificacao-config',
           label: 'Objetivos e Desafios',
           icon: 'conquistas',
-          description: 'Governança de objetivos, desafios e conquistas sem ranking ou liga ativa',
+          description: 'Jornadas privadas de objetivos, desafios e conquistas',
         },
         {
           href: '/produtos-modulos',
           label: 'Produtos e Módulos',
           icon: 'config',
-          description: 'Catálogo, estados contratados e visibilidade sem ativação automática de módulos gated',
+          description: 'Disponibilidade dos produtos e visibilidade sem ativacao automatica',
         },
         {
           href: '/analytics-emails',
@@ -151,7 +145,13 @@ const NAVIGATION = {
           href: '/dashboard?section=saude-primaria',
           label: 'Saúde Primária',
           icon: 'semaforo',
-          description: 'Semáforo da saúde e Concierge sob gates clínicos e contratuais',
+          description: 'Semáforo da saúde com indicadores agregados sob gates clínicos',
+        },
+        {
+          href: '/comunidade/gerenciar',
+          label: 'Gestão editorial',
+          icon: 'community',
+          description: 'Criação, revisão e publicação de conteúdos da comunidade',
         },
         {
           href: '/campanhas',
@@ -163,7 +163,7 @@ const NAVIGATION = {
           href: '/gamificacao-config',
           label: 'Objetivos e Desafios',
           icon: 'conquistas',
-          description: 'Objetivos, desafios e conquistas em governança, sem ranking ou liga ativa',
+          description: 'Objetivos, desafios e conquistas em jornadas privadas',
         },
       ],
     },
@@ -233,9 +233,9 @@ const NAVIGATION = {
       items: [
         {
           href: '/semaforo',
-          label: 'Saúde Primária',
+          label: 'Semáforo da Saúde',
           icon: 'semaforo',
-          description: 'Semáforo da Saúde',
+          description: 'Quiz de perfil, resultado por dimensão e sinais privados',
         },
         {
           href: '/colaboradora',
@@ -265,7 +265,7 @@ const NAVIGATION = {
           href: '/desafios',
           label: 'Desafios',
           icon: 'desafios',
-          description: 'Desafios voluntários da empresa sem pontuação competitiva',
+          description: 'Desafios voluntarios e educativos da empresa',
         },
         {
           href: '/conquistas',
@@ -294,12 +294,12 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   primary_health: {
     href: '/dashboard?section=saude-primaria',
     icon: 'semaforo',
-    description: 'Módulo contratado de cuidado primário, visível conforme governança',
+    description: 'Cuidado primario visivel conforme disponibilidade da empresa',
   },
   concierge: {
     href: '/concierge',
     icon: 'profile',
-    description: 'Acompanhamento de casos somente para empresas com Concierge contratado',
+    description: 'Acompanhamento de casos somente para empresas com Concierge disponivel',
   },
   education: {
     href: '/campanhas',
@@ -309,12 +309,12 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   achievements: {
     href: '/conquistas',
     icon: 'conquistas',
-    description: 'Objetivos, desafios e conquistas sem ranking ou liga ativa',
+    description: 'Objetivos, desafios e conquistas privadas',
   },
   nr1: {
     href: '/avaliacao-nr1',
     icon: 'historico',
-    description: 'Avaliação psicossocial NR-1 sob contrato e gates Yavix',
+    description: 'Avaliacao psicossocial NR-1 somente quando houver liberacao operacional',
   },
   sipat: {
     href: '/viva-sipat',
@@ -324,20 +324,31 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   human_development: {
     href: '/desenvolvimento-humano',
     icon: 'objetivos',
-    description: 'Conteúdos de desenvolvimento humano contratados pela empresa',
+    description: 'Conteudos de desenvolvimento humano disponiveis para a empresa',
   },
   denunciation: {
     href: '/canal-denuncias',
     icon: 'config',
-    description: 'Canal parceiro para denúncias, governado por contrato específico',
+    description: 'Canal parceiro para denuncias quando houver liberacao aprovada',
   },
 };
 
 const MODULE_STATE_BADGES: Readonly<Record<Exclude<CompanyModuleState, 'enabled'>, string>> = {
   locked: 'Bloqueado',
-  coming_soon: 'Em breve',
+  coming_soon: 'Planejado',
   partner_managed: 'Parceiro',
-  requires_contract: 'Contrato',
+  requires_contract: 'Aguardando liberacao',
+};
+
+const MODULE_NAVIGATION_RUNTIME_READY: Readonly<Record<CompanyModuleSlug, boolean>> = {
+  primary_health: true,
+  concierge: false,
+  education: true,
+  achievements: true,
+  nr1: false,
+  sipat: false,
+  human_development: false,
+  denunciation: false,
 };
 
 function getModuleBadgeLabel(moduleState: CompanyModuleState): string | undefined {
@@ -406,7 +417,8 @@ function getExistingRoutes(groups: readonly NavigationGroup[]): Set<string> {
 
 function canShowModuleNavigationItem(role: UserRole, module: NavigationModuleRow): boolean {
   if (module.visible !== 1) return false;
-  if (role === 'colaboradora' && module.module_state !== 'enabled') return false;
+  if (!MODULE_NAVIGATION_RUNTIME_READY[module.module_slug]) return false;
+  if (module.module_state !== 'enabled') return false;
   return true;
 }
 

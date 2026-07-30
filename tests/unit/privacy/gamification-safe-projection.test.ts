@@ -96,11 +96,16 @@ import { GET as getLeaderTeam } from '@/app/api/leader/team/route';
 import { GET as getRhUsers } from '@/app/api/rh/users/route';
 import { GET as getAdminUsers } from '@/app/api/admin/users/route';
 import { GET as getAdminCompanyUsers } from '@/app/api/admin/companies/[id]/users/route';
+import { POST as sendAdminAlert } from '@/app/api/admin/alerts/send/route';
 import { GET as getNotifications } from '@/app/api/notifications/route';
 import { GET as getNotificationCount } from '@/app/api/notifications/count/route';
 
 const root = process.cwd();
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), 'utf8');
+const foldText = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase();
 const forbiddenKeys = new Set([
   'password_hash', 'points', 'level', 'league', 'streak', 'week_points', 'points_spent', 'xp', 'xp_reward', 'badges', 'user_badges',
   'pointsnextlevel', 'achievementcount', 'levelinfo', 'pointsearned', 'currentleague', 'weekpoints',
@@ -677,17 +682,30 @@ describe('safe authenticated projections', () => {
   });
 
   it('removes numeric gamification promises and totals from platform source', () => {
-    const neutralDeepLinks = [
-      'src/app/(platform)/desafios/gerenciar/page.tsx',
-      'src/app/(platform)/gamificacao-config/page.tsx',
-      'src/app/(platform)/liga/page.tsx',
-      'src/app/(platform)/liga/gerenciar/page.tsx',
-    ];
-    for (const page of neutralDeepLinks) {
-      const source = read(page);
-      expect(source, page).toContain('FeedbackState');
-      expect(source, page).toContain('LEGACY_GAMIFICATION_STATE.message');
-    }
+    const challengeManagementCompatibility = read('src/app/(platform)/desafios/gerenciar/page.tsx');
+    expect(challengeManagementCompatibility).toContain("router.replace('/gamificacao-config')");
+    expect(challengeManagementCompatibility).not.toContain('LEGACY_GAMIFICATION_STATE');
+    expect(challengeManagementCompatibility).not.toMatch(/ranking|leaderboard|recompensas|xp_reward/i);
+
+    const ligaCompatibility = read('src/app/(platform)/liga/page.tsx');
+    expect(ligaCompatibility).toContain("router.replace('/conquistas')");
+    expect(ligaCompatibility).toContain("router.replace('/gamificacao-config')");
+    expect(ligaCompatibility).toContain("router.replace('/campanhas')");
+    expect(ligaCompatibility).not.toContain('LEGACY_GAMIFICATION_STATE');
+    expect(ligaCompatibility).not.toMatch(/ranking|leaderboard|recompensas|xp_reward/i);
+
+    const ligaManagementCompatibility = read('src/app/(platform)/liga/gerenciar/page.tsx');
+    expect(ligaManagementCompatibility).toContain("router.replace('/gamificacao-config')");
+    expect(ligaManagementCompatibility).toContain("router.replace('/conquistas')");
+    expect(ligaManagementCompatibility).toContain("router.replace('/campanhas')");
+    expect(ligaManagementCompatibility).not.toContain('LEGACY_GAMIFICATION_STATE');
+    expect(ligaManagementCompatibility).not.toMatch(/ranking|leaderboard|recompensas|xp_reward/i);
+
+    const educationManager = read('src/app/(platform)/gamificacao-config/page.tsx');
+    expect(educationManager).toContain('/api/rh/lessons');
+    expect(educationManager).toContain('Conteudos educativos');
+    expect(foldText(educationManager)).not.toMatch(/governanca privada|contrato real|contrato educativo/i);
+    expect(educationManager).not.toMatch(/xp_reward|week_points|points_spent|pontos totais|subir de nÃ­vel|ranking semanal|exibir no ranking|\/api\/gamification\/(?:rewards|league)/i);
 
     const approvedParticipationPages = [
       'src/app/(platform)/conquistas/page.tsx',
@@ -696,6 +714,19 @@ describe('safe authenticated projections', () => {
     ].map(read).join('\n');
     expect(approvedParticipationPages).not.toMatch(/week_points|points_spent|xp_reward|pontos totais|subir de nível|ranking semanal|exibir no ranking/i);
     expect(approvedParticipationPages).not.toMatch(/user_badges|user_leagues|custom_league_members|health_scores/);
+    expect(foldText(approvedParticipationPages)).not.toMatch(/\bwave\s+\d+\b|legad[oa]s?|ranking|badges?|classificacao|pontuacao|liga|semaforo|nr-1/i);
+    expect(foldText(approvedParticipationPages)).not.toMatch(/contrato seguro|eventos elegiveis|recibos de privacidade|dsar|ledger elegivel|sem expor historico/i);
+
+    const dashboardViewModel = read('src/app/(platform)/dashboard/dashboard-view-model.ts');
+    expect(foldText(dashboardViewModel)).not.toMatch(/fonte legada|classificacao de sensibilidade/i);
+
+    const sidebarSource = read('src/components/platform/Sidebar.tsx');
+    const collaboratorStart = sidebarSource.indexOf('collaborator: {');
+    const collaboratorEnd = sidebarSource.indexOf('  manager:', collaboratorStart);
+    const collaboratorNavigationDetails = sidebarSource.slice(collaboratorStart, collaboratorEnd);
+    expect(collaboratorNavigationDetails).not.toBe('');
+    expect(foldText(collaboratorNavigationDetails)).not.toMatch(/sem compara|sem liga|sem ranking/i);
+    expect(foldText(read('src/components/platform/navigation.ts'))).not.toMatch(/sem pontua/i);
 
     const reachablePages = [
       'src/app/(platform)/colaboradora/page.tsx',
@@ -711,5 +742,35 @@ describe('safe authenticated projections', () => {
     const adminSource = read('src/app/(platform)/admin/page.tsx');
     expect(adminSource).not.toContain("activeTab === 'Badges'");
     expect(adminSource).not.toMatch(/<span>Nível \{u\.level\}|u\.points\.toLocaleString/);
+  });
+
+  it('keeps Admin surfaces from reopening legacy badges or gamification alert types', () => {
+    const adminSource = read('src/app/(platform)/admin/page.tsx');
+    const adminAlertRoute = read('src/app/api/admin/alerts/send/route.ts');
+
+    expect(adminSource).not.toMatch(/function\s+BadgesTab|Badges Tab|\/api\/admin\/badges|Novo Badge|Criar Badge|Badges da Plataforma|>Pontos</);
+    expect(adminSource).not.toMatch(/value="challenge"|value="gamification"|Gamifica(?:ção|Ã§Ã£o)/);
+    expect(adminAlertRoute).not.toMatch(/'challenge'|'gamification'/);
+  });
+
+  it.each(['challenge', 'gamification'])('rejects legacy Admin alert type %s before DB access', async (notificationType) => {
+    boundary.events = [];
+
+    const response = await sendAdminAlert(new Request('http://localhost/api/admin/alerts/send', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Aviso',
+        message: 'Mensagem segura',
+        company_id: 'company-1',
+        notification_type: notificationType,
+      }),
+    }) as any, {
+      auth: { ...auth, role: 'admin', isMasterAdmin: true, companyId: '' },
+    } as any);
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toBe('Dados inválidos');
+    expect(boundary.events).toEqual([]);
   });
 });

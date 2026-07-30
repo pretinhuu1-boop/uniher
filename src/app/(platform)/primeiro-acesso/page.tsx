@@ -42,7 +42,7 @@ const TOUR_BY_ROLE: Record<UserRole, TourSlide[]> = {
       title: 'Experiência final do produto',
       description: 'Mesmo em perfil master, o objetivo é validar a jornada completa da plataforma para empresa e colaboradora.',
       bullets: [
-        'conteúdo diário e gamificação',
+        'conteúdo diário e recorrência guiada',
         'uso contínuo no mobile',
         'comunicação segmentada por empresa e perfil',
       ],

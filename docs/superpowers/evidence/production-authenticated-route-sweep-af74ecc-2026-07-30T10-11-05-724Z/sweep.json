@@ -1,0 +1,1258 @@
+{
+  "summary": {
+    "baseURL": "https://www.uniher.com.br",
+    "commit": "af74ecc",
+    "generatedAt": "2026-07-30T10:12:35.983Z",
+    "total": 75,
+    "pass": 53,
+    "review": 22,
+    "error": 0,
+    "reviewItems": [
+      {
+        "role": "admin",
+        "route": "/admin",
+        "finalUrl": "/admin",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-admin.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/admin?tab=empresas",
+        "finalUrl": "/admin?tab=empresas",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-admin-tab-empresas.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/admin?tab=usuarios",
+        "finalUrl": "/admin?tab=usuarios",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-admin-tab-usuarios.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/admin?tab=admin",
+        "finalUrl": "/admin?tab=admin",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-admin-tab-admin.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/admin?tab=sistema",
+        "finalUrl": "/admin?tab=sistema",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-admin-tab-sistema.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/analytics-emails",
+        "finalUrl": "/analytics-emails",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-analytics-emails.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/produtos-modulos",
+        "finalUrl": "/produtos-modulos",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-produtos-modulos.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/dashboard?section=saude-primaria",
+        "finalUrl": "/dashboard?section=saude-primaria",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-dashboard-section-saude-primaria.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/dashboard?section=exames",
+        "finalUrl": "/dashboard?section=exames",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-dashboard-section-exames.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/comunidade/gerenciar",
+        "finalUrl": "/comunidade/gerenciar",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-comunidade-gerenciar.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/gamificacao-config",
+        "finalUrl": "/gamificacao-config",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-gamificacao-config.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/concierge",
+        "finalUrl": "/admin?tab=empresas",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-concierge.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/canal-denuncias",
+        "finalUrl": "/admin?tab=empresas",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-canal-denuncias.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/viva-sipat",
+        "finalUrl": "/admin?tab=empresas",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-viva-sipat.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/desenvolvimento-humano",
+        "finalUrl": "/admin?tab=empresas",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-desenvolvimento-humano.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/nr1",
+        "finalUrl": "/admin?tab=empresas",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-nr1.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/avaliacao-nr1",
+        "finalUrl": "/admin?tab=empresas",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-avaliacao-nr1.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/historico",
+        "finalUrl": "/dashboard?section=exames",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-historico.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/saude-primaria",
+        "finalUrl": "/dashboard?section=saude-primaria",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-saude-primaria.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/liga",
+        "finalUrl": "/gamificacao-config",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-liga.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/liga/gerenciar",
+        "finalUrl": "/gamificacao-config",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-liga-gerenciar.png",
+        "error": null
+      },
+      {
+        "role": "admin",
+        "route": "/desafios/gerenciar",
+        "finalUrl": "/gamificacao-config",
+        "status": "REVIEW",
+        "hits": [
+          {
+            "key": "internal_contract",
+            "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+          }
+        ],
+        "screenshot": "admin-desafios-gerenciar.png",
+        "error": null
+      }
+    ]
+  },
+  "results": [
+    {
+      "role": "admin",
+      "route": "/admin",
+      "finalUrl": "/admin",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-admin.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-admin-tab-empresas.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=usuarios",
+      "finalUrl": "/admin?tab=usuarios",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-admin-tab-usuarios.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=admin",
+      "finalUrl": "/admin?tab=admin",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-admin-tab-admin.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=sistema",
+      "finalUrl": "/admin?tab=sistema",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-admin-tab-sistema.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/analytics-emails",
+      "finalUrl": "/analytics-emails",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-analytics-emails.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/produtos-modulos",
+      "finalUrl": "/produtos-modulos",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-produtos-modulos.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "finalUrl": "/dashboard?section=saude-primaria",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-dashboard-section-saude-primaria.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/dashboard?section=exames",
+      "finalUrl": "/dashboard?section=exames",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-dashboard-section-exames.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/comunidade/gerenciar",
+      "finalUrl": "/comunidade/gerenciar",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-comunidade-gerenciar.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/gamificacao-config",
+      "finalUrl": "/gamificacao-config",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-gamificacao-config.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/concierge",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-concierge.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/canal-denuncias",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-canal-denuncias.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/viva-sipat",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-viva-sipat.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/desenvolvimento-humano",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-desenvolvimento-humano.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/nr1",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-nr1.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-avaliacao-nr1.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/historico",
+      "finalUrl": "/dashboard?section=exames",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-historico.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/saude-primaria",
+      "finalUrl": "/dashboard?section=saude-primaria",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-saude-primaria.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/liga",
+      "finalUrl": "/gamificacao-config",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-liga.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-liga-gerenciar.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "title": "Ir para conteúdo principal | UniHER | Administrador da Plataforma",
+      "overflow": false,
+      "screenshot": "admin-desafios-gerenciar.png",
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/dashboard",
+      "finalUrl": "/dashboard",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/dashboard?section=saude-primaria",
+      "finalUrl": "/dashboard?section=saude-primaria",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/dashboard?section=exames",
+      "finalUrl": "/dashboard?section=exames",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/colaboradoras-gestao",
+      "finalUrl": "/colaboradoras-gestao",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/departamentos",
+      "finalUrl": "/departamentos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/convites",
+      "finalUrl": "/convites",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/campanhas",
+      "finalUrl": "/campanhas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/comunidade/gerenciar",
+      "finalUrl": "/comunidade/gerenciar",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/company-profile",
+      "finalUrl": "/company-profile",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/notificacoes",
+      "finalUrl": "/notificacoes",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/produtos-modulos",
+      "finalUrl": "/produtos-modulos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/gamificacao-config",
+      "finalUrl": "/gamificacao-config",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/onboarding-rh",
+      "finalUrl": "/onboarding-rh",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/concierge",
+      "finalUrl": "/produtos-modulos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/canal-denuncias",
+      "finalUrl": "/produtos-modulos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/viva-sipat",
+      "finalUrl": "/produtos-modulos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/desenvolvimento-humano",
+      "finalUrl": "/produtos-modulos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/nr1",
+      "finalUrl": "/produtos-modulos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/produtos-modulos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/historico",
+      "finalUrl": "/dashboard?section=exames",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/saude-primaria",
+      "finalUrl": "/dashboard?section=saude-primaria",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/liga",
+      "finalUrl": "/gamificacao-config",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "rh",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "lideranca",
+      "route": "/dashboard",
+      "finalUrl": "/dashboard",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "lideranca",
+      "route": "/campanhas",
+      "finalUrl": "/campanhas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "lideranca",
+      "route": "/historico",
+      "finalUrl": "/dashboard?section=exames",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "lideranca",
+      "route": "/saude-primaria",
+      "finalUrl": "/dashboard?section=saude-primaria",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "lideranca",
+      "route": "/liga",
+      "finalUrl": "/campanhas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "lideranca",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/campanhas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "lideranca",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/campanhas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | RH | Gestão da Saúde e Bem-estar",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "finalUrl": "/colaboradora",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/semaforo",
+      "finalUrl": "/semaforo",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/agenda",
+      "finalUrl": "/agenda",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/comunidade",
+      "finalUrl": "/comunidade",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/conquistas",
+      "finalUrl": "/conquistas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/campanhas",
+      "finalUrl": "/campanhas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/notificacoes",
+      "finalUrl": "/notificacoes",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/configuracoes",
+      "finalUrl": "/configuracoes",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/objetivos",
+      "finalUrl": "/objetivos",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/desafios",
+      "finalUrl": "/desafios",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/concierge",
+      "finalUrl": "/colaboradora",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/canal-denuncias",
+      "finalUrl": "/colaboradora",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/viva-sipat",
+      "finalUrl": "/colaboradora",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/desenvolvimento-humano",
+      "finalUrl": "/colaboradora",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/nr1",
+      "finalUrl": "/colaboradora",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/colaboradora",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/historico",
+      "finalUrl": "/colaboradora",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/saude-primaria",
+      "finalUrl": "/semaforo",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/liga",
+      "finalUrl": "/conquistas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/conquistas",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/desafios",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    },
+    {
+      "role": "colaboradora",
+      "route": "/primeiro-acesso",
+      "finalUrl": "/primeiro-acesso",
+      "status": "PASS",
+      "hits": [],
+      "title": "Ir para conteúdo principal | UniHER | Saúde Feminina",
+      "overflow": false,
+      "screenshot": null,
+      "error": null
+    }
+  ]
+}

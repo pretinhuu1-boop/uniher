@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-07-30T15:12:42.485Z",
+  "scope": "Local fixture validation for destructive or account-state RH/Admin clickables using disposable test records only.",
+  "total": 7,
+  "pass": 7,
+  "review": 0,
+  "fail": 0,
+  "byLane": {
+    "company_state": {
+      "total": 2,
+      "pass": 2,
+      "review": 0,
+      "fail": 0
+    },
+    "user_state": {
+      "total": 3,
+      "pass": 3,
+      "review": 0,
+      "fail": 0
+    },
+    "department_delete": {
+      "total": 2,
+      "pass": 2,
+      "review": 0,
+      "fail": 0
+    }
+  },
+  "reviewItems": [],
+  "failures": []
+}

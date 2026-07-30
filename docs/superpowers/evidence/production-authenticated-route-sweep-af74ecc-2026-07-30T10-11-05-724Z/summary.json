@@ -1,0 +1,319 @@
+{
+  "baseURL": "https://www.uniher.com.br",
+  "commit": "af74ecc",
+  "generatedAt": "2026-07-30T10:12:35.983Z",
+  "total": 75,
+  "pass": 53,
+  "review": 22,
+  "error": 0,
+  "reviewItems": [
+    {
+      "role": "admin",
+      "route": "/admin",
+      "finalUrl": "/admin",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-admin.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-admin-tab-empresas.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=usuarios",
+      "finalUrl": "/admin?tab=usuarios",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-admin-tab-usuarios.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=admin",
+      "finalUrl": "/admin?tab=admin",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-admin-tab-admin.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/admin?tab=sistema",
+      "finalUrl": "/admin?tab=sistema",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-admin-tab-sistema.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/analytics-emails",
+      "finalUrl": "/analytics-emails",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-analytics-emails.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/produtos-modulos",
+      "finalUrl": "/produtos-modulos",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-produtos-modulos.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "finalUrl": "/dashboard?section=saude-primaria",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-dashboard-section-saude-primaria.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/dashboard?section=exames",
+      "finalUrl": "/dashboard?section=exames",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-dashboard-section-exames.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/comunidade/gerenciar",
+      "finalUrl": "/comunidade/gerenciar",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-comunidade-gerenciar.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/gamificacao-config",
+      "finalUrl": "/gamificacao-config",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-gamificacao-config.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/concierge",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-concierge.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/canal-denuncias",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-canal-denuncias.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/viva-sipat",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-viva-sipat.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/desenvolvimento-humano",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-desenvolvimento-humano.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/nr1",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-nr1.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/avaliacao-nr1",
+      "finalUrl": "/admin?tab=empresas",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-avaliacao-nr1.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/historico",
+      "finalUrl": "/dashboard?section=exames",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-historico.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/saude-primaria",
+      "finalUrl": "/dashboard?section=saude-primaria",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-saude-primaria.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/liga",
+      "finalUrl": "/gamificacao-config",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-liga.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/liga/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-liga-gerenciar.png",
+      "error": null
+    },
+    {
+      "role": "admin",
+      "route": "/desafios/gerenciar",
+      "finalUrl": "/gamificacao-config",
+      "status": "REVIEW",
+      "hits": [
+        {
+          "key": "internal_contract",
+          "snippet": "tivos e desafios jornadas privadas de objetivos, desafios e conquistas objetivos desafios governanca privada produtos e modulos disponibilidade dos produtos e visibilidade sem ativacao automatica co"
+        }
+      ],
+      "screenshot": "admin-desafios-gerenciar.png",
+      "error": null
+    }
+  ]
+}
