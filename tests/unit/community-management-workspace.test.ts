@@ -117,7 +117,11 @@ describe('editorial product copy boundary', () => {
 
     expect(source).toContain('Conferência editorial');
     expect(source).toContain('conferir a leitura antes de publicar');
+    expect(source).toContain('Imagem do conteúdo');
+    expect(source).toContain('biblioteca interna');
     expect(source).not.toContain('Prévia em texto simples');
     expect(source).not.toContain('visualizar a prévia');
+    expect(source).not.toContain('Caminho local da imagem');
+    expect(source).not.toContain('HTML não é aceito nem renderizado');
   });
 });

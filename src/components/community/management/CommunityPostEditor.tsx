@@ -145,7 +145,7 @@ export function CommunityPostEditor({
                 aria-describedby={fieldErrors.bodyText ? 'community-post-body-error' : 'community-post-body-help'}
                 placeholder="Escreva o conteúdo em texto simples."
               />
-              <p id="community-post-body-help" className="mt-1.5 text-xs text-[var(--platform-muted)]">HTML não é aceito nem renderizado.</p>
+              <p id="community-post-body-help" className="mt-1.5 text-xs text-[var(--platform-muted)]">O conteúdo será publicado como texto simples.</p>
               <FieldError id="community-post-body-error" error={fieldErrors.bodyText} />
             </div>
 
@@ -183,7 +183,7 @@ export function CommunityPostEditor({
             </div>
 
             <div>
-              <label htmlFor="community-post-image" className="mb-1.5 block text-sm font-medium text-[var(--platform-muted)]">Caminho local da imagem <span className="font-normal">(opcional)</span></label>
+              <label htmlFor="community-post-image" className="mb-1.5 block text-sm font-medium text-[var(--platform-muted)]">Imagem do conteúdo <span className="font-normal">(opcional)</span></label>
               <input
                 id="community-post-image"
                 value={form.imagePath}
@@ -191,9 +191,9 @@ export function CommunityPostEditor({
                 className={cn(inputClassName, fieldErrors.imagePath && 'border-[var(--platform-critical)]')}
                 aria-invalid={Boolean(fieldErrors.imagePath)}
                 aria-describedby={fieldErrors.imagePath ? 'community-post-image-error' : 'community-post-image-help'}
-                placeholder="/community/pausas.webp"
+                placeholder="/community/imagem.webp"
               />
-              <p id="community-post-image-help" className="mt-1.5 text-xs text-[var(--platform-muted)]">Somente arquivos locais iniciados por /. URLs externas são recusadas.</p>
+              <p id="community-post-image-help" className="mt-1.5 text-xs text-[var(--platform-muted)]">Use uma imagem já disponível na biblioteca interna. URLs externas são recusadas.</p>
               <FieldError id="community-post-image-error" error={fieldErrors.imagePath} />
             </div>
 
