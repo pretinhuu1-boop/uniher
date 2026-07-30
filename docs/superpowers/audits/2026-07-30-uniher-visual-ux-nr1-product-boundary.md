@@ -42,11 +42,17 @@ Continue the authenticated-platform recovery goal without touching the public la
 - `npm run check:release-env` -> FAIL locally because this worktree has no loaded env files or secrets; rerun on VPS before restart.
 - `claude --print ...` -> unavailable in this session; command timed out after 60s.
 - VPS deploy found `/logo-uniher.png` returning 404 from the standalone runtime when `public/` was not copied into `.next/standalone/public`; corrected on VPS and persisted as `npm run prepare:standalone`.
+- VPS `npm run check:release-env` -> PASS 9, HOLD 0, FAIL 0.
+- Production landing header after deploy -> `Last-Modified: Tue, 21 Jul 2026 17:56:04 GMT`.
+- Production `/logo-uniher.png` -> HTTP 200, `content-type: image/png`.
+- Production `/api/health` -> healthy.
+- Production authenticated `/produtos-modulos` smoke -> heading visible, no forbidden COPSOQ/Yavix/spec copy, no 4xx/5xx responses, no console errors.
+- Production screenshot: `docs/superpowers/evidence/production-produtos-modulos-1976f8d-2026-07-30.png`.
 
 ## Gate status
 
 - Landing page: not modified in this wave.
 - Sensitive modules: still fail-closed; no NR-1/COPSOQ/Yavix runtime is exposed from shell or compatibility routes.
 - Product modules: real tenant endpoint remains the source of truth only when tenant scope exists.
-- Production deploy: completed for `6339456`; follow-up deploys must run `npm run prepare:standalone` before PM2 restart.
-- Human visual approval: pending after production smoke.
+- Production deploy: completed for `1976f8d`; follow-up deploys must run `npm run prepare:standalone` before PM2 restart.
+- Human visual approval: pending, but technical production smoke passed.
