@@ -1,0 +1,38 @@
+{
+  "baseURL": "https://www.uniher.com.br",
+  "commit": "1d81c58",
+  "generatedAt": "2026-07-30T13:07:19.509Z",
+  "sourceEvidence": "docs/superpowers/evidence/production-readonly-clicks-1d81c58-2026-07-30T12-54-03-826Z",
+  "scope": "Production keyboard validation for sr-only skip links href=\"#main-content\" only.",
+  "total": 76,
+  "pass": 76,
+  "review": 0,
+  "error": 0,
+  "byRole": {
+    "admin": {
+      "total": 23,
+      "pass": 23,
+      "review": 0,
+      "error": 0
+    },
+    "colaboradora": {
+      "total": 22,
+      "pass": 22,
+      "review": 0,
+      "error": 0
+    },
+    "lideranca": {
+      "total": 7,
+      "pass": 7,
+      "review": 0,
+      "error": 0
+    },
+    "rh": {
+      "total": 24,
+      "pass": 24,
+      "review": 0,
+      "error": 0
+    }
+  },
+  "failures": []
+}

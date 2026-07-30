@@ -60,16 +60,29 @@ Not allowed to click in production without a fixture or explicit write-safe prot
 - ambiguous buttons with unclear side effects;
 - stateful edit/configuration workflows.
 
-## Attempted Safe-Click Follow-Up
+## Production Read-Only Click Follow-Up
 
-A broad safe-click run was attempted after the inventory, but it exceeded the 5-minute execution window and did not write a PASS artifact. Therefore this audit does not claim button-by-button functional PASS.
+The first deterministic production read-only lane is complete on commit `1d81c58`.
+
+Evidence:
+
+- `docs/superpowers/evidence/production-readonly-clicks-1d81c58-2026-07-30T12-54-03-826Z/summary.json`
+- `docs/superpowers/evidence/production-skip-link-keyboard-1d81c58-2026-07-30T13-07-19-509Z/summary.json`
+- Receipt: `docs/superpowers/audits/2026-07-30-uniher-production-readonly-clicks-wave.md`
+
+Result:
+
+- `read_only_ui_control`: 150 PASS / 0 REVIEW / 0 ERROR.
+- `in_page_anchor`: 76 PASS / 0 REVIEW / 0 ERROR after keyboard-specific skip-link validation.
+- Combined production-safe read-only lane: 226 PASS / 0 REVIEW / 0 ERROR.
+
+This still does not claim button-by-button functional PASS across the whole product because 656 controls remain blocked from production click by policy.
 
 ## Next Wave
 
 Run button validation in smaller, deterministic lanes:
 
-1. Production read-only lane: click only `read_only_ui_control` and `in_page_anchor` controls by route group, with timeout-safe resumable output.
-2. Local fixture lane: click mutation-capable workflows against a seeded/local database and verify expected API calls and UI states.
-3. Production guarded lane: only after local fixture PASS, test non-destructive production workflows that are explicitly reversible or no-op under smoke accounts.
+1. Local fixture lane: click mutation-capable, stateful, session and ambiguous workflows against a seeded/local database and verify expected API calls and UI states.
+2. Production guarded lane: only after local fixture PASS, test non-destructive production workflows that are explicitly reversible or no-op under smoke accounts.
 
 Do not claim "all buttons work" until those lanes produce PASS evidence.
