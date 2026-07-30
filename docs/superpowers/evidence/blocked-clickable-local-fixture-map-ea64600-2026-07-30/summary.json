@@ -1,0 +1,1011 @@
+{
+  "sourceEvidence": "docs/superpowers/evidence/production-clickable-inventory-a856440-2026-07-30T12-38-56-687Z/all-clickables.json",
+  "currentCommit": "ea64600",
+  "generatedAt": "2026-07-30T13:18:05.353Z",
+  "rawBlockedOccurrences": 656,
+  "uniqueBlockedControls": 484,
+  "byClass": {
+    "session": 76,
+    "unknown_button": 276,
+    "destructive": 15,
+    "mutation_or_submit": 79,
+    "stateful_open_or_mutation_risk": 13,
+    "disabled": 25
+  },
+  "byRole": {
+    "admin": 95,
+    "colaboradora": 188,
+    "lideranca": 58,
+    "rh": 143
+  },
+  "topLabels": [
+    {
+      "label": "Ir para o início da UniHER",
+      "count": 76
+    },
+    {
+      "label": "Sair da Conta",
+      "count": 53
+    },
+    {
+      "label": "Convites",
+      "count": 24
+    },
+    {
+      "label": "Sair da Plataforma",
+      "count": 23
+    },
+    {
+      "label": "Convidar",
+      "count": 12
+    },
+    {
+      "label": "Editar",
+      "count": 12
+    },
+    {
+      "label": "Exportar CSV",
+      "count": 12
+    },
+    {
+      "label": "✓ Verdadeiro",
+      "count": 8
+    },
+    {
+      "label": "✗ Falso",
+      "count": 8
+    },
+    {
+      "label": "1a",
+      "count": 8
+    },
+    {
+      "label": "1m",
+      "count": 8
+    },
+    {
+      "label": "3m",
+      "count": 8
+    },
+    {
+      "label": "6m",
+      "count": 8
+    },
+    {
+      "label": "Anterior",
+      "count": 8
+    },
+    {
+      "label": "Bem",
+      "count": 8
+    },
+    {
+      "label": "Cansada",
+      "count": 8
+    },
+    {
+      "label": "ConvitesInclua novas colaboradoras na empresa.→",
+      "count": 8
+    },
+    {
+      "label": "Fazer check-in",
+      "count": 8
+    },
+    {
+      "label": "Fazer check-out",
+      "count": 8
+    },
+    {
+      "label": "Muito bem",
+      "count": 8
+    },
+    {
+      "label": "Neutra",
+      "count": 8
+    },
+    {
+      "label": "Nova licao",
+      "count": 8
+    },
+    {
+      "label": "Registrar leitura",
+      "count": 8
+    },
+    {
+      "label": "Sobrecarregada",
+      "count": 8
+    },
+    {
+      "label": "+ Nova Empresa",
+      "count": 7
+    },
+    {
+      "label": "Liderança",
+      "count": 7
+    },
+    {
+      "label": "Suspender",
+      "count": 7
+    },
+    {
+      "label": "Ativas",
+      "count": 6
+    },
+    {
+      "label": "Concluídas",
+      "count": 6
+    },
+    {
+      "label": "Todas",
+      "count": 6
+    },
+    {
+      "label": "Participar Agora",
+      "count": 5
+    },
+    {
+      "label": "Bloquear",
+      "count": 3
+    },
+    {
+      "label": "Sono",
+      "count": 3
+    },
+    {
+      "label": "Apagar meus registros",
+      "count": 2
+    },
+    {
+      "label": "ApoioSinal vermelho para priorizar cuidado e suporte.",
+      "count": 2
+    },
+    {
+      "label": "BemSinal verde para manter o cuidado que já funciona.",
+      "count": 2
+    },
+    {
+      "label": "Conexão",
+      "count": 2
+    },
+    {
+      "label": "ConexãoVínculos, pertencimento e apoio percebido.",
+      "count": 2
+    },
+    {
+      "label": "Energia",
+      "count": 2
+    },
+    {
+      "label": "EnergiaDisposição física e mental para o dia.",
+      "count": 2
+    },
+    {
+      "label": "Entrar",
+      "count": 2
+    },
+    {
+      "label": "Entrar na plataforma",
+      "count": 2
+    },
+    {
+      "label": "Hábitos",
+      "count": 2
+    },
+    {
+      "label": "HábitosRotina, alimentação, movimento e hidratação.",
+      "count": 2
+    },
+    {
+      "label": "Novo conteúdo",
+      "count": 2
+    },
+    {
+      "label": "ObservarSinal amarelo para acompanhar com gentileza.",
+      "count": 2
+    },
+    {
+      "label": "Prevenção",
+      "count": 2
+    },
+    {
+      "label": "PrevençãoExames, sinais do corpo e cuidado preventivo.",
+      "count": 2
+    },
+    {
+      "label": "Resetar Senha",
+      "count": 2
+    },
+    {
+      "label": "Salvar Prevenção",
+      "count": 2
+    }
+  ],
+  "routeGroups": [
+    {
+      "profileRole": "colaboradora",
+      "route": "/saude-primaria",
+      "totalUnique": 19,
+      "byClass": {
+        "destructive": 1,
+        "disabled": 1,
+        "session": 1,
+        "unknown_button": 16
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/semaforo",
+      "totalUnique": 19,
+      "byClass": {
+        "destructive": 1,
+        "disabled": 1,
+        "session": 1,
+        "unknown_button": 16
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/avaliacao-nr1",
+      "totalUnique": 12,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 11
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/canal-denuncias",
+      "totalUnique": 12,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 11
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/colaboradora",
+      "totalUnique": 12,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 11
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/concierge",
+      "totalUnique": 12,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 11
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/desenvolvimento-humano",
+      "totalUnique": 12,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 11
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/historico",
+      "totalUnique": 12,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 11
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/nr1",
+      "totalUnique": 12,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 11
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/viva-sipat",
+      "totalUnique": 12,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 11
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/configuracoes",
+      "totalUnique": 11,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 4,
+        "session": 1,
+        "unknown_button": 5
+      }
+    },
+    {
+      "profileRole": "lideranca",
+      "route": "/dashboard",
+      "totalUnique": 10,
+      "byClass": {
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 7
+      }
+    },
+    {
+      "profileRole": "lideranca",
+      "route": "/historico",
+      "totalUnique": 10,
+      "byClass": {
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 7
+      }
+    },
+    {
+      "profileRole": "lideranca",
+      "route": "/saude-primaria",
+      "totalUnique": 10,
+      "byClass": {
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 7
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/dashboard",
+      "totalUnique": 10,
+      "byClass": {
+        "mutation_or_submit": 3,
+        "session": 1,
+        "unknown_button": 6
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/dashboard?section=exames",
+      "totalUnique": 10,
+      "byClass": {
+        "mutation_or_submit": 3,
+        "session": 1,
+        "unknown_button": 6
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/dashboard?section=saude-primaria",
+      "totalUnique": 10,
+      "byClass": {
+        "mutation_or_submit": 3,
+        "session": 1,
+        "unknown_button": 6
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/historico",
+      "totalUnique": 10,
+      "byClass": {
+        "mutation_or_submit": 3,
+        "session": 1,
+        "unknown_button": 6
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/saude-primaria",
+      "totalUnique": 10,
+      "byClass": {
+        "mutation_or_submit": 3,
+        "session": 1,
+        "unknown_button": 6
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/agenda",
+      "totalUnique": 9,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 7
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/campanhas",
+      "totalUnique": 9,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 3,
+        "session": 1,
+        "unknown_button": 4
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/convites",
+      "totalUnique": 9,
+      "byClass": {
+        "destructive": 1,
+        "disabled": 1,
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 4
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/comunidade",
+      "totalUnique": 7,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 6
+      }
+    },
+    {
+      "profileRole": "lideranca",
+      "route": "/campanhas",
+      "totalUnique": 7,
+      "byClass": {
+        "disabled": 1,
+        "session": 1,
+        "unknown_button": 5
+      }
+    },
+    {
+      "profileRole": "lideranca",
+      "route": "/desafios/gerenciar",
+      "totalUnique": 7,
+      "byClass": {
+        "disabled": 1,
+        "session": 1,
+        "unknown_button": 5
+      }
+    },
+    {
+      "profileRole": "lideranca",
+      "route": "/liga",
+      "totalUnique": 7,
+      "byClass": {
+        "disabled": 1,
+        "session": 1,
+        "unknown_button": 5
+      }
+    },
+    {
+      "profileRole": "lideranca",
+      "route": "/liga/gerenciar",
+      "totalUnique": 7,
+      "byClass": {
+        "disabled": 1,
+        "session": 1,
+        "unknown_button": 5
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/colaboradoras-gestao",
+      "totalUnique": 7,
+      "byClass": {
+        "destructive": 1,
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 2
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/comunidade/gerenciar",
+      "totalUnique": 7,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 4,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=usuarios",
+      "totalUnique": 6,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 2,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/campanhas",
+      "totalUnique": 6,
+      "byClass": {
+        "disabled": 1,
+        "session": 1,
+        "unknown_button": 4
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/departamentos",
+      "totalUnique": 6,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 2,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/onboarding-rh",
+      "totalUnique": 6,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 4
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=admin",
+      "totalUnique": 5,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=empresas",
+      "totalUnique": 5,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/avaliacao-nr1",
+      "totalUnique": 5,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/canal-denuncias",
+      "totalUnique": 5,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/concierge",
+      "totalUnique": 5,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desenvolvimento-humano",
+      "totalUnique": 5,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/nr1",
+      "totalUnique": 5,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/viva-sipat",
+      "totalUnique": 5,
+      "byClass": {
+        "destructive": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/company-profile",
+      "totalUnique": 5,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/desafios/gerenciar",
+      "totalUnique": 5,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/gamificacao-config",
+      "totalUnique": 5,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/liga",
+      "totalUnique": 5,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/liga/gerenciar",
+      "totalUnique": 5,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin?tab=sistema",
+      "totalUnique": 4,
+      "byClass": {
+        "mutation_or_submit": 2,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=exames",
+      "totalUnique": 4,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/dashboard?section=saude-primaria",
+      "totalUnique": 4,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/desafios/gerenciar",
+      "totalUnique": 4,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/gamificacao-config",
+      "totalUnique": 4,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/historico",
+      "totalUnique": 4,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga",
+      "totalUnique": 4,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/liga/gerenciar",
+      "totalUnique": 4,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/primeiro-acesso",
+      "totalUnique": 4,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/saude-primaria",
+      "totalUnique": 4,
+      "byClass": {
+        "disabled": 1,
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/primeiro-acesso",
+      "totalUnique": 4,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "stateful_open_or_mutation_risk": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/comunidade/gerenciar",
+      "totalUnique": 3,
+      "byClass": {
+        "disabled": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/desafios",
+      "totalUnique": 3,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 2
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/desafios/gerenciar",
+      "totalUnique": 3,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 2
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/objetivos",
+      "totalUnique": 3,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 2
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/avaliacao-nr1",
+      "totalUnique": 3,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/canal-denuncias",
+      "totalUnique": 3,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/concierge",
+      "totalUnique": 3,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/desenvolvimento-humano",
+      "totalUnique": 3,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/notificacoes",
+      "totalUnique": 3,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/nr1",
+      "totalUnique": 3,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/produtos-modulos",
+      "totalUnique": 3,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "rh",
+      "route": "/viva-sipat",
+      "totalUnique": 3,
+      "byClass": {
+        "mutation_or_submit": 1,
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/admin",
+      "totalUnique": 2,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/analytics-emails",
+      "totalUnique": 2,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "admin",
+      "route": "/produtos-modulos",
+      "totalUnique": 2,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/conquistas",
+      "totalUnique": 2,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/liga",
+      "totalUnique": 2,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/liga/gerenciar",
+      "totalUnique": 2,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 1
+      }
+    },
+    {
+      "profileRole": "colaboradora",
+      "route": "/notificacoes",
+      "totalUnique": 2,
+      "byClass": {
+        "session": 1,
+        "unknown_button": 1
+      }
+    }
+  ]
+}
