@@ -77,7 +77,7 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
   },
   manager: {
     '/dashboard': ['Visão geral da empresa', 'Todos os indicadores e gráficos', 'Check-in x Check-out'],
-    '/dashboard?section=saude-primaria': ['Semáforo da Saúde', 'Concierge'],
+    '/dashboard?section=saude-primaria': ['Semáforo da Saúde', 'Indicadores agregados'],
     '/campanhas': ['Campanhas de saúde', 'Conteúdos publicados'],
     '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas em revisão'],
   },

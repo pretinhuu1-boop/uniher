@@ -212,6 +212,20 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(overflowX).toBe(false);
 }
 
+async function expectShellLinksHiddenFromNavigation(page: Page) {
+  const navigation = page.locator('nav[aria-label="Navegação principal"]').first();
+  for (const href of [
+    '/concierge',
+    '/nr1',
+    '/avaliacao-nr1',
+    '/viva-sipat',
+    '/desenvolvimento-humano',
+    '/canal-denuncias',
+  ]) {
+    await expect(navigation.locator(`a[href="${href}"]`)).toHaveCount(0);
+  }
+}
+
 test.describe('Platform product boundary smoke', () => {
   test.describe.configure({ mode: 'serial' });
   test.use({ serviceWorkers: 'block' });
@@ -317,6 +331,39 @@ test.describe('Platform product boundary smoke', () => {
     await expectNoUnsafeControlsOrClaims(page);
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-desafios-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
+  });
+
+  test('authenticated navigation hides module shells without approved contracts', async ({ page, context, request, baseURL }) => {
+    assertProductBoundaryHostIsLoopback(baseURL);
+    const evidenceDir = path.resolve(__dirname, '..', '..', 'docs', 'superpowers', 'evidence', 'shell-navigation-hidden-local-2026-07-30');
+    fs.mkdirSync(evidenceDir, { recursive: true });
+
+    await authenticatedPage(page, context, request, baseURL!, 'admin');
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto('/admin');
+    await expect(page.getByRole('navigation', { name: /Navega/i })).toBeVisible();
+    await expectShellLinksHiddenFromNavigation(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-admin-sidebar-shell-links-hidden.png'), fullPage: true });
+
+    await authenticatedPage(page, context, request, baseURL!, 'rh');
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto('/dashboard');
+    await expect(page.getByText('Atividade de exames')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: /Navega/i })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: /Navega/i })).not.toContainText('Concierge');
+    await expectShellLinksHiddenFromNavigation(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-rh-sidebar-shell-links-hidden.png'), fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/dashboard');
+    await expect(page.getByText('Atividade de exames')).toBeVisible();
+    await page.getByRole('button', { name: /Abrir navega/i }).click();
+    await expect(page.getByRole('dialog', { name: /Navega/i })).toBeVisible();
+    await expectShellLinksHiddenFromNavigation(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-rh-sidebar-shell-links-hidden.png'), fullPage: true });
   });
 
   test('collaborator NR-1 runtime route stays blocked or unavailable without production runtime', async ({ page, context, request, baseURL }) => {

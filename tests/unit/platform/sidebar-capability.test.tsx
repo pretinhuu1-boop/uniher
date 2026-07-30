@@ -263,7 +263,7 @@ describe('Sidebar persisted collaborator capability', () => {
 
     render(<Sidebar isOpen={false} onClose={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: /^NR-1$/i })).not.toBeNull();
+    expect(screen.queryByRole('link', { name: /^NR-1$/i })).toBeNull();
     expect(screen.queryByRole('link', { name: /^SIPAT$/i })).toBeNull();
     expect(screen.queryByText('Bloqueado')).toBeNull();
     expect(screen.queryByRole('link', { name: /^Concierge$/i })).toBeNull();

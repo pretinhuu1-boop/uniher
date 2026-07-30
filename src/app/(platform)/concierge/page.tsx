@@ -31,7 +31,7 @@ export default function ConciergePage() {
       allowedItems={[
         'Shell bloqueado para empresas com potencial contratacao do Concierge.',
         'Descricao de casos, status, pendencias e tempo de resposta apenas como alvo futuro.',
-        'Separacao entre menu visivel e permissao de executar atendimento.',
+        'Separacao entre catalogo de modulos e permissao de executar atendimento.',
       ]}
       blockedItems={[
         'Cadastro, atribuicao, triagem ou historico real de casos.',

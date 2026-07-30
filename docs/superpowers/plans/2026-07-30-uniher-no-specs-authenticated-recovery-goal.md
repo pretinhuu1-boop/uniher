@@ -33,16 +33,26 @@ Continue the authenticated UniHER recovery until screens do not show specs, plac
 - unauthenticated users keep the auth redirect with the original target;
 - no history API productization, challenge-admin workflow, ranking, rewards or Liga behavior is introduced.
 
+## Current navigation containment wave
+
+Authenticated navigation must not lead users into shell/spec pages that have no approved contract. The safe implementation is:
+
+- remove the fixed Admin `/concierge` shortcut;
+- hide runtime-unready module-shell routes from module-aware navigation: Concierge, NR-1, SIPAT, Desenvolvimento Humano and Canal de Denuncias;
+- require both `module_state=enabled` and an explicit runtime-ready navigation flag before a module-only route can appear in the sidebar;
+- keep `/produtos-modulos` as the visible governance/status surface for those modules;
+- keep direct URLs fail-closed for audit and deep-link containment, without promoting the module as usable product.
+
 ## Remaining authenticated spec inventory
 
 | Surface | Decision |
 | --- | --- |
 | `/produtos-modulos` | Promoted: real module status/limited governance UI |
-| `/concierge` | HOLD: needs operational contract, SLA, data boundaries |
-| `/canal-denuncias` | HOLD: partner/legal/DPO decision before intake |
-| `/viva-sipat` | HOLD: approved source package before content |
-| `/desenvolvimento-humano` | HOLD: approved content/trail contract |
-| `/nr1` | HOLD shell: real Yavix/COPSOQ requires separate contract intake |
+| `/concierge` | HOLD direct URL; hidden from navigation until operational contract, SLA and data boundaries exist |
+| `/canal-denuncias` | HOLD direct URL; hidden from navigation until partner/legal/DPO decision before intake |
+| `/viva-sipat` | HOLD direct URL; hidden from navigation until approved source package exists |
+| `/desenvolvimento-humano` | HOLD direct URL; hidden from navigation until approved content/trail contract exists |
+| `/nr1` | HOLD direct URL; hidden from navigation until real Yavix/COPSOQ contract intake promotes it |
 | `/liga`, `/liga/gerenciar` | HOLD: privacy scoring/ranking contract missing |
 | `/desafios/gerenciar` | Compatibility redirect; governed challenge admin remains HOLD |
 | `/historico` | Compatibility redirect; dedicated history product remains HOLD_PRODUCTIZE_HISTORY |

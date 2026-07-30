@@ -70,12 +70,6 @@ const NAVIGATION = {
           description: 'Semáforo consolidado e indicadores por empresa, setor e período',
         },
         {
-          href: '/concierge',
-          label: 'Concierge',
-          icon: 'profile',
-          description: 'Gestão de casos somente quando o módulo e contrato estiverem aprovados',
-        },
-        {
           href: '/dashboard?section=exames',
           label: 'Dashboard de exames',
           icon: 'historico',
@@ -151,7 +145,7 @@ const NAVIGATION = {
           href: '/dashboard?section=saude-primaria',
           label: 'Saúde Primária',
           icon: 'semaforo',
-          description: 'Semáforo da saúde e Concierge sob gates clínicos e contratuais',
+          description: 'Semáforo da saúde com indicadores agregados sob gates clínicos',
         },
         {
           href: '/comunidade/gerenciar',
@@ -346,6 +340,17 @@ const MODULE_STATE_BADGES: Readonly<Record<Exclude<CompanyModuleState, 'enabled'
   requires_contract: 'Contrato',
 };
 
+const MODULE_NAVIGATION_RUNTIME_READY: Readonly<Record<CompanyModuleSlug, boolean>> = {
+  primary_health: true,
+  concierge: false,
+  education: true,
+  achievements: true,
+  nr1: false,
+  sipat: false,
+  human_development: false,
+  denunciation: false,
+};
+
 function getModuleBadgeLabel(moduleState: CompanyModuleState): string | undefined {
   return moduleState === 'enabled' ? undefined : MODULE_STATE_BADGES[moduleState];
 }
@@ -412,7 +417,8 @@ function getExistingRoutes(groups: readonly NavigationGroup[]): Set<string> {
 
 function canShowModuleNavigationItem(role: UserRole, module: NavigationModuleRow): boolean {
   if (module.visible !== 1) return false;
-  if (role === 'colaboradora' && module.module_state !== 'enabled') return false;
+  if (!MODULE_NAVIGATION_RUNTIME_READY[module.module_slug]) return false;
+  if (module.module_state !== 'enabled') return false;
   return true;
 }
 

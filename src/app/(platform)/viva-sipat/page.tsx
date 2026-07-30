@@ -10,7 +10,7 @@ export default function VivaSipatPage() {
       stateTitle="Fonte de conteúdo pendente"
       stateDescription="A árvore local não validou conteúdo SIPAT existente; esta tela não cria aulas, campanhas, vídeos ou materiais novos."
       intentTitle="Espaço pronto sem conteúdo inventado"
-      intentDescription="A superfície atende ao menu solicitado pela Dra. Paola mantendo o requisito de reconciliar os materiais existentes antes de publicar qualquer conteúdo."
+      intentDescription="A superfície mantém o módulo bloqueado para auditoria e deep links, com o requisito de reconciliar os materiais existentes antes de publicar qualquer conteúdo."
       steps={[
         {
           title: 'Localizar fonte',
@@ -29,7 +29,7 @@ export default function VivaSipatPage() {
         },
       ]}
       allowedItems={[
-        'Shell visível com estado de fonte pendente.',
+        'Shell acessível por URL direta com estado de fonte pendente.',
         'Referência ao objetivo SIPAT sem materiais inventados.',
         'Preparação para receber campanhas, vídeos e ações aprovadas.',
       ]}

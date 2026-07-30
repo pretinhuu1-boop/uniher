@@ -10,7 +10,7 @@ export default function Nr1Page() {
       stateTitle="Contrato pendente"
       stateDescription="O fluxo COPSOQ e a integração Yavix permanecem bloqueados até existir contrato, consentimento e gate técnico aprovados."
       intentTitle="Contrato antes da avaliação"
-      intentDescription="Esta superfície mostra o módulo no menu sem montar questionário, consentimento, coleta de respostas ou envio para parceiro."
+      intentDescription="Esta superfície mantém o módulo bloqueado para auditoria e deep links sem montar questionário, consentimento, coleta de respostas ou envio para parceiro."
       steps={[
         {
           title: 'Validar contrato',
@@ -29,7 +29,7 @@ export default function Nr1Page() {
         },
       ]}
       allowedItems={[
-        'Menu visível para sinalizar que NR-1 é um módulo contratável.',
+        'Status contratável centralizado em Produtos e Módulos, sem link operacional na navegação.',
         'Estado de contrato separado da permissão de executar COPSOQ.',
         'Shell estático sem chamadas Yavix, coleta de respostas ou cálculo de risco.',
       ]}

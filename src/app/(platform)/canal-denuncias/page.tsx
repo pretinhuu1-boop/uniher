@@ -10,7 +10,7 @@ export default function CanalDenunciasPage() {
       stateTitle="Parceiro pendente"
       stateDescription="Nenhum relato, protocolo, caixa de entrada, fluxo de resposta ou integração externa foi ativado."
       intentTitle="Fronteira legal antes de formulário"
-      intentDescription="A página torna o módulo visível sem capturar dados sensíveis ou simular um canal que depende de parceiro e contrato específicos."
+      intentDescription="A página mantém o módulo bloqueado para auditoria e deep links sem capturar dados sensíveis ou simular um canal que depende de parceiro e contrato específicos."
       steps={[
         {
           title: 'Formalizar parceiro',
@@ -29,9 +29,9 @@ export default function CanalDenunciasPage() {
         },
       ]}
       allowedItems={[
-        'Shell visível como módulo partner-managed.',
+        'Shell acessível por URL direta como módulo partner-managed.',
         'Indicação honesta de dependência de parceiro e contrato.',
-        'Separação entre menu e recebimento real de denúncia.',
+        'Separação entre catálogo de módulos e recebimento real de denúncia.',
       ]}
       blockedItems={[
         'Formulário, caixa de entrada, protocolo ou upload de denúncia.',
