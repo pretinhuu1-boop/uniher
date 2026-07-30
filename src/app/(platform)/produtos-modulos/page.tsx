@@ -16,6 +16,16 @@ type CompanyModulesResponse = {
   modules: CompanyModuleNavigationRecord[];
 };
 
+type AdminCompanyOption = {
+  id: string;
+  name?: string | null;
+  trade_name?: string | null;
+};
+
+type AdminCompaniesResponse = {
+  companies: AdminCompanyOption[];
+};
+
 const SENSITIVE_MODULE_SLUGS: readonly CompanyModuleSlug[] = [
   'primary_health',
   'concierge',
@@ -72,7 +82,23 @@ function stateTone(state: CompanyModuleState): string {
 
 export default function ProdutosModulosPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const modulesCacheKey = user?.companyId ? '/api/company/modules' : null;
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const adminCompaniesUrl = user?.isMasterAdmin === true && user.role === 'admin' && !user.companyId
+    ? '/api/admin/companies?limit=200'
+    : null;
+  const { data: companiesData, isLoading: companiesLoading } = useSWR<AdminCompaniesResponse>(
+    adminCompaniesUrl,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
+  const companyOptions = companiesData?.companies ?? [];
+  const selectedTargetCompanyId = selectedCompanyId || companyOptions[0]?.id || '';
+  const targetCompanyId = user?.companyId ?? selectedTargetCompanyId;
+  const modulesCacheKey = targetCompanyId
+    ? user?.companyId
+      ? '/api/company/modules'
+      : `/api/company/modules?company_id=${targetCompanyId}`
+    : null;
   const { data, error, isLoading, mutate } = useSWR<CompanyModulesResponse>(modulesCacheKey, fetcher);
   const [updatingSlug, setUpdatingSlug] = useState<CompanyModuleSlug | null>(null);
   const [notice, setNotice] = useState('');
@@ -80,10 +106,10 @@ export default function ProdutosModulosPage() {
   const modules = useMemo(() => data?.modules ?? [], [data?.modules]);
   const enabledCount = modules.filter((module) => !isSensitiveModule(module.module_slug) && module.module_state === 'enabled' && module.visible === 1).length;
   const holdCount = modules.filter((module) => isSensitiveModule(module.module_slug)).length;
-  const canEditNonSensitiveModules = user?.isMasterAdmin === true && user?.role === 'admin' && Boolean(user.companyId);
+  const canEditNonSensitiveModules = user?.isMasterAdmin === true && user?.role === 'admin' && Boolean(targetCompanyId);
 
   async function updateModuleState(moduleSlug: CompanyModuleSlug, moduleState: CompanyModuleState) {
-    if (!user?.companyId || updatingSlug) return;
+    if (!targetCompanyId || updatingSlug) return;
     setUpdatingSlug(moduleSlug);
     setNotice('');
 
@@ -92,7 +118,7 @@ export default function ProdutosModulosPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          company_id: user.companyId,
+          company_id: targetCompanyId,
           module_slug: moduleSlug,
           module_state: moduleState,
         }),
@@ -108,12 +134,12 @@ export default function ProdutosModulosPage() {
     }
   }
 
-  if (authLoading || isLoading) {
+  if (authLoading || companiesLoading || isLoading) {
     return <FeedbackState kind="loading" title="Carregando produtos" description="Buscando a disponibilidade da empresa autenticada." />;
   }
 
-  if (!user?.companyId) {
-    return <FeedbackState kind="denied" title="Empresa nao encontrada" description="Esta superficie depende de um escopo de empresa autenticado." />;
+  if (!targetCompanyId) {
+    return <FeedbackState kind="denied" title="Empresa nao encontrada" description="Selecione uma empresa para revisar produtos e modulos." />;
   }
 
   if (error) {
@@ -147,6 +173,25 @@ export default function ProdutosModulosPage() {
               Acompanhe quais produtos estao disponiveis para a empresa atual. Produtos protegidos permanecem indisponiveis ate
               existir uma liberacao aprovada e uma fonte operacional validada.
             </p>
+            {adminCompaniesUrl && (
+              <label className="mt-4 grid max-w-md gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--platform-muted)]">
+                Empresa
+                <select
+                  value={targetCompanyId}
+                  onChange={(event) => {
+                    setSelectedCompanyId(event.target.value);
+                    setNotice('');
+                  }}
+                  className="h-11 rounded-lg border border-[var(--platform-line)] bg-white px-3 text-sm font-semibold normal-case tracking-normal text-[var(--platform-ink)]"
+                >
+                  {companyOptions.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.trade_name || company.name || company.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center sm:min-w-80">

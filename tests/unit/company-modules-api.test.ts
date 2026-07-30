@@ -101,6 +101,13 @@ async function getModules(companyId: string): Promise<Response> {
   );
 }
 
+async function getModulesRequest(url: string, authContext: AuthContext): Promise<Response> {
+  return getCompanyModules(
+    new Request(url) as unknown as NextRequest,
+    authContext,
+  );
+}
+
 async function patchModule(
   body: Record<string, unknown>,
   authContext = context('', 'admin', true),
@@ -168,6 +175,31 @@ describe('company modules API', () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toMatchObject({ error: 'Empresa nao encontrada' });
+  });
+
+  it('lets Master Admin without own company scope read modules for a selected company', async () => {
+    const response = await getModulesRequest(
+      'http://localhost/api/company/modules?company_id=company-b',
+      context('', 'admin', true),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      modules: expect.arrayContaining([
+        { module_slug: 'education', module_state: 'enabled', visible: 1 },
+        { module_slug: 'concierge', module_state: 'enabled', visible: 1 },
+      ]),
+    });
+  });
+
+  it('blocks non-master users from reading another company modules by query string', async () => {
+    const response = await getModulesRequest(
+      'http://localhost/api/company/modules?company_id=company-b',
+      context('company-a', 'rh', false),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({ error: 'Permissao insuficiente para consultar outra empresa' });
   });
 
   it('lets only Master Admin mutate one company module state and audits old/new values', async () => {

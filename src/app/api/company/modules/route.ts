@@ -39,16 +39,22 @@ function auditSnapshot(module: Pick<CompanyModuleRecord, 'module_state' | 'visib
   };
 }
 
-export const GET = withAuth(async (_req: NextRequest, { auth }) => {
+export const GET = withAuth(async (req: NextRequest, { auth }) => {
   try {
     await initDb();
 
-    if (!auth.companyId) {
+    const requestedCompanyId = new URL(req.url).searchParams.get('company_id')?.trim() || '';
+    if (requestedCompanyId && requestedCompanyId !== auth.companyId && auth.isMasterAdmin !== true) {
+      return NextResponse.json({ error: 'Permissao insuficiente para consultar outra empresa' }, { status: 403 });
+    }
+
+    const companyId = requestedCompanyId || auth.companyId;
+    if (!companyId) {
       return NextResponse.json({ error: 'Empresa nao encontrada' }, { status: 404 });
     }
 
     const explicitModules = createCompanyModulesStore(getReadDb())
-      .listCompanyModules(auth.companyId);
+      .listCompanyModules(companyId);
     const modules: CompanyModuleNavigationRecord[] = resolveCompanyModuleNavigationRows(explicitModules);
 
     return NextResponse.json({ modules });

@@ -146,7 +146,10 @@ describe('Paola P3 locked module shells', () => {
     const source = read('src/app/(platform)/produtos-modulos/page.tsx');
 
     expect(source).not.toContain('ContainedSurfacePreview');
-    expect(source).toContain("const modulesCacheKey = user?.companyId ? '/api/company/modules' : null");
+    expect(source).toContain('selectedCompanyId');
+    expect(source).toContain('adminCompaniesUrl');
+    expect(source).toContain('targetCompanyId');
+    expect(source).toContain('company_id=${targetCompanyId}');
     expect(source).toContain('useSWR<CompanyModulesResponse>(modulesCacheKey, fetcher)');
     expect(source).toContain('/api/company/modules');
     expect(source).toContain('SENSITIVE_MODULE_SLUGS');
