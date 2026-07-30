@@ -353,7 +353,7 @@ export default function ColaboradorasGestaoPage() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-uni-text-900">Importação por planilha</h2>
-              <p className="text-[11px] text-uni-text-500">Preview mascarado antes da gravação. CPF e RG não aparecem na tela.</p>
+              <p className="text-[11px] text-uni-text-500">Conferência mascarada antes da gravação. CPF e RG não aparecem na tela.</p>
             </div>
           </div>
           <button
@@ -395,7 +395,7 @@ export default function ColaboradorasGestaoPage() {
 
           {importPreviewRows.length > 0 && (
             <div className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-3">
-              <div className="text-[11px] font-bold uppercase text-emerald-800 mb-2">Prévia segura</div>
+              <div className="text-[11px] font-bold uppercase text-emerald-800 mb-2">Conferência segura</div>
               <div className="grid gap-2 md:grid-cols-2">
                 {importPreviewRows.slice(0, 4).map((row) => (
                   <div key={row.rowNumber} className="rounded-md bg-white border border-emerald-100 p-3 text-xs">

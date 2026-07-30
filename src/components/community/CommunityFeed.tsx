@@ -54,7 +54,7 @@ export function CommunityFeed() {
       <PageHeader
         context="Comunidade"
         title="Conteúdos da sua empresa"
-        description="Uma seleção editorial para apoiar pausas, sono, movimento e cuidado. Sem comentários, ranking ou dados de saúde."
+        description="Uma seleção editorial para apoiar pausas, sono, movimento e cuidado. Sem comentários, exposição pública ou dados de saúde."
       />
 
       <div className="mt-5">
