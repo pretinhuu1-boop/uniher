@@ -35,8 +35,14 @@ These were not broken shells, but they kept spec/legacy vocabulary visible in re
 - `npx tsc --noEmit` -> PASS.
 - `npm run build` -> PASS.
 - Landing denylist diff count -> 0.
-
-## Pending
-
-- Production deploy.
-- Production rendered text rescan for the two routes.
+- GitHub push -> `12e78ea`.
+- VPS deploy -> `12e78ea`.
+- VPS `npm run check:release-env` -> PASS 9, HOLD 0, FAIL 0.
+- Production landing header -> `Last-Modified: Tue, 21 Jul 2026 17:56:04 GMT`.
+- Production `/api/health` -> healthy.
+- Production rendered text rescan:
+  - RH `/colaboradoras-gestao` shows `Conferência mascarada antes da gravação`; no `Preview mascarado`, `Prévia segura`, `Preview`, `spec` or `placeholder`.
+  - Collaborator `/comunidade` shows `Sem comentários, exposição pública ou dados de saúde`; no `ranking`, `leaderboard`, `Preview`, `spec` or `placeholder`.
+- Production screenshots:
+  - `docs/superpowers/evidence/production-copy-jargon-12e78ea-rh-colaboradoras-gestao.png`
+  - `docs/superpowers/evidence/production-copy-jargon-12e78ea-colaboradora-comunidade.png`
