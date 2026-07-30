@@ -9,7 +9,6 @@ const shellPages = [
   'src/app/(platform)/viva-sipat/page.tsx',
   'src/app/(platform)/desenvolvimento-humano/page.tsx',
   'src/app/(platform)/canal-denuncias/page.tsx',
-  'src/app/(platform)/produtos-modulos/page.tsx',
 ] as const;
 
 function read(relativePath: string): string {
@@ -73,5 +72,17 @@ describe('Paola P3 locked module shells', () => {
     expect(source).toContain('Parceiro pendente');
     expect(source).toContain('Nenhum relato, protocolo, caixa de entrada');
     expect(source).not.toMatch(/<textarea|<input|method=['"]post|fetch\s*\(|api\/denuncia|api\/denuncias/i);
+  });
+
+  it('promotes Produtos e Modulos from static spec shell to the real company modules surface', () => {
+    const source = read('src/app/(platform)/produtos-modulos/page.tsx');
+
+    expect(source).not.toContain('ContainedSurfacePreview');
+    expect(source).toContain("useSWR<CompanyModulesResponse>('/api/company/modules'");
+    expect(source).toContain('/api/company/modules');
+    expect(source).toContain('SENSITIVE_MODULE_SLUGS');
+    expect(source).toContain('Modulo sensivel em HOLD');
+    expect(source).toContain('canEditNonSensitiveModules');
+    expect(source).toContain('isMasterAdmin');
   });
 });

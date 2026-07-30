@@ -7,8 +7,9 @@ Goal: remap authenticated product surfaces that exist but do not appear, decide 
 ## Decision
 
 - Safe unlock now: expose `/comunidade/gerenciar` in RH navigation. The page and backend already allow RH/Admin editorial work for simple community text posts.
+- Promoted in the no-spec recovery wave: `/produtos-modulos` now reads the real `/api/company/modules` contract and shows non-sensitive governance while keeping sensitive modules in HOLD.
 - Keep hidden or flow-only: `/historico`, `/onboarding-rh`, `/primeiro-acesso`, `/saude-primaria`, `/desafios/gerenciar`, `/liga`, `/liga/gerenciar`.
-- Keep shell/gated: `/concierge`, `/produtos-modulos`, `/nr1`, `/viva-sipat`, `/desenvolvimento-humano`, `/canal-denuncias`.
+- Keep shell/gated: `/concierge`, `/nr1`, `/viva-sipat`, `/desenvolvimento-humano`, `/canal-denuncias`.
 - Keep runtime entitlement-gated only: `/avaliacao-nr1`.
 
 ## Visibility Matrix
@@ -18,6 +19,7 @@ Goal: remap authenticated product surfaces that exist but do not appear, decide 
 | `/comunidade/gerenciar` | Admin base nav; RH page access without nav | Real RH/Admin editorial CRUD for simple text community posts | UNLOCK_RH_NAV |
 | `/campanhas` | RH, lideranca, colaboradora | Real/limited campaigns | KEEP |
 | `/gamificacao-config` | Admin/RH | Real lesson manager and governance, no ranking/reward/Liga | KEEP_SAFE_LIMITED |
+| `/produtos-modulos` | Authenticated company-scoped users; mutation remains Master Admin-only through API | Real module-state view backed by `/api/company/modules`; non-sensitive state management only; sensitive modules displayed as HOLD | KEEP_SAFE_LIMITED |
 | `/objetivos` | Colaboradora | Real private personal objectives only | KEEP_COLLAB_ONLY |
 | `/desafios` | Colaboradora | Real voluntary challenges only, no ranking/points | KEEP_COLLAB_ONLY |
 | `/conquistas` | Colaboradora | Real private achievements projection | KEEP_COLLAB_ONLY |
@@ -42,13 +44,13 @@ Goal: remap authenticated product surfaces that exist but do not appear, decide 
 | Desenvolvimento Humano | Module slug and shell only | Contracted offer, authorship, review workflow, progression rules, sensitive-data exclusions | DH trail/content schema based on approved content only; tests blocking health/NR-1/Semaforo/agenda use |
 | NR-1/Yavix real | Entitlement/consent gates and dev/test mock path; real path fail-closed | Yavix auth/SSO, sandbox, provisioning, result/scoring/laudo contract, CPF/GHE/cycles, DPA, retention, GRO/PGR boundaries | Wave 00 Yavix contract intake before any real proxy/results implementation; tests for fail-closed, token secrecy, no compliance promise |
 | Liga/ranking/rewards | Legacy tables exist but APIs are privacy-review gated | Opt-in, no health-derived ranking, suppression, scoring/economy, redemption ops, appeals/removal, DPO/legal approval | New safe motivation contract or keep blocked; no nominal leaderboard/rewards until approved |
-| Produtos/Modulos | Backend can list/update module rows; sensitive modules cannot be enabled | UI policy, Master Admin mutation flow, audit review, per-module activation policy | P8 UI may manage non-sensitive states only; sensitive enablement remains external HOLD |
+| Produtos/Modulos | UI and backend can list module rows; Master Admin API can update non-sensitive states; sensitive modules are rendered as HOLD and cannot be enabled by this surface | Company selector/audit review UX for broader Master Admin operations; any sensitive activation remains external | Keep UI limited to non-sensitive states; sensitive enablement remains external HOLD |
 | Educacao/Conteudos | Community posts, campaigns and lessons are real limited primitives | Content ops runbook, source review, media/upload policy, notification policy | Build education/content panel only over approved primitives; tests block XP/ranking/certificate claims |
 
 ## Safe Next Units
 
 1. RH navigation unlock for `/comunidade/gerenciar`.
-2. P8 non-sensitive module management UI contract, with sensitive modules displayed as HOLD.
+2. Productize `/historico` only after a concrete product contract and projection boundary.
 3. Educacao/Conteudos panel over lessons/community/campaign primitives, with content-source validation.
 4. Denuncias partner-managed configuration spec, before any inbox/intake.
 5. Yavix Wave 00 intake checklist before any production NR-1 integration.

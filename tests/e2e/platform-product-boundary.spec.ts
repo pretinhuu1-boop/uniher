@@ -1,5 +1,7 @@
 import { expect, test, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test';
 import { extractAccessTokenFromSetCookie } from './helpers/auth';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const PASSWORD = 'Admin@2026';
@@ -15,12 +17,6 @@ const roleCredentials: Record<SeedRole, { email: string; password: string }> = {
 };
 
 const containedRoutes = [
-  {
-    role: 'admin',
-    path: '/produtos-modulos',
-    title: /Produtos e M.dulos/i,
-    anchors: [/Controle administrativo em prepara/i, /Permanece bloqueado/i, /Toggle real de ativa/i],
-  },
   {
     role: 'admin',
     path: '/concierge',
@@ -85,6 +81,12 @@ const reviewRoutes = [
 }>;
 
 const safeUsefulRoutes = [
+  {
+    role: 'rh',
+    path: '/produtos-modulos',
+    title: /Produtos e M.dulos/i,
+    anchors: [/Estados reais do contrato/i, /Modulo sensivel em HOLD/i, /Nao sensiveis editaveis/i, /Auditoria no backend/i],
+  },
   {
     role: 'rh',
     path: '/gamificacao-config',
@@ -205,6 +207,11 @@ async function expectAnchors(page: Page, anchors: readonly RegExp[]) {
   }
 }
 
+async function expectNoHorizontalOverflow(page: Page) {
+  const overflowX = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+  expect(overflowX).toBe(false);
+}
+
 test.describe('Platform product boundary smoke', () => {
   test.describe.configure({ mode: 'serial' });
   test.use({ serviceWorkers: 'block' });
@@ -245,6 +252,30 @@ test.describe('Platform product boundary smoke', () => {
       await expectNoUnsafeControlsOrClaims(page);
     });
   }
+
+  test('RH visual smoke captures Produtos e Modulos desktop and mobile without overflow', async ({ page, context, request, baseURL }) => {
+    assertProductBoundaryHostIsLoopback(baseURL);
+    await authenticatedPage(page, context, request, baseURL!, 'rh');
+
+    const evidenceDir = path.resolve(__dirname, '..', '..', 'docs', 'superpowers', 'evidence', 'produtos-modulos-ui-local-2026-07-30');
+    fs.mkdirSync(evidenceDir, { recursive: true });
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto('/produtos-modulos');
+    await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
+    await expectAnchors(page, [/Estados reais do contrato/i, /Modulo sensivel em HOLD/i, /Auditoria no backend/i]);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-produtos-modulos.png'), fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/produtos-modulos');
+    await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
+    await expectAnchors(page, [/Modulo sensivel em HOLD/i, /Visibilidade nao e permissao/i]);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-produtos-modulos.png'), fullPage: true });
+  });
 
   test('collaborator NR-1 runtime route stays blocked or unavailable without production runtime', async ({ page, context, request, baseURL }) => {
     assertProductBoundaryHostIsLoopback(baseURL);
