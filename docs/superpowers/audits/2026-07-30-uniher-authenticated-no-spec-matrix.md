@@ -73,7 +73,7 @@ This is not final product completion. It is the coordinator map for the next imp
 
 ## Immediate Findings
 
-1. `/gamificacao-config` copy hardening is PASS locally after `2026-07-30-uniher-gamificacao-config-copy-wave.md`; production deploy/smoke still gates final production evidence for that commit.
+1. `/gamificacao-config` copy hardening is PASS after `2026-07-30-uniher-gamificacao-config-copy-wave.md`, production deploy and production render smoke on commit `8efcdc3`.
 2. Coverage gap: `/onboarding-rh` is a real helper surface but is not currently in `VISUAL_SMOKE_ROUTES`; before any visual PASS for that route, add or run a focused desktop/mobile authenticated capture.
 3. Coverage gap: `/primeiro-acesso` is covered by auth flow E2E but not by the broad visual smoke list. That is acceptable for auth flow correctness, but visual PASS for first-access changes needs dedicated desktop/mobile screenshots.
 4. False-positive rule: `placeholder` attributes on inputs are allowed when they are examples/help text. A finding requires a rendered screen that acts as a substitute for product, not normal form placeholder attributes.

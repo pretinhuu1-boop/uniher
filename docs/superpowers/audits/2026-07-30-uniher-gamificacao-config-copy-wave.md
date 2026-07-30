@@ -1,6 +1,6 @@
 ## Decision
 
-PASS pending deploy.
+PASS.
 
 ## Scope
 
@@ -36,17 +36,31 @@ PASS pending deploy.
   - PASS: `governanca privada`, `contrato real` and `contrato educativo` are absent from `src/app/(platform)/gamificacao-config/page.tsx` and present only in canaries.
 - Landing guard:
   - PASS: `landing_worktree_diff_count=0`.
+- GitHub/VPS:
+  - PASS: commit `8efcdc3` pushed to `codex/uniher-wave3-collaborator-nr1`.
+  - PASS: VPS fast-forwarded to `8efcdc3`.
+  - PASS: `npm ci` found 0 vulnerabilities.
+  - PASS: `npm run build`.
+  - PASS: `npm run prepare:standalone`.
+  - PASS: `npm run check:release-env` -> PASS 9, HOLD 0, FAIL 0.
+  - PASS: `pm2 restart uniher --update-env`; `uniher` online.
+  - PASS: `/api/health` returned healthy.
+  - PASS: public landing smoke returned HTTP 200 with `Last-Modified: Tue, 21 Jul 2026 17:56:04 GMT`.
+- Production render smoke:
+  - PASS: `/gamificacao-config` desktop/mobile as RH smoke account rendered required anchors and no `governanca privada`, `contrato real` or `contrato educativo`.
 
 ## Evidence
 
 - `docs/superpowers/evidence/gamificacao-config-copy-local-2026-07-30/desktop-1366-gamificacao-config.png`
 - `docs/superpowers/evidence/gamificacao-config-copy-local-2026-07-30/mobile-390-gamificacao-config.png`
+- `docs/superpowers/evidence/production-gamificacao-config-copy-8efcdc3-2026-07-30/desktop-1366-gamificacao-config.png`
+- `docs/superpowers/evidence/production-gamificacao-config-copy-8efcdc3-2026-07-30/mobile-390-gamificacao-config.png`
 
 ## Drift / Risk
 
 - No runtime behavior changed.
 - The route still uses existing `/api/rh/lessons` behavior; no gamification reward, ranking, Liga or sensitive module behavior was introduced.
-- Full production PASS still requires push, deploy and production smoke after commit.
+- Production PASS is scoped to `/gamificacao-config` copy hardening. The broader no-spec goal remains active.
 
 ## Next Wave
 

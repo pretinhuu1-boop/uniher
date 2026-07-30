@@ -29,9 +29,9 @@ Matrix artifact:
 Current completed implementation target:
 
 - `/gamificacao-config` copy hardening.
-- Decision: `PASS_REAL_PRODUCT` after local RED/GREEN and visual evidence.
+- Decision: `PASS_REAL_PRODUCT` after local RED/GREEN, visual evidence, production deploy and production render smoke.
 - Receipt: `docs/superpowers/audits/2026-07-30-uniher-gamificacao-config-copy-wave.md`.
-- Production status: pending deploy/smoke for the commit containing that receipt.
+- Production commit: `8efcdc3`.
 
 Next selection target:
 
@@ -69,7 +69,7 @@ The next implementation wave must be selected from this matrix. If a route has n
 | `/avaliacao-nr1` | Fail-closed unless explicit mock runtime is active | Done |
 | `/objetivos`, `/desafios`, `/conquistas`, navigation copy | Internal contract/governance wording removed from real product surfaces | Done |
 | Global authenticated no-spec matrix | Required before the next product edit | Done |
-| `/gamificacao-config` copy hardening | Remove internal governance/spec vocabulary from a real RH/Admin surface | Done locally; production pending |
+| `/gamificacao-config` copy hardening | Remove internal governance/spec vocabulary from a real RH/Admin surface | Done |
 | Rendered authenticated route sweep | Select the next no-spec recovery target from the matrix | Active |
 | Concierge operations | Operational contract, SLA, data governance | HOLD |
 | Canal de Denuncias intake | Partner/legal/DPO workflow | HOLD |
