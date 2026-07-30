@@ -143,8 +143,8 @@ export default function ProdutosModulosPage() {
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--platform-muted)]">Governanca de modulos</p>
             <h1 className="text-2xl font-semibold text-[var(--platform-ink)]">Produtos e Modulos</h1>
             <p className="text-sm leading-6 text-[var(--platform-muted)]">
-              Estados reais do contrato `company_modules` para a empresa atual. Modulos sensiveis aparecem como HOLD ate existir contrato,
-              fonte aprovada e governanca especifica.
+              Estados reais do contrato da empresa atual. Modulos sensiveis ficam bloqueados por contrato ate existir fonte aprovada,
+              governanca especifica e liberacao formal.
             </p>
           </div>
 
@@ -159,7 +159,7 @@ export default function ProdutosModulosPage() {
             </div>
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
               <p className="text-xl font-semibold text-amber-800">{holdCount}</p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">HOLD</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">Contrato</p>
             </div>
           </div>
         </div>
@@ -173,18 +173,18 @@ export default function ProdutosModulosPage() {
         </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <LockKeyhole className="mb-3 text-amber-800" size={20} aria-hidden="true" />
-          <h2 className="text-sm font-semibold text-amber-950">Modulo sensivel em HOLD</h2>
+          <h2 className="text-sm font-semibold text-amber-950">Modulo sensivel bloqueado</h2>
           <p className="mt-1 text-xs leading-5 text-amber-800">NR-1, SIPAT, Concierge, Denuncias, DH e Saude Primaria nao sao ativados por esta tela.</p>
         </div>
         <div className="rounded-lg border border-[var(--platform-line)] bg-[var(--platform-surface)] p-4">
           <Eye className="mb-3 text-[var(--platform-muted)]" size={20} aria-hidden="true" />
           <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Visibilidade nao e permissao</h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--platform-muted)]">Menu visivel nao libera runtime, scoring, intake ou dados sensiveis.</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--platform-muted)]">Menu visivel nao libera execucao operacional, avaliacao automatica, recebimento de relatos ou dados sensiveis.</p>
         </div>
         <div className="rounded-lg border border-[var(--platform-line)] bg-[var(--platform-surface)] p-4">
           <ShieldAlert className="mb-3 text-[var(--platform-muted)]" size={20} aria-hidden="true" />
-          <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Auditoria no backend</h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--platform-muted)]">Mudancas validas passam por `/api/company/modules` e registro de auditoria.</p>
+          <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Auditoria tecnica</h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--platform-muted)]">Mudancas validas passam pelo fluxo tecnico de modulos e registro de auditoria.</p>
         </div>
       </section>
 
@@ -211,17 +211,17 @@ export default function ProdutosModulosPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-base font-semibold text-[var(--platform-ink)]">{definition?.label ?? module.module_slug}</h2>
                   <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${sensitive ? 'border-amber-200 bg-amber-50 text-amber-800' : stateTone(module.module_state)}`}>
-                    {sensitive ? 'HOLD' : STATE_LABELS[module.module_state]}
+                    {sensitive ? 'Requer contrato' : STATE_LABELS[module.module_state]}
                   </span>
                   {sensitive && (
                     <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">
-                      Modulo sensivel em HOLD
+                      Bloqueado por contrato
                     </span>
                   )}
                 </div>
                 <p className="text-sm leading-6 text-[var(--platform-muted)]">
                   {sensitive
-                    ? `Modulo sensivel tratado como HOLD nesta tela. Estado bruto: ${STATE_LABELS[module.module_state]}. Nenhum runtime sensivel e ativado por esta superficie.`
+                    ? `Produto sensivel bloqueado nesta tela. Estado atual: ${STATE_LABELS[module.module_state]}. Nenhuma execucao sensivel e ativada por esta superficie.`
                     : STATE_HELP[module.module_state]}
                 </p>
               </div>

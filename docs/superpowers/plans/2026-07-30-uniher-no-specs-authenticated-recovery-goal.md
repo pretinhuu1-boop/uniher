@@ -89,6 +89,15 @@ Direct module URLs for products without approved runtime contracts were still sh
 - only explicitly mocked dev/test runtime can render `CopsoqFlow`;
 - no production COPSOQ, Yavix integration, laudo, scoring, GRO/PGR or technical unavailable shell is introduced.
 
+## Current Produtos e Modulos copy hardening wave
+
+`/produtos-modulos` is already the real company module status surface, but the authenticated UI still exposed internal implementation/governance jargon. The safe implementation is copy hardening only:
+
+- user-facing copy says `Bloqueado por contrato` / `Requer contrato` instead of `HOLD`;
+- user-facing copy says contract, technical audit, operational execution, automatic evaluation and sensitive data receipt instead of `company_modules`, backend, runtime, scoring or intake;
+- the governance decision in this plan remains HOLD for sensitive modules, but the product UI avoids internal jargon;
+- no sensitive module activation, permission change, API behavior, landing change or new runtime is introduced.
+
 ## Remaining authenticated spec inventory
 
 | Surface | Decision |

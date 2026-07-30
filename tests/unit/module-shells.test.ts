@@ -147,7 +147,14 @@ describe('Paola P3 locked module shells', () => {
     expect(source).toContain("useSWR<CompanyModulesResponse>('/api/company/modules'");
     expect(source).toContain('/api/company/modules');
     expect(source).toContain('SENSITIVE_MODULE_SLUGS');
-    expect(source).toContain('Modulo sensivel em HOLD');
+    expect(source).toContain('Bloqueado por contrato');
+    expect(source).toContain('Auditoria tecnica');
+    expect(source).not.toContain('Modulo sensivel em HOLD');
+    expect(source).not.toContain('Auditoria no backend');
+    expect(source).not.toMatch(/\bcompany_modules\b/);
+    expect(source).not.toMatch(/\bruntime\b/i);
+    expect(source).not.toMatch(/\bscoring\b/i);
+    expect(source).not.toMatch(/\bintake\b/i);
     expect(source).toContain('canEditNonSensitiveModules');
     expect(source).toContain('isMasterAdmin');
   });

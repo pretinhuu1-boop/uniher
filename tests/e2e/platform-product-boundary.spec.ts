@@ -111,7 +111,8 @@ const safeUsefulRoutes = [
     role: 'rh',
     path: '/produtos-modulos',
     title: /Produtos e M.dulos/i,
-    anchors: [/Estados reais do contrato/i, /Modulo sensivel em HOLD/i, /Nao sensiveis editaveis/i, /Auditoria no backend/i],
+    anchors: [/Estados reais do contrato/i, /Bloqueado por contrato/i, /Nao sensiveis editaveis/i, /Auditoria tecnica/i],
+    blockedText: /Modulo sensivel em HOLD|Auditoria no backend|\bcompany_modules\b|\bruntime\b|\bscoring\b|\bintake\b|\bHOLD\b/i,
   },
   {
     role: 'rh',
@@ -142,6 +143,7 @@ const safeUsefulRoutes = [
   path: string;
   title: RegExp;
   anchors: readonly RegExp[];
+  blockedText?: RegExp;
 }>;
 
 const unsafeOperationalControlText = /ativar modulo|habilitar modulo|iniciar avaliacao|aceitar e continuar|emitir laudo|gerar laudo|enviar denuncia|abrir chamado|\bresgatar\b|comprar recompensa/i;
@@ -301,6 +303,7 @@ test.describe('Platform product boundary smoke', () => {
       await page.goto(route.path, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { name: route.title })).toBeVisible();
       await expectAnchors(page, route.anchors);
+      if ('blockedText' in route) await expect(page.locator('body')).not.toContainText(route.blockedText);
       await expectNoUnsafeControlsOrClaims(page);
     });
   }
@@ -315,7 +318,8 @@ test.describe('Platform product boundary smoke', () => {
     await page.setViewportSize({ width: 1366, height: 900 });
     await page.goto('/produtos-modulos', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
-    await expectAnchors(page, [/Estados reais do contrato/i, /Modulo sensivel em HOLD/i, /Auditoria no backend/i]);
+    await expectAnchors(page, [/Estados reais do contrato/i, /Bloqueado por contrato/i, /Auditoria tecnica/i]);
+    await expect(page.locator('body')).not.toContainText(/Modulo sensivel em HOLD|Auditoria no backend|\bcompany_modules\b|\bruntime\b|\bscoring\b|\bintake\b|\bHOLD\b/i);
     await expectNoUnsafeControlsOrClaims(page);
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-produtos-modulos.png'), fullPage: true });
@@ -323,7 +327,8 @@ test.describe('Platform product boundary smoke', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/produtos-modulos', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
-    await expectAnchors(page, [/Modulo sensivel em HOLD/i, /Visibilidade nao e permissao/i]);
+    await expectAnchors(page, [/Bloqueado por contrato/i, /Visibilidade nao e permissao/i]);
+    await expect(page.locator('body')).not.toContainText(/Modulo sensivel em HOLD|Auditoria no backend|\bcompany_modules\b|\bruntime\b|\bscoring\b|\bintake\b|\bHOLD\b/i);
     await expectNoUnsafeControlsOrClaims(page);
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-produtos-modulos.png'), fullPage: true });
@@ -481,7 +486,7 @@ test.describe('Platform product boundary smoke', () => {
     await authenticatedPage(page, context, request, baseURL!, 'colaboradora');
 
     await page.goto('/avaliacao-nr1', { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(/\/colaboradora$/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/colaboradora$/, { timeout: 15000 });
     await expect(page.getByRole('heading', { name: /Jornada privada/i })).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Preview tecnico restrito|Preview t.cnico restrito|Previa indisponivel|Runtime Yavix indisponivel|permanece bloqueado fora de dev\/test/i);
     await expect(page.locator('body')).not.toContainText(/Contrato pendente|Permanece bloqueado|Shell estatico sem chamadas Yavix|COPSOQ/i);
