@@ -12,8 +12,8 @@ describe('gamification product copy boundary', () => {
   it('keeps first-access tour from promising classic gamification before product approval', () => {
     const source = read('src/app/(platform)/primeiro-acesso/page.tsx');
 
-    expect(source).toContain('conteúdo diário e recorrência guiada');
-    expect(source).not.toMatch(/conte[uú]do di[aá]rio e gamifica(?:cao|ção)|ranking|leaderboard|loja de recompensas|recompensas dispon[ií]veis|resgatar|ganh[ae] pontos|\bxp\b|badges?/i);
+    expect(source).toMatch(/conte.{0,4}do di.{0,4}rio e recorr.{0,8}ncia guiada/i);
+    expect(source).not.toMatch(/conte.{0,4}do di.{0,4}rio e gamifica|ranking|leaderboard|loja de recompensas|recompensas dispon|resgatar|ganh[ae] pontos|\bxp\b|badges?/i);
   });
 
   it('keeps education management active without operational rewards or ranking', () => {
@@ -21,16 +21,18 @@ describe('gamification product copy boundary', () => {
 
     expect(educationSource).toContain('/api/rh/lessons');
     expect(educationSource).toContain('Editor ativo de licoes');
-    expect(educationSource).not.toMatch(/\/api\/gamification\/(?:rewards|league)|xp_reward|loja de recompensas|recompensas dispon[iÃ­]veis|resgatar|comprar recompensa|ranking geral|leaderboard|ganh[ae] pontos|xp ganho/i);
+    expect(educationSource).not.toMatch(/\/api\/gamification\/(?:rewards|league)|xp_reward|loja de recompensas|recompensas dispon|resgatar|comprar recompensa|ranking geral|leaderboard|ganh[ae] pontos|xp ganho/i);
   });
 
-  it('keeps review routes explicit about HOLD instead of operational rewards or ranking', () => {
-    const reviewSources = [
+  it('keeps Liga compatibility routes redirect-only instead of operational rewards or ranking', () => {
+    const compatibilitySources = [
       read('src/app/(platform)/liga/page.tsx'),
       read('src/app/(platform)/liga/gerenciar/page.tsx'),
     ].join('\n');
 
-    expect(reviewSources).toMatch(/em revis[aã]o|LEGACY_GAMIFICATION_STATE/);
-    expect(reviewSources).not.toMatch(/loja de recompensas|recompensas dispon[ií]veis|resgatar|comprar recompensa|ranking geral|leaderboard|ganh[ae] pontos|xp ganho/i);
+    expect(compatibilitySources).toContain("router.replace('/conquistas')");
+    expect(compatibilitySources).toContain("router.replace('/gamificacao-config')");
+    expect(compatibilitySources).not.toMatch(/em revis|LEGACY_GAMIFICATION_STATE|ContainedSurfacePreview|FeedbackState/);
+    expect(compatibilitySources).not.toMatch(/loja de recompensas|recompensas dispon|resgatar|comprar recompensa|ranking geral|leaderboard|ganh[ae] pontos|xp ganho/i);
   });
 });

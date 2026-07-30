@@ -8,9 +8,9 @@ Goal: remap authenticated product surfaces that exist but do not appear, decide 
 
 - Safe unlock now: expose `/comunidade/gerenciar` in RH navigation. The page and backend already allow RH/Admin editorial work for simple community text posts.
 - Promoted in the no-spec recovery wave: `/produtos-modulos` now reads the real `/api/company/modules` contract and shows non-sensitive governance while keeping sensitive modules in HOLD.
-- Promoted as compatibility redirects in the no-spec recovery wave: `/historico` now routes to `/dashboard?section=exames` or `/colaboradora`; `/desafios/gerenciar` now routes to `/gamificacao-config` or `/desafios`.
+- Promoted as compatibility redirects in the no-spec recovery wave: `/historico` now routes to `/dashboard?section=exames` or `/colaboradora`; `/desafios/gerenciar` now routes to `/gamificacao-config` or `/desafios`; `/liga` and `/liga/gerenciar` now route to safe non-ranking surfaces.
 - Hidden from normal navigation in the no-spec recovery wave: Concierge, NR-1, SIPAT, Desenvolvimento Humano and Canal de Denuncias module shell links. Their direct URLs remain fail-closed for containment, while `/produtos-modulos` remains the visible governance surface.
-- Keep hidden or flow-only: `/onboarding-rh`, `/primeiro-acesso`, `/saude-primaria`, `/liga`, `/liga/gerenciar`.
+- Keep hidden or flow-only: `/onboarding-rh`, `/primeiro-acesso`, `/saude-primaria`.
 - Keep shell/gated: `/concierge`, `/nr1`, `/viva-sipat`, `/desenvolvimento-humano`, `/canal-denuncias`.
 - Keep runtime entitlement-gated only: `/avaliacao-nr1`.
 
@@ -33,8 +33,8 @@ Goal: remap authenticated product surfaces that exist but do not appear, decide 
 | `/primeiro-acesso` | Not visible | First-access helper | KEEP_FLOW_ONLY |
 | `/saude-primaria` | Hidden compatibility route | Redirect/compatibility | KEEP_HIDDEN |
 | `/desafios/gerenciar` | Compatibility route | Redirects to `/gamificacao-config` for RH/Admin and `/desafios` for colaboradora; no challenge-admin workflow | KEEP_COMPAT_REDIRECT_HOLD_CHALLENGE_ADMIN |
-| `/liga` | Not visible | Review shell | HOLD_PRIVACY_PRODUCT |
-| `/liga/gerenciar` | Not visible | Review shell | HOLD_PRIVACY_PRODUCT |
+| `/liga` | Compatibility route | Redirects to `/conquistas` for colaboradora and `/gamificacao-config` for RH/Admin; no Liga/ranking/rewards product | KEEP_COMPAT_REDIRECT_HOLD_PRIVACY_PRODUCT |
+| `/liga/gerenciar` | Compatibility route | Redirects to `/gamificacao-config` for RH/Admin and `/conquistas` for colaboradora; no Liga management workflow | KEEP_COMPAT_REDIRECT_HOLD_PRIVACY_PRODUCT |
 | `/concierge`, `/nr1`, `/viva-sipat`, `/desenvolvimento-humano`, `/canal-denuncias` | Hidden from final navigation; direct URL only | Fail-closed shell/gate for audit/deep-link containment | HOLD_DIRECT_URL_HIDE_NAV |
 
 ## Contract And Governance Gates

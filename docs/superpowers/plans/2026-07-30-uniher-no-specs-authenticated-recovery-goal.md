@@ -43,6 +43,15 @@ Authenticated navigation must not lead users into shell/spec pages that have no 
 - keep `/produtos-modulos` as the visible governance/status surface for those modules;
 - keep direct URLs fail-closed for audit and deep-link containment, without promoting the module as usable product.
 
+## Current Liga compatibility wave
+
+`/liga` and `/liga/gerenciar` were privacy-review/spec screens for a product that still has no approved ranking/reward contract. The safe implementation is compatibility routing only:
+
+- `/liga` sends colaboradora users to `/conquistas`, RH/Admin to `/gamificacao-config`, and lideranca to `/campanhas`;
+- `/liga/gerenciar` sends RH/Admin to `/gamificacao-config`, colaboradora to `/conquistas`, and lideranca to `/campanhas`;
+- unauthenticated users keep auth redirects with the original targets;
+- no Liga product, leaderboard, rewards, points, XP, scoring, group comparison or redemption behavior is introduced.
+
 ## Remaining authenticated spec inventory
 
 | Surface | Decision |
@@ -53,7 +62,7 @@ Authenticated navigation must not lead users into shell/spec pages that have no 
 | `/viva-sipat` | HOLD direct URL; hidden from navigation until approved source package exists |
 | `/desenvolvimento-humano` | HOLD direct URL; hidden from navigation until approved content/trail contract exists |
 | `/nr1` | HOLD direct URL; hidden from navigation until real Yavix/COPSOQ contract intake promotes it |
-| `/liga`, `/liga/gerenciar` | HOLD: privacy scoring/ranking contract missing |
+| `/liga`, `/liga/gerenciar` | Compatibility redirects; Liga/ranking/rewards product remains HOLD_PRIVACY_PRODUCT |
 | `/desafios/gerenciar` | Compatibility redirect; governed challenge admin remains HOLD |
 | `/historico` | Compatibility redirect; dedicated history product remains HOLD_PRODUCTIZE_HISTORY |
 

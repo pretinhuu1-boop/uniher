@@ -64,6 +64,26 @@ describe('Paola P3 locked module shells', () => {
     expect(source).not.toContain('FeedbackState');
   });
 
+  it('keeps Liga routes as compatibility redirects instead of review/spec screens', () => {
+    const ligaSource = read('src/app/(platform)/liga/page.tsx');
+    const ligaManagementSource = read('src/app/(platform)/liga/gerenciar/page.tsx');
+    const combinedSource = `${ligaSource}\n${ligaManagementSource}`;
+
+    expect(ligaSource).toContain("router.replace('/conquistas')");
+    expect(ligaSource).toContain("router.replace('/gamificacao-config')");
+    expect(ligaSource).toContain("router.replace('/auth?redirect=%2Fliga')");
+    expect(ligaSource).toContain("router.replace('/campanhas')");
+    expect(ligaManagementSource).toContain("router.replace('/gamificacao-config')");
+    expect(ligaManagementSource).toContain("router.replace('/conquistas')");
+    expect(ligaManagementSource).toContain("router.replace('/auth?redirect=%2Fliga%2Fgerenciar')");
+    expect(ligaManagementSource).toContain("router.replace('/campanhas')");
+    expect(combinedSource).not.toContain('ContainedSurfacePreview');
+    expect(combinedSource).not.toContain('FeedbackState');
+    expect(combinedSource).not.toContain('LEGACY_GAMIFICATION_STATE');
+    expect(combinedSource).not.toContain('Liga em revis');
+    expect(combinedSource).not.toContain('Gestao de ligas em revis');
+  });
+
   it('keeps NR-1 as a contract-gated shell separate from COPSOQ runtime', () => {
     const source = read('src/app/(platform)/nr1/page.tsx');
 

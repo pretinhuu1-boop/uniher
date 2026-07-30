@@ -6,13 +6,15 @@ import path from 'node:path';
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const PASSWORD = 'Admin@2026';
 const RH_EMAIL = 'rh.visual@eduardaeyurimarketingltda.com.br';
+const LEADERSHIP_EMAIL = 'lideranca.visual@eduardaeyurimarketingltda.com.br';
 const COLLABORATOR_EMAIL = 'nr1.visual@eduardaeyurimarketingltda.com.br';
 
-type SeedRole = 'admin' | 'rh' | 'colaboradora';
+type SeedRole = 'admin' | 'rh' | 'lideranca' | 'colaboradora';
 
 const roleCredentials: Record<SeedRole, { email: string; password: string }> = {
   admin: { email: ADMIN_EMAIL, password: PASSWORD },
   rh: { email: RH_EMAIL, password: PASSWORD },
+  lideranca: { email: LEADERSHIP_EMAIL, password: PASSWORD },
   colaboradora: { email: COLLABORATOR_EMAIL, password: PASSWORD },
 };
 
@@ -60,24 +62,41 @@ const containedRoutes = [
   anchors: readonly RegExp[];
 }>;
 
-const reviewRoutes = [
+const compatibilityRedirectRoutes = [
   {
     role: 'rh',
     path: '/liga/gerenciar',
-    title: /Gest.o de ligas em revis.o/i,
-    anchors: [/Pontuacao e classificacao estao em revisao/i],
+    expectedUrl: /\/gamificacao-config$/,
+    title: /Conteudos educativos/i,
+    blockedText: /Gestao de ligas em revisao|Gest.o de ligas em revis.o|Liga em revisao|Liga em revis.o/i,
   },
   {
     role: 'colaboradora',
     path: '/liga',
-    title: /^Liga$/,
-    anchors: [/Liga em revisao/i, /nenhuma exposicao nominal/i, /Promocao da pagina sem decisao/i],
+    expectedUrl: /\/conquistas$/,
+    title: /Minhas conquistas/i,
+    blockedText: /Liga em revisao|Liga em revis.o|nenhuma exposicao nominal|Promocao da pagina sem decisao/i,
+  },
+  {
+    role: 'lideranca',
+    path: '/liga',
+    expectedUrl: /\/campanhas$/,
+    title: /Campanhas/i,
+    blockedText: /Liga em revisao|Liga em revis.o|nenhuma exposicao nominal|Promocao da pagina sem decisao/i,
+  },
+  {
+    role: 'lideranca',
+    path: '/liga/gerenciar',
+    expectedUrl: /\/campanhas$/,
+    title: /Campanhas/i,
+    blockedText: /Gestao de ligas em revisao|Gest.o de ligas em revis.o|Liga em revisao|Liga em revis.o/i,
   },
 ] as const satisfies ReadonlyArray<{
   role: SeedRole;
   path: string;
+  expectedUrl: RegExp;
   title: RegExp;
-  anchors: readonly RegExp[];
+  blockedText: RegExp;
 }>;
 
 const safeUsefulRoutes = [
@@ -230,6 +249,17 @@ test.describe('Platform product boundary smoke', () => {
   test.describe.configure({ mode: 'serial' });
   test.use({ serviceWorkers: 'block' });
 
+  test('unauthenticated Liga compatibility routes preserve original redirect targets', async ({ page, context, baseURL }) => {
+    assertProductBoundaryHostIsLoopback(baseURL);
+    await context.clearCookies();
+
+    await page.goto('/liga');
+    await expect(page).toHaveURL(/\/auth\?redirect=%2Fliga$/);
+
+    await page.goto('/liga/gerenciar');
+    await expect(page).toHaveURL(/\/auth\?redirect=%2Fliga%2Fgerenciar$/);
+  });
+
   for (const route of containedRoutes) {
     test(`${route.role} contained surface stays visibly blocked: ${route.path}`, async ({ page, context, request, baseURL }) => {
       assertProductBoundaryHostIsLoopback(baseURL);
@@ -243,14 +273,15 @@ test.describe('Platform product boundary smoke', () => {
     });
   }
 
-  for (const route of reviewRoutes) {
-    test(`${route.role} review surface does not reopen legacy gamification: ${route.path}`, async ({ page, context, request, baseURL }) => {
+  for (const route of compatibilityRedirectRoutes) {
+    test(`${route.role} Liga compatibility route lands on useful surface: ${route.path}`, async ({ page, context, request, baseURL }) => {
       assertProductBoundaryHostIsLoopback(baseURL);
       await authenticatedPage(page, context, request, baseURL!, route.role);
 
       await page.goto(route.path);
+      await expect(page).toHaveURL(route.expectedUrl);
       await expect(page.getByRole('heading', { name: route.title })).toBeVisible();
-      await expectAnchors(page, route.anchors);
+      await expect(page.locator('body')).not.toContainText(route.blockedText);
       await expectNoUnsafeControlsOrClaims(page);
     });
   }
@@ -315,6 +346,14 @@ test.describe('Platform product boundary smoke', () => {
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-desafios-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
 
+    await page.goto('/liga/gerenciar');
+    await expect(page).toHaveURL(/\/gamificacao-config$/);
+    await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Gestao de ligas em revisao|Gest.o de ligas em revis.o|Liga em revisao|Liga em revis.o/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-liga-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
+
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/historico');
     await expect(page).toHaveURL(/\/dashboard\?section=exames$/);
@@ -331,6 +370,40 @@ test.describe('Platform product boundary smoke', () => {
     await expectNoUnsafeControlsOrClaims(page);
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-desafios-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
+
+    await page.goto('/liga/gerenciar');
+    await expect(page).toHaveURL(/\/gamificacao-config$/);
+    await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Gestao de ligas em revisao|Gest.o de ligas em revis.o|Liga em revisao|Liga em revis.o/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-liga-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
+  });
+
+  test('collaborator Liga compatibility route lands on private achievements', async ({ page, context, request, baseURL }) => {
+    assertProductBoundaryHostIsLoopback(baseURL);
+    await authenticatedPage(page, context, request, baseURL!, 'colaboradora');
+
+    const evidenceDir = path.resolve(__dirname, '..', '..', 'docs', 'superpowers', 'evidence', 'compat-redirects-local-2026-07-30');
+    fs.mkdirSync(evidenceDir, { recursive: true });
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto('/liga');
+    await expect(page).toHaveURL(/\/conquistas$/);
+    await expect(page.getByRole('heading', { name: /Minhas conquistas/i })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Liga em revisao|Liga em revis.o|nenhuma exposicao nominal|Promocao da pagina sem decisao/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-liga-redirect-conquistas.png'), fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/liga');
+    await expect(page).toHaveURL(/\/conquistas$/);
+    await expect(page.getByRole('heading', { name: /Minhas conquistas/i })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Liga em revisao|Liga em revis.o|nenhuma exposicao nominal|Promocao da pagina sem decisao/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-liga-redirect-conquistas.png'), fullPage: true });
   });
 
   test('authenticated navigation hides module shells without approved contracts', async ({ page, context, request, baseURL }) => {

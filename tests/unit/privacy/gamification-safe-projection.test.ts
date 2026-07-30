@@ -683,15 +683,19 @@ describe('safe authenticated projections', () => {
     expect(challengeManagementCompatibility).not.toContain('LEGACY_GAMIFICATION_STATE');
     expect(challengeManagementCompatibility).not.toMatch(/ranking|leaderboard|recompensas|xp_reward/i);
 
-    const neutralDeepLinks = [
-      'src/app/(platform)/liga/page.tsx',
-      'src/app/(platform)/liga/gerenciar/page.tsx',
-    ];
-    for (const page of neutralDeepLinks) {
-      const source = read(page);
-      expect(source, page).toContain('FeedbackState');
-      expect(source, page).toContain('LEGACY_GAMIFICATION_STATE.message');
-    }
+    const ligaCompatibility = read('src/app/(platform)/liga/page.tsx');
+    expect(ligaCompatibility).toContain("router.replace('/conquistas')");
+    expect(ligaCompatibility).toContain("router.replace('/gamificacao-config')");
+    expect(ligaCompatibility).toContain("router.replace('/campanhas')");
+    expect(ligaCompatibility).not.toContain('LEGACY_GAMIFICATION_STATE');
+    expect(ligaCompatibility).not.toMatch(/ranking|leaderboard|recompensas|xp_reward/i);
+
+    const ligaManagementCompatibility = read('src/app/(platform)/liga/gerenciar/page.tsx');
+    expect(ligaManagementCompatibility).toContain("router.replace('/gamificacao-config')");
+    expect(ligaManagementCompatibility).toContain("router.replace('/conquistas')");
+    expect(ligaManagementCompatibility).toContain("router.replace('/campanhas')");
+    expect(ligaManagementCompatibility).not.toContain('LEGACY_GAMIFICATION_STATE');
+    expect(ligaManagementCompatibility).not.toMatch(/ranking|leaderboard|recompensas|xp_reward/i);
 
     const educationManager = read('src/app/(platform)/gamificacao-config/page.tsx');
     expect(educationManager).toContain('/api/rh/lessons');
