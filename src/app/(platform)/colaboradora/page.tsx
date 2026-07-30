@@ -10,6 +10,7 @@ import {
   Check,
   ClipboardCheck,
   LockKeyhole,
+  Megaphone,
   ShieldCheck,
 } from 'lucide-react';
 import DailyLesson from '@/components/gamification/DailyLesson';
@@ -268,6 +269,11 @@ export default function CollaboratorHomePage() {
 
   const missions = missionData?.missions ?? [];
   const checkInLabel = streak?.checkedInToday ? 'Check-in registrado' : 'Fazer check-in';
+  const campaignsActive = data?.campaignsActive ?? 0;
+  const campaignsTotal = data?.campaignsTotal ?? 0;
+  const campaignSummary = campaignsTotal > 0
+    ? `${campaignsActive} de ${campaignsTotal} campanhas ativas`
+    : 'Nenhuma campanha ativa agora';
   const nr1PreviewState = getNr1PreviewState({
     previewEnabled: process.env.NEXT_PUBLIC_UNIHER_NR1_PREVIEW === '1',
     entitled: isNr1RuntimeEntitled(moduleData?.modules),
@@ -293,9 +299,34 @@ export default function CollaboratorHomePage() {
         items={[
           { label: 'Conteúdos vistos', value: data?.contentViewed ?? 0 },
           { label: 'Exames em dia', value: data?.examsPercent ?? 0, detail: '%' },
-          { label: 'Campanhas', value: data?.campaignsActive ?? 0, detail: `de ${data?.campaignsTotal ?? 0}` },
+          { label: 'Campanhas', value: campaignsActive, detail: `de ${campaignsTotal}` },
         ]}
       />
+
+      <section
+        aria-labelledby="campaigns-home-title"
+        className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--platform-radius-control)] bg-[var(--platform-group)] text-[var(--platform-action-strong)]">
+              <Megaphone size={21} strokeWidth={1.7} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--platform-action-strong)]">Ações abertas</p>
+              <h2 id="campaigns-home-title" className="mt-1 text-lg font-semibold text-[var(--platform-ink)]">Campanhas da empresa</h2>
+              <p className="mt-1 text-sm text-[var(--platform-muted)]">{campaignSummary}</p>
+              <p className="mt-1 max-w-2xl text-sm text-[var(--platform-muted)]">
+                Acompanhe ações disponíveis para sua empresa e participe quando fizer sentido para sua rotina.
+              </p>
+            </div>
+          </div>
+          <Link href="/campanhas" className={`${actionLinkClass} shrink-0`} aria-label="Acompanhar campanhas">
+            Acompanhar campanhas
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
 
       <section aria-labelledby="journey-title" className="overflow-hidden rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)]">
         <div className="border-b border-[var(--platform-line)] px-4 py-5 sm:px-5">

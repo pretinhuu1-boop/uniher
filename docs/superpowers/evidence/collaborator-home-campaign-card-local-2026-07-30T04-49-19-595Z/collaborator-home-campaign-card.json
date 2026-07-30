@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-07-30T04:49:33.816Z",
+  "baseURL": "http://127.0.0.1:3119",
+  "route": "/colaboradora",
+  "dbPath": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\tests\\.playwright-data\\wave2-collaborator-home-2026-07-30T04-49-19-595Z\\uniher-playwright.db",
+  "results": [
+    {
+      "viewport": "desktop-1366",
+      "status": 200,
+      "url": "http://127.0.0.1:3119/colaboradora",
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\collaborator-home-campaign-card-local-2026-07-30T04-49-19-595Z\\desktop-1366-colaboradora.png",
+      "checks": {
+        "hasCampaignCard": true,
+        "hasCampaignLink": true,
+        "hasCampaignSummary": true,
+        "hasSafeCopy": true,
+        "forbiddenGamificationCopy": false,
+        "horizontalOverflow": null
+      }
+    },
+    {
+      "viewport": "mobile-390",
+      "status": 200,
+      "url": "http://127.0.0.1:3119/colaboradora",
+      "screenshot": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\collaborator-home-campaign-card-local-2026-07-30T04-49-19-595Z\\mobile-390-colaboradora.png",
+      "checks": {
+        "hasCampaignCard": true,
+        "hasCampaignLink": true,
+        "hasCampaignSummary": true,
+        "hasSafeCopy": true,
+        "forbiddenGamificationCopy": false,
+        "horizontalOverflow": null
+      }
+    }
+  ],
+  "failures": []
+}

@@ -60,6 +60,15 @@ The collaborator home and manager sidebar still surfaced legacy review/spec copy
 - manager sidebar replaces `Conquistas em revisão` with `Conquistas privadas`;
 - no scoring, ranking, points, XP, rewards, league, badges or comparative behavior is introduced.
 
+## Current collaborator campaign recovery wave
+
+The collaborator home had a recoverable company campaigns affordance in the previous product and should not degrade to only an abstract summary number. The safe implementation is a read-only campaign card on `/colaboradora`:
+
+- show the current company campaign count from the existing collaborator home payload;
+- link to the existing `/campanhas` product surface;
+- keep the card free of XP, ranking, points, rewards, league, badges or comparison copy;
+- do not introduce a new campaign API, join flow or management behavior from this wave.
+
 ## Remaining authenticated spec inventory
 
 | Surface | Decision |
@@ -74,6 +83,7 @@ The collaborator home and manager sidebar still surfaced legacy review/spec copy
 | `/desafios/gerenciar` | Compatibility redirect; governed challenge admin remains HOLD |
 | `/historico` | Compatibility redirect; dedicated history product remains HOLD_PRODUCTIZE_HISTORY |
 | `/colaboradora` gamification review banner | Promoted: real private journey links to existing objetivos/desafios/conquistas surfaces |
+| `/colaboradora` campaign summary only | Promoted: real company campaigns card linking to `/campanhas`, read-only from existing payload |
 
 ## Wave gate
 

@@ -56,6 +56,12 @@ describe('Collaborator home summary parity', () => {
     expect(within(summary).getByText('3')).not.toBeNull();
     expect(within(summary).getByText('de 5')).not.toBeNull();
     expect(summary.textContent).not.toMatch(/\b(?:XP|ranking|pontos?)\b/i);
+
+    const campaignCard = screen.getByRole('region', { name: /Campanhas da empresa/i });
+    expect(within(campaignCard).getByText(/3 de 5 campanhas ativas/i)).not.toBeNull();
+    const campaignLink = within(campaignCard).getByRole('link', { name: /Acompanhar campanhas/i });
+    expect(campaignLink.getAttribute('href')).toBe('/campanhas');
+    expect(campaignCard.textContent).not.toMatch(/\b(?:XP|ranking|pontos?)\b/i);
   });
 
   it('renders private journey links instead of a legacy gamification review banner', () => {
