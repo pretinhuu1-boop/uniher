@@ -111,7 +111,7 @@ const safeUsefulRoutes = [
     role: 'rh',
     path: '/produtos-modulos',
     title: /Produtos e M.dulos/i,
-    anchors: [/Estados reais do contrato/i, /Bloqueado por contrato/i, /Nao sensiveis editaveis/i, /Auditoria tecnica/i],
+    anchors: [/Disponibilidade dos produtos/i, /Produtos protegidos/i, /Produtos configuraveis/i, /Registro das mudancas/i],
     blockedText: /Modulo sensivel em HOLD|Auditoria no backend|\bcompany_modules\b|\bruntime\b|\bscoring\b|\bintake\b|\bHOLD\b/i,
   },
   {
@@ -318,7 +318,7 @@ test.describe('Platform product boundary smoke', () => {
     await page.setViewportSize({ width: 1366, height: 900 });
     await page.goto('/produtos-modulos', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
-    await expectAnchors(page, [/Estados reais do contrato/i, /Bloqueado por contrato/i, /Auditoria tecnica/i]);
+    await expectAnchors(page, [/Disponibilidade dos produtos/i, /Produtos protegidos/i, /Registro das mudancas/i]);
     await expect(page.locator('body')).not.toContainText(/Modulo sensivel em HOLD|Auditoria no backend|\bcompany_modules\b|\bruntime\b|\bscoring\b|\bintake\b|\bHOLD\b/i);
     await expectNoUnsafeControlsOrClaims(page);
     await expectNoHorizontalOverflow(page);
@@ -327,7 +327,7 @@ test.describe('Platform product boundary smoke', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/produtos-modulos', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
-    await expectAnchors(page, [/Bloqueado por contrato/i, /Visibilidade nao e permissao/i]);
+    await expectAnchors(page, [/Produtos protegidos/i, /Menu nao libera operacao/i]);
     await expect(page.locator('body')).not.toContainText(/Modulo sensivel em HOLD|Auditoria no backend|\bcompany_modules\b|\bruntime\b|\bscoring\b|\bintake\b|\bHOLD\b/i);
     await expectNoUnsafeControlsOrClaims(page);
     await expectNoHorizontalOverflow(page);

@@ -28,17 +28,17 @@ const SENSITIVE_MODULE_SLUGS: readonly CompanyModuleSlug[] = [
 const STATE_LABELS: Record<CompanyModuleState, string> = {
   enabled: 'Ativo',
   locked: 'Bloqueado',
-  coming_soon: 'Em breve',
+  coming_soon: 'Planejado',
   partner_managed: 'Parceiro',
-  requires_contract: 'Contrato',
+  requires_contract: 'Aguardando liberacao',
 };
 
 const STATE_HELP: Record<CompanyModuleState, string> = {
-  enabled: 'Aparece como produto ativo quando tambem esta visivel para o perfil.',
-  locked: 'Existe no catalogo, mas nao executa fluxo operacional.',
-  coming_soon: 'Pode aparecer como roadmap sem liberar comportamento.',
-  partner_managed: 'Depende de parceiro, contrato e dados fora da operacao UniHER.',
-  requires_contract: 'Requer contrato, fonte ou decisao de governanca antes de ativar.',
+  enabled: 'Disponivel para os perfis autorizados quando tambem esta visivel no menu.',
+  locked: 'Produto indisponivel no momento, sem liberar fluxo operacional.',
+  coming_soon: 'Planejado para ativacao futura, sem liberar comportamento operacional.',
+  partner_managed: 'Atendimento conduzido com parceiro autorizado fora da operacao direta UniHER.',
+  requires_contract: 'Aguardando liberacao operacional aprovada antes de ativar.',
 };
 
 const NON_SENSITIVE_EDITABLE_STATES: readonly CompanyModuleState[] = [
@@ -109,7 +109,7 @@ export default function ProdutosModulosPage() {
   }
 
   if (authLoading || isLoading) {
-    return <FeedbackState kind="loading" title="Carregando modulos" description="Buscando o contrato de modulos da empresa autenticada." />;
+    return <FeedbackState kind="loading" title="Carregando produtos" description="Buscando a disponibilidade da empresa autenticada." />;
   }
 
   if (!user?.companyId) {
@@ -141,11 +141,11 @@ export default function ProdutosModulosPage() {
       <section className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[var(--platform-surface)] p-5 shadow-sm md:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--platform-muted)]">Governanca de modulos</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--platform-muted)]">Disponibilidade dos produtos</p>
             <h1 className="text-2xl font-semibold text-[var(--platform-ink)]">Produtos e Modulos</h1>
             <p className="text-sm leading-6 text-[var(--platform-muted)]">
-              Estados reais do contrato da empresa atual. Modulos sensiveis ficam bloqueados por contrato ate existir fonte aprovada,
-              governanca especifica e liberacao formal.
+              Acompanhe quais produtos estao disponiveis para a empresa atual. Produtos protegidos permanecem indisponiveis ate
+              existir uma liberacao aprovada e uma fonte operacional validada.
             </p>
           </div>
 
@@ -160,7 +160,7 @@ export default function ProdutosModulosPage() {
             </div>
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
               <p className="text-xl font-semibold text-amber-800">{holdCount}</p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">Contrato</p>
+              <p className="text-[10px] font-semibold uppercase leading-4 text-amber-700">Protegidos</p>
             </div>
           </div>
         </div>
@@ -169,23 +169,23 @@ export default function ProdutosModulosPage() {
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Guardrails de ativacao">
         <div className="rounded-lg border border-[var(--platform-line)] bg-[var(--platform-surface)] p-4">
           <ShieldCheck className="mb-3 text-emerald-700" size={20} aria-hidden="true" />
-          <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Nao sensiveis editaveis</h2>
+          <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Produtos configuraveis</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--platform-muted)]">Educacao e Conquistas podem mudar estado por Master Admin.</p>
         </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <LockKeyhole className="mb-3 text-amber-800" size={20} aria-hidden="true" />
-          <h2 className="text-sm font-semibold text-amber-950">Modulo sensivel bloqueado</h2>
+          <h2 className="text-sm font-semibold text-amber-950">Produtos protegidos</h2>
           <p className="mt-1 text-xs leading-5 text-amber-800">NR-1, SIPAT, Concierge, Denuncias, DH e Saude Primaria nao sao ativados por esta tela.</p>
         </div>
         <div className="rounded-lg border border-[var(--platform-line)] bg-[var(--platform-surface)] p-4">
           <Eye className="mb-3 text-[var(--platform-muted)]" size={20} aria-hidden="true" />
-          <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Visibilidade nao e permissao</h2>
+          <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Menu nao libera operacao</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--platform-muted)]">Menu visivel nao libera execucao operacional, avaliacao automatica, recebimento de relatos ou dados sensiveis.</p>
         </div>
         <div className="rounded-lg border border-[var(--platform-line)] bg-[var(--platform-surface)] p-4">
           <ShieldAlert className="mb-3 text-[var(--platform-muted)]" size={20} aria-hidden="true" />
-          <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Auditoria tecnica</h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--platform-muted)]">Mudancas validas passam pelo fluxo tecnico de modulos e registro de auditoria.</p>
+          <h2 className="text-sm font-semibold text-[var(--platform-ink)]">Registro das mudancas</h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--platform-muted)]">Mudancas validas passam por verificacao de acesso e ficam registradas.</p>
         </div>
       </section>
 
@@ -212,17 +212,17 @@ export default function ProdutosModulosPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-base font-semibold text-[var(--platform-ink)]">{definition?.label ?? module.module_slug}</h2>
                   <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${sensitive ? 'border-amber-200 bg-amber-50 text-amber-800' : stateTone(module.module_state)}`}>
-                    {sensitive ? 'Requer contrato' : STATE_LABELS[module.module_state]}
+                    {sensitive ? 'Aguardando liberacao' : STATE_LABELS[module.module_state]}
                   </span>
                   {sensitive && (
                     <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">
-                      Bloqueado por contrato
+                      Protegido
                     </span>
                   )}
                 </div>
                 <p className="text-sm leading-6 text-[var(--platform-muted)]">
                   {sensitive
-                    ? `Produto sensivel bloqueado nesta tela. Estado atual: ${STATE_LABELS[module.module_state]}. Nenhuma execucao sensivel e ativada por esta superficie.`
+                    ? `Produto protegido nesta tela. Status atual: ${STATE_LABELS[module.module_state]}. A visualizacao no menu nao libera atendimento, avaliacao, recebimento de relatos ou dados sensiveis.`
                     : STATE_HELP[module.module_state]}
                 </p>
               </div>
@@ -261,10 +261,10 @@ export default function ProdutosModulosPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <CheckCircle2 className="mt-0.5 text-amber-800" size={20} aria-hidden="true" />
           <div className="space-y-1">
-            <h2 className="text-sm font-semibold text-amber-950">Limite desta wave</h2>
+            <h2 className="text-sm font-semibold text-amber-950">Como esta tela atua</h2>
             <p className="text-sm leading-6 text-amber-900">
-              Esta tela nao cria contratos, nao altera permissoes de usuario e nao ativa produto sensivel. Ela apenas expoe o estado real
-              dos modulos e permite governanca limitada de modulos nao sensiveis quando o usuario e Master Admin.
+              Esta tela nao altera permissoes de usuario e nao ativa produto protegido. Ela mostra a disponibilidade atual
+              dos produtos e permite mudancas apenas nos produtos configuraveis quando o usuario e Master Admin.
             </p>
           </div>
         </div>

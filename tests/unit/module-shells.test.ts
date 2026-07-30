@@ -150,8 +150,10 @@ describe('Paola P3 locked module shells', () => {
     expect(source).toContain('useSWR<CompanyModulesResponse>(modulesCacheKey, fetcher)');
     expect(source).toContain('/api/company/modules');
     expect(source).toContain('SENSITIVE_MODULE_SLUGS');
-    expect(source).toContain('Bloqueado por contrato');
-    expect(source).toContain('Auditoria tecnica');
+    expect(source).toContain('Produtos protegidos');
+    expect(source).toContain('Registro das mudancas');
+    expect(source).toContain('Como esta tela atua');
+    expect(source).not.toContain('Limite desta wave');
     expect(source).not.toContain('Modulo sensivel em HOLD');
     expect(source).not.toContain('Auditoria no backend');
     expect(source).not.toMatch(/\bcompany_modules\b/);

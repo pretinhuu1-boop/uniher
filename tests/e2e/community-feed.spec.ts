@@ -1047,7 +1047,7 @@ test.describe('company community feed', () => {
     await page.locator('#community-post-title').fill(browserTitle);
     await page.locator('#community-post-summary').fill(browserSummary);
     await page.locator('#community-post-body').fill(browserBody);
-    await expect(page.getByRole('heading', { name: 'Prévia em texto simples' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Conferência editorial' })).toBeVisible();
     await expect(
       page
         .locator('aside[aria-labelledby="community-preview-title"]')

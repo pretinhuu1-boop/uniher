@@ -107,3 +107,17 @@ describe('editorial workspace guard', () => {
     expect(guard.isCurrent(newDraft)).toBe(false);
   });
 });
+
+describe('editorial product copy boundary', () => {
+  it('uses operational review copy instead of visible preview jargon', () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), 'src', 'components', 'community', 'management', 'CommunityPostEditor.tsx'),
+      'utf8',
+    );
+
+    expect(source).toContain('Conferência editorial');
+    expect(source).toContain('conferir a leitura antes de publicar');
+    expect(source).not.toContain('Prévia em texto simples');
+    expect(source).not.toContain('visualizar a prévia');
+  });
+});

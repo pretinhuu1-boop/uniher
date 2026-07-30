@@ -244,7 +244,7 @@ export function CommunityPostEditor({
         <aside aria-labelledby="community-preview-title" className="min-w-0 border-t border-[var(--platform-line)] bg-[color-mix(in_srgb,var(--platform-group)_35%,var(--platform-surface))] p-4 sm:p-5 xl:border-t-0">
           <div className="flex items-center gap-2 text-[var(--platform-action-strong)]">
             <Eye aria-hidden="true" className="h-4 w-4" />
-            <h3 id="community-preview-title" className="text-sm font-semibold">Prévia em texto simples</h3>
+            <h3 id="community-preview-title" className="text-sm font-semibold">Conferência editorial</h3>
           </div>
           <div className="mt-4 min-w-0 space-y-4">
             <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--platform-muted)]">
@@ -257,7 +257,7 @@ export function CommunityPostEditor({
               <p className="mt-2 whitespace-pre-wrap break-words text-sm font-medium leading-6 text-[var(--platform-muted)]">{form.summary.trim() || 'O resumo aparecerá aqui.'}</p>
             </div>
             <div className="border-t border-[var(--platform-line)] pt-4">
-              <p className="whitespace-pre-wrap break-words text-sm leading-7 text-[var(--platform-ink)]">{form.bodyText || 'Escreva o conteúdo para visualizar a prévia.'}</p>
+              <p className="whitespace-pre-wrap break-words text-sm leading-7 text-[var(--platform-ink)]">{form.bodyText || 'Escreva o conteúdo para conferir a leitura antes de publicar.'}</p>
             </div>
             {form.imagePath.trim() && (
               <div className="flex min-w-0 items-start gap-2 border-t border-[var(--platform-line)] pt-4 text-xs text-[var(--platform-muted)]">
