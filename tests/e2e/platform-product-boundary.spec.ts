@@ -476,24 +476,15 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-rh-sidebar-shell-links-hidden.png'), fullPage: true });
   });
 
-  test('collaborator NR-1 runtime route stays blocked or unavailable without production runtime', async ({ page, context, request, baseURL }) => {
+  test('collaborator NR-1 runtime route hides technical preview without production runtime', async ({ page, context, request, baseURL }) => {
     assertProductBoundaryHostIsLoopback(baseURL);
     await authenticatedPage(page, context, request, baseURL!, 'colaboradora');
 
     await page.goto('/avaliacao-nr1', { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(/\/(?:colaboradora|avaliacao-nr1)$/);
-    if (new URL(page.url()).pathname === '/colaboradora') {
-      await expect(page.getByRole('heading', { name: /Jornada privada/i })).toBeVisible();
-      await expect(page.locator('body')).not.toContainText(/Contrato pendente|Permanece bloqueado|Shell estatico sem chamadas Yavix|COPSOQ/i);
-    } else {
-      await expect(page).toHaveURL(/\/avaliacao-nr1$/);
-      await expectAnchors(page, [
-        /Preview tecnico restrito/i,
-        /Nao gera laudo, scoring, conformidade NR-1, GRO\/PGR nem integracao real com a Yavix/i,
-        /Runtime Yavix indisponivel/i,
-        /permanece bloqueado fora de dev\/test/i,
-      ]);
-    }
+    await page.waitForURL(/\/colaboradora$/, { timeout: 15000 });
+    await expect(page.getByRole('heading', { name: /Jornada privada/i })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Preview tecnico restrito|Preview t.cnico restrito|Previa indisponivel|Runtime Yavix indisponivel|permanece bloqueado fora de dev\/test/i);
+    await expect(page.locator('body')).not.toContainText(/Contrato pendente|Permanece bloqueado|Shell estatico sem chamadas Yavix|COPSOQ/i);
     await expectNoUnsafeControlsOrClaims(page);
   });
 });

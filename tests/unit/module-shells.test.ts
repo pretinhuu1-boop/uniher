@@ -115,7 +115,11 @@ describe('Paola P3 locked module shells', () => {
 
     expect(source).toContain('getNr1RuntimeEntitlementForCurrentRequest');
     expect(source).toContain("redirect('/nr1')");
+    expect(source).toContain("if (!isYavixMock()) redirect('/nr1')");
     expect(source.indexOf('getNr1RuntimeEntitlementForCurrentRequest')).toBeLessThan(source.indexOf('<CopsoqFlow'));
+    expect(source.indexOf("if (!isYavixMock()) redirect('/nr1')")).toBeLessThan(source.indexOf('<CopsoqFlow'));
+    expect(source).not.toContain('Previa indisponivel');
+    expect(source).not.toContain('Preview tecnico restrito');
   });
 
   it('keeps the collaborator NR-1 journey gated by company modules', () => {

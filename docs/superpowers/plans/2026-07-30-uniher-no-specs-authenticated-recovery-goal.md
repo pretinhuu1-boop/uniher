@@ -78,6 +78,16 @@ Direct module URLs for products without approved runtime contracts were still sh
 - unauthenticated users keep auth redirects with the original targets;
 - no Concierge case workflow, Denuncias intake, SIPAT operation, Desenvolvimento Humano trail or NR-1/Yavix runtime behavior is introduced.
 
+## Current NR-1 technical preview hiding wave
+
+`/avaliacao-nr1` still had a renderable technical preview/unavailable screen when a company was entitled but the Yavix mock/runtime was not active. The safe implementation is fail-closed routing:
+
+- unauthenticated users keep the auth redirect with the original target;
+- users without explicit NR-1 runtime entitlement continue to `/nr1`, which is already compatibility-routed by role;
+- users with entitlement but without the explicit Yavix mock runtime also return to `/nr1`;
+- only explicitly mocked dev/test runtime can render `CopsoqFlow`;
+- no production COPSOQ, Yavix integration, laudo, scoring, GRO/PGR or technical unavailable shell is introduced.
+
 ## Remaining authenticated spec inventory
 
 | Surface | Decision |
@@ -88,6 +98,7 @@ Direct module URLs for products without approved runtime contracts were still sh
 | `/viva-sipat` | Compatibility redirect; approved source package remains HOLD |
 | `/desenvolvimento-humano` | Compatibility redirect; approved content/trail contract remains HOLD |
 | `/nr1` | Compatibility redirect; real Yavix/COPSOQ contract intake remains HOLD |
+| `/avaliacao-nr1` | Compatibility redirect unless explicit mock runtime is active; production NR-1/Yavix remains HOLD |
 | `/liga`, `/liga/gerenciar` | Compatibility redirects; Liga/ranking/rewards product remains HOLD_PRIVACY_PRODUCT |
 | `/desafios/gerenciar` | Compatibility redirect; governed challenge admin remains HOLD |
 | `/historico` | Compatibility redirect; dedicated history product remains HOLD_PRODUCTIZE_HISTORY |
