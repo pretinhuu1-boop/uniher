@@ -1,10 +1,10 @@
 {
   "summary": {
-    "generatedAt": "2026-07-30T13:42:46.708Z",
+    "generatedAt": "2026-07-30T14:40:50.422Z",
     "source": "C:\\Users\\user\\Documents\\uniher-app-audit\\.worktrees\\uniher-wave3-collaborator-nr1\\docs\\superpowers\\evidence\\blocked-clickable-local-fixture-map-ea64600-2026-07-30\\blocked-controls.json",
-    "scope": "Local fixture validation for global home, session/logout and disabled clickable controls only.",
-    "total": 177,
-    "pass": 172,
+    "scope": "Local fixture validation for global home, session/logout, disabled, collaborator wellbeing and reading controls.",
+    "total": 180,
+    "pass": 175,
     "review": 5,
     "fail": 0,
     "byLane": {
@@ -24,6 +24,18 @@
         "total": 25,
         "pass": 20,
         "review": 5,
+        "fail": 0
+      },
+      "wellbeing": {
+        "total": 2,
+        "pass": 2,
+        "review": 0,
+        "fail": 0
+      },
+      "education": {
+        "total": 1,
+        "pass": 1,
+        "review": 0,
         "fail": 0
       }
     },
@@ -1679,6 +1691,33 @@
       "status": "PASS",
       "beforeUrl": "/gamificacao-config",
       "afterUrl": "/gamificacao-config"
+    },
+    {
+      "lane": "wellbeing",
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "label": "Fazer check-in + mood",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/colaboradora"
+    },
+    {
+      "lane": "wellbeing",
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "label": "Fazer check-out + mood",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/colaboradora"
+    },
+    {
+      "lane": "education",
+      "role": "colaboradora",
+      "route": "/colaboradora",
+      "label": "Registrar leitura",
+      "status": "PASS",
+      "beforeUrl": "/colaboradora",
+      "afterUrl": "/colaboradora"
     }
   ]
 }

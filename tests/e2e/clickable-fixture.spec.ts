@@ -17,7 +17,7 @@ interface BlockedControl {
 }
 
 interface FixtureResult {
-  lane: 'home' | 'session' | 'disabled';
+  lane: 'home' | 'session' | 'disabled' | 'wellbeing' | 'education';
   role: SmokeRole;
   route: string;
   label: string;
@@ -68,12 +68,19 @@ function relativeUrl(url: string): string {
 }
 
 async function apiLogin(request: APIRequestContext, role: SmokeRole): Promise<string> {
+  return apiLoginWithCredentials(request, CREDENTIALS[role]);
+}
+
+async function apiLoginWithCredentials(
+  request: APIRequestContext,
+  credentials: { email: string; password: string },
+): Promise<string> {
   const response = await request.post('/api/auth/login', {
-    data: CREDENTIALS[role],
+    data: credentials,
   });
-  expect(response.ok(), `${role} login failed: ${await response.text()}`).toBe(true);
+  expect(response.ok(), `${credentials.email} login failed: ${await response.text()}`).toBe(true);
   const token = extractAccessTokenFromSetCookie(response);
-  expect(token, `${role} login did not return access cookie`).toBeTruthy();
+  expect(token, `${credentials.email} login did not return access cookie`).toBeTruthy();
   return token;
 }
 
@@ -89,6 +96,65 @@ async function authenticatedPage(
   return context.newPage();
 }
 
+async function authenticatedPageWithCredentials(
+  browser: Browser,
+  request: APIRequestContext,
+  baseURL: string,
+  credentials: { email: string; password: string },
+): Promise<Page> {
+  const token = await apiLoginWithCredentials(request, credentials);
+  const context = await browser.newContext({ baseURL });
+  await context.addCookies([{ name: 'uniher-access-token', value: token, url: baseURL }]);
+  return context.newPage();
+}
+
+async function createCompany(request: APIRequestContext, adminToken: string, suffix: string): Promise<string> {
+  const cnpjDigits = suffix.padStart(8, '0').slice(-8);
+  const response = await request.post('/api/admin/companies', {
+    headers: { Cookie: `uniher-access-token=${adminToken}` },
+    data: {
+      name: `Empresa Clickable Fixture ${suffix}`,
+      cnpj: `55.${cnpjDigits.slice(0, 3)}.${cnpjDigits.slice(3, 6)}/0001-${cnpjDigits.slice(6, 8)}`,
+      sector: 'Saude',
+      plan: 'pro',
+    },
+  });
+  expect(response.ok(), await response.text()).toBe(true);
+  const body = await response.json();
+  return body.company.id as string;
+}
+
+async function createCollaborator(
+  request: APIRequestContext,
+  adminToken: string,
+  input: { companyId: string; email: string; password: string; name: string },
+): Promise<void> {
+  const response = await request.post('/api/admin/users', {
+    headers: { Cookie: `uniher-access-token=${adminToken}` },
+    data: {
+      name: input.name,
+      email: input.email,
+      password: input.password,
+      role: 'colaboradora',
+      company_id: input.companyId,
+      mustChangePassword: false,
+    },
+  });
+  expect(response.ok(), await response.text()).toBe(true);
+}
+
+async function markFirstAccessTourComplete(
+  request: APIRequestContext,
+  credentials: { email: string; password: string },
+): Promise<void> {
+  const token = await apiLoginWithCredentials(request, credentials);
+  const response = await request.patch('/api/users/me/preferences', {
+    headers: { Cookie: `uniher-access-token=${token}` },
+    data: { preferences: { first_access_tour_completed: '1' } },
+  });
+  expect(response.ok(), await response.text()).toBe(true);
+}
+
 async function closePage(page: Page): Promise<void> {
   await page.context().close().catch(() => undefined);
 }
@@ -98,12 +164,12 @@ function writeReport(results: readonly FixtureResult[]): void {
   const summary = {
     generatedAt: new Date().toISOString(),
     source: SOURCE_PATH,
-    scope: 'Local fixture validation for global home, session/logout and disabled clickable controls only.',
+    scope: 'Local fixture validation for global home, session/logout, disabled, collaborator wellbeing and reading controls.',
     total: results.length,
     pass: results.filter((result) => result.status === 'PASS').length,
     review: results.filter((result) => result.status === 'REVIEW').length,
     fail: results.filter((result) => result.status === 'FAIL').length,
-    byLane: ['home', 'session', 'disabled'].reduce<Record<string, { total: number; pass: number; review: number; fail: number }>>((acc, lane) => {
+    byLane: ['home', 'session', 'disabled', 'wellbeing', 'education'].reduce<Record<string, { total: number; pass: number; review: number; fail: number }>>((acc, lane) => {
       const laneResults = results.filter((result) => result.lane === lane);
       acc[lane] = {
         total: laneResults.length,
@@ -136,13 +202,37 @@ function writeReport(results: readonly FixtureResult[]): void {
 
 test.describe('blocked clickable local fixture: shell/session lanes', () => {
   test.describe.configure({ mode: 'serial' });
-  test.setTimeout(240_000);
+  test.setTimeout(420_000);
 
   const controls = loadControls();
   const homeControls = uniqueByRoute(controls.filter((control) => control.ariaLabel?.includes('UniHER')));
   const sessionControls = uniqueByRoute(controls.filter((control) => control.classification === 'session'));
   const disabledControls = uniqueByRoute(controls.filter((control) => control.classification === 'disabled'));
+  const collaboratorWellbeingControls = controls.filter((control) =>
+    control.profileRole === 'colaboradora'
+    && ['Fazer check-in', 'Fazer check-out', 'Muito bem', 'Bem', 'Neutra', 'Cansada', 'Sobrecarregada'].includes(control.label),
+  );
+  const collaboratorReadingControls = controls.filter((control) =>
+    control.profileRole === 'colaboradora' && control.label === 'Registrar leitura',
+  );
   const results: FixtureResult[] = [];
+  const suffix = Date.now().toString().slice(-8);
+  const fixtureCollaborator = {
+    email: `clickable-colab-${suffix}@empresa.com`,
+    password: 'Clickable@2026',
+  };
+
+  test.beforeAll(async ({ request }) => {
+    const adminToken = await apiLogin(request, 'admin');
+    const companyId = await createCompany(request, adminToken, suffix);
+    await createCollaborator(request, adminToken, {
+      companyId,
+      email: fixtureCollaborator.email,
+      password: fixtureCollaborator.password,
+      name: `Clickable Colab ${suffix}`,
+    });
+    await markFirstAccessTourComplete(request, fixtureCollaborator);
+  });
 
   test.afterAll(() => {
     writeReport(results);
@@ -270,5 +360,124 @@ test.describe('blocked clickable local fixture: shell/session lanes', () => {
       await Promise.all([...pages.values()].map((page) => closePage(page)));
     }
     expect(results.filter((result) => result.lane === 'disabled' && result.status === 'FAIL')).toEqual([]);
+  });
+
+  test('collaborator wellbeing buttons submit locally and become registered states', async ({ browser, request, baseURL }) => {
+    expect(collaboratorWellbeingControls.length).toBe(56);
+    const page = await authenticatedPageWithCredentials(browser, request, baseURL!, fixtureCollaborator);
+
+    try {
+      await page.goto('/colaboradora', { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined);
+
+      const checkInResult: FixtureResult = {
+        lane: 'wellbeing',
+        role: 'colaboradora',
+        route: '/colaboradora',
+        label: 'Fazer check-in + mood',
+        status: 'FAIL',
+        beforeUrl: relativeUrl(page.url()),
+      };
+      const checkInRow = page.locator('li').filter({ hasText: 'Check-in de hoje' }).first();
+      await checkInRow.getByRole('button', { name: 'Muito bem' }).click();
+      await expect(checkInRow.getByRole('button', { name: 'Muito bem' })).toHaveAttribute('aria-pressed', 'true');
+      const checkInResponsePromise = page.waitForResponse((response) =>
+        response.url().endsWith('/api/gamification/check-in') && response.request().method() === 'POST',
+      );
+      await checkInRow.getByRole('button', { name: 'Fazer check-in' }).click();
+      const checkInResponse = await checkInResponsePromise;
+      if (!checkInResponse.ok()) {
+        throw new Error(`check-in failed: HTTP ${checkInResponse.status()} ${await checkInResponse.text()}`);
+      }
+      await expect(checkInRow.getByRole('button', { name: 'Check-in registrado' })).toBeDisabled();
+      checkInResult.afterUrl = relativeUrl(page.url());
+      checkInResult.status = 'PASS';
+      results.push(checkInResult);
+
+      const checkOutResult: FixtureResult = {
+        lane: 'wellbeing',
+        role: 'colaboradora',
+        route: '/colaboradora',
+        label: 'Fazer check-out + mood',
+        status: 'FAIL',
+        beforeUrl: relativeUrl(page.url()),
+      };
+      const checkOutRow = page.locator('li').filter({ hasText: 'Check-out do dia' }).first();
+      await checkOutRow.getByRole('button', { name: 'Cansada' }).click();
+      await expect(checkOutRow.getByRole('button', { name: 'Cansada' })).toHaveAttribute('aria-pressed', 'true');
+      const checkOutResponsePromise = page.waitForResponse((response) =>
+        response.url().endsWith('/api/wellbeing/check-out') && response.request().method() === 'POST',
+      );
+      await checkOutRow.getByRole('button', { name: 'Fazer check-out' }).click();
+      const checkOutResponse = await checkOutResponsePromise;
+      if (!checkOutResponse.ok()) {
+        throw new Error(`check-out failed: HTTP ${checkOutResponse.status()} ${await checkOutResponse.text()}`);
+      }
+      await expect(checkOutRow.getByRole('button', { name: 'Check-out registrado' })).toBeDisabled();
+      checkOutResult.afterUrl = relativeUrl(page.url());
+      checkOutResult.status = 'PASS';
+      results.push(checkOutResult);
+
+      const status = await request.get('/api/gamification/streak-status', {
+        headers: { Cookie: `uniher-access-token=${await apiLoginWithCredentials(request, fixtureCollaborator)}` },
+      });
+      expect(status.ok(), await status.text()).toBe(true);
+      const statusBody = await status.json();
+      expect(statusBody).toMatchObject({
+        checkedInToday: true,
+        checkedOutToday: true,
+        checkInMood: 'muito_bem',
+        checkOutMood: 'cansada',
+      });
+    } finally {
+      await closePage(page);
+    }
+  });
+
+  test('collaborator reading button is classified from the local fixture route state', async ({ browser, request, baseURL }) => {
+    expect(collaboratorReadingControls.length).toBe(8);
+    const page = await authenticatedPageWithCredentials(browser, request, baseURL!, fixtureCollaborator);
+    const result: FixtureResult = {
+      lane: 'education',
+      role: 'colaboradora',
+      route: '/colaboradora',
+      label: 'Registrar leitura',
+      status: 'FAIL',
+    };
+
+    try {
+      await page.goto('/colaboradora', { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined);
+      result.beforeUrl = relativeUrl(page.url());
+      const registerButton = page.getByRole('button', { name: 'Registrar leitura' }).first();
+      if (await registerButton.count() === 0) {
+        result.afterUrl = relativeUrl(page.url());
+        result.status = 'REVIEW';
+        result.error = 'daily reading mission was not present in the local fixture route state';
+        results.push(result);
+        return;
+      }
+
+      await page.getByPlaceholder(/Conte brevemente/i).first().fill('Registro local de leitura educativa com mais de vinte caracteres.');
+      const responsePromise = page.waitForResponse((response) =>
+        /\/api\/gamification\/daily-missions\/[^/]+\/complete$/.test(new URL(response.url()).pathname)
+        && response.request().method() === 'POST',
+      );
+      await registerButton.click();
+      const response = await responsePromise;
+      if (!response.ok()) {
+        throw new Error(`reading completion failed: HTTP ${response.status()} ${await response.text()}`);
+      }
+      await expect(page.getByRole('status')).toContainText('Progresso educativo registrado');
+      result.afterUrl = relativeUrl(page.url());
+      result.status = 'PASS';
+      results.push(result);
+    } catch (error) {
+      result.error = error instanceof Error ? error.message : String(error);
+      results.push(result);
+      throw error;
+    } finally {
+      await closePage(page);
+    }
   });
 });

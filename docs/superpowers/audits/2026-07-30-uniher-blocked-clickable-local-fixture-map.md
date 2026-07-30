@@ -50,7 +50,8 @@ Start with the highest-confidence local fixture batch:
 
 1. Global shell/session controls: logo/home button and logout/menu buttons across profiles. Completed in `docs/superpowers/audits/2026-07-30-uniher-local-clickable-fixture-shell-session.md`.
 2. Disabled controls and read-only-looking filters: initial fixture lane completed with 20 PASS / 5 REVIEW / 0 FAIL; the 5 REVIEW items need seed or focused route-state follow-up.
-3. RH/Admin stateful/mutation controls: invite/edit/export/new content/new lesson/new company/new user.
-4. Collaborator wellbeing controls: check-in/check-out, mood buttons, true/false and register-reading controls.
+3. Collaborator wellbeing controls: check-in/check-out, mood buttons and register-reading controls. Completed for the consolidated `/colaboradora` surface in `docs/superpowers/audits/2026-07-30-uniher-local-clickable-fixture-shell-session.md`.
+4. RH/Admin stateful/mutation controls: invite/edit/export/new content/new lesson/new company/new user.
+5. Remaining educational activity controls: true/false and other DailyLesson interaction types still need a focused local lane if they are present in the daily lesson fixture.
 
 Only after those local lanes produce PASS evidence should any guarded production lane be considered.
