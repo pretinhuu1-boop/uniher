@@ -51,6 +51,27 @@ export const quizSubmitSchema = z.object({
   archetypeKey: z.enum(['guardia', 'protetora', 'guerreira', 'equilibrista']),
 });
 
+export const healthCheckinAnswersSchema = z.object({
+  lastGynecologist: z.enum(['recent', 'moderate', 'delayed', 'overdue', 'never']),
+  mammography: z.enum(['current', 'delayed', 'never_needed', 'na']),
+  papanicolau: z.enum(['recent', 'moderate', 'delayed', 'never']),
+  familyHistory: z.enum(['no', 'distant', 'close', 'unknown']),
+  diabetesHistory: z.enum(['no', 'distant', 'close', 'self']),
+  menstrualCycle: z.enum(['regular', 'irregular', 'painful', 'menopause', 'contraceptive']),
+  mentalHealth: z.enum(['great', 'good', 'regular', 'concerning']),
+  lifestyle: z.enum(['active', 'moderate', 'sedentary', 'inactive']),
+  smoking: z.enum(['never', 'quit_long', 'quit_recent', 'current']),
+});
+
+export const healthCheckinSchema = z.object({
+  source: z.literal('exam_quiz_v1'),
+  consent: z.object({
+    accepted: z.boolean().refine((value) => value === true, 'consent is required'),
+    version: z.literal('health-checkin-v1'),
+  }),
+  answers: healthCheckinAnswersSchema,
+});
+
 // === CHALLENGES ===
 
 export const createChallengeSchema = z.object({
@@ -103,5 +124,6 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CompanyInput = z.infer<typeof companySchema>;
 export type QuizSubmitInput = z.infer<typeof quizSubmitSchema>;
+export type HealthCheckinInput = z.infer<typeof healthCheckinSchema>;
 export type CreateChallengeInput = z.infer<typeof createChallengeSchema>;
 export type LeadInput = z.infer<typeof leadSchema>;

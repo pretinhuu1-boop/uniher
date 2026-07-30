@@ -46,6 +46,7 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
   colaboradora: [
     { href: '/colaboradora', label: 'Meu Painel', icon: 'dashboard' },
     { href: '/semaforo', label: 'Meu Semaforo', icon: 'semaforo' },
+    { href: '/health-checkin', label: 'Quiz de Exames', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
     { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios', label: 'Desafios', icon: 'desafios' },
