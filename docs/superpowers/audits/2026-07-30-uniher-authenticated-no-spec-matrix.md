@@ -47,7 +47,7 @@ This is not final product completion. It is the coordinator map for the next imp
 | `/comunidade` | colaboradora | PASS_REAL_PRODUCT | Company-scoped community/education feed | `spec`, `placeholder screen`, `ranking`, public exposure claims | approved community privacy model | `visual-ux`: colab-comunidade; community tests |
 | `/comunidade/gerenciar` | admin, rh | PASS_REAL_PRODUCT | Community editorial management | `spec`, `placeholder screen`, `Preview mascarado`, `Previa segura` | safe existing editorial workflow | `visual-ux`: admin-educacao, rh-gestao-editorial; production copy smoke |
 | `/campanhas` | rh, lideranca, colaboradora | PASS_REAL_PRODUCT | Campaigns and education product | `spec`, `placeholder screen`, ranking/reward claims | approved education/campaigns surface | `visual-ux`: rh-campanhas, lideranca-campanhas, colab-campanhas |
-| `/gamificacao-config` | admin, rh | PASS_REAL_PRODUCT | Existing education lesson editor plus private objectives/challenges admin surface | `governanca privada`, `contrato real`, `contrato educativo`, `spec`, `placeholder screen`, `ranking`, `recompensas`, `XP`, `liga` | safe existing editor; ranking/rewards HOLD | `2026-07-30-uniher-gamificacao-config-copy-wave.md`; local desktop/mobile screenshots |
+| `/gamificacao-config` | admin, rh | PASS_REAL_PRODUCT | Existing education lesson editor plus private objectives/challenges admin surface | `governanca privada`, `contrato real`, `contrato educativo`, `spec`, `placeholder screen`, `ranking`, `recompensas`, `XP`, `liga` | safe existing editor; ranking/rewards HOLD | `2026-07-30-uniher-gamificacao-config-copy-wave.md`; `2026-07-30-uniher-admin-sidebar-copy-wave.md`; local desktop/mobile screenshots |
 | `/objetivos` | colaboradora | PASS_REAL_PRODUCT | Personal objectives product | `Contrato seguro`, `eventos elegiveis`, `DSAR`, `ledger`, `sem expor historico`, `spec` | safe private journey | platform product boundary; production screenshots at `production-private-journey-copy-6317adb-2026-07-30` |
 | `/desafios` | colaboradora | PASS_REAL_PRODUCT | Company challenges product | `Contrato seguro`, `recibos de privacidade`, `DSAR`, `ranking`, `liga`, `spec` | safe voluntary/private participation | platform product boundary; production screenshots at `production-private-journey-copy-6317adb-2026-07-30` |
 | `/conquistas` | colaboradora | PASS_REAL_PRODUCT | Private achievements product | `Contrato seguro`, `ledger elegivel`, `DSAR`, `ranking`, `badges`, `liga`, `spec` | safe private journey | platform product boundary; production screenshots at `production-private-journey-copy-6317adb-2026-07-30` |
@@ -73,10 +73,11 @@ This is not final product completion. It is the coordinator map for the next imp
 
 ## Immediate Findings
 
-1. `/gamificacao-config` copy hardening is PASS after `2026-07-30-uniher-gamificacao-config-copy-wave.md`, production deploy and production render smoke on commit `8efcdc3`.
-2. Coverage gap: `/onboarding-rh` is a real helper surface but is not currently in `VISUAL_SMOKE_ROUTES`; before any visual PASS for that route, add or run a focused desktop/mobile authenticated capture.
-3. Coverage gap: `/primeiro-acesso` is covered by auth flow E2E but not by the broad visual smoke list. That is acceptable for auth flow correctness, but visual PASS for first-access changes needs dedicated desktop/mobile screenshots.
-4. False-positive rule: `placeholder` attributes on inputs are allowed when they are examples/help text. A finding requires a rendered screen that acts as a substitute for product, not normal form placeholder attributes.
+1. `/gamificacao-config` page copy hardening is PASS after `2026-07-30-uniher-gamificacao-config-copy-wave.md`, production deploy and production render smoke on commit `8efcdc3`.
+2. Rendered production route sweep on commit `af74ecc` visited 75 authenticated role/routes and found 22 admin-only `REVIEW` hits from sidebar copy `Governanca privada`; local `COPY_FIX` is documented in `2026-07-30-uniher-admin-sidebar-copy-wave.md` and awaits production deploy/smoke.
+3. Coverage gap: `/onboarding-rh` is a real helper surface but is not currently in `VISUAL_SMOKE_ROUTES`; before any visual PASS for that route, add or run a focused desktop/mobile authenticated capture.
+4. Coverage gap: `/primeiro-acesso` is covered by auth flow E2E but not by the broad visual smoke list. That is acceptable for auth flow correctness, but visual PASS for first-access changes needs dedicated desktop/mobile screenshots.
+5. False-positive rule: `placeholder` attributes on inputs are allowed when they are examples/help text. A finding requires a rendered screen that acts as a substitute for product, not normal form placeholder attributes.
 
 ## Commands To Keep As Matrix Gate
 

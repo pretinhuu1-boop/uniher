@@ -335,6 +335,32 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-gamificacao-config.png'), fullPage: true });
   });
 
+  test('admin sidebar keeps gamificacao config details free from legacy governance copy', async ({ page, context, request, baseURL }) => {
+    assertProductBoundaryHostIsLoopback(baseURL);
+    await authenticatedPage(page, context, request, baseURL!, 'admin');
+
+    const evidenceDir = path.resolve(__dirname, '..', '..', 'docs', 'superpowers', 'evidence', 'admin-sidebar-private-journey-copy-local-2026-07-30');
+    fs.mkdirSync(evidenceDir, { recursive: true });
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto('/gamificacao-config', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
+    await expect(page.locator('nav[aria-label="Navegação principal"]')).toContainText(/Conquistas privadas/i);
+    await expect(page.locator('body')).not.toContainText(/Governan(?:ça|ca) privada|governanca privada/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-admin-gamificacao-sidebar.png'), fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/gamificacao-config', { waitUntil: 'domcontentloaded' });
+    await page.getByLabel('Abrir navegação').click();
+    await expect(page.getByRole('navigation', { name: 'Navegação' })).toContainText(/Conquistas privadas/i);
+    await expect(page.locator('body')).not.toContainText(/Governan(?:ça|ca) privada|governanca privada/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-admin-gamificacao-sidebar.png'), fullPage: true });
+  });
+
   test('RH visual smoke captures Produtos e Modulos desktop and mobile without overflow', async ({ page, context, request, baseURL }) => {
     assertProductBoundaryHostIsLoopback(baseURL);
     await authenticatedPage(page, context, request, baseURL!, 'rh');

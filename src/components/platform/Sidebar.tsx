@@ -87,7 +87,7 @@ const NAVIGATION_PRESENTATION_DETAILS: Readonly<Record<SidebarNavVariant, Readon
     '/dashboard?section=saude-primaria': ['Sem\u00e1foro consolidado', 'Indicadores por empresa'],
     '/dashboard?section=exames': ['Exames em dia', 'Indicadores de preven\u00e7\u00e3o'],
     '/produtos-modulos': ['Controle de m\u00f3dulos contratados', 'Ativa\u00e7\u00e3o de funcionalidades sob gate'],
-    '/gamificacao-config': ['Objetivos', 'Desafios', 'Governança privada'],
+    '/gamificacao-config': ['Objetivos', 'Desafios', 'Conquistas privadas'],
   },
   personal: {},
 };

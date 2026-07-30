@@ -33,10 +33,13 @@ Current completed implementation target:
 - Receipt: `docs/superpowers/audits/2026-07-30-uniher-gamificacao-config-copy-wave.md`.
 - Production commit: `8efcdc3`.
 
-Next selection target:
+Current active implementation target:
 
-- run a rendered authenticated route sweep from the matrix;
-- update the matrix if new `COPY_FIX`, `COMPAT_REDIRECT`, `HOLD_HIDDEN` or `PROMOTE` candidates appear;
+- admin sidebar copy hardening selected by rendered production sweep on commit `af74ecc`;
+- decision: `COPY_FIX` because `/gamificacao-config` is real product but admin sidebar still rendered internal governance wording;
+- local status: PASS after unit canary, typecheck, source scan, landing guard and desktop/mobile Playwright evidence;
+- receipt: `docs/superpowers/audits/2026-07-30-uniher-admin-sidebar-copy-wave.md`;
+- production status: pending commit, deploy and production render smoke;
 - keep the same denylist: public landing, permissions, APIs, database contracts, ranking/rewards/Liga behavior, NR-1/Yavix/COPSOQ, Concierge, Denuncias, SIPAT and Desenvolvimento Humano.
 
 Required matrix columns for ongoing maintenance:
@@ -70,7 +73,8 @@ The next implementation wave must be selected from this matrix. If a route has n
 | `/objetivos`, `/desafios`, `/conquistas`, navigation copy | Internal contract/governance wording removed from real product surfaces | Done |
 | Global authenticated no-spec matrix | Required before the next product edit | Done |
 | `/gamificacao-config` copy hardening | Remove internal governance/spec vocabulary from a real RH/Admin surface | Done |
-| Rendered authenticated route sweep | Select the next no-spec recovery target from the matrix | Active |
+| Rendered authenticated route sweep | Selected admin sidebar copy leak from production commit `af74ecc` | Done |
+| Admin sidebar `/gamificacao-config` presentation details | Remove `Governanca privada` from rendered admin sidebar | Local PASS / deploy pending |
 | Concierge operations | Operational contract, SLA, data governance | HOLD |
 | Canal de Denuncias intake | Partner/legal/DPO workflow | HOLD |
 | SIPAT operations | Approved source package | HOLD |
