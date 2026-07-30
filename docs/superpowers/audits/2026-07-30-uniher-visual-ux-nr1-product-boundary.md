@@ -35,15 +35,18 @@ Continue the authenticated-platform recovery goal without touching the public la
 - `npx playwright test --config=tests/playwright.config.ts --project=platform-product-boundary --workers=1` -> PASS, 22 tests.
 - `npx tsc --noEmit` -> PASS.
 - `npm run build` -> PASS.
+- `node --test tests/prepare-playwright-static.test.cjs` -> PASS, 2 tests.
+- `npm run prepare:standalone` -> PASS.
 - `git diff --check` -> PASS.
 - Landing denylist diff count for public/landing paths -> 0.
 - `npm run check:release-env` -> FAIL locally because this worktree has no loaded env files or secrets; rerun on VPS before restart.
 - `claude --print ...` -> unavailable in this session; command timed out after 60s.
+- VPS deploy found `/logo-uniher.png` returning 404 from the standalone runtime when `public/` was not copied into `.next/standalone/public`; corrected on VPS and persisted as `npm run prepare:standalone`.
 
 ## Gate status
 
 - Landing page: not modified in this wave.
 - Sensitive modules: still fail-closed; no NR-1/COPSOQ/Yavix runtime is exposed from shell or compatibility routes.
 - Product modules: real tenant endpoint remains the source of truth only when tenant scope exists.
-- Production deploy: pending for this commit and must include VPS `check:release-env`.
+- Production deploy: completed for `6339456`; follow-up deploys must run `npm run prepare:standalone` before PM2 restart.
 - Human visual approval: pending after production smoke.

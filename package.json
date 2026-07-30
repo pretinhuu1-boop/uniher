@@ -6,6 +6,7 @@
     "dev": "next dev --port 3000",
     "dev:turbo": "next dev --turbo --port 3000",
     "build": "next build",
+    "prepare:standalone": "node scripts/prepare-standalone-static.cjs",
     "start": "next start",
     "db:migrate": "tsx src/lib/db/migrate.ts",
     "db:seed": "tsx src/lib/db/seed.ts",
