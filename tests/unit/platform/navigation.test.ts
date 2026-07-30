@@ -278,9 +278,9 @@ describe('platform navigation', () => {
     ]));
     const byLabel = Object.fromEntries(items.map((item) => [item.label, item]));
 
-    expect(byLabel['Saúde Primária'].badgeLabel).toBe('Contrato');
+    expect(byLabel['Saúde Primária'].badgeLabel).toBe('Aguardando liberacao');
     expect(byLabel.Educação.badgeLabel).toBe('Bloqueado');
-    expect(byLabel['Objetivos e Desafios'].badgeLabel).toBe('Em breve');
+    expect(byLabel['Objetivos e Desafios'].badgeLabel).toBe('Planejado');
   });
 
   it('keeps NR-1 runtime links hidden from navigation until a separate contract promotes the surface', () => {

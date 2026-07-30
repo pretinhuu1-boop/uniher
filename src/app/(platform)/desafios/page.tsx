@@ -184,11 +184,11 @@ export default function DesafiosPage() {
         <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[color-mix(in_srgb,var(--platform-positive)_10%,var(--platform-surface))] p-5 sm:p-6">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--platform-ink)]">
             <ShieldCheck size={19} aria-hidden="true" />
-            Contrato seguro
+            Privacidade da participacao
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--platform-muted)]">
             <li className="flex gap-3"><DoorOpen size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Entrar e sair e sempre voluntario.</span></li>
-            <li className="flex gap-3"><UsersRound size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>A participacao individual fica restrita a colaboradora e aos recibos de privacidade.</span></li>
+            <li className="flex gap-3"><UsersRound size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Sua participacao fica no seu espaco privado.</span></li>
             <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Somente acoes educativas e gerais aprovadas entram neste fluxo.</span></li>
           </ul>
         </div>
@@ -323,7 +323,7 @@ export default function DesafiosPage() {
 
       {left.length > 0 && (
         <p className="text-xs text-[var(--platform-muted)]">
-          {left.length} participacao encerrada fica visivel somente para voce e para DSAR.
+          {left.length} participacao encerrada permanece disponivel apenas no seu historico privado.
         </p>
       )}
     </div>

@@ -124,19 +124,19 @@ const safeUsefulRoutes = [
     role: 'colaboradora',
     path: '/desafios',
     title: /Desafios da empresa/i,
-    anchors: [/Participacao voluntaria/i, /Contrato seguro/i, /participacao individual fica restrita a colaboradora/i],
+    anchors: [/Participacao voluntaria/i, /Privacidade da participacao/i, /Sua participacao fica no seu espaco privado/i],
   },
   {
     role: 'colaboradora',
     path: '/conquistas',
     title: /Minhas conquistas/i,
-    anchors: [/Jornada privada/i, /Contrato seguro/i, /Visivel apenas para voce e para DSAR/i],
+    anchors: [/Jornada privada/i, /Privacidade da jornada/i, /Visivel apenas para voce/i],
   },
   {
     role: 'colaboradora',
     path: '/objetivos',
     title: /Meus objetivos/i,
-    anchors: [/Jornada privada/i, /Contrato seguro/i, /Objetivos pessoais iniciados pela propria colaboradora/i],
+    anchors: [/Jornada privada/i, /Privacidade da jornada/i, /Objetivos pessoais iniciados pela propria colaboradora/i],
   },
 ] as const satisfies ReadonlyArray<{
   role: SeedRole;

@@ -61,7 +61,7 @@ const NAVIGATION = {
           href: '/admin?tab=empresas',
           label: 'Empresas',
           icon: 'companies',
-          description: 'Empresas, usuários, permissões e módulos contratados',
+          description: 'Empresas, usuarios, permissoes e produtos disponiveis',
         },
         {
           href: '/dashboard?section=saude-primaria',
@@ -85,13 +85,13 @@ const NAVIGATION = {
           href: '/gamificacao-config',
           label: 'Objetivos e Desafios',
           icon: 'conquistas',
-          description: 'Governanca privada de objetivos, desafios e conquistas',
+          description: 'Jornadas privadas de objetivos, desafios e conquistas',
         },
         {
           href: '/produtos-modulos',
           label: 'Produtos e Módulos',
           icon: 'config',
-          description: 'Catálogo, estados contratados e visibilidade sem ativação automática de módulos gated',
+          description: 'Disponibilidade dos produtos e visibilidade sem ativacao automatica',
         },
         {
           href: '/analytics-emails',
@@ -163,7 +163,7 @@ const NAVIGATION = {
           href: '/gamificacao-config',
           label: 'Objetivos e Desafios',
           icon: 'conquistas',
-          description: 'Objetivos, desafios e conquistas em governanca privada',
+          description: 'Objetivos, desafios e conquistas em jornadas privadas',
         },
       ],
     },
@@ -294,12 +294,12 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   primary_health: {
     href: '/dashboard?section=saude-primaria',
     icon: 'semaforo',
-    description: 'Módulo contratado de cuidado primário, visível conforme governança',
+    description: 'Cuidado primario visivel conforme disponibilidade da empresa',
   },
   concierge: {
     href: '/concierge',
     icon: 'profile',
-    description: 'Acompanhamento de casos somente para empresas com Concierge contratado',
+    description: 'Acompanhamento de casos somente para empresas com Concierge disponivel',
   },
   education: {
     href: '/campanhas',
@@ -314,7 +314,7 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   nr1: {
     href: '/avaliacao-nr1',
     icon: 'historico',
-    description: 'Avaliação psicossocial NR-1 sob contrato e gates Yavix',
+    description: 'Avaliacao psicossocial NR-1 somente quando houver liberacao operacional',
   },
   sipat: {
     href: '/viva-sipat',
@@ -324,20 +324,20 @@ const MODULE_NAVIGATION: Readonly<Record<CompanyModuleSlug, {
   human_development: {
     href: '/desenvolvimento-humano',
     icon: 'objetivos',
-    description: 'Conteúdos de desenvolvimento humano contratados pela empresa',
+    description: 'Conteudos de desenvolvimento humano disponiveis para a empresa',
   },
   denunciation: {
     href: '/canal-denuncias',
     icon: 'config',
-    description: 'Canal parceiro para denúncias, governado por contrato específico',
+    description: 'Canal parceiro para denuncias quando houver liberacao especifica',
   },
 };
 
 const MODULE_STATE_BADGES: Readonly<Record<Exclude<CompanyModuleState, 'enabled'>, string>> = {
   locked: 'Bloqueado',
-  coming_soon: 'Em breve',
+  coming_soon: 'Planejado',
   partner_managed: 'Parceiro',
-  requires_contract: 'Contrato',
+  requires_contract: 'Aguardando liberacao',
 };
 
 const MODULE_NAVIGATION_RUNTIME_READY: Readonly<Record<CompanyModuleSlug, boolean>> = {

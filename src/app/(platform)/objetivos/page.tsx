@@ -171,7 +171,7 @@ export default function ObjetivosPage() {
                 Privado e voluntario
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--platform-muted)]">
-                A pagina usa somente objetivos iniciados pela propria colaboradora. O progresso fica no seu espaco pessoal e os registros elegiveis sao gravados pelo servidor.
+                A pagina usa somente objetivos iniciados pela propria colaboradora. O progresso fica no seu espaco pessoal e avanca apenas quando voce confirma uma acao.
               </p>
             </div>
           </div>
@@ -180,11 +180,11 @@ export default function ObjetivosPage() {
         <div className="rounded-[var(--platform-radius-surface)] border border-[var(--platform-line)] bg-[color-mix(in_srgb,var(--platform-positive)_10%,var(--platform-surface))] p-5 sm:p-6">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--platform-ink)]">
             <ListChecks size={19} aria-hidden="true" />
-            Contrato seguro
+            Privacidade da jornada
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-6 text-[var(--platform-muted)]">
             <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Catalogo aprovado, sem texto livre sensivel.</span></li>
-            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Eventos elegiveis gravados apenas pelo servidor.</span></li>
+            <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Seu progresso e salvo com seguranca quando voce atualiza a jornada.</span></li>
             <li className="flex gap-3"><ShieldCheck size={18} className="mt-1 flex-none text-[var(--platform-positive)]" aria-hidden="true" /><span>Sem exposicao publica de progresso individual.</span></li>
           </ul>
         </div>
@@ -199,7 +199,7 @@ export default function ObjetivosPage() {
             Meus objetivos
           </h2>
           <p className="mt-1 text-sm text-[var(--platform-muted)]">
-            Atualize em passos claros. Concluir encerra o objetivo; arquivar remove da rotina sem expor historico.
+            Atualize em passos claros. Concluir encerra o objetivo; arquivar remove da rotina mantendo sua jornada privada.
           </p>
         </div>
 

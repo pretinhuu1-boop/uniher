@@ -714,6 +714,7 @@ describe('safe authenticated projections', () => {
     expect(approvedParticipationPages).not.toMatch(/week_points|points_spent|xp_reward|pontos totais|subir de nível|ranking semanal|exibir no ranking/i);
     expect(approvedParticipationPages).not.toMatch(/user_badges|user_leagues|custom_league_members|health_scores/);
     expect(foldText(approvedParticipationPages)).not.toMatch(/\bwave\s+\d+\b|legad[oa]s?|ranking|badges?|classificacao|pontuacao|liga|semaforo|nr-1/i);
+    expect(foldText(approvedParticipationPages)).not.toMatch(/contrato seguro|eventos elegiveis|recibos de privacidade|dsar|ledger elegivel|sem expor historico/i);
 
     const dashboardViewModel = read('src/app/(platform)/dashboard/dashboard-view-model.ts');
     expect(foldText(dashboardViewModel)).not.toMatch(/fonte legada|classificacao de sensibilidade/i);
