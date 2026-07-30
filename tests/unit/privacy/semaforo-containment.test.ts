@@ -271,7 +271,7 @@ describe('Semaforo private self-report', () => {
     expect(page).toContain('<AuthenticatedSemaforoQuiz />');
     expect(page).not.toContain('Circuito de autocuidado');
     expect(page).not.toContain('Escolher dimens');
-    expect(page).not.toContain('REGISTRAR SINAL');
+    expect(page).not.toMatch(/registrar sinal/i);
     expect(`${page}\n${quiz}`).not.toMatch(/health_scores|recalculate|ranking|pontos|\bXP\b|liga|quiz correto/i);
 
     for (const route of [
