@@ -1,0 +1,21 @@
+{
+  "baseURL": "https://www.uniher.com.br",
+  "commit": "eb16d42",
+  "generatedAt": "2026-07-30T10:27:13.008Z",
+  "checks": [
+    {
+      "viewport": "desktop-1366",
+      "status": "PASS",
+      "hasLegacy": false,
+      "hasReplacement": true,
+      "screenshot": "desktop-1366-admin-gamificacao-sidebar.png"
+    },
+    {
+      "viewport": "mobile-390",
+      "status": "PASS",
+      "hasLegacy": false,
+      "hasReplacement": true,
+      "screenshot": "mobile-390-admin-gamificacao-sidebar.png"
+    }
+  ]
+}

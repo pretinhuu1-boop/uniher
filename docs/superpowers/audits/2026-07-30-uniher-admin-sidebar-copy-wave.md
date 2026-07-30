@@ -4,7 +4,7 @@ Date: 2026-07-30
 
 ## Decision
 
-PASS locally. Pending production deploy and production render smoke.
+PASS.
 
 The rendered authenticated route sweep on production commit `af74ecc` found 22 `REVIEW` hits. All hits were admin-role pages and shared the same source: the admin sidebar details for `/gamificacao-config` still rendered `Governanca privada` as user-facing copy.
 
@@ -73,9 +73,22 @@ Independent reviewer found no critical/warning issue in the source/unit patch. T
 
 ## Production Gate
 
-Pending:
+PASS on commit `eb16d42`.
 
-- commit and push;
-- VPS fast-forward, install/build/standalone/release-env/restart;
-- production health and landing header smoke;
-- production rendered check proving `Governanca privada` no longer appears in admin sidebar.
+- GitHub push: PASS.
+- VPS fast-forward: `af74ecc..eb16d42`.
+- `npm ci`: PASS, 0 vulnerabilities.
+- `npm run build`: PASS, 151 pages.
+- `npm run prepare:standalone`: PASS.
+- `npm run check:release-env`: PASS 9, HOLD 0, FAIL 0.
+- PM2 restart: `uniher` online.
+- Health: `{"status":"healthy"}`.
+- Landing header smoke: HTTP 200, `Last-Modified: Tue, 21 Jul 2026 17:56:04 GMT`.
+
+Production rendered smoke:
+
+- `docs/superpowers/evidence/production-admin-sidebar-copy-eb16d42-2026-07-30/summary.json`
+- `docs/superpowers/evidence/production-admin-sidebar-copy-eb16d42-2026-07-30/desktop-1366-admin-gamificacao-sidebar.png`
+- `docs/superpowers/evidence/production-admin-sidebar-copy-eb16d42-2026-07-30/mobile-390-admin-gamificacao-sidebar.png`
+
+Result: desktop and mobile `hasLegacy=false`, `hasReplacement=true`.
