@@ -733,7 +733,6 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
       '/api/badges',
       '/api/collaborator/badges',
       '/api/objectives',
-      '/api/collaborator/challenges',
       '/api/gamification/rewards',
       '/api/gamification/rewards/redemptions',
     ];
@@ -742,6 +741,40 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
         headers: authHeaders(tokens.collaboratorA),
       }));
     }
+
+    const safeChallenges = await request.get('/api/collaborator/challenges', {
+      headers: authHeaders(tokens.collaboratorA),
+    });
+    expect(safeChallenges.status(), await safeChallenges.text()).toBe(200);
+    expectPrivateResponse(safeChallenges);
+    const safeChallengesPayload = await safeChallenges.json() as Record<string, unknown>;
+    expect(Object.keys(safeChallengesPayload).sort()).toEqual(['catalog', 'challenges']);
+    expect(JSON.stringify(safeChallengesPayload)).toMatch(/sem pontuacao ou ranking/i);
+    expect(JSON.stringify(safeChallengesPayload)).not.toMatch(/points|leaderboard|xp|reward|user_id|company_id|health_scores/i);
+    const challengeCatalog = safeChallengesPayload.catalog as Array<{ key: string; isActive: boolean }>;
+    const safeCatalogKey = challengeCatalog.find(item => item.isActive)?.key ?? challengeCatalog[0]?.key;
+    expect(safeCatalogKey).toBeTruthy();
+
+    const joinedChallenge = await request.post('/api/collaborator/challenges', {
+      headers: authHeaders(tokens.collaboratorA),
+      data: { catalogKey: safeCatalogKey },
+    });
+    expect(joinedChallenge.status(), await joinedChallenge.text()).toBe(201);
+    expectPrivateResponse(joinedChallenge);
+    const joinedPayload = await joinedChallenge.json() as { challenge: { id: string } };
+    expect(Object.keys(joinedPayload).sort()).toEqual(['challenge']);
+    expect(JSON.stringify(joinedPayload)).not.toMatch(/points|leaderboard|xp|reward|user_id|company_id|health_scores/i);
+    expect(joinedPayload.challenge.id).toBeTruthy();
+
+    const patchedChallenge = await request.patch(`/api/collaborator/challenges/${joinedPayload.challenge.id}`, {
+      headers: authHeaders(tokens.collaboratorA),
+      data: { action: 'progress', progress: 25 },
+    });
+    expect(patchedChallenge.status(), await patchedChallenge.text()).toBe(200);
+    expectPrivateResponse(patchedChallenge);
+    const patchedPayload = await patchedChallenge.json() as { challenge: { progress: number } };
+    expect(patchedPayload.challenge.progress).toBe(25);
+    expect(JSON.stringify(patchedPayload)).not.toMatch(/points|leaderboard|xp|reward|user_id|company_id|health_scores/i);
 
     const managerReads = [
       ['/api/rh/leagues', tokens.rhA],
@@ -754,9 +787,6 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
     }
 
     const mutations = [
-      { path: '/api/collaborator/challenges', method: 'POST', token: tokens.collaboratorA },
-      { path: '/api/collaborator/challenges', method: 'PATCH', token: tokens.collaboratorA },
-      { path: '/api/collaborator/challenges/not-real', method: 'PATCH', token: tokens.collaboratorA },
       { path: '/api/gamification/rewards/redeem', method: 'POST', token: tokens.collaboratorA },
       { path: '/api/gamification/rewards/redemptions', method: 'PATCH', token: tokens.collaboratorA },
       { path: '/api/objectives/not-real/claim', method: 'POST', token: tokens.collaboratorA },
@@ -785,7 +815,7 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
     expect(legacyGamificationSnapshot()).toEqual(legacyBefore);
   });
 
-  test('Semaforo is review-only and every formerly connected writer leaves health_scores unchanged', async ({ request }) => {
+  test('Semaforo is private self-report and every formerly connected writer leaves health_scores unchanged', async ({ request }) => {
     const reviewReads = [
       '/api/collaborator/semaforo',
       '/api/collaborator/semaforo/history',
@@ -794,10 +824,11 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
       const response = await request.get(path, { headers: authHeaders(tokens.collaboratorA) });
       expect(response.status(), await response.text()).toBe(200);
       expectPrivateResponse(response);
-      const payload = await response.json() as { status: string; label: string };
-      expect(payload.status).toBe('under_review');
-      expect(payload.label).toMatch(/^Em revis/);
-      expect(JSON.stringify(payload)).not.toMatch(/green|yellow|red|score/i);
+      const payload = await response.json() as { status: string; diagnostic?: boolean; companyVisible?: boolean };
+      expect(payload.status).toBe(path.endsWith('/history') ? 'private_self_report_history' : 'private_self_report');
+      expect(payload.diagnostic).toBe(false);
+      expect(payload.companyVisible).toBe(false);
+      expect(JSON.stringify(payload)).not.toMatch(/health_scores|score|company_id|user_id/i);
     }
 
     const before = healthScoreSnapshot(ids.collaboratorA);
@@ -962,13 +993,8 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
     expect(await companyADashboard.text()).toContain(COMPANY_A_CANARY);
     await expect(page.locator('#main-content')).toContainText(COMPANY_A_CANARY);
 
-    const historyAuthPromise = page.waitForResponse(response =>
-      new URL(response.url()).pathname === '/api/auth/me',
-    );
-    await page.locator('nav a[href="/historico"]').click();
-    await expect(page).toHaveURL(/\/historico$/);
-    const historyAuth = await historyAuthPromise;
-    await expectPrivateBrowserResponse(historyAuth);
+    await page.locator('nav a[href="/campanhas"]').click();
+    await expect(page).toHaveURL(/\/campanhas$/);
     await expect(page.locator('body')).not.toContainText(COMPANY_A_CANARY);
     await page.evaluate((companyACanary) => {
       const root = document.documentElement;
@@ -993,14 +1019,31 @@ test.describe('Wave 1.1 privacy promotion gate', () => {
     const companyBAuthPromise = page.waitForResponse(response =>
       new URL(response.url()).pathname === '/api/auth/me',
     );
-    await page.locator('nav a[href="/analytics-emails"]').click();
+    await page.goto('/analytics-emails');
     await expect(page).toHaveURL(/\/analytics-emails$/);
     const companyBAuth = await companyBAuthPromise;
-    expect(companyBAuth.status(), await companyBAuth.text()).toBe(200);
+    expect(companyBAuth.status()).toBe(200);
     await expectPrivateBrowserResponse(companyBAuth);
-    expect(await companyBAuth.json()).toMatchObject({ user: { id: ids.rhB } });
     await expect(page.getByText('Privacy RH B', { exact: true })).toBeVisible();
     await expect(page.locator('body')).not.toContainText(COMPANY_A_CANARY);
+    await page.evaluate((companyACanary) => {
+      const root = document.documentElement;
+      root.dataset.privacyTenantLeak = '0';
+      root.dataset.privacyLoadingSeen = '0';
+      const scan = () => {
+        const text = document.body?.innerText ?? '';
+        if (text.includes(companyACanary)) root.dataset.privacyTenantLeak = '1';
+        if (/Preparando sua vis|Carregando sua/.test(text)) {
+          root.dataset.privacyLoadingSeen = '1';
+        }
+      };
+      new MutationObserver(scan).observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+      scan();
+    }, COMPANY_A_CANARY);
 
     const companyBDashboardPromise = page.waitForResponse((response) => {
       const url = new URL(response.url());

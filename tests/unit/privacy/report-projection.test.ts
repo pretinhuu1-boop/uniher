@@ -526,13 +526,16 @@ describe('protected route and cache boundaries', () => {
     const historyPage = readFileSync('src/app/(platform)/historico/page.tsx', 'utf8');
     const communicationsPage = readFileSync('src/app/(platform)/analytics-emails/page.tsx', 'utf8');
 
-    for (const source of [dashboardHook, historyPage, communicationsPage]) {
+    for (const source of [dashboardHook, communicationsPage]) {
       expect(source).toContain("cache: 'no-store'");
       expect(source).toContain('revalidateOnFocus: true');
       expect(source).toContain('dedupingInterval: 0');
       expect(source).toContain('keepPreviousData: false');
       expect(source).not.toContain('fallbackData');
     }
+    expect(historyPage).toContain("router.replace('/dashboard?section=exames')");
+    expect(historyPage).not.toContain('/api/analytics/history');
+    expect(historyPage).not.toContain('FeedbackState');
     expect(dashboardHook).toMatch(/companyId[\s\S]*role[\s\S]*period[\s\S]*departmentId/);
     expect(authHook).toContain('clearProtectedReportCaches');
     expect(authHook).toMatch(

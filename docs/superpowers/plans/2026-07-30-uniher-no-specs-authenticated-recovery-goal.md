@@ -15,7 +15,7 @@ Continue the authenticated UniHER recovery until screens do not show specs, plac
 - Visual evidence is required for UI waves on desktop and mobile before deployment claims.
 - Commit/push only explicit wave files after diff review. Deploy only after local gates pass.
 
-## Current wave target
+## Completed wave target
 
 `/produtos-modulos` is recoverable now. It currently renders a static `ContainedSurfacePreview`, but `/api/company/modules` and the `company_modules` store already exist. The safe implementation is a real company module status surface:
 
@@ -24,20 +24,29 @@ Continue the authenticated UniHER recovery until screens do not show specs, plac
 - sensitive modules display HOLD and cannot be enabled from this UI;
 - no landing, public route, NR-1 runtime, Liga, rewards, Denuncias intake, Concierge case workflow, SIPAT content or DH trail behavior is introduced.
 
+## Current wave target
+
+`/historico` and `/desafios/gerenciar` were authenticated spec/review routes with no safe standalone product contract. The safe implementation is compatibility routing:
+
+- `/historico` sends RH/Admin/Lideranca to `/dashboard?section=exames` and colaboradora to `/colaboradora`;
+- `/desafios/gerenciar` sends RH/Admin to `/gamificacao-config` and colaboradora to `/desafios`;
+- unauthenticated users keep the auth redirect with the original target;
+- no history API productization, challenge-admin workflow, ranking, rewards or Liga behavior is introduced.
+
 ## Remaining authenticated spec inventory
 
 | Surface | Decision |
 | --- | --- |
-| `/produtos-modulos` | Promote now: real module status/limited governance UI |
+| `/produtos-modulos` | Promoted: real module status/limited governance UI |
 | `/concierge` | HOLD: needs operational contract, SLA, data boundaries |
 | `/canal-denuncias` | HOLD: partner/legal/DPO decision before intake |
 | `/viva-sipat` | HOLD: approved source package before content |
 | `/desenvolvimento-humano` | HOLD: approved content/trail contract |
 | `/nr1` | HOLD shell: real Yavix/COPSOQ requires separate contract intake |
 | `/liga`, `/liga/gerenciar` | HOLD: privacy scoring/ranking contract missing |
-| `/desafios/gerenciar` | HOLD: governed challenge admin policy missing |
-| `/historico` | HOLD_PRODUCTIZE_HISTORY: partial protected history needs product definition |
+| `/desafios/gerenciar` | Compatibility redirect; governed challenge admin remains HOLD |
+| `/historico` | Compatibility redirect; dedicated history product remains HOLD_PRODUCTIZE_HISTORY |
 
 ## Wave gate
 
-PASS requires focused unit tests, typecheck, `git diff --check`, denylist check, desktop/mobile authenticated screenshots for `/produtos-modulos`, explicit commit, push, deploy, and production health/smoke. If any non-technical gate is missing, the release state remains HOLD for that surface.
+PASS requires focused unit tests, typecheck, `git diff --check`, denylist check, desktop/mobile authenticated screenshots for promoted/compatibility surfaces, explicit commit, push, deploy, and production health/smoke. If any non-technical gate is missing, the release state remains HOLD for that surface.

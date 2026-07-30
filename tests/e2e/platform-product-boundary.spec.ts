@@ -277,6 +277,48 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-produtos-modulos.png'), fullPage: true });
   });
 
+  test('RH compatibility redirects hide legacy spec routes behind useful surfaces', async ({ page, context, request, baseURL }) => {
+    assertProductBoundaryHostIsLoopback(baseURL);
+    await authenticatedPage(page, context, request, baseURL!, 'rh');
+
+    const evidenceDir = path.resolve(__dirname, '..', '..', 'docs', 'superpowers', 'evidence', 'compat-redirects-local-2026-07-30');
+    fs.mkdirSync(evidenceDir, { recursive: true });
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto('/historico');
+    await expect(page).toHaveURL(/\/dashboard\?section=exames$/);
+    await expect(page.getByText('Atividade de exames')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Historico indisponivel|Histórico indisponível/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-historico-redirect-dashboard-exames.png'), fullPage: true });
+
+    await page.goto('/desafios/gerenciar');
+    await expect(page).toHaveURL(/\/gamificacao-config$/);
+    await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Gestao de desafios em revisao|Gestão de desafios em revisão/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-desafios-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/historico');
+    await expect(page).toHaveURL(/\/dashboard\?section=exames$/);
+    await expect(page.getByText('Atividade de exames')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Historico indisponivel|Histórico indisponível/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-historico-redirect-dashboard-exames.png'), fullPage: true });
+
+    await page.goto('/desafios/gerenciar');
+    await expect(page).toHaveURL(/\/gamificacao-config$/);
+    await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Gestao de desafios em revisao|Gestão de desafios em revisão/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-desafios-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
+  });
+
   test('collaborator NR-1 runtime route stays blocked or unavailable without production runtime', async ({ page, context, request, baseURL }) => {
     assertProductBoundaryHostIsLoopback(baseURL);
     await authenticatedPage(page, context, request, baseURL!, 'colaboradora');

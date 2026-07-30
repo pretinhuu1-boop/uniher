@@ -83,6 +83,23 @@ describe('RH protected dashboard view model', () => {
     const first = createDashboardViewModel(projection);
     const second = createDashboardViewModel(projection);
 
+    expect(first.actions).toEqual([
+      {
+        label: 'Campanhas',
+        description: 'Gerencie as campanhas sem expor participação individual.',
+        href: '/campanhas',
+      },
+      {
+        label: 'Convites',
+        description: 'Inclua novas colaboradoras na empresa.',
+        href: '/convites',
+      },
+      {
+        label: 'Dashboard de exames',
+        description: 'Consulte a superfície consolidada de indicadores protegidos.',
+        href: '/dashboard?section=exames',
+      },
+    ]);
     expect(first.actions).not.toBe(second.actions);
     expect(first.actions[0]).not.toBe(second.actions[0]);
     expect(Object.isFrozen(first.actions)).toBe(true);

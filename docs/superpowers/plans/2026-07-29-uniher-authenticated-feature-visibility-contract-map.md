@@ -8,7 +8,8 @@ Goal: remap authenticated product surfaces that exist but do not appear, decide 
 
 - Safe unlock now: expose `/comunidade/gerenciar` in RH navigation. The page and backend already allow RH/Admin editorial work for simple community text posts.
 - Promoted in the no-spec recovery wave: `/produtos-modulos` now reads the real `/api/company/modules` contract and shows non-sensitive governance while keeping sensitive modules in HOLD.
-- Keep hidden or flow-only: `/historico`, `/onboarding-rh`, `/primeiro-acesso`, `/saude-primaria`, `/desafios/gerenciar`, `/liga`, `/liga/gerenciar`.
+- Promoted as compatibility redirects in the no-spec recovery wave: `/historico` now routes to `/dashboard?section=exames` or `/colaboradora`; `/desafios/gerenciar` now routes to `/gamificacao-config` or `/desafios`.
+- Keep hidden or flow-only: `/onboarding-rh`, `/primeiro-acesso`, `/saude-primaria`, `/liga`, `/liga/gerenciar`.
 - Keep shell/gated: `/concierge`, `/nr1`, `/viva-sipat`, `/desenvolvimento-humano`, `/canal-denuncias`.
 - Keep runtime entitlement-gated only: `/avaliacao-nr1`.
 
@@ -26,11 +27,11 @@ Goal: remap authenticated product surfaces that exist but do not appear, decide 
 | `/agenda` | Colaboradora | Real personal agenda only | KEEP_COLLAB_ONLY |
 | `/notificacoes` | RH base; personal utility elsewhere | Real personal notifications | KEEP_PERSONAL |
 | `/configuracoes` | Personal/profile surface | Real personal settings | KEEP_PERSONAL |
-| `/historico` | Not visible | Partial/protected history | HOLD_PRODUCTIZE_HISTORY |
+| `/historico` | Compatibility route | Redirects to consolidated dashboard/collaborator surfaces; no standalone history UI | KEEP_COMPAT_REDIRECT_HOLD_HISTORY |
 | `/onboarding-rh` | Not visible | First-run helper | KEEP_FLOW_ONLY |
 | `/primeiro-acesso` | Not visible | First-access helper | KEEP_FLOW_ONLY |
 | `/saude-primaria` | Hidden compatibility route | Redirect/compatibility | KEEP_HIDDEN |
-| `/desafios/gerenciar` | Not visible | Review shell | HOLD_GOVERNED_CHALLENGE_ADMIN |
+| `/desafios/gerenciar` | Compatibility route | Redirects to `/gamificacao-config` for RH/Admin and `/desafios` for colaboradora; no challenge-admin workflow | KEEP_COMPAT_REDIRECT_HOLD_CHALLENGE_ADMIN |
 | `/liga` | Not visible | Review shell | HOLD_PRIVACY_PRODUCT |
 | `/liga/gerenciar` | Not visible | Review shell | HOLD_PRIVACY_PRODUCT |
 
@@ -50,7 +51,7 @@ Goal: remap authenticated product surfaces that exist but do not appear, decide 
 ## Safe Next Units
 
 1. RH navigation unlock for `/comunidade/gerenciar`.
-2. Productize `/historico` only after a concrete product contract and projection boundary.
+2. Productize a dedicated history surface only after a concrete product contract and projection boundary.
 3. Educacao/Conteudos panel over lessons/community/campaign primitives, with content-source validation.
 4. Denuncias partner-managed configuration spec, before any inbox/intake.
 5. Yavix Wave 00 intake checklist before any production NR-1 integration.

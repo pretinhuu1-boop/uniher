@@ -678,8 +678,12 @@ describe('safe authenticated projections', () => {
   });
 
   it('removes numeric gamification promises and totals from platform source', () => {
+    const challengeManagementCompatibility = read('src/app/(platform)/desafios/gerenciar/page.tsx');
+    expect(challengeManagementCompatibility).toContain("router.replace('/gamificacao-config')");
+    expect(challengeManagementCompatibility).not.toContain('LEGACY_GAMIFICATION_STATE');
+    expect(challengeManagementCompatibility).not.toMatch(/ranking|leaderboard|recompensas|xp_reward/i);
+
     const neutralDeepLinks = [
-      'src/app/(platform)/desafios/gerenciar/page.tsx',
       'src/app/(platform)/liga/page.tsx',
       'src/app/(platform)/liga/gerenciar/page.tsx',
     ];

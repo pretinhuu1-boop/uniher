@@ -42,6 +42,28 @@ describe('Paola P3 locked module shells', () => {
     expect(source).not.toContain('allowedItems');
   });
 
+  it('keeps Historico as a compatibility redirect instead of an unavailable product screen', () => {
+    const source = read('src/app/(platform)/historico/page.tsx');
+
+    expect(source).toContain("router.replace('/dashboard?section=exames')");
+    expect(source).toContain("router.replace('/colaboradora')");
+    expect(source).not.toContain('/api/analytics/history');
+    expect(source).not.toContain('Histórico indisponível');
+    expect(source).not.toContain('FeedbackState');
+  });
+
+  it('keeps Desafios management as a compatibility redirect to approved safe surfaces', () => {
+    const source = read('src/app/(platform)/desafios/gerenciar/page.tsx');
+
+    expect(source).toContain("router.replace('/gamificacao-config')");
+    expect(source).toContain("user.role === 'lideranca'");
+    expect(source).toContain("router.replace('/campanhas')");
+    expect(source).toContain("router.replace('/desafios')");
+    expect(source).not.toContain('LEGACY_GAMIFICATION_STATE');
+    expect(source).not.toContain('Gestão de desafios em revisão');
+    expect(source).not.toContain('FeedbackState');
+  });
+
   it('keeps NR-1 as a contract-gated shell separate from COPSOQ runtime', () => {
     const source = read('src/app/(platform)/nr1/page.tsx');
 

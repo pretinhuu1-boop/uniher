@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import type Database from 'better-sqlite3';
 import { hasCollaboratorSelfCapability } from '@/lib/auth/collaborator-self';
 import type { ParticipationActor } from '@/services/participation.service';
-import type { CompanyChallengeView } from '@/types/challenges';
+import type { CompanyChallengeCatalogItem, CompanyChallengeView } from '@/types/challenges';
 
-export type PublicCompanyChallengeView = Pick<CompanyChallengeView, 'id' | 'catalog_key' | 'status' | 'progress' | 'challenge'>;
+export type PublicCompanyChallengeView = Pick<CompanyChallengeView, 'id' | 'catalog_key' | 'status' | 'progress'> & {
+  challenge: Pick<CompanyChallengeCatalogItem, 'key' | 'title' | 'description' | 'mode' | 'target' | 'startsAt' | 'endsAt' | 'isActive'>;
+};
 
 export class ChallengeApiError extends Error {
   constructor(
@@ -71,6 +73,15 @@ export function toPublicCompanyChallengeView(challenge: CompanyChallengeView): P
     catalog_key: challenge.catalog_key,
     status: challenge.status,
     progress: challenge.progress,
-    challenge: { ...challenge.challenge },
+    challenge: {
+      key: challenge.challenge.key,
+      title: challenge.challenge.title,
+      description: challenge.challenge.description,
+      mode: challenge.challenge.mode,
+      target: challenge.challenge.target,
+      startsAt: challenge.challenge.startsAt,
+      endsAt: challenge.challenge.endsAt,
+      isActive: challenge.challenge.isActive,
+    },
   };
 }

@@ -245,7 +245,7 @@ test.describe('RH — Painel da Empresa', () => {
     const actions = page.getByRole('region', { name: 'Próximas ações' });
     await expect(actions.getByRole('link', { name: /Campanhas/ })).toHaveAttribute('href', '/campanhas');
     await expect(actions.getByRole('link', { name: /Convites/ })).toHaveAttribute('href', '/convites');
-    await expect(actions.getByRole('link', { name: /Histórico/ })).toHaveAttribute('href', '/historico');
+    await expect(actions.getByRole('link', { name: /Dashboard de exames/ })).toHaveAttribute('href', '/dashboard?section=exames');
 
     await expect(page.getByRole('heading', { name: 'Indicadores protegidos' })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Contribuintes ativos/ })).toBeVisible();
