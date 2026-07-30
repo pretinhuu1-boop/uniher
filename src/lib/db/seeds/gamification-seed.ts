@@ -2460,7 +2460,7 @@ function mkReflexao(topic: Topic, theme: string, week: number, day: number, orde
     id: randomUUID(),
     company_id: null,
     title: `Reflexão: ${topic.t}`,
-    description: `Um momento de introspecção sobre ${topic.t.toLowerCase()}.`,
+    description: `Um momento de reflexão sobre ${topic.t.toLowerCase()}.`,
     type: 'reflexao',
     theme,
     content_json: JSON.stringify({

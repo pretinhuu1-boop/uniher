@@ -41,7 +41,12 @@ describe('gamification product copy boundary', () => {
 
   it('keeps authenticated navigation copy free of visible spec-like wording', () => {
     const navigationSource = read('src/components/platform/navigation.ts');
+    const educationSeed = read('src/lib/db/seeds/gamification-seed.ts');
+    const copyMigration = read('src/lib/db/migrations/067_clean_education_lesson_spec_like_copy.sql');
 
     expect(navigationSource).not.toMatch(/liberacao especifica|placeholder|mock|wireframe|contrato real|em implementacao/i);
+    expect(educationSeed).not.toMatch(/introspec/i);
+    expect(copyMigration).toContain('introspec');
+    expect(copyMigration).toContain('reflex');
   });
 });
