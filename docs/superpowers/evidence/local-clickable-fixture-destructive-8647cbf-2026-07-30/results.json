@@ -1,0 +1,90 @@
+{
+  "summary": {
+    "generatedAt": "2026-07-30T15:12:42.485Z",
+    "scope": "Local fixture validation for destructive or account-state RH/Admin clickables using disposable test records only.",
+    "total": 7,
+    "pass": 7,
+    "review": 0,
+    "fail": 0,
+    "byLane": {
+      "company_state": {
+        "total": 2,
+        "pass": 2,
+        "review": 0,
+        "fail": 0
+      },
+      "user_state": {
+        "total": 3,
+        "pass": 3,
+        "review": 0,
+        "fail": 0
+      },
+      "department_delete": {
+        "total": 2,
+        "pass": 2,
+        "review": 0,
+        "fail": 0
+      }
+    },
+    "reviewItems": [],
+    "failures": []
+  },
+  "results": [
+    {
+      "lane": "company_state",
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "label": "Suspender",
+      "status": "PASS",
+      "evidence": "Fixture company is_active changed to 0 after clicking Suspender."
+    },
+    {
+      "lane": "company_state",
+      "role": "admin",
+      "route": "/admin?tab=empresas",
+      "label": "Reativar",
+      "status": "PASS",
+      "evidence": "Fixture company is_active returned to 1 after clicking Reativar."
+    },
+    {
+      "lane": "user_state",
+      "role": "admin",
+      "route": "/admin?tab=usuarios",
+      "label": "Bloquear",
+      "status": "PASS",
+      "evidence": "Fixture user blocked changed to 1 after clicking Bloquear."
+    },
+    {
+      "lane": "user_state",
+      "role": "admin",
+      "route": "/admin?tab=usuarios",
+      "label": "Desbloquear",
+      "status": "PASS",
+      "evidence": "Fixture user blocked returned to 0 after clicking Desbloquear."
+    },
+    {
+      "lane": "user_state",
+      "role": "admin",
+      "route": "/admin?tab=usuarios",
+      "label": "Resetar Senha",
+      "status": "PASS",
+      "evidence": "Reset click returned the out-of-band password reset contract without exposing a temporary password."
+    },
+    {
+      "lane": "department_delete",
+      "role": "rh",
+      "route": "/departamentos",
+      "label": "Excluir confirmation",
+      "status": "PASS",
+      "evidence": "Delete click exposes Confirmar/Cancelar and cancel returns to Excluir."
+    },
+    {
+      "lane": "department_delete",
+      "role": "rh",
+      "route": "/departamentos",
+      "label": "Confirmar",
+      "status": "PASS",
+      "evidence": "Fixture department was removed after confirmation."
+    }
+  ]
+}
