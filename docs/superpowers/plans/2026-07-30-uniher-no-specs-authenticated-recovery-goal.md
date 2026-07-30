@@ -42,6 +42,7 @@ Current active implementation target:
 - keep the same denylist: public landing, permissions, APIs, database contracts, ranking/rewards/Liga behavior, NR-1/Yavix/COPSOQ, Concierge, Denuncias, SIPAT and Desenvolvimento Humano.
 - follow-up rendered production sweep on commit `4031d32` is PASS: 75 role/routes, 75 PASS, 0 REVIEW, 0 ERROR.
 - flow-only visual gap wave is PASS: `/onboarding-rh` and `/primeiro-acesso` were added to `VISUAL_SMOKE_ROUTES`, local visual matrix is 204 PASS / 0 FAIL, and focused production desktop/mobile evidence is 4 PASS / 0 REVIEW / 0 ERROR.
+- completion audit is PASS for the current route inventory and production evidence: `docs/superpowers/audits/2026-07-30-uniher-no-specs-authenticated-completion-audit.md`.
 
 Required matrix columns for ongoing maintenance:
 
@@ -78,6 +79,7 @@ The next implementation wave must be selected from this matrix. If a route has n
 | Admin sidebar `/gamificacao-config` presentation details | Remove `Governanca privada` from rendered admin sidebar | Done |
 | Rendered authenticated route sweep after admin sidebar fix | Confirm no visible review hit remains in the current 75-route matrix | Done |
 | Flow-only visual gap coverage | Add `/onboarding-rh` and `/primeiro-acesso` to visual coverage with production screenshots | Done |
+| Authenticated no-spec completion audit | Verify current route inventory, matrix, production sweeps, visual gates and governance holds | Done |
 | Concierge operations | Operational contract, SLA, data governance | HOLD |
 | Canal de Denuncias intake | Partner/legal/DPO workflow | HOLD |
 | SIPAT operations | Approved source package | HOLD |
