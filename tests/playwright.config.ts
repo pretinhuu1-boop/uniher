@@ -70,6 +70,7 @@ export default defineConfig({
     { name: 'collaborator-journey', testMatch: 'collaborator-journey.spec.ts', use: { headless: true, serviceWorkers: 'block' } },
     { name: 'platform-product-boundary', testMatch: 'platform-product-boundary.spec.ts', use: { headless: true, serviceWorkers: 'block' } },
     { name: 'clickable-fixture', testMatch: 'clickable-fixture.spec.ts', use: { headless: true, serviceWorkers: 'block' } },
+    { name: 'clickable-admin-rh-fixture', testMatch: 'clickable-admin-rh-fixture.spec.ts', use: { headless: true, serviceWorkers: 'block' } },
     { name: 'master', testMatch: 'master.spec.ts' },
     { name: 'rh', testMatch: 'rh.spec.ts' },
     { name: 'colaboradora', testMatch: 'colaboradora.spec.ts' },

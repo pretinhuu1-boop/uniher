@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-07-30T14:59:50.635Z",
+  "scope": "Local fixture validation for non-destructive RH/Admin clickables that open forms, accordions, or navigation without submitting production mutations.",
+  "total": 9,
+  "pass": 9,
+  "review": 0,
+  "fail": 0,
+  "byLane": {
+    "admin_forms": {
+      "total": 4,
+      "pass": 4,
+      "review": 0,
+      "fail": 0
+    },
+    "rh_navigation": {
+      "total": 1,
+      "pass": 1,
+      "review": 0,
+      "fail": 0
+    },
+    "rh_forms": {
+      "total": 4,
+      "pass": 4,
+      "review": 0,
+      "fail": 0
+    }
+  },
+  "reviewItems": [],
+  "failures": []
+}
