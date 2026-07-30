@@ -1,0 +1,52 @@
+{
+  "projectId": "b2e342ba-3ad5-4a43-b61e-9c5e7242dd41",
+  "projectName": "UniHer Health Hub",
+  "editorUrl": "https://lovable.dev/projects/b2e342ba-3ad5-4a43-b61e-9c5e7242dd41?view=codeEditor",
+  "publishedPreview": "https://ofgcareexperience.lovable.app",
+  "extractedAt": "2026-07-30",
+  "treeLabelCount": 261,
+  "copiedFiles": {
+    "src/components/dashboard/HealthSemaphore.tsx": {
+      "bytes": 4027
+    },
+    "package.json": {
+      "bytes": 3084
+    },
+    "src/App.tsx": {
+      "bytes": 4445
+    },
+    "src/pages/HealthStatus.tsx": {
+      "bytes": 7103
+    },
+    "src/pages/DemoHealthCheckin.tsx": {
+      "bytes": 25451
+    },
+    "src/pages/Concierge.tsx": {
+      "bytes": 17140
+    },
+    "src/pages/HRDashboard.tsx": {
+      "bytes": 72276
+    },
+    "src/contexts/UserContext.tsx": {
+      "bytes": 23185
+    },
+    "src/contexts/OnboardingContext.tsx": {
+      "bytes": 1515
+    },
+    "src/components/guards/UnifiedAuthGuard.tsx": {
+      "bytes": 2470
+    },
+    "src/integrations/supabase/client.ts": {
+      "bytes": 590
+    },
+    "src/integrations/supabase/types.ts": {
+      "bytes": 50249
+    },
+    "README.md": {
+      "bytes": 2102
+    },
+    "tailwind.config.ts": {
+      "bytes": 3177
+    }
+  }
+}
