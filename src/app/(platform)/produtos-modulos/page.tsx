@@ -72,7 +72,8 @@ function stateTone(state: CompanyModuleState): string {
 
 export default function ProdutosModulosPage() {
   const { user, isLoading: authLoading } = useAuth();
-  const { data, error, isLoading, mutate } = useSWR<CompanyModulesResponse>('/api/company/modules', fetcher);
+  const modulesCacheKey = user?.companyId ? '/api/company/modules' : null;
+  const { data, error, isLoading, mutate } = useSWR<CompanyModulesResponse>(modulesCacheKey, fetcher);
   const [updatingSlug, setUpdatingSlug] = useState<CompanyModuleSlug | null>(null);
   const [notice, setNotice] = useState('');
 

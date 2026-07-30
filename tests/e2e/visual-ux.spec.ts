@@ -30,6 +30,7 @@ interface VisualSmokeRoute {
   role: VisualSmokeRole;
   name: string;
   route: string;
+  expectedPath?: string;
 }
 
 interface VisualSmokeViewport {
@@ -62,13 +63,13 @@ const VISUAL_SMOKE_ROUTES: readonly VisualSmokeRoute[] = [
   { role: 'admin', name: 'admin-produtos-modulos', route: '/produtos-modulos' },
   { role: 'admin', name: 'admin-relatorios', route: '/analytics-emails' },
   { role: 'admin', name: 'admin-saude-primaria', route: '/dashboard?section=saude-primaria' },
-  { role: 'admin', name: 'admin-concierge', route: '/concierge' },
+  { role: 'admin', name: 'admin-concierge', route: '/concierge', expectedPath: '/admin?tab=empresas' },
   { role: 'admin', name: 'admin-historico', route: '/dashboard?section=exames' },
   { role: 'admin', name: 'admin-educacao', route: '/comunidade/gerenciar' },
   { role: 'admin', name: 'admin-gamificacao', route: '/gamificacao-config' },
-  { role: 'admin', name: 'admin-viva-sipat', route: '/viva-sipat' },
-  { role: 'admin', name: 'admin-desenvolvimento-humano', route: '/desenvolvimento-humano' },
-  { role: 'admin', name: 'admin-canal-denuncias', route: '/canal-denuncias' },
+  { role: 'admin', name: 'admin-viva-sipat', route: '/viva-sipat', expectedPath: '/admin?tab=empresas' },
+  { role: 'admin', name: 'admin-desenvolvimento-humano', route: '/desenvolvimento-humano', expectedPath: '/admin?tab=empresas' },
+  { role: 'admin', name: 'admin-canal-denuncias', route: '/canal-denuncias', expectedPath: '/admin?tab=empresas' },
   { role: 'rh', name: 'rh-dashboard', route: '/dashboard' },
   { role: 'rh', name: 'rh-colaboradoras', route: '/colaboradoras-gestao' },
   { role: 'rh', name: 'rh-departamentos', route: '/departamentos' },
@@ -79,12 +80,12 @@ const VISUAL_SMOKE_ROUTES: readonly VisualSmokeRoute[] = [
   { role: 'rh', name: 'rh-notificacoes', route: '/notificacoes' },
   { role: 'rh', name: 'rh-saude-primaria', route: '/dashboard?section=saude-primaria' },
   { role: 'rh', name: 'rh-gamificacao', route: '/gamificacao-config' },
-  { role: 'rh', name: 'rh-desafios-gerenciar', route: '/desafios/gerenciar' },
-  { role: 'rh', name: 'rh-liga-gerenciar', route: '/liga/gerenciar' },
-  { role: 'rh', name: 'rh-nr1', route: '/nr1' },
-  { role: 'rh', name: 'rh-viva-sipat', route: '/viva-sipat' },
-  { role: 'rh', name: 'rh-desenvolvimento-humano', route: '/desenvolvimento-humano' },
-  { role: 'rh', name: 'rh-canal-denuncias', route: '/canal-denuncias' },
+  { role: 'rh', name: 'rh-desafios-gerenciar', route: '/desafios/gerenciar', expectedPath: '/gamificacao-config' },
+  { role: 'rh', name: 'rh-liga-gerenciar', route: '/liga/gerenciar', expectedPath: '/gamificacao-config' },
+  { role: 'rh', name: 'rh-nr1', route: '/nr1', expectedPath: '/produtos-modulos' },
+  { role: 'rh', name: 'rh-viva-sipat', route: '/viva-sipat', expectedPath: '/produtos-modulos' },
+  { role: 'rh', name: 'rh-desenvolvimento-humano', route: '/desenvolvimento-humano', expectedPath: '/produtos-modulos' },
+  { role: 'rh', name: 'rh-canal-denuncias', route: '/canal-denuncias', expectedPath: '/produtos-modulos' },
   { role: 'lideranca', name: 'lideranca-dashboard', route: '/dashboard' },
   { role: 'lideranca', name: 'lideranca-campanhas', route: '/campanhas' },
   { role: 'colaboradora', name: 'colab-home', route: '/colaboradora' },
@@ -97,12 +98,12 @@ const VISUAL_SMOKE_ROUTES: readonly VisualSmokeRoute[] = [
   { role: 'colaboradora', name: 'colab-configuracoes', route: '/configuracoes' },
   { role: 'colaboradora', name: 'colab-objetivos', route: '/objetivos' },
   { role: 'colaboradora', name: 'colab-desafios', route: '/desafios' },
-  { role: 'colaboradora', name: 'colab-liga', route: '/liga' },
-  { role: 'colaboradora', name: 'colab-nr1-shell', route: '/nr1' },
-  { role: 'colaboradora', name: 'colab-avaliacao-nr1', route: '/avaliacao-nr1' },
-  { role: 'colaboradora', name: 'colab-viva-sipat', route: '/viva-sipat' },
-  { role: 'colaboradora', name: 'colab-desenvolvimento-humano', route: '/desenvolvimento-humano' },
-  { role: 'colaboradora', name: 'colab-canal-denuncias', route: '/canal-denuncias' },
+  { role: 'colaboradora', name: 'colab-liga', route: '/liga', expectedPath: '/conquistas' },
+  { role: 'colaboradora', name: 'colab-nr1-redirect', route: '/nr1', expectedPath: '/colaboradora' },
+  { role: 'colaboradora', name: 'colab-avaliacao-nr1', route: '/avaliacao-nr1', expectedPath: '/colaboradora' },
+  { role: 'colaboradora', name: 'colab-viva-sipat', route: '/viva-sipat', expectedPath: '/colaboradora' },
+  { role: 'colaboradora', name: 'colab-desenvolvimento-humano', route: '/desenvolvimento-humano', expectedPath: '/colaboradora' },
+  { role: 'colaboradora', name: 'colab-canal-denuncias', route: '/canal-denuncias', expectedPath: '/colaboradora' },
 ];
 
 function evidencePath(filename: string): string {
@@ -786,20 +787,19 @@ test.describe('Admin Empresa — Visual UX', () => {
     await expect(page.getByText('OFG', { exact: true })).not.toBeVisible();
   });
 
-  test('NR-1 habilitado permanece no shell de RH', async () => {
+  test('NR-1 habilitado fica oculto para RH e direct URL volta para Produtos e Modulos', async () => {
     ensureNr1VisualFixtures();
     await openRhDashboard(page);
     await page.screenshot({ path: evidencePath('pr7-rh-dashboard-desktop.png') });
 
     const nr1Link = page.getByRole('link', { name: 'NR-1', exact: true });
-    await expect(nr1Link).toHaveAttribute('href', '/nr1');
-    await nr1Link.click();
+    await expect(nr1Link).toHaveCount(0);
 
-    await expect(page).toHaveURL(/\/nr1$/);
-    await expect(page.getByRole('heading', { name: 'NR-1', exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Contrato antes da avalia/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Permanece bloqueado/i })).toBeVisible();
-    await page.screenshot({ path: evidencePath('pr7-nr1-rh-shell-desktop.png') });
+    await page.goto('/nr1');
+    await expect(page).toHaveURL(/\/produtos-modulos$/);
+    await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Permanece bloqueado|Contrato antes da avalia|COPSOQ|Yavix|Preview tecnico/i);
+    await page.screenshot({ path: evidencePath('pr7-nr1-rh-redirect-produtos-modulos-desktop.png') });
   });
 
   test('Colaboradoras — gestão carrega', async () => {
@@ -868,14 +868,15 @@ test.describe('Colaboradora NR-1 - Visual UX', () => {
     ensureNr1VisualFixtures();
   });
 
-  test('Colaboradora com NR-1 habilitado abre runtime COPSOQ', async ({ page }) => {
+  test('Colaboradora com NR-1 habilitado sem mock nao ve runtime COPSOQ', async ({ page }) => {
     await loginUI(page, DEMO_NR1_COLLAB_EMAIL, ADMIN_PASS);
     await page.goto('/avaliacao-nr1');
 
-    await expect(page).toHaveURL(/\/avaliacao-nr1$/);
-    await expect(page.getByText('Avaliação Psicossocial', { exact: true })).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole('button', { name: 'Aceitar e continuar', exact: true })).toBeVisible();
-    await page.screenshot({ path: evidencePath('pr7-nr1-colaboradora-runtime-desktop.png') });
+    await expect(page).toHaveURL(/\/colaboradora$/);
+    await expect(page.getByRole('heading', { name: 'Minha jornada', exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'Jornada privada', exact: true })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Avalia..o Psicossocial|Aceitar e continuar|COPSOQ|Yavix|Preview tecnico|Previa indisponivel/i);
+    await page.screenshot({ path: evidencePath('pr7-nr1-colaboradora-redirect-home-desktop.png') });
   });
 });
 
@@ -945,7 +946,7 @@ test.describe('Mobile — Visual UX', () => {
     await navigation.getByRole('navigation', { name: 'Navegação principal', exact: true })
       .evaluate(element => { element.scrollTop = element.scrollHeight; });
     await waitForSidebarMotion(page);
-    await expect(navigation.getByRole('link', { name: 'NR-1', exact: true })).toBeVisible();
+    await expect(navigation.getByRole('link', { name: 'NR-1', exact: true })).toHaveCount(0);
     await expect(navigation.locator('button').filter({ hasText: 'Sair da Conta' })).toBeVisible();
     await page.screenshot({ path: evidencePath('wave3-mobile-colaboradora-sidebar-bottom.png'), fullPage: true });
   });
@@ -992,12 +993,18 @@ test.describe('Final visual promotion smoke @visual-smoke', () => {
         const credentials = loginCredentialsForRole(role);
         const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } });
         const consoleIssues: string[] = [];
+        const responseIssues: string[] = [];
 
         page.on('console', (message) => {
           if (message.type() === 'error') consoleIssues.push(message.text());
         });
         page.on('pageerror', (error) => {
           consoleIssues.push(error.message);
+        });
+        page.on('response', (response) => {
+          if (response.status() >= 400) {
+            responseIssues.push(`${response.status()} ${response.url()}`);
+          }
         });
 
         try {
@@ -1008,6 +1015,7 @@ test.describe('Final visual promotion smoke @visual-smoke', () => {
             const issues: string[] = [];
             const screenshot = screenshotFilename(viewport.name, role, route.name);
             consoleIssues.length = 0;
+            responseIssues.length = 0;
 
             try {
               await page.goto(route.route);
@@ -1015,14 +1023,18 @@ test.describe('Final visual promotion smoke @visual-smoke', () => {
 
               const currentUrl = new URL(page.url());
               const currentPath = `${currentUrl.pathname}${currentUrl.search}`;
-              if (currentPath !== route.route) {
-                issues.push(`unexpected navigation: ${currentPath}`);
+              const expectedPath = route.expectedPath ?? route.route;
+              if (currentPath !== expectedPath) {
+                issues.push(`unexpected navigation: ${currentPath}; expected ${expectedPath}`);
               }
 
               issues.push(...await collectRouteGeometryIssues(page));
 
               if (consoleIssues.length > 0) {
                 issues.push(...consoleIssues.slice(0, 5).map((message) => `console error: ${message.slice(0, 160)}`));
+              }
+              if (responseIssues.length > 0) {
+                issues.push(...responseIssues.slice(0, 5).map((message) => `response error: ${message.slice(0, 180)}`));
               }
 
               if (process.env.VISUAL_UX_CAPTURE_SCREENSHOTS === '1') {

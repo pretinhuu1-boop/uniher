@@ -1,8 +1,8 @@
 # UniHER visual UX smoke matrix
 
-Generated: 2026-07-29T15:41:26.516Z
-Counts: total 192, PASS 192, FAIL 0
-Routes: 48
+Generated: 2026-07-30T08:16:06.109Z
+Counts: total 196, PASS 196, FAIL 0
+Routes: 49
 Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 
 | Status | Viewport | Role | Screen | Route | Screenshot | Issues |
@@ -27,6 +27,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | mobile-375 | rh | rh-departamentos | /departamentos | mobile-375-rh-rh-departamentos.png | - |
 | PASS | mobile-375 | rh | rh-convites | /convites | mobile-375-rh-rh-convites.png | - |
 | PASS | mobile-375 | rh | rh-campanhas | /campanhas | mobile-375-rh-rh-campanhas.png | - |
+| PASS | mobile-375 | rh | rh-gestao-editorial | /comunidade/gerenciar | mobile-375-rh-rh-gestao-editorial.png | - |
 | PASS | mobile-375 | rh | rh-company-profile | /company-profile | mobile-375-rh-rh-company-profile.png | - |
 | PASS | mobile-375 | rh | rh-notificacoes | /notificacoes | mobile-375-rh-rh-notificacoes.png | - |
 | PASS | mobile-375 | rh | rh-saude-primaria | /dashboard?section=saude-primaria | mobile-375-rh-rh-saude-primaria.png | - |
@@ -50,7 +51,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | mobile-375 | colaboradora | colab-objetivos | /objetivos | mobile-375-colaboradora-colab-objetivos.png | - |
 | PASS | mobile-375 | colaboradora | colab-desafios | /desafios | mobile-375-colaboradora-colab-desafios.png | - |
 | PASS | mobile-375 | colaboradora | colab-liga | /liga | mobile-375-colaboradora-colab-liga.png | - |
-| PASS | mobile-375 | colaboradora | colab-nr1-shell | /nr1 | mobile-375-colaboradora-colab-nr1-shell.png | - |
+| PASS | mobile-375 | colaboradora | colab-nr1-redirect | /nr1 | mobile-375-colaboradora-colab-nr1-redirect.png | - |
 | PASS | mobile-375 | colaboradora | colab-avaliacao-nr1 | /avaliacao-nr1 | mobile-375-colaboradora-colab-avaliacao-nr1.png | - |
 | PASS | mobile-375 | colaboradora | colab-viva-sipat | /viva-sipat | mobile-375-colaboradora-colab-viva-sipat.png | - |
 | PASS | mobile-375 | colaboradora | colab-desenvolvimento-humano | /desenvolvimento-humano | mobile-375-colaboradora-colab-desenvolvimento-humano.png | - |
@@ -75,6 +76,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | tablet-768 | rh | rh-departamentos | /departamentos | tablet-768-rh-rh-departamentos.png | - |
 | PASS | tablet-768 | rh | rh-convites | /convites | tablet-768-rh-rh-convites.png | - |
 | PASS | tablet-768 | rh | rh-campanhas | /campanhas | tablet-768-rh-rh-campanhas.png | - |
+| PASS | tablet-768 | rh | rh-gestao-editorial | /comunidade/gerenciar | tablet-768-rh-rh-gestao-editorial.png | - |
 | PASS | tablet-768 | rh | rh-company-profile | /company-profile | tablet-768-rh-rh-company-profile.png | - |
 | PASS | tablet-768 | rh | rh-notificacoes | /notificacoes | tablet-768-rh-rh-notificacoes.png | - |
 | PASS | tablet-768 | rh | rh-saude-primaria | /dashboard?section=saude-primaria | tablet-768-rh-rh-saude-primaria.png | - |
@@ -98,7 +100,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | tablet-768 | colaboradora | colab-objetivos | /objetivos | tablet-768-colaboradora-colab-objetivos.png | - |
 | PASS | tablet-768 | colaboradora | colab-desafios | /desafios | tablet-768-colaboradora-colab-desafios.png | - |
 | PASS | tablet-768 | colaboradora | colab-liga | /liga | tablet-768-colaboradora-colab-liga.png | - |
-| PASS | tablet-768 | colaboradora | colab-nr1-shell | /nr1 | tablet-768-colaboradora-colab-nr1-shell.png | - |
+| PASS | tablet-768 | colaboradora | colab-nr1-redirect | /nr1 | tablet-768-colaboradora-colab-nr1-redirect.png | - |
 | PASS | tablet-768 | colaboradora | colab-avaliacao-nr1 | /avaliacao-nr1 | tablet-768-colaboradora-colab-avaliacao-nr1.png | - |
 | PASS | tablet-768 | colaboradora | colab-viva-sipat | /viva-sipat | tablet-768-colaboradora-colab-viva-sipat.png | - |
 | PASS | tablet-768 | colaboradora | colab-desenvolvimento-humano | /desenvolvimento-humano | tablet-768-colaboradora-colab-desenvolvimento-humano.png | - |
@@ -123,6 +125,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | desktop-1366 | rh | rh-departamentos | /departamentos | desktop-1366-rh-rh-departamentos.png | - |
 | PASS | desktop-1366 | rh | rh-convites | /convites | desktop-1366-rh-rh-convites.png | - |
 | PASS | desktop-1366 | rh | rh-campanhas | /campanhas | desktop-1366-rh-rh-campanhas.png | - |
+| PASS | desktop-1366 | rh | rh-gestao-editorial | /comunidade/gerenciar | desktop-1366-rh-rh-gestao-editorial.png | - |
 | PASS | desktop-1366 | rh | rh-company-profile | /company-profile | desktop-1366-rh-rh-company-profile.png | - |
 | PASS | desktop-1366 | rh | rh-notificacoes | /notificacoes | desktop-1366-rh-rh-notificacoes.png | - |
 | PASS | desktop-1366 | rh | rh-saude-primaria | /dashboard?section=saude-primaria | desktop-1366-rh-rh-saude-primaria.png | - |
@@ -146,7 +149,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | desktop-1366 | colaboradora | colab-objetivos | /objetivos | desktop-1366-colaboradora-colab-objetivos.png | - |
 | PASS | desktop-1366 | colaboradora | colab-desafios | /desafios | desktop-1366-colaboradora-colab-desafios.png | - |
 | PASS | desktop-1366 | colaboradora | colab-liga | /liga | desktop-1366-colaboradora-colab-liga.png | - |
-| PASS | desktop-1366 | colaboradora | colab-nr1-shell | /nr1 | desktop-1366-colaboradora-colab-nr1-shell.png | - |
+| PASS | desktop-1366 | colaboradora | colab-nr1-redirect | /nr1 | desktop-1366-colaboradora-colab-nr1-redirect.png | - |
 | PASS | desktop-1366 | colaboradora | colab-avaliacao-nr1 | /avaliacao-nr1 | desktop-1366-colaboradora-colab-avaliacao-nr1.png | - |
 | PASS | desktop-1366 | colaboradora | colab-viva-sipat | /viva-sipat | desktop-1366-colaboradora-colab-viva-sipat.png | - |
 | PASS | desktop-1366 | colaboradora | colab-desenvolvimento-humano | /desenvolvimento-humano | desktop-1366-colaboradora-colab-desenvolvimento-humano.png | - |
@@ -171,6 +174,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | desktop-wide-1920 | rh | rh-departamentos | /departamentos | desktop-wide-1920-rh-rh-departamentos.png | - |
 | PASS | desktop-wide-1920 | rh | rh-convites | /convites | desktop-wide-1920-rh-rh-convites.png | - |
 | PASS | desktop-wide-1920 | rh | rh-campanhas | /campanhas | desktop-wide-1920-rh-rh-campanhas.png | - |
+| PASS | desktop-wide-1920 | rh | rh-gestao-editorial | /comunidade/gerenciar | desktop-wide-1920-rh-rh-gestao-editorial.png | - |
 | PASS | desktop-wide-1920 | rh | rh-company-profile | /company-profile | desktop-wide-1920-rh-rh-company-profile.png | - |
 | PASS | desktop-wide-1920 | rh | rh-notificacoes | /notificacoes | desktop-wide-1920-rh-rh-notificacoes.png | - |
 | PASS | desktop-wide-1920 | rh | rh-saude-primaria | /dashboard?section=saude-primaria | desktop-wide-1920-rh-rh-saude-primaria.png | - |
@@ -194,7 +198,7 @@ Viewports: mobile-375, tablet-768, desktop-1366, desktop-wide-1920
 | PASS | desktop-wide-1920 | colaboradora | colab-objetivos | /objetivos | desktop-wide-1920-colaboradora-colab-objetivos.png | - |
 | PASS | desktop-wide-1920 | colaboradora | colab-desafios | /desafios | desktop-wide-1920-colaboradora-colab-desafios.png | - |
 | PASS | desktop-wide-1920 | colaboradora | colab-liga | /liga | desktop-wide-1920-colaboradora-colab-liga.png | - |
-| PASS | desktop-wide-1920 | colaboradora | colab-nr1-shell | /nr1 | desktop-wide-1920-colaboradora-colab-nr1-shell.png | - |
+| PASS | desktop-wide-1920 | colaboradora | colab-nr1-redirect | /nr1 | desktop-wide-1920-colaboradora-colab-nr1-redirect.png | - |
 | PASS | desktop-wide-1920 | colaboradora | colab-avaliacao-nr1 | /avaliacao-nr1 | desktop-wide-1920-colaboradora-colab-avaliacao-nr1.png | - |
 | PASS | desktop-wide-1920 | colaboradora | colab-viva-sipat | /viva-sipat | desktop-wide-1920-colaboradora-colab-viva-sipat.png | - |
 | PASS | desktop-wide-1920 | colaboradora | colab-desenvolvimento-humano | /desenvolvimento-humano | desktop-wide-1920-colaboradora-colab-desenvolvimento-humano.png | - |

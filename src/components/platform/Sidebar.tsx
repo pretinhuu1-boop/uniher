@@ -344,6 +344,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { revalidateOnFocus: false },
   );
   const company = companyData?.company;
+  const [failedCompanyLogoUrl, setFailedCompanyLogoUrl] = useState<string | null>(null);
+  const companyDisplayName = company ? (company.trade_name || company.name) : '';
+  const companyLogoUrl = company?.logo_url && company.logo_url !== failedCompanyLogoUrl
+    ? company.logo_url
+    : null;
+  const companyInitials = companyDisplayName.slice(0, 2).toUpperCase() || 'UN';
 
   const moduleCacheKey = pathname !== '/primeiro-acesso' && user?.companyId
     ? ['/api/company/modules', user.id, user.companyId, role] as const
@@ -462,13 +468,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }
                 : undefined}
             >
-              {company.logo_url ? (
-                <img src={company.logo_url} alt="" className={styles.companyLogo} />
+              {companyLogoUrl ? (
+                <img
+                  src={companyLogoUrl}
+                  alt=""
+                  className={styles.companyLogo}
+                  onError={() => setFailedCompanyLogoUrl(companyLogoUrl)}
+                />
               ) : (
-                (company.trade_name || company.name).slice(0, 2).toUpperCase()
+                companyInitials
               )}
             </div>
-            <span className={styles.companyName}>{company.trade_name || company.name}</span>
+            <span className={styles.companyName}>{companyDisplayName}</span>
           </div>
         ) : null}
       </div>
