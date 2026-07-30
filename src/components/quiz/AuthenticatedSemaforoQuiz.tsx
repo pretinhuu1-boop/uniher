@@ -139,7 +139,7 @@ function ResultPanel({
           Semaforo por dimensao
         </p>
         <p className="mt-1 text-sm text-[var(--platform-muted)]">
-          Leitura educativa baseada no quiz correto de onboarding. Nao e diagnostico clinico.
+          Leitura educativa privada baseada nas respostas do quiz. Nao e diagnostico clinico.
         </p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {scores.map((item) => {
@@ -245,7 +245,7 @@ export default function AuthenticatedSemaforoQuiz() {
           Resultado personalizado e rota de apoio
         </h2>
         <p className="mt-1 text-sm leading-6 text-[var(--platform-muted)]">
-          O quiz correto da plataforma usa sliders de onboarding, salva o arquétipo no perfil e colore as dimensões do Semáforo.
+          Responda no seu ritmo para receber um perfil de cuidado, o Semaforo inicial por dimensao e a rota de apoio indicada.
         </p>
       </div>
 

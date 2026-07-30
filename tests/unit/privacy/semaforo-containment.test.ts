@@ -266,10 +266,13 @@ describe('Semaforo private self-report', () => {
 
   it('keeps source boundaries free of score-derived Semaforo UI and RH/Admin readers', () => {
     const page = read('src/app/(platform)/semaforo/page.tsx');
+    const quiz = read('src/components/quiz/AuthenticatedSemaforoQuiz.tsx');
     expect(page).toContain('auto-relato privado');
-    expect(page).toContain('companyVisible: false');
-    expect(page).toContain('Circuito de autocuidado');
-    expect(page).not.toMatch(/health_scores|score|recalculate|ranking|pontos|\bXP\b|liga/i);
+    expect(page).toContain('<AuthenticatedSemaforoQuiz />');
+    expect(page).not.toContain('Circuito de autocuidado');
+    expect(page).not.toContain('Escolher dimens');
+    expect(page).not.toContain('REGISTRAR SINAL');
+    expect(`${page}\n${quiz}`).not.toMatch(/health_scores|recalculate|ranking|pontos|\bXP\b|liga|quiz correto/i);
 
     for (const route of [
       'src/app/api/collaborator/semaforo/route.ts',

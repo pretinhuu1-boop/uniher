@@ -847,6 +847,8 @@ test.describe('Admin Empresa — Visual UX', () => {
     await expect(page.getByRole('link', { name: 'Semáforo da Saúde', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('heading', { name: 'Resultado personalizado e rota de apoio', exact: true })).toBeVisible();
     await expect(page.getByText('Quiz do Semaforo', { exact: true })).toBeVisible();
+    await expect(page.getByText('Circuito de autocuidado', { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/quiz correto/i)).toHaveCount(0);
 
     const retake = page.getByRole('button', { name: /Refazer quiz/i });
     if (await retake.count()) {
