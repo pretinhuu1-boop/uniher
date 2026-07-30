@@ -18,48 +18,55 @@ const roleCredentials: Record<SeedRole, { email: string; password: string }> = {
   colaboradora: { email: COLLABORATOR_EMAIL, password: PASSWORD },
 };
 
-const containedRoutes = [
+const moduleHoldRedirectRoutes = [
   {
     role: 'admin',
     path: '/concierge',
-    title: /Concierge/i,
-    anchors: [/Contrato pendente/i, /Permanece bloqueado/i, /Cadastro, atribuicao, triagem/i],
+    expectedUrl: /\/admin\?tab=empresas$/,
+    title: /Empresas/i,
+    blockedText: /Como esta pagina vai funcionar|Permanece bloqueado|Cadastro, atribuicao, triagem/i,
   },
   {
     role: 'admin',
     path: '/canal-denuncias',
-    title: /Canal de Den.ncias/i,
-    anchors: [/Parceiro pendente/i, /Permanece bloqueado/i, /Formulario, caixa de entrada, protocolo/i],
+    expectedUrl: /\/admin\?tab=empresas$/,
+    title: /Empresas/i,
+    blockedText: /Como esta pagina vai funcionar|Permanece bloqueado|Formulario, caixa de entrada, protocolo/i,
   },
   {
     role: 'admin',
     path: '/viva-sipat',
-    title: /Viva SIPAT/i,
-    anchors: [/Fonte de conteudo pendente/i, /Permanece bloqueado/i, /materiais nao fornecidos/i],
+    expectedUrl: /\/admin\?tab=empresas$/,
+    title: /Empresas/i,
+    blockedText: /Como esta pagina vai funcionar|Permanece bloqueado|materiais nao fornecidos/i,
   },
   {
     role: 'admin',
     path: '/desenvolvimento-humano',
-    title: /Desenvolvimento Humano/i,
-    anchors: [/Modulo futuro/i, /Permanece bloqueado/i, /Ranking, pontuacao ou diagnostico/i],
+    expectedUrl: /\/admin\?tab=empresas$/,
+    title: /Empresas/i,
+    blockedText: /Como esta pagina vai funcionar|Permanece bloqueado|Ranking, pontuacao ou diagnostico/i,
   },
   {
     role: 'rh',
     path: '/nr1',
-    title: /NR-1/i,
-    anchors: [/Contrato pendente/i, /Permanece bloqueado/i, /Qualquer leitura ou escrita em integracoes Yavix/i],
+    expectedUrl: /\/produtos-modulos$/,
+    title: /Produtos e M.dulos/i,
+    blockedText: /Como esta pagina vai funcionar|Permanece bloqueado|Qualquer leitura ou escrita em integracoes Yavix|COPSOQ/i,
   },
   {
     role: 'colaboradora',
     path: '/nr1',
-    title: /NR-1/i,
-    anchors: [/Contrato pendente/i, /Permanece bloqueado/i, /Shell estatico sem chamadas Yavix/i],
+    expectedUrl: /\/colaboradora$/,
+    title: /Jornada privada/i,
+    blockedText: /Como esta pagina vai funcionar|Permanece bloqueado|Shell estatico sem chamadas Yavix|COPSOQ/i,
   },
 ] as const satisfies ReadonlyArray<{
   role: SeedRole;
   path: string;
+  expectedUrl: RegExp;
   title: RegExp;
-  anchors: readonly RegExp[];
+  blockedText: RegExp;
 }>;
 
 const compatibilityRedirectRoutes = [
@@ -110,25 +117,25 @@ const safeUsefulRoutes = [
     role: 'rh',
     path: '/gamificacao-config',
     title: /Conteudos educativos/i,
-    anchors: [/Editor ativo de licoes/i, /Pontuacao, ranking, premios e Liga seguem desativados/i],
+    anchors: [/Editor ativo de licoes/i, /Biblioteca educativa/i, /contrato real de conteudo educativo/i],
   },
   {
     role: 'colaboradora',
     path: '/desafios',
     title: /Desafios da empresa/i,
-    anchors: [/Convite voluntario, sem ranking/i, /RH nao ve nomes nem progresso individual/i, /Sem Semaforo, NR-1, agenda, exames, pontos ou Liga/i],
+    anchors: [/Participacao voluntaria/i, /Contrato seguro/i, /participacao individual fica restrita a colaboradora/i],
   },
   {
     role: 'colaboradora',
     path: '/conquistas',
     title: /Minhas conquistas/i,
-    anchors: [/Privadas, deterministicas e sem badge legado/i, /Sem pontos, raridade, ranking ou compartilhamento/i],
+    anchors: [/Jornada privada/i, /Contrato seguro/i, /Visivel apenas para voce e para DSAR/i],
   },
   {
     role: 'colaboradora',
     path: '/objetivos',
     title: /Meus objetivos/i,
-    anchors: [/sem ranking/i, /Sem pontos, badges, comparacao ou ranking/i],
+    anchors: [/Jornada privada/i, /Contrato seguro/i, /Objetivos pessoais iniciados pela propria colaboradora/i],
   },
 ] as const satisfies ReadonlyArray<{
   role: SeedRole;
@@ -253,22 +260,22 @@ test.describe('Platform product boundary smoke', () => {
     assertProductBoundaryHostIsLoopback(baseURL);
     await context.clearCookies();
 
-    await page.goto('/liga');
+    await page.goto('/liga', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/auth\?redirect=%2Fliga$/);
 
-    await page.goto('/liga/gerenciar');
+    await page.goto('/liga/gerenciar', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/auth\?redirect=%2Fliga%2Fgerenciar$/);
   });
 
-  for (const route of containedRoutes) {
-    test(`${route.role} contained surface stays visibly blocked: ${route.path}`, async ({ page, context, request, baseURL }) => {
+  for (const route of moduleHoldRedirectRoutes) {
+    test(`${route.role} module HOLD route is hidden behind useful surface: ${route.path}`, async ({ page, context, request, baseURL }) => {
       assertProductBoundaryHostIsLoopback(baseURL);
       await authenticatedPage(page, context, request, baseURL!, route.role);
 
-      await page.goto(route.path);
-      await expect(page).toHaveURL(new RegExp(`${route.path.replace(/[/?]/g, '\\$&')}$`));
+      await page.goto(route.path, { waitUntil: 'domcontentloaded' });
+      await expect(page).toHaveURL(route.expectedUrl);
       await expect(page.getByRole('heading', { name: route.title })).toBeVisible();
-      await expectAnchors(page, route.anchors);
+      await expect(page.locator('body')).not.toContainText(route.blockedText);
       await expectNoUnsafeControlsOrClaims(page);
     });
   }
@@ -278,7 +285,7 @@ test.describe('Platform product boundary smoke', () => {
       assertProductBoundaryHostIsLoopback(baseURL);
       await authenticatedPage(page, context, request, baseURL!, route.role);
 
-      await page.goto(route.path);
+      await page.goto(route.path, { waitUntil: 'domcontentloaded' });
       await expect(page).toHaveURL(route.expectedUrl);
       await expect(page.getByRole('heading', { name: route.title })).toBeVisible();
       await expect(page.locator('body')).not.toContainText(route.blockedText);
@@ -291,7 +298,7 @@ test.describe('Platform product boundary smoke', () => {
       assertProductBoundaryHostIsLoopback(baseURL);
       await authenticatedPage(page, context, request, baseURL!, route.role);
 
-      await page.goto(route.path);
+      await page.goto(route.path, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { name: route.title })).toBeVisible();
       await expectAnchors(page, route.anchors);
       await expectNoUnsafeControlsOrClaims(page);
@@ -306,7 +313,7 @@ test.describe('Platform product boundary smoke', () => {
     fs.mkdirSync(evidenceDir, { recursive: true });
 
     await page.setViewportSize({ width: 1366, height: 900 });
-    await page.goto('/produtos-modulos');
+    await page.goto('/produtos-modulos', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
     await expectAnchors(page, [/Estados reais do contrato/i, /Modulo sensivel em HOLD/i, /Auditoria no backend/i]);
     await expectNoUnsafeControlsOrClaims(page);
@@ -314,7 +321,7 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-produtos-modulos.png'), fullPage: true });
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/produtos-modulos');
+    await page.goto('/produtos-modulos', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /Produtos e M.dulos/i })).toBeVisible();
     await expectAnchors(page, [/Modulo sensivel em HOLD/i, /Visibilidade nao e permissao/i]);
     await expectNoUnsafeControlsOrClaims(page);
@@ -330,7 +337,7 @@ test.describe('Platform product boundary smoke', () => {
     fs.mkdirSync(evidenceDir, { recursive: true });
 
     await page.setViewportSize({ width: 1366, height: 900 });
-    await page.goto('/historico');
+    await page.goto('/historico', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/dashboard\?section=exames$/);
     await expect(page.getByText('Atividade de exames')).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Historico indisponivel|Histórico indisponível/i);
@@ -338,7 +345,7 @@ test.describe('Platform product boundary smoke', () => {
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-historico-redirect-dashboard-exames.png'), fullPage: true });
 
-    await page.goto('/desafios/gerenciar');
+    await page.goto('/desafios/gerenciar', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/gamificacao-config$/);
     await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Gestao de desafios em revisao|Gestão de desafios em revisão/i);
@@ -346,7 +353,7 @@ test.describe('Platform product boundary smoke', () => {
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-desafios-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
 
-    await page.goto('/liga/gerenciar');
+    await page.goto('/liga/gerenciar', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/gamificacao-config$/);
     await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Gestao de ligas em revisao|Gest.o de ligas em revis.o|Liga em revisao|Liga em revis.o/i);
@@ -355,7 +362,7 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-liga-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/historico');
+    await page.goto('/historico', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/dashboard\?section=exames$/);
     await expect(page.getByText('Atividade de exames')).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Historico indisponivel|Histórico indisponível/i);
@@ -363,7 +370,7 @@ test.describe('Platform product boundary smoke', () => {
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-historico-redirect-dashboard-exames.png'), fullPage: true });
 
-    await page.goto('/desafios/gerenciar');
+    await page.goto('/desafios/gerenciar', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/gamificacao-config$/);
     await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Gestao de desafios em revisao|Gestão de desafios em revisão/i);
@@ -371,7 +378,7 @@ test.describe('Platform product boundary smoke', () => {
     await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-desafios-gerenciar-redirect-gamificacao-config.png'), fullPage: true });
 
-    await page.goto('/liga/gerenciar');
+    await page.goto('/liga/gerenciar', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/gamificacao-config$/);
     await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Gestao de ligas em revisao|Gest.o de ligas em revis.o|Liga em revisao|Liga em revis.o/i);
@@ -388,7 +395,7 @@ test.describe('Platform product boundary smoke', () => {
     fs.mkdirSync(evidenceDir, { recursive: true });
 
     await page.setViewportSize({ width: 1366, height: 900 });
-    await page.goto('/liga');
+    await page.goto('/liga', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/conquistas$/);
     await expect(page.getByRole('heading', { name: /Minhas conquistas/i })).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Liga em revisao|Liga em revis.o|nenhuma exposicao nominal|Promocao da pagina sem decisao/i);
@@ -397,7 +404,7 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-liga-redirect-conquistas.png'), fullPage: true });
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/liga');
+    await page.goto('/liga', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/conquistas$/);
     await expect(page.getByRole('heading', { name: /Minhas conquistas/i })).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/Liga em revisao|Liga em revis.o|nenhuma exposicao nominal|Promocao da pagina sem decisao/i);
@@ -414,7 +421,7 @@ test.describe('Platform product boundary smoke', () => {
     fs.mkdirSync(evidenceDir, { recursive: true });
 
     await page.setViewportSize({ width: 1366, height: 900 });
-    await page.goto('/colaboradora');
+    await page.goto('/colaboradora', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /Jornada privada/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Abrir objetivos/i })).toHaveAttribute('href', '/objetivos');
     await expect(page.getByRole('link', { name: /Abrir desafios/i })).toHaveAttribute('href', '/desafios');
@@ -425,7 +432,7 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-colaboradora-private-journey.png'), fullPage: true });
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/colaboradora');
+    await page.goto('/colaboradora', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /Jornada privada/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /Abrir objetivos/i })).toHaveAttribute('href', '/objetivos');
     await expect(page.getByRole('link', { name: /Abrir desafios/i })).toHaveAttribute('href', '/desafios');
@@ -443,7 +450,7 @@ test.describe('Platform product boundary smoke', () => {
 
     await authenticatedPage(page, context, request, baseURL!, 'admin');
     await page.setViewportSize({ width: 1366, height: 900 });
-    await page.goto('/admin');
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('navigation', { name: /Navega/i })).toBeVisible();
     await expectShellLinksHiddenFromNavigation(page);
     await expectNoHorizontalOverflow(page);
@@ -451,7 +458,7 @@ test.describe('Platform product boundary smoke', () => {
 
     await authenticatedPage(page, context, request, baseURL!, 'rh');
     await page.setViewportSize({ width: 1366, height: 900 });
-    await page.goto('/dashboard');
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Atividade de exames')).toBeVisible();
     await expect(page.getByRole('navigation', { name: /Navega/i })).toBeVisible();
     await expect(page.getByRole('navigation', { name: /Navega/i })).not.toContainText('Concierge');
@@ -460,7 +467,7 @@ test.describe('Platform product boundary smoke', () => {
     await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-rh-sidebar-shell-links-hidden.png'), fullPage: true });
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/dashboard');
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Atividade de exames')).toBeVisible();
     await page.getByRole('button', { name: /Abrir navega/i }).click();
     await expect(page.getByRole('dialog', { name: /Navega/i })).toBeVisible();
@@ -473,10 +480,11 @@ test.describe('Platform product boundary smoke', () => {
     assertProductBoundaryHostIsLoopback(baseURL);
     await authenticatedPage(page, context, request, baseURL!, 'colaboradora');
 
-    await page.goto('/avaliacao-nr1');
-    if (new URL(page.url()).pathname === '/nr1') {
-      await expect(page.getByRole('heading', { name: 'NR-1', exact: true })).toBeVisible();
-      await expectAnchors(page, [/Contrato pendente/i, /Permanece bloqueado/i]);
+    await page.goto('/avaliacao-nr1', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\/(?:colaboradora|avaliacao-nr1)$/);
+    if (new URL(page.url()).pathname === '/colaboradora') {
+      await expect(page.getByRole('heading', { name: /Jornada privada/i })).toBeVisible();
+      await expect(page.locator('body')).not.toContainText(/Contrato pendente|Permanece bloqueado|Shell estatico sem chamadas Yavix|COPSOQ/i);
     } else {
       await expect(page).toHaveURL(/\/avaliacao-nr1$/);
       await expectAnchors(page, [

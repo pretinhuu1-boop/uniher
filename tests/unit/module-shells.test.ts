@@ -10,26 +10,44 @@ const shellPages = [
   'src/app/(platform)/desenvolvimento-humano/page.tsx',
   'src/app/(platform)/canal-denuncias/page.tsx',
 ] as const;
+const redirectHelper = 'src/components/platform/ModuleHoldRedirect.tsx';
 
 function read(relativePath: string): string {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
 describe('Paola P3 locked module shells', () => {
-  it.each(shellPages)('keeps %s as a contained static shell', (relativePath) => {
+  it.each(shellPages)('keeps %s hidden behind compatibility redirects', (relativePath) => {
     const source = read(relativePath);
 
-    expect(source).toContain('ContainedSurfacePreview');
-    expect(source).toContain('allowedItems');
-    expect(source).toContain('blockedItems');
+    expect(source).toContain('ModuleHoldRedirect');
+    expect(source).toMatch(/loginRedirect="%2F(?:concierge|nr1|viva-sipat|desenvolvimento-humano|canal-denuncias)"/);
+    expect(source).not.toContain('ContainedSurfacePreview');
+    expect(source).not.toContain('allowedItems');
+    expect(source).not.toContain('blockedItems');
+    expect(source).not.toMatch(/useSWR|fetch\s*\(|getReadDb|getWriteQueue|initDb|withAuth|onSubmit|router\.push|<form|<input|<textarea|\/api\//i);
+  });
+
+  it('keeps contract-gated module redirects centralized on useful authenticated surfaces', () => {
+    const source = read(redirectHelper);
+
+    expect(source).toContain('useAuth');
+    expect(source).toContain('useRouter');
+    expect(source).toContain('AuthLoadingScreen');
+    expect(source).toContain("router.replace(`/auth?redirect=${loginRedirect}`)");
+    expect(source).toContain("router.replace('/admin?tab=empresas')");
+    expect(source).toContain("router.replace('/produtos-modulos')");
+    expect(source).toContain('Boolean(user.also_collaborator)');
+    expect(source).toContain("router.replace('/colaboradora')");
+    expect(source).toContain("router.replace('/dashboard')");
+    expect(source).not.toContain('ContainedSurfacePreview');
     expect(source).not.toMatch(/useSWR|fetch\s*\(|getReadDb|getWriteQueue|initDb|withAuth|onSubmit|router\.push|<form|<input|<textarea|\/api\//i);
   });
 
   it('keeps Viva SIPAT source-needed and does not invent content', () => {
     const source = read('src/app/(platform)/viva-sipat/page.tsx');
 
-    expect(source).toContain('Fonte de conteúdo pendente');
-    expect(source).toContain('não cria aulas, campanhas, vídeos ou materiais novos');
+    expect(source).toContain('ModuleHoldRedirect');
     expect(source).not.toMatch(/certificado emitido|conte[uú]do publicado|aula dispon[ií]vel|cronograma oficial/i);
   });
 
@@ -87,8 +105,8 @@ describe('Paola P3 locked module shells', () => {
   it('keeps NR-1 as a contract-gated shell separate from COPSOQ runtime', () => {
     const source = read('src/app/(platform)/nr1/page.tsx');
 
-    expect(source).toContain('Contrato pendente');
-    expect(source).toContain('COPSOQ');
+    expect(source).toContain('ModuleHoldRedirect');
+    expect(source).not.toContain('COPSOQ');
     expect(source).not.toMatch(/CopsoqFlow|useCopsoq|\/api\/yavix\/copsoq|<form|<input|<textarea/i);
   });
 
@@ -111,8 +129,7 @@ describe('Paola P3 locked module shells', () => {
   it('keeps the denunciation shell partner-managed without receiving reports', () => {
     const source = read('src/app/(platform)/canal-denuncias/page.tsx');
 
-    expect(source).toContain('Parceiro pendente');
-    expect(source).toContain('Nenhum relato, protocolo, caixa de entrada');
+    expect(source).toContain('ModuleHoldRedirect');
     expect(source).not.toMatch(/<textarea|<input|method=['"]post|fetch\s*\(|api\/denuncia|api\/denuncias/i);
   });
 

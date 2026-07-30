@@ -69,16 +69,25 @@ The collaborator home had a recoverable company campaigns affordance in the prev
 - keep the card free of XP, ranking, points, rewards, league, badges or comparison copy;
 - do not introduce a new campaign API, join flow or management behavior from this wave.
 
+## Current module direct-shell hiding wave
+
+Direct module URLs for products without approved runtime contracts were still showing contained spec/HOLD shells. The safe implementation is compatibility routing only:
+
+- `/concierge`, `/canal-denuncias`, `/viva-sipat` and `/desenvolvimento-humano` send Admin users to `/admin?tab=empresas`;
+- `/nr1` sends RH users to `/produtos-modulos` and colaboradoras to `/colaboradora`;
+- unauthenticated users keep auth redirects with the original targets;
+- no Concierge case workflow, Denuncias intake, SIPAT operation, Desenvolvimento Humano trail or NR-1/Yavix runtime behavior is introduced.
+
 ## Remaining authenticated spec inventory
 
 | Surface | Decision |
 | --- | --- |
 | `/produtos-modulos` | Promoted: real module status/limited governance UI |
-| `/concierge` | HOLD direct URL; hidden from navigation until operational contract, SLA and data boundaries exist |
-| `/canal-denuncias` | HOLD direct URL; hidden from navigation until partner/legal/DPO decision before intake |
-| `/viva-sipat` | HOLD direct URL; hidden from navigation until approved source package exists |
-| `/desenvolvimento-humano` | HOLD direct URL; hidden from navigation until approved content/trail contract exists |
-| `/nr1` | HOLD direct URL; hidden from navigation until real Yavix/COPSOQ contract intake promotes it |
+| `/concierge` | Compatibility redirect; operational contract, SLA and data boundaries remain HOLD |
+| `/canal-denuncias` | Compatibility redirect; partner/legal/DPO decision before intake remains HOLD |
+| `/viva-sipat` | Compatibility redirect; approved source package remains HOLD |
+| `/desenvolvimento-humano` | Compatibility redirect; approved content/trail contract remains HOLD |
+| `/nr1` | Compatibility redirect; real Yavix/COPSOQ contract intake remains HOLD |
 | `/liga`, `/liga/gerenciar` | Compatibility redirects; Liga/ranking/rewards product remains HOLD_PRIVACY_PRODUCT |
 | `/desafios/gerenciar` | Compatibility redirect; governed challenge admin remains HOLD |
 | `/historico` | Compatibility redirect; dedicated history product remains HOLD_PRODUCTIZE_HISTORY |
