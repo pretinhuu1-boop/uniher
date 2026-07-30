@@ -20,19 +20,24 @@ Continue the authenticated UniHER recovery until screens do not show specs, plac
 
 ## Active Wave
 
-Use the authenticated no-spec matrix to run the next product edit wave.
+Run a rendered authenticated route sweep from the no-spec matrix to select the next product edit wave.
 
 Matrix artifact:
 
 - `docs/superpowers/audits/2026-07-30-uniher-authenticated-no-spec-matrix.md`
 
-Next implementation target:
+Current completed implementation target:
 
 - `/gamificacao-config` copy hardening.
-- Decision: `COPY_FIX`.
-- Reason: the route is a real RH/Admin education/private journey surface, but the source scan still finds rendered internal governance vocabulary.
-- Boundary: copy-only unless a focused RED/GREEN canary proves a real behavior gap.
-- Denylist: public landing, permissions, APIs, database contracts, ranking/rewards/Liga behavior, NR-1/Yavix/COPSOQ, Concierge, Denuncias, SIPAT and Desenvolvimento Humano.
+- Decision: `PASS_REAL_PRODUCT` after local RED/GREEN and visual evidence.
+- Receipt: `docs/superpowers/audits/2026-07-30-uniher-gamificacao-config-copy-wave.md`.
+- Production status: pending deploy/smoke for the commit containing that receipt.
+
+Next selection target:
+
+- run a rendered authenticated route sweep from the matrix;
+- update the matrix if new `COPY_FIX`, `COMPAT_REDIRECT`, `HOLD_HIDDEN` or `PROMOTE` candidates appear;
+- keep the same denylist: public landing, permissions, APIs, database contracts, ranking/rewards/Liga behavior, NR-1/Yavix/COPSOQ, Concierge, Denuncias, SIPAT and Desenvolvimento Humano.
 
 Required matrix columns for ongoing maintenance:
 
@@ -64,7 +69,8 @@ The next implementation wave must be selected from this matrix. If a route has n
 | `/avaliacao-nr1` | Fail-closed unless explicit mock runtime is active | Done |
 | `/objetivos`, `/desafios`, `/conquistas`, navigation copy | Internal contract/governance wording removed from real product surfaces | Done |
 | Global authenticated no-spec matrix | Required before the next product edit | Done |
-| `/gamificacao-config` copy hardening | Remove internal governance/spec vocabulary from a real RH/Admin surface | Active |
+| `/gamificacao-config` copy hardening | Remove internal governance/spec vocabulary from a real RH/Admin surface | Done locally; production pending |
+| Rendered authenticated route sweep | Select the next no-spec recovery target from the matrix | Active |
 | Concierge operations | Operational contract, SLA, data governance | HOLD |
 | Canal de Denuncias intake | Partner/legal/DPO workflow | HOLD |
 | SIPAT operations | Approved source package | HOLD |

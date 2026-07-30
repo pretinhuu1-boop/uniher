@@ -341,7 +341,7 @@ export default function EducationalLessonsManagerPage() {
     <div className={styles.page}>
       <h1 className={styles.title}>Conteudos educativos</h1>
       <p className={styles.subtitle}>
-        Editor ativo de licoes para RH, com publicacao educativa e governanca privada.
+        Editor ativo de licoes para RH, com publicacao educativa e acompanhamento responsavel.
       </p>
 
       <div className={styles.sections}>
@@ -352,7 +352,7 @@ export default function EducationalLessonsManagerPage() {
           </div>
 
           <p className={styles.sectionDesc}>
-            Liste, filtre, crie e mantenha licoes da empresa usando o contrato real de conteudo educativo. Licoes globais ou
+            Liste, filtre, crie e mantenha licoes da empresa usando o fluxo aprovado de conteudo educativo. Licoes globais ou
             ja vencidas podem aparecer como somente leitura.
           </p>
 
@@ -500,7 +500,7 @@ export default function EducationalLessonsManagerPage() {
             <div className={styles.lessonModalHeader}>
               <div>
                 <h2 id="lesson-modal-title" className={styles.modalTitle}>{editingLesson ? 'Editar licao' : 'Nova licao'}</h2>
-                <p className={styles.lessonModalSubtitle}>Preencha o contrato educativo. Dados competitivos continuam bloqueados.</p>
+                <p className={styles.lessonModalSubtitle}>Preencha os campos educativos. Dados competitivos continuam bloqueados.</p>
               </div>
               <button type="button" className={styles.lessonCloseBtn} onClick={closeForm} aria-label="Fechar">x</button>
             </div>
@@ -596,7 +596,7 @@ export default function EducationalLessonsManagerPage() {
                     <span className={styles.lessonStep}>4</span>
                     <div>
                       <strong>Validacao interna</strong>
-                      <p>Marque quando o conteudo ja passou pela revisao responsavel.</p>
+                      <p>Marque quando o conteudo ja passou pela validacao responsavel.</p>
                     </div>
                   </div>
 

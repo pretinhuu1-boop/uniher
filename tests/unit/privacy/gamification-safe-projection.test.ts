@@ -704,6 +704,7 @@ describe('safe authenticated projections', () => {
     const educationManager = read('src/app/(platform)/gamificacao-config/page.tsx');
     expect(educationManager).toContain('/api/rh/lessons');
     expect(educationManager).toContain('Conteudos educativos');
+    expect(foldText(educationManager)).not.toMatch(/governanca privada|contrato real|contrato educativo/i);
     expect(educationManager).not.toMatch(/xp_reward|week_points|points_spent|pontos totais|subir de nÃ­vel|ranking semanal|exibir no ranking|\/api\/gamification\/(?:rewards|league)/i);
 
     const approvedParticipationPages = [

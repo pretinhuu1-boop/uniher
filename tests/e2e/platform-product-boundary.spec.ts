@@ -118,7 +118,8 @@ const safeUsefulRoutes = [
     role: 'rh',
     path: '/gamificacao-config',
     title: /Conteudos educativos/i,
-    anchors: [/Editor ativo de licoes/i, /Biblioteca educativa/i, /contrato real de conteudo educativo/i],
+    anchors: [/Editor ativo de licoes/i, /Biblioteca educativa/i, /campos editoriais aprovados/i],
+    blockedText: /governanca privada|contrato real|contrato educativo/i,
   },
   {
     role: 'colaboradora',
@@ -307,6 +308,32 @@ test.describe('Platform product boundary smoke', () => {
       await expectNoUnsafeControlsOrClaims(page);
     });
   }
+
+  test('RH visual smoke captures gamificacao config copy hardening desktop and mobile', async ({ page, context, request, baseURL }) => {
+    assertProductBoundaryHostIsLoopback(baseURL);
+    await authenticatedPage(page, context, request, baseURL!, 'rh');
+
+    const evidenceDir = path.resolve(__dirname, '..', '..', 'docs', 'superpowers', 'evidence', 'gamificacao-config-copy-local-2026-07-30');
+    fs.mkdirSync(evidenceDir, { recursive: true });
+
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto('/gamificacao-config', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
+    await expectAnchors(page, [/Editor ativo de licoes/i, /Biblioteca educativa/i, /campos editoriais aprovados/i]);
+    await expect(page.locator('body')).not.toContainText(/governanca privada|contrato real|contrato educativo/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'desktop-1366-gamificacao-config.png'), fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/gamificacao-config', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: /Conteudos educativos/i })).toBeVisible();
+    await expectAnchors(page, [/Editor ativo de licoes/i, /campos editoriais aprovados/i]);
+    await expect(page.locator('body')).not.toContainText(/governanca privada|contrato real|contrato educativo/i);
+    await expectNoUnsafeControlsOrClaims(page);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: path.join(evidenceDir, 'mobile-390-gamificacao-config.png'), fullPage: true });
+  });
 
   test('RH visual smoke captures Produtos e Modulos desktop and mobile without overflow', async ({ page, context, request, baseURL }) => {
     assertProductBoundaryHostIsLoopback(baseURL);

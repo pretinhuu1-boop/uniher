@@ -21,6 +21,7 @@ describe('gamification product copy boundary', () => {
 
     expect(educationSource).toContain('/api/rh/lessons');
     expect(educationSource).toContain('Editor ativo de licoes');
+    expect(educationSource).not.toMatch(/governanca privada|contrato real|contrato educativo/i);
     expect(educationSource).not.toMatch(/\/api\/gamification\/(?:rewards|league)|xp_reward|loja de recompensas|recompensas dispon|resgatar|comprar recompensa|ranking geral|leaderboard|ganh[ae] pontos|xp ganho/i);
   });
 
