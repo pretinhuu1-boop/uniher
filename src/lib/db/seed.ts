@@ -38,12 +38,12 @@ async function seed() {
       if (existingArch.c === 0) {
         console.log('[seed] Inserindo arquétipos...');
         const archetypes = [
-          { id: 'arch_guardia', key: 'guardia', name: 'Guardiã Resiliente', desc: 'Cuida de todos ao redor mas às vezes esquece de si.', base: [2,3,2.5,3,2.5,3], g30: [3.5,4,3.5,4.5,3.5,4.5], missions: 12, campaigns: 3, habits: 8 },
-          { id: 'arch_protetora', key: 'protetora', name: 'Protetora Silenciosa', desc: 'Sabe o que precisa mas adia por falta de tempo.', base: [2,3.5,2.5,2.5,2.5,2.5], g30: [4,4.5,3.5,3.5,3.5,4], missions: 10, campaigns: 4, habits: 10 },
-          { id: 'arch_guerreira', key: 'guerreira', name: 'Guerreira em Evolução', desc: 'Já prioriza a saúde e quer avançar.', base: [5.5,5,4.8,5,5.2,5.5], g30: [6.5,6,6,6.2,6.5,7], missions: 18, campaigns: 5, habits: 14 },
-          { id: 'arch_equilibrista', key: 'equilibrista', name: 'Equilibrista Zen', desc: 'Busca equilíbrio em tudo que faz.', base: [4,3.8,4,4.5,4.2,4.7], g30: [5,5,5.5,5.5,5.5,6], missions: 15, campaigns: 4, habits: 12 },
-          { id: 'arch_exploradora', key: 'exploradora', name: 'Exploradora de Hábitos', desc: 'Sempre testando novas formas de cuidar da saúde.', base: [3,4,3.5,4,3,4], g30: [4.5,5.5,4.5,5,4.5,5.5], missions: 20, campaigns: 4, habits: 15 },
-          { id: 'arch_soberana', key: 'soberana', name: 'Soberana do Autocuidado', desc: 'Domina sua saúde e inspira outras.', base: [7,7.5,7,8,7.5,8], g30: [8,8.5,8,8.5,8,9], missions: 25, campaigns: 6, habits: 20 },
+          { id: 'arc_guardia', key: 'guardia', name: 'Guardiã Resiliente', desc: 'Cuida de todos ao redor mas às vezes esquece de si.', base: [2,3,2.5,3,2.5,3], g30: [3.5,4,3.5,4.5,3.5,4.5], missions: 12, campaigns: 3, habits: 8 },
+          { id: 'arc_protetora', key: 'protetora', name: 'Protetora Silenciosa', desc: 'Sabe o que precisa mas adia por falta de tempo.', base: [2,3.5,2.5,2.5,2.5,2.5], g30: [4,4.5,3.5,3.5,3.5,4], missions: 10, campaigns: 4, habits: 10 },
+          { id: 'arc_guerreira', key: 'guerreira', name: 'Guerreira em Evolução', desc: 'Já prioriza a saúde e quer avançar.', base: [5.5,5,4.8,5,5.2,5.5], g30: [6.5,6,6,6.2,6.5,7], missions: 18, campaigns: 5, habits: 14 },
+          { id: 'arc_equilibrista', key: 'equilibrista', name: 'Equilibrista Zen', desc: 'Busca equilíbrio em tudo que faz.', base: [4,3.8,4,4.5,4.2,4.7], g30: [5,5,5.5,5.5,5.5,6], missions: 15, campaigns: 4, habits: 12 },
+          { id: 'arc_exploradora', key: 'exploradora', name: 'Exploradora de Hábitos', desc: 'Sempre testando novas formas de cuidar da saúde.', base: [3,4,3.5,4,3,4], g30: [4.5,5.5,4.5,5,4.5,5.5], missions: 20, campaigns: 4, habits: 15 },
+          { id: 'arc_soberana', key: 'soberana', name: 'Soberana do Autocuidado', desc: 'Domina sua saúde e inspira outras.', base: [7,7.5,7,8,7.5,8], g30: [8,8.5,8,8.5,8,9], missions: 25, campaigns: 6, habits: 20 },
         ];
         const archStmt = db.prepare('INSERT INTO archetypes (id, key, name, description, base_scores, growth_30, growth_60, growth_90, missions, campaigns, habits) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         archetypes.forEach(a => archStmt.run(a.id, a.key, a.name, a.desc, JSON.stringify(a.base), JSON.stringify(a.g30), JSON.stringify(a.g30), JSON.stringify(a.g30), a.missions, a.campaigns, a.habits));
@@ -74,11 +74,11 @@ async function seed() {
       if (existingCh.c === 0) {
         console.log('[seed] Inserindo desafios padrão...');
         const challenges = [
-          { id: 'ch_1', title: 'Ritual de Meditação', cat: 'Saúde Mental', steps: 5, arche: 'arch_protetora' },
-          { id: 'ch_2', title: 'Hidratação 2L', cat: 'Hábitos', steps: 5, arche: 'arch_guardia' },
-          { id: 'ch_3', title: 'Sono Reparador', cat: 'Sono', steps: 7, arche: 'arch_guardia' },
-          { id: 'ch_4', title: 'Pausas Ativas', cat: 'Energia', steps: 10, arche: 'arch_guerreira' },
-          { id: 'ch_5', title: 'Mindfulness 10 min', cat: 'Saúde Mental', steps: 3, arche: 'arch_protetora' },
+          { id: 'ch_1', title: 'Ritual de Meditação', cat: 'Saúde Mental', steps: 5, arche: 'arc_protetora' },
+          { id: 'ch_2', title: 'Hidratação 2L', cat: 'Hábitos', steps: 5, arche: 'arc_guardia' },
+          { id: 'ch_3', title: 'Sono Reparador', cat: 'Sono', steps: 7, arche: 'arc_guardia' },
+          { id: 'ch_4', title: 'Pausas Ativas', cat: 'Energia', steps: 10, arche: 'arc_guerreira' },
+          { id: 'ch_5', title: 'Mindfulness 10 min', cat: 'Saúde Mental', steps: 3, arche: 'arc_protetora' },
         ];
         const chStmt = db.prepare('INSERT OR IGNORE INTO challenges (id, title, description, category, points, total_steps, archetype_id, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, 1)');
         challenges.forEach(c => chStmt.run(c.id, c.title, c.title, c.cat, 100, c.steps, c.arche));
