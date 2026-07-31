@@ -7,7 +7,7 @@
  */
 import { test, expect, Page } from '@playwright/test';
 
-const BASE = 'http://localhost:3000';
+const BASE = process.env.BASE_URL || 'http://localhost:3000';
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASS = 'Admin@2026';
 const DEMO_RH_EMAIL = 'contabilidade@eduardaeyurimarketingltda.com.br';
@@ -162,7 +162,7 @@ test.describe('Master Admin — Visual UX', () => {
   });
 
   test('Sidebar — Notificações e Configurações acessíveis', async () => {
-    await page.locator('text=Notificações').first().click();
+    await page.getByRole('link', { name: /Notifica/i }).click();
     await page.waitForURL('**/notificacoes');
     await expect(page.locator('h1:has-text("Notificações"), h2:has-text("Notificações")')).toBeVisible();
     await page.goBack();
@@ -231,7 +231,9 @@ test.describe('Admin Empresa — Visual UX', () => {
   test('Semáforo de Saúde carrega', async () => {
     await page.goto(`${BASE}/semaforo`);
     await page.waitForTimeout(3000);
-    await expect(page.locator('text=Semáforo').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', {
+      name: /Sem.foro da Sa.de/i,
+    }).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('Troca para Colaboradora funciona', async () => {
