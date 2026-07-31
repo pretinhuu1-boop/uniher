@@ -14,7 +14,11 @@ export const GET = withRole('lideranca')(async (_req: NextRequest, context: any)
   const companyId = context.auth.companyId;
 
   // Get leader's department
-  const leader = db.prepare('SELECT department_id, can_approve FROM users WHERE id = ?').get(userId) as any;
+  const leader = db.prepare(`
+    SELECT department_id, can_approve
+    FROM users
+    WHERE id = ? AND company_id = ? AND role = 'lideranca' AND deleted_at IS NULL
+  `).get(userId, context.auth.companyId) as any;
   if (!leader?.department_id) {
     return NextResponse.json({ error: 'Sem setor vinculado', team: [], stats: null }, { status: 200 });
   }
@@ -57,16 +61,31 @@ export const POST = withRole('lideranca')(async (req: NextRequest, context: any)
     return NextResponse.json({ error: 'Sem permissão para aprovar. Solicite ao admin.' }, { status: 403 });
   }
 
-  // Verify target is in same department
-  const target = db.prepare('SELECT id, department_id, company_id FROM users WHERE id = ? AND deleted_at IS NULL').get(targetUserId) as any;
-  if (!target || target.department_id !== leader.department_id) {
+  const target = db.prepare(`
+    SELECT id
+    FROM users
+    WHERE id = ?
+      AND company_id = ?
+      AND department_id = ?
+      AND role = 'colaboradora'
+      AND deleted_at IS NULL
+  `).get(targetUserId, context.auth.companyId, leader.department_id) as any;
+  if (!target) {
     return NextResponse.json({ error: 'Colaboradora não encontrada no seu setor' }, { status: 404 });
   }
 
   if (action === 'approve') {
     const wq = getWriteQueue();
     await wq.enqueue((db) => {
-      db.prepare('UPDATE users SET approved = 1 WHERE id = ?').run(targetUserId);
+      db.prepare(`
+        UPDATE users
+        SET approved = 1
+        WHERE id = ?
+          AND company_id = ?
+          AND department_id = ?
+          AND role = 'colaboradora'
+          AND deleted_at IS NULL
+      `).run(targetUserId, context.auth.companyId, leader.department_id);
     });
 
     // Notify the approved user

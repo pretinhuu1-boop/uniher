@@ -24,17 +24,17 @@ export interface LeagueEntry {
   league: League;
 }
 
-export function getLeagueRanking(league: League, weekStart?: string): LeagueEntry[] {
+export function getLeagueRanking(league: League, weekStart: string | undefined, companyId: string): LeagueEntry[] {
   const db = getReadDb();
   const ws = weekStart || getWeekStart();
   const rows = db.prepare(`
     SELECT ul.user_id, ul.week_points, ul.league, u.name, u.avatar_url
     FROM user_leagues ul
     JOIN users u ON u.id = ul.user_id
-    WHERE ul.week_start = ? AND ul.league = ?
+    WHERE ul.week_start = ? AND ul.league = ? AND u.company_id = ?
     ORDER BY ul.week_points DESC
     LIMIT 50
-  `).all(ws, league) as any[];
+  `).all(ws, league, companyId) as any[];
 
   return rows.map((r, i) => ({
     rank: i + 1,
@@ -60,17 +60,25 @@ export function getUserLeagueStatus(userId: string): {
   const ws = getWeekStart();
 
   const entry = db.prepare('SELECT * FROM user_leagues WHERE user_id = ? AND week_start = ?').get(userId, ws) as any;
-  const user = db.prepare('SELECT league FROM users WHERE id = ?').get(userId) as any;
+  const user = db.prepare('SELECT league, company_id FROM users WHERE id = ?').get(userId) as any;
   const currentLeague = (entry?.league || user?.league || 'bronze') as League;
   const weekPoints = entry?.week_points || 0;
 
   // Count rank within league
-  const above = db.prepare('SELECT COUNT(*) as c FROM user_leagues WHERE week_start = ? AND league = ? AND week_points > ?')
-    .get(ws, currentLeague, weekPoints) as { c: number };
+  const above = db.prepare(`
+    SELECT COUNT(*) as c
+    FROM user_leagues ul
+    JOIN users u ON u.id = ul.user_id
+    WHERE ul.week_start = ? AND ul.league = ? AND ul.week_points > ? AND u.company_id = ?
+  `).get(ws, currentLeague, weekPoints, user?.company_id) as { c: number };
   const rank = above.c + 1;
 
-  const total = db.prepare('SELECT COUNT(*) as c FROM user_leagues WHERE week_start = ? AND league = ?')
-    .get(ws, currentLeague) as { c: number };
+  const total = db.prepare(`
+    SELECT COUNT(*) as c
+    FROM user_leagues ul
+    JOIN users u ON u.id = ul.user_id
+    WHERE ul.week_start = ? AND ul.league = ? AND u.company_id = ?
+  `).get(ws, currentLeague, user?.company_id) as { c: number };
 
   const meta = LEAGUE_META[currentLeague];
   const promoteZone = rank <= meta.promoteTop;

@@ -19,30 +19,44 @@ export const GET = withRole('rh', 'lideranca', 'admin')(async (req: NextRequest,
   const month = url.searchParams.get('month');
   const type = url.searchParams.get('type');
 
-  let query = `
-    SELECT he.id, he.title, he.type, he.date, he.time, he.status, he.notes,
-           u.name as user_name, u.email as user_email, u.id as user_id
-    FROM health_events he
-    JOIN users u ON u.id = he.user_id
-    WHERE he.company_id = ? AND he.deleted_at IS NULL
-  `;
+  const where = ['he.company_id = ?', 'he.deleted_at IS NULL'];
   const params: any[] = [companyId];
 
+  if (context.auth.role === 'lideranca') {
+    const leader = db.prepare(`
+      SELECT department_id
+      FROM users
+      WHERE id = ? AND company_id = ? AND role = 'lideranca' AND deleted_at IS NULL
+    `).get(context.auth.userId, companyId) as { department_id: string | null } | undefined;
+    if (!leader?.department_id) {
+      return NextResponse.json({
+        events: [],
+        stats: { total: 0, pending: 0, completed: 0, missed: 0, exames: 0, consultas: 0 },
+      });
+    }
+    where.push('u.department_id = ?');
+    params.push(leader.department_id);
+  }
+
   if (month) {
-    query += ` AND he.date LIKE ?`;
+    where.push('he.date LIKE ?');
     params.push(month + '%');
   }
 
   if (type && type !== 'all') {
-    query += ` AND he.type = ?`;
+    where.push('he.type = ?');
     params.push(type);
   }
 
-  query += ` ORDER BY he.date ASC, he.time ASC`;
+  const events = db.prepare(`
+    SELECT he.date, he.type, he.status, COUNT(*) as count
+    FROM health_events he
+    JOIN users u ON u.id = he.user_id
+    WHERE ${where.join(' AND ')}
+    GROUP BY he.date, he.type, he.status
+    ORDER BY he.date ASC, he.type ASC, he.status ASC
+  `).all(...params);
 
-  const events = db.prepare(query).all(...params);
-
-  // Stats
   const stats = db.prepare(`
     SELECT
       COUNT(*) as total,
@@ -51,9 +65,10 @@ export const GET = withRole('rh', 'lideranca', 'admin')(async (req: NextRequest,
       COUNT(CASE WHEN status = 'missed' THEN 1 END) as missed,
       COUNT(CASE WHEN type = 'exame' THEN 1 END) as exames,
       COUNT(CASE WHEN type = 'consulta' THEN 1 END) as consultas
-    FROM health_events
-    WHERE company_id = ? AND deleted_at IS NULL
-  `).get(companyId);
+    FROM health_events he
+    JOIN users u ON u.id = he.user_id
+    WHERE ${where.join(' AND ')}
+  `).get(...params);
 
   return NextResponse.json({ events, stats });
 });

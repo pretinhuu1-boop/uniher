@@ -30,8 +30,12 @@ export const GET = withRole('rh', 'lideranca')(async (_req, context) => {
   const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
   if (!user?.company_id) return NextResponse.json({ invites: [] });
 
+  const tokenProjection = context.auth.role === 'rh' ? ', i.token' : '';
   const invites = db.prepare(`
-    SELECT i.*, u.name as invited_by_name, d.name as department_name
+    SELECT i.id, i.company_id, i.email, i.role, i.department_id,
+           i.status, i.invited_by, i.expires_at, i.name, i.created_at,
+           u.name as invited_by_name, d.name as department_name
+           ${tokenProjection}
     FROM invites i
     LEFT JOIN users u ON u.id = i.invited_by
     LEFT JOIN departments d ON d.id = i.department_id

@@ -665,7 +665,7 @@ export default function ConvitesPage() {
                   </td>
                   <td className={styles.td} data-label="Ações">
                     <div className={styles.rowActions}>
-                      {inv.status === 'pending' && (
+                      {inv.status === 'pending' && inv.token && (
                         <>
                           <button
                             className={`${styles.rowBtn} ${copiedId === inv.id ? styles.rowBtnCopied : ''}`}
@@ -681,7 +681,7 @@ export default function ConvitesPage() {
                           </button>
                         </>
                       )}
-                      {inv.status !== 'pending' && (
+                      {(inv.status !== 'pending' || !inv.token) && (
                         <span style={{ color: 'var(--text-400)', fontSize: '0.75rem' }}>—</span>
                       )}
                     </div>

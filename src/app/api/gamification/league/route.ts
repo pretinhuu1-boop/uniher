@@ -5,6 +5,6 @@ import { getUserLeagueStatus, getLeagueRanking } from '@/services/league.service
 export const GET = withAuth(async (_req, context) => {
   const userId = context.auth.userId;
   const status = getUserLeagueStatus(userId);
-  const ranking = getLeagueRanking(status.currentLeague, status.weekStart);
+  const ranking = getLeagueRanking(status.currentLeague, status.weekStart, context.auth.companyId);
   return NextResponse.json({ status, ranking });
 });

@@ -25,7 +25,7 @@ export default function AgendaPage() {
   const [msg, setMsg] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
 
-  // Collaborator: own events. Manager: team events.
+  // Collaborator: own events. Manager: privacy-preserving team aggregates.
   const apiBase = isManager ? '/api/rh/agenda' : '/api/collaborator/agenda';
   const params = new URLSearchParams({ month });
   if (filterType) params.set('type', filterType);
@@ -101,10 +101,10 @@ export default function AgendaPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 24, fontFamily: 'var(--ff-display, Playfair Display, serif)', fontWeight: 700, color: '#1a2a4a', margin: 0 }}>
-            📅 {isManager ? 'Agenda do Time' : 'Minha Agenda de Saúde'}
+            📅 {isManager ? 'Indicadores da Agenda' : 'Minha Agenda de Saúde'}
           </h1>
           <p style={{ color: '#8a7a6a', fontSize: 14, marginTop: 4 }}>
-            {isManager ? 'Exames e consultas das colaboradoras' : 'Organize seus exames, consultas e lembretes'}
+            {isManager ? 'Visão agregada, sem dados clínicos ou identificação individual' : 'Organize seus exames, consultas e lembretes'}
           </p>
         </div>
         {!isManager && (
@@ -222,7 +222,7 @@ export default function AgendaPage() {
         <div style={{ textAlign: 'center', padding: 60, color: '#8a7a6a', background: '#fff', borderRadius: 12, border: '1px solid #e8dfd0' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
           <p style={{ fontWeight: 600, color: '#5a4a3a' }}>Nenhum evento neste mês</p>
-          <p style={{ fontSize: 13, marginTop: 4 }}>{isManager ? 'As colaboradoras ainda não agendaram eventos.' : 'Clique em "+ Novo evento" para agendar um exame ou consulta.'}</p>
+          <p style={{ fontSize: 13, marginTop: 4 }}>{isManager ? 'Nenhum indicador agregado neste período.' : 'Clique em "+ Novo evento" para agendar um exame ou consulta.'}</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -233,23 +233,20 @@ export default function AgendaPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {(evts as any[]).map((e: any) => (
-                  <div key={e.id} style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e8dfd0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                  <div key={e.id ?? `${e.date}-${e.type}-${e.status}`} style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e8dfd0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 200 }}>
                       <span style={{ fontSize: 28 }}>{TYPE_ICONS[e.type] || '📋'}</span>
                       <div>
                         <div style={{ fontWeight: 600, color: '#1a2a4a' }}>
-                          {e.title}
-                          {e.time && <span style={{ fontSize: 12, color: '#8a7a6a', marginLeft: 8 }}>às {e.time}</span>}
+                          {isManager ? `${e.count} ${TYPE_LABELS[e.type] ?? 'evento'}${e.count === 1 ? '' : 's'}` : e.title}
+                          {!isManager && e.time && <span style={{ fontSize: 12, color: '#8a7a6a', marginLeft: 8 }}>às {e.time}</span>}
                         </div>
                         <div style={{ fontSize: 12, color: '#8a7a6a', marginTop: 2 }}>
                           <span style={{ background: `${STATUS_COLORS[e.status]}15`, color: STATUS_COLORS[e.status], padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
                             {STATUS_LABELS[e.status] || e.status}
                           </span>
-                          {isManager && e.user_name && (
-                            <span style={{ marginLeft: 8 }}>— {e.user_name}</span>
-                          )}
                         </div>
-                        {e.notes && <div style={{ fontSize: 12, color: '#8a7a6a', marginTop: 4, fontStyle: 'italic' }}>{e.notes}</div>}
+                        {!isManager && e.notes && <div style={{ fontSize: 12, color: '#8a7a6a', marginTop: 4, fontStyle: 'italic' }}>{e.notes}</div>}
                       </div>
                     </div>
                     {!isManager && e.status === 'pending' && (

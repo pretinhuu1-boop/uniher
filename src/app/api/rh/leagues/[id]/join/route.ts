@@ -11,10 +11,13 @@ import { getWeekStart } from '@/services/gamification.service';
 
 export const POST = withAuth(async (_req, context) => {
   const userId = context.auth.userId;
+  const companyId = context.auth.companyId;
   const { id: leagueId } = await context.params;
   const db = getReadDb();
 
-  const league = db.prepare('SELECT * FROM custom_leagues WHERE id = ? AND is_active = 1').get(leagueId) as any;
+  const league = db.prepare(
+    'SELECT * FROM custom_leagues WHERE id = ? AND company_id = ? AND is_active = 1'
+  ).get(leagueId, companyId) as any;
   if (!league) return NextResponse.json({ error: 'Liga não encontrada' }, { status: 404 });
   if (league.type !== 'opt_in') return NextResponse.json({ error: 'Esta liga não permite inscrição manual' }, { status: 400 });
 
@@ -30,10 +33,13 @@ export const POST = withAuth(async (_req, context) => {
 
 export const DELETE = withAuth(async (_req, context) => {
   const userId = context.auth.userId;
+  const companyId = context.auth.companyId;
   const { id: leagueId } = await context.params;
   const db = getReadDb();
 
-  const league = db.prepare('SELECT type FROM custom_leagues WHERE id = ?').get(leagueId) as any;
+  const league = db.prepare(
+    'SELECT type FROM custom_leagues WHERE id = ? AND company_id = ?'
+  ).get(leagueId, companyId) as any;
   if (!league) return NextResponse.json({ error: 'Liga não encontrada' }, { status: 404 });
   if (league.type !== 'opt_in') return NextResponse.json({ error: 'Não é possível sair desta liga' }, { status: 400 });
 

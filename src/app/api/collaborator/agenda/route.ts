@@ -94,28 +94,5 @@ export const POST = withAuth(async (req: NextRequest, context: any) => {
     });
   } catch { /* non-critical */ }
 
-  // Notify managers (RH/lideranca) of the same company
-  if (user?.company_id && type !== 'lembrete') {
-    try {
-      const managers = db.prepare(`
-        SELECT id FROM users
-        WHERE company_id = ? AND role IN ('rh', 'lideranca') AND deleted_at IS NULL AND blocked = 0 AND id != ?
-      `).all(user.company_id, userId) as { id: string }[];
-
-      const userName = (db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as any)?.name || 'Colaboradora';
-      const whenLabel = time ? `${date} às ${time}` : date;
-
-      const wq = getWriteQueue();
-      for (const mgr of managers) {
-        await wq.enqueue((db) => {
-          db.prepare(`
-            INSERT INTO notifications (id, user_id, type, title, message)
-            VALUES (?, ?, 'system', ?, ?)
-          `).run(nanoid(), mgr.id, `${type === 'exame' ? 'Exame' : 'Consulta'} agendada`, `${userName} agendou: ${title} em ${whenLabel}`);
-        });
-      }
-    } catch { /* non-critical */ }
-  }
-
   return NextResponse.json({ id, title, type, date, status: 'pending' });
 });

@@ -14,7 +14,7 @@ export const GET = withAuth(async (req, context) => {
 
   if (type === 'league') {
     const userLeague = (db.prepare('SELECT league FROM users WHERE id = ?').get(userId) as any)?.league || 'bronze';
-    const ranking = getLeagueRanking(userLeague as any);
+    const ranking = getLeagueRanking(userLeague as any, undefined, context.auth.companyId);
     return NextResponse.json({ ranking, type: 'league' });
   }
 
