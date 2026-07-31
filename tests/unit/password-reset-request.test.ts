@@ -32,6 +32,8 @@ describe('password reset request', () => {
       id: 'user-1',
       name: 'User One',
       email: 'user@example.com',
+      expectedActorId: 'admin-1',
+      expectedActorRole: 'admin',
     });
 
     expect(result).toEqual({ delivered: true });
@@ -42,6 +44,8 @@ describe('password reset request', () => {
       expiresAt: expect.any(String),
       replacementPasswordHash: 'replacement-password-hash',
       expectedEmail: 'user@example.com',
+      expectedActorId: 'admin-1',
+      expectedActorRole: 'admin',
     });
     expect(deps.sendEmail).toHaveBeenCalledWith(expect.objectContaining({
       to: 'user@example.com',
@@ -59,6 +63,8 @@ describe('password reset request', () => {
       id: 'user-1',
       name: 'User One',
       email: 'user@example.com',
+      expectedActorId: 'admin-1',
+      expectedActorRole: 'admin',
     });
 
     expect(result).toEqual({ delivered: false });
@@ -72,6 +78,7 @@ describe('password reset request', () => {
       email: 'user@example.com',
       expectedCompanyId: 'company-a',
       expectedActorId: 'rh-1',
+      expectedActorRole: 'rh',
     });
 
     expect(deps.beginAdministrativePasswordReset).toHaveBeenCalledWith(
@@ -79,6 +86,7 @@ describe('password reset request', () => {
         expectedEmail: 'user@example.com',
         expectedCompanyId: 'company-a',
         expectedActorId: 'rh-1',
+        expectedActorRole: 'rh',
       }),
     );
   });
@@ -91,6 +99,8 @@ describe('password reset request', () => {
       id: 'user-1',
       name: 'User One',
       email: 'user@example.com',
+      expectedActorId: 'admin-1',
+      expectedActorRole: 'admin',
     })).rejects.toThrow('Invalid production application origin');
 
     expect(deps.sendEmail).not.toHaveBeenCalled();

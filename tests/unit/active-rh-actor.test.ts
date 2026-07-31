@@ -1,6 +1,9 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { hasActiveRhActor } from '@/lib/security/active-rh-actor';
+import {
+  hasActiveMasterAdminActor,
+  hasActiveRhActor,
+} from '@/lib/security/active-rh-actor';
 
 describe('active RH actor contract', () => {
   let db: Database.Database;
@@ -19,6 +22,7 @@ describe('active RH actor contract', () => {
         role TEXT,
         approved INTEGER,
         blocked INTEGER,
+        is_master_admin INTEGER,
         deleted_at TEXT
       );
       INSERT INTO companies (id, is_active)
@@ -27,6 +31,11 @@ describe('active RH actor contract', () => {
         id, company_id, role, approved, blocked
       ) VALUES (
         'rh-1', 'company-a', 'rh', 1, 0
+      );
+      INSERT INTO users (
+        id, role, approved, blocked, is_master_admin
+      ) VALUES (
+        'admin-1', 'admin', 1, 0, 1
       );
     `);
   });
@@ -48,5 +57,20 @@ describe('active RH actor contract', () => {
     db.prepare(sql).run(id);
 
     expect(hasActiveRhActor(db, 'rh-1', 'company-a')).toBe(false);
+  });
+
+  it('accepts only an explicitly active Master Admin', () => {
+    expect(hasActiveMasterAdminActor(db, 'admin-1')).toBe(true);
+  });
+
+  it.each([
+    ['master flag', 'UPDATE users SET is_master_admin = NULL WHERE id = ?'],
+    ['approved', 'UPDATE users SET approved = NULL WHERE id = ?'],
+    ['blocked', 'UPDATE users SET blocked = NULL WHERE id = ?'],
+    ['role', "UPDATE users SET role = 'rh' WHERE id = ?"],
+  ])('rejects an invalid Admin %s state', (_field, sql) => {
+    db.prepare(sql).run('admin-1');
+
+    expect(hasActiveMasterAdminActor(db, 'admin-1')).toBe(false);
   });
 });

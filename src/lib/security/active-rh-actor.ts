@@ -21,3 +21,21 @@ export function hasActiveRhActor(
 
   return Boolean(actor);
 }
+
+export function hasActiveMasterAdminActor(
+  db: Database.Database,
+  actorId: string,
+): boolean {
+  const actor = db.prepare(`
+    SELECT id
+    FROM users
+    WHERE id = ?
+      AND role = 'admin'
+      AND is_master_admin = 1
+      AND approved = 1
+      AND blocked = 0
+      AND deleted_at IS NULL
+  `).get(actorId);
+
+  return Boolean(actor);
+}

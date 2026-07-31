@@ -10,8 +10,9 @@ interface PasswordResetSubject {
   id: string;
   name: string;
   email: string;
+  expectedActorId: string;
+  expectedActorRole: 'admin' | 'rh';
   expectedCompanyId?: string;
-  expectedActorId?: string;
 }
 
 export async function requestUserPasswordReset(
@@ -43,11 +44,10 @@ export async function requestUserPasswordReset(
     expiresAt,
     replacementPasswordHash,
     expectedEmail: subject.email,
+    expectedActorId: subject.expectedActorId,
+    expectedActorRole: subject.expectedActorRole,
     ...(subject.expectedCompanyId
       ? { expectedCompanyId: subject.expectedCompanyId }
-      : {}),
-    ...(subject.expectedActorId
-      ? { expectedActorId: subject.expectedActorId }
       : {}),
   });
 

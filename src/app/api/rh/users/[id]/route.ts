@@ -274,6 +274,7 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         email: targetUser.email,
         expectedCompanyId: companyId,
         expectedActorId: context.auth.userId,
+        expectedActorRole: 'rh',
       });
       if (delivered) {
         await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });

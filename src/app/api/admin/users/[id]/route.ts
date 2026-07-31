@@ -74,7 +74,11 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
       if (!targetUser) {
         return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 });
       }
-      const { delivered } = await requestUserPasswordReset(targetUser);
+      const { delivered } = await requestUserPasswordReset({
+        ...targetUser,
+        expectedActorId: context.auth.userId,
+        expectedActorRole: 'admin',
+      });
       if (delivered) {
         await logAudit({
           actorId: context.auth.userId,

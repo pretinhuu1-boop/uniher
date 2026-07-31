@@ -28,6 +28,7 @@ describe('atomic password reset lifecycle', () => {
         email TEXT NOT NULL,
         approved INTEGER,
         blocked INTEGER,
+        is_master_admin INTEGER DEFAULT 0,
         password_hash TEXT NOT NULL,
         must_change_password INTEGER NOT NULL DEFAULT 0,
         password_reset_required INTEGER NOT NULL DEFAULT 0,
@@ -65,6 +66,11 @@ describe('atomic password reset lifecycle', () => {
       ) VALUES (
         'rh-1', 'company-a', 'rh', 'rh@example.com', 1, 0, 'rh-hash'
       );
+      INSERT INTO users (
+        id, role, email, approved, blocked, is_master_admin, password_hash
+      ) VALUES (
+        'admin-1', 'admin', 'admin@example.com', 1, 0, 1, 'admin-hash'
+      );
       INSERT INTO refresh_tokens (id, user_id) VALUES ('refresh-1', 'user-1');
     `);
   });
@@ -79,6 +85,7 @@ describe('atomic password reset lifecycle', () => {
       expectedEmail: 'user@example.com',
       expectedCompanyId: 'company-a',
       expectedActorId: 'rh-1',
+      expectedActorRole: 'rh',
       token: 'cross-tenant-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'attacker-hash',
@@ -106,6 +113,7 @@ describe('atomic password reset lifecycle', () => {
       expectedEmail: 'user@example.com',
       expectedCompanyId: 'company-a',
       expectedActorId: 'rh-1',
+      expectedActorRole: 'rh',
       token: 'protected-role-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'attacker-hash',
@@ -133,6 +141,7 @@ describe('atomic password reset lifecycle', () => {
       expectedEmail: 'user@example.com',
       expectedCompanyId: 'company-a',
       expectedActorId: 'rh-1',
+      expectedActorRole: 'rh',
       token: 'revoked-actor-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'attacker-hash',
@@ -160,7 +169,35 @@ describe('atomic password reset lifecycle', () => {
       expectedEmail: 'user@example.com',
       expectedCompanyId: 'company-a',
       expectedActorId: 'rh-1',
+      expectedActorRole: 'rh',
       token: 'stale-email-token',
+      expiresAt: '2999-01-01T00:00:00.000Z',
+      replacementPasswordHash: 'attacker-hash',
+    })).resolves.toBe(false);
+
+    expect(deps.db.prepare(`
+      SELECT password_hash, session_version
+      FROM users WHERE id = 'user-1'
+    `).get()).toEqual({
+      password_hash: 'old-password-hash',
+      session_version: 0,
+    });
+    expect(deps.db.prepare(
+      'SELECT COUNT(*) AS count FROM password_reset_tokens',
+    ).get()).toEqual({ count: 0 });
+  });
+
+  it('does not reset after the Master Admin actor is revoked', async () => {
+    deps.db.prepare(
+      "UPDATE users SET is_master_admin = 0 WHERE id = 'admin-1'",
+    ).run();
+
+    await expect(beginAdministrativePasswordReset({
+      userId: 'user-1',
+      expectedEmail: 'user@example.com',
+      expectedActorId: 'admin-1',
+      expectedActorRole: 'admin',
+      token: 'revoked-admin-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'attacker-hash',
     })).resolves.toBe(false);
@@ -181,6 +218,8 @@ describe('atomic password reset lifecycle', () => {
     await expect(beginAdministrativePasswordReset({
       userId: 'user-1',
       expectedEmail: 'user@example.com',
+      expectedActorId: 'admin-1',
+      expectedActorRole: 'admin',
       token: 'reset-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'unusable-random-hash',
@@ -204,6 +243,8 @@ describe('atomic password reset lifecycle', () => {
     await beginAdministrativePasswordReset({
       userId: 'user-1',
       expectedEmail: 'user@example.com',
+      expectedActorId: 'admin-1',
+      expectedActorRole: 'admin',
       token: 'single-use-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'unusable-random-hash',

@@ -85,8 +85,12 @@ describe('administrative password reset response security', () => {
       name: 'User One',
       email: 'user@example.com',
       ...(_role === 'rh'
-        ? { expectedCompanyId: 'company-a', expectedActorId: 'rh-1' }
-        : {}),
+        ? {
+            expectedCompanyId: 'company-a',
+            expectedActorId: 'rh-1',
+            expectedActorRole: 'rh',
+          }
+        : { expectedActorId: 'admin-1', expectedActorRole: 'admin' }),
     }));
   });
 });

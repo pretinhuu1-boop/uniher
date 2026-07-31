@@ -1,5 +1,8 @@
 import { getReadDb, getWriteQueue } from '@/lib/db';
-import { hasActiveRhActor } from '@/lib/security/active-rh-actor';
+import {
+  hasActiveMasterAdminActor,
+  hasActiveRhActor,
+} from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 
 export interface PasswordResetTokenRow {
@@ -17,8 +20,9 @@ interface AdministrativePasswordResetInput {
   expiresAt: string;
   replacementPasswordHash: string;
   expectedEmail: string;
+  expectedActorId: string;
+  expectedActorRole: 'admin' | 'rh';
   expectedCompanyId?: string;
-  expectedActorId?: string;
 }
 
 export async function beginAdministrativePasswordReset(
@@ -28,17 +32,17 @@ export async function beginAdministrativePasswordReset(
 
   return getWriteQueue().enqueue((db) => {
     const reset = db.transaction(() => {
-      if (
-        input.expectedCompanyId
-        && (
-          !input.expectedActorId
-          || !hasActiveRhActor(
-            db,
-            input.expectedActorId,
-            input.expectedCompanyId,
+      const activeActor = input.expectedActorRole === 'rh'
+        ? Boolean(
+            input.expectedCompanyId
+            && hasActiveRhActor(
+              db,
+              input.expectedActorId,
+              input.expectedCompanyId,
+            )
           )
-        )
-      ) {
+        : hasActiveMasterAdminActor(db, input.expectedActorId);
+      if (!activeActor) {
         return false;
       }
 
