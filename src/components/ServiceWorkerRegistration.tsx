@@ -6,7 +6,7 @@ export function ServiceWorkerRegistration() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
-    const CACHE_VERSION = 'uniher-v3';
+    const CACHE_VERSION = 'uniher-v4';
     let reloaded = false;
     const isLocalhost =
       window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';

@@ -24,7 +24,7 @@ self.addEventListener('notificationclick', function(event) {
 });
 
 // PWA Cache strategy
-const CACHE_NAME = 'uniher-v3';
+const CACHE_NAME = 'uniher-v4';
 const PRECACHE_URLS = ['/logo-uniher.png', '/manifest.json'];
 
 self.addEventListener('install', event => {

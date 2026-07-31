@@ -94,30 +94,45 @@ export async function processLeagueTransitions(weekStart: string): Promise<void>
     for (const league of LEAGUES) {
       const meta = LEAGUE_META[league];
       const rows = db.prepare(`
-        SELECT ul.user_id, ul.week_points, u.league as user_league
+        SELECT ul.user_id, ul.week_points, u.league as user_league, u.company_id
         FROM user_leagues ul JOIN users u ON u.id = ul.user_id
-        WHERE ul.week_start = ? AND ul.league = ?
+        WHERE ul.week_start = ? AND ul.league = ? AND u.company_id IS NOT NULL
         ORDER BY ul.week_points DESC
       `).all(weekStart, league) as any[];
 
-      rows.forEach((row, idx) => {
-        const rank = idx + 1;
-        const leagueIndex = LEAGUES.indexOf(league);
+      const rowsByCompany = new Map<string, any[]>();
+      for (const row of rows) {
+        const companyRows = rowsByCompany.get(row.company_id) ?? [];
+        companyRows.push(row);
+        rowsByCompany.set(row.company_id, companyRows);
+      }
 
-        if (meta.promoteTop > 0 && rank <= meta.promoteTop && leagueIndex < LEAGUES.length - 1) {
-          const nextLeague = LEAGUES[leagueIndex + 1];
-          db.prepare(`UPDATE users SET league = ?, updated_at = datetime('now') WHERE id = ?`).run(nextLeague, row.user_id);
-          db.prepare(`INSERT INTO notifications (id, user_id, type, title, message) VALUES (?, ?, 'badge', ?, ?)`)
-            .run(nanoid(), row.user_id, `${LEAGUE_META[nextLeague].icon} Promovida para ${LEAGUE_META[nextLeague].label}!`,
+      for (const companyRows of rowsByCompany.values()) {
+        companyRows.forEach((row, idx) => {
+          const rank = idx + 1;
+          const leagueIndex = LEAGUES.indexOf(league);
+
+          if (meta.promoteTop > 0 && rank <= meta.promoteTop && leagueIndex < LEAGUES.length - 1) {
+            const nextLeague = LEAGUES[leagueIndex + 1];
+            db.prepare(`
+              UPDATE users SET league = ?, updated_at = datetime('now')
+              WHERE id = ? AND company_id = ?
+            `).run(nextLeague, row.user_id, row.company_id);
+            db.prepare(`INSERT INTO notifications (id, user_id, type, title, message) VALUES (?, ?, 'badge', ?, ?)`)
+              .run(nanoid(), row.user_id, `${LEAGUE_META[nextLeague].icon} Promovida para ${LEAGUE_META[nextLeague].label}!`,
               `Parabéns! Você foi promovida para a liga ${LEAGUE_META[nextLeague].label}.`);
-        } else if (meta.relegateBottom > 0 && rank > rows.length - meta.relegateBottom && leagueIndex > 0) {
-          const prevLeague = LEAGUES[leagueIndex - 1];
-          db.prepare(`UPDATE users SET league = ?, updated_at = datetime('now') WHERE id = ?`).run(prevLeague, row.user_id);
-          db.prepare(`INSERT INTO notifications (id, user_id, type, title, message) VALUES (?, ?, 'system', ?, ?)`)
-            .run(nanoid(), row.user_id, `Rebaixada para ${LEAGUE_META[prevLeague].label}`,
+          } else if (meta.relegateBottom > 0 && rank > companyRows.length - meta.relegateBottom && leagueIndex > 0) {
+            const prevLeague = LEAGUES[leagueIndex - 1];
+            db.prepare(`
+              UPDATE users SET league = ?, updated_at = datetime('now')
+              WHERE id = ? AND company_id = ?
+            `).run(prevLeague, row.user_id, row.company_id);
+            db.prepare(`INSERT INTO notifications (id, user_id, type, title, message) VALUES (?, ?, 'system', ?, ?)`)
+              .run(nanoid(), row.user_id, `Rebaixada para ${LEAGUE_META[prevLeague].label}`,
               `Pontue mais esta semana para subir de liga!`);
-        }
-      });
+          }
+        });
+      }
     }
   });
 }
