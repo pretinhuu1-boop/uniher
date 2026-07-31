@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -6,6 +6,14 @@ const BASE_URL = process.env.UNIHER_E2E_BASE_URL!;
 const COLLABORATOR_EMAIL = process.env.UNIHER_E2E_COLLABORATOR_EMAIL!;
 const COLLABORATOR_PASSWORD = process.env.UNIHER_E2E_COLLABORATOR_PASSWORD!;
 const ARTIFACT_DIR = process.env.UNIHER_E2E_ARTIFACT_DIR || 'artifacts/semaforo-retirement';
+
+async function ensureExamList(page: Page) {
+  const birthDateInput = page.getByLabel('Data de nascimento');
+  if (await birthDateInput.isVisible()) {
+    await birthDateInput.fill('1985-07-31');
+  }
+  await expect(page.locator('fieldset')).toHaveCount(13);
+}
 
 test('keeps only the preventive exam Semaforo on desktop and mobile', async ({ page }) => {
   await page.goto(`${BASE_URL}/auth`);
@@ -16,11 +24,26 @@ test('keeps only the preventive exam Semaforo on desktop and mobile', async ({ p
   await page.locator('button[type="submit"]').click();
   await page.waitForURL(/\/(colaboradora|welcome|primeiro-acesso)/, { timeout: 15_000 });
 
+  const unexpectedMutations: string[] = [];
+  await page.route(`${BASE_URL}/api/**`, async (route) => {
+    const request = route.request();
+    if (!['GET', 'HEAD'].includes(request.method())) {
+      unexpectedMutations.push(`${request.method()} ${request.url()}`);
+      await route.abort();
+      return;
+    }
+    await route.continue();
+  });
+
+  const initialLoad = page.waitForResponse(
+    (response) => response.url().endsWith('/api/collaborator/health-checkin'),
+  );
   await page.goto(`${BASE_URL}/semaforo`);
+  expect((await initialLoad).status()).toBe(200);
   await expect(page.getByRole('heading', { name: /Semaforo da Saude/i })).toBeVisible();
   await expect(page.getByText('Saude primaria', { exact: true })).toBeVisible();
   await expect(page.getByText('Meu Semaforo', { exact: true })).toBeVisible();
-  await expect(page.locator('fieldset')).toHaveCount(13);
+  await ensureExamList(page);
 
   const pageText = await page.locator('main').innerText();
   const visibleLines = new Set(pageText.split('\n').map((line) => line.trim().toLocaleLowerCase('pt-BR')));
@@ -42,6 +65,7 @@ test('keeps only the preventive exam Semaforo on desktop and mobile', async ({ p
 
   const screenshotDir = path.resolve(process.cwd(), ARTIFACT_DIR);
   mkdirSync(screenshotDir, { recursive: true });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: path.join(screenshotDir, 'semaforo-desktop.png'),
   });
@@ -52,12 +76,19 @@ test('keeps only the preventive exam Semaforo on desktop and mobile', async ({ p
   await page.screenshot({ path: path.join(screenshotDir, 'semaforo-desktop-bottom.png') });
 
   await page.setViewportSize({ width: 390, height: 844 });
+  const mobileLoad = page.waitForResponse(
+    (response) => response.url().endsWith('/api/collaborator/health-checkin'),
+  );
   await page.reload();
+  expect((await mobileLoad).status()).toBe(200);
   await expect(page.getByRole('heading', { name: /Semaforo da Saude/i })).toBeVisible();
+  await ensureExamList(page);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: path.join(screenshotDir, 'semaforo-mobile.png'),
   });
   await submitButton.scrollIntoViewIfNeeded();
   await expect(submitButton).toBeVisible();
   await page.screenshot({ path: path.join(screenshotDir, 'semaforo-mobile-bottom.png') });
+  expect(unexpectedMutations).toEqual([]);
 });
