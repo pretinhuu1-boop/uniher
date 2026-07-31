@@ -174,6 +174,11 @@ export async function refresh(): Promise<{ accessToken: string; refreshToken: st
   }
   const { user, auth } = sessionSubject;
 
+  if (auth.passwordResetRequired) {
+    await refreshTokenRepo.deleteAllUserTokens(user.id);
+    throw new UnauthorizedError('Redefinicao de senha por link obrigatoria');
+  }
+
   // Rotacao: deletar token antigo, criar novo
   await refreshTokenRepo.deleteRefreshToken(currentRefreshToken);
 

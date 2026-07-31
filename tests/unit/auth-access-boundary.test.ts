@@ -49,6 +49,7 @@ function activeUser(overrides: Record<string, unknown> = {}) {
     approved: 1,
     deleted_at: null,
     must_change_password: 0,
+    password_reset_required: 0,
     ...overrides,
   };
 }
@@ -93,6 +94,7 @@ describe('authenticated API boundary', () => {
           companyId: 'company-1',
           isMasterAdmin: false,
           mustChangePassword: false,
+          passwordResetRequired: false,
         },
       }),
     );
@@ -158,6 +160,39 @@ describe('authenticated API boundary', () => {
     const handler = vi.fn(async () => NextResponse.json({ ok: true }));
     const request = new NextRequest('http://localhost/api/users/me/change-password', {
       headers: { Authorization: 'Bearer valid-token' },
+    });
+
+    const response = await withAuth(handler)(request, segmentData);
+
+    expect(response.status).toBe(200);
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('blocks password-change APIs while an email-token reset is required', async () => {
+    authBoundary.getUserById.mockReturnValue(activeUser({
+      must_change_password: 1,
+      password_reset_required: 1,
+    }));
+    const handler = vi.fn(async () => NextResponse.json({ ok: true }));
+    const request = new NextRequest('http://localhost/api/auth/change-password', {
+      headers: { Authorization: 'Bearer stolen-token' },
+    });
+
+    const response = await withAuth(handler)(request, segmentData);
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ passwordResetRequired: true });
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('allows logout while an email-token reset is required', async () => {
+    authBoundary.getUserById.mockReturnValue(activeUser({
+      must_change_password: 1,
+      password_reset_required: 1,
+    }));
+    const handler = vi.fn(async () => NextResponse.json({ ok: true }));
+    const request = new NextRequest('http://localhost/api/auth/logout', {
+      headers: { Authorization: 'Bearer stolen-token' },
     });
 
     const response = await withAuth(handler)(request, segmentData);

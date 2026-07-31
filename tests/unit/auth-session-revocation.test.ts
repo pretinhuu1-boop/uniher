@@ -50,6 +50,7 @@ function activeUser(overrides: Record<string, unknown> = {}) {
     approved: 1,
     deleted_at: null,
     must_change_password: 0,
+    password_reset_required: 0,
     ...overrides,
   };
 }
@@ -90,6 +91,7 @@ describe('auth session revocation', () => {
       companyId: 'company-1',
       isMasterAdmin: false,
       mustChangePassword: false,
+      passwordResetRequired: false,
     });
     expect(authDeps.deleteRefreshToken).toHaveBeenCalledWith('old-refresh-token');
     expect(authDeps.createRefreshToken).toHaveBeenCalledWith('user-1', 'new-refresh-token');
@@ -120,6 +122,19 @@ describe('auth session revocation', () => {
 
     expect(authDeps.deleteAllUserTokens).toHaveBeenCalledWith('user-1');
     expect(authDeps.deleteRefreshToken).not.toHaveBeenCalled();
+    expect(authDeps.createRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it('rejects refresh while an email-token password reset is required', async () => {
+    authDeps.getUserById.mockReturnValue(activeUser({
+      must_change_password: 1,
+      password_reset_required: 1,
+    }));
+
+    await expect(refresh()).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(authDeps.deleteAllUserTokens).toHaveBeenCalledWith('user-1');
+    expect(authDeps.signAccessToken).not.toHaveBeenCalled();
     expect(authDeps.createRefreshToken).not.toHaveBeenCalled();
   });
 });

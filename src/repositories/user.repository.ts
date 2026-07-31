@@ -18,6 +18,7 @@ export interface UserRow {
   blocked: number; // 0 or 1
   approved: number; // 0 = pending, 1 = approved
   must_change_password: number; // 0 or 1
+  password_reset_required: number; // 0 or 1
   deleted_at: string | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
@@ -29,7 +30,7 @@ export interface UserRow {
   department_name?: string | null;
 }
 
-export type PublicUser = Omit<UserRow, 'password_hash'>;
+export type PublicUser = Omit<UserRow, 'password_hash' | 'password_reset_required'>;
 
 export function getUserById(id: string): UserRow | undefined {
   const db = getReadDb();
@@ -162,6 +163,10 @@ export function countUsersByRole(companyId: string, role: string): number {
 
 /** Remove password_hash do retorno */
 export function toPublicUser(user: UserRow): PublicUser {
-  const { password_hash: _, ...publicUser } = user;
+  const {
+    password_hash: _passwordHash,
+    password_reset_required: _passwordResetRequired,
+    ...publicUser
+  } = user;
   return publicUser;
 }

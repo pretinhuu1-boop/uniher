@@ -18,8 +18,7 @@ const updateSchema = z.object({
   cargo: z.string().max(100).optional(),
   emergency_contact_name: z.string().max(100).optional(),
   emergency_contact_phone: z.string().max(20).optional(),
-  mustChangePassword: z.literal(false).optional(),
-});
+}).strict();
 
 export const PATCH = withAuth(async (req: NextRequest, context) => {
   const body = await req.json();
@@ -28,7 +27,7 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
     return NextResponse.json({ error: 'Dados inválidos', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { name, nickname, emergency_contact_name, emergency_contact_phone, mustChangePassword } = parsed.data;
+  const { name, nickname, emergency_contact_name, emergency_contact_phone } = parsed.data;
   const writeQueue = getWriteQueue();
 
   await writeQueue.enqueue((db) => {
@@ -39,7 +38,6 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
     if (nickname !== undefined) { fields.push('nickname = ?'); values.push(nickname); }
     if (emergency_contact_name !== undefined) { fields.push('emergency_contact_name = ?'); values.push(emergency_contact_name); }
     if (emergency_contact_phone !== undefined) { fields.push('emergency_contact_phone = ?'); values.push(emergency_contact_phone); }
-    if (mustChangePassword === false) { fields.push('must_change_password = 0'); }
 
     if (fields.length === 0) return;
     fields.push("updated_at = datetime('now')");

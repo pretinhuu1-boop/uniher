@@ -24,6 +24,10 @@ const PASSWORD_CHANGE_ALLOWED_PATHS = new Set([
   '/api/users/me/change-password',
 ]);
 
+const PASSWORD_RESET_ALLOWED_PATHS = new Set([
+  '/api/auth/logout',
+]);
+
 function applyPrivateCachePolicy(response: NextResponse): NextResponse {
   response.headers.set('Cache-Control', 'private, no-store');
 
@@ -87,6 +91,19 @@ export function withAuth(handler: ApiHandler) {
 
       const payload = await verifyAccessToken(accessToken);
       const { auth } = getActiveSessionSubject(payload.userId);
+
+      if (
+        auth.passwordResetRequired
+        && !PASSWORD_RESET_ALLOWED_PATHS.has(req.nextUrl.pathname)
+      ) {
+        return applyPrivateCachePolicy(NextResponse.json(
+          {
+            error: 'Redefinicao de senha por link obrigatoria',
+            passwordResetRequired: true,
+          },
+          { status: 403 },
+        ));
+      }
 
       if (
         auth.mustChangePassword

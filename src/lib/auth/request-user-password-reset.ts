@@ -1,12 +1,9 @@
+import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
-import { getWriteQueue } from '@/lib/db';
+import { hashPassword } from '@/lib/auth/password';
 import { sendEmail } from '@/lib/mail';
 import { passwordResetEmailHtml } from '@/lib/mail/templates';
-import {
-  createResetToken,
-  invalidateUserTokens,
-} from '@/repositories/password-reset.repository';
-import { deleteAllUserTokens } from '@/repositories/refresh-token.repository';
+import { beginAdministrativePasswordReset } from '@/repositories/password-reset.repository';
 
 interface PasswordResetSubject {
   id: string;
@@ -19,17 +16,19 @@ export async function requestUserPasswordReset(
 ): Promise<{ delivered: boolean }> {
   const token = nanoid(32);
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const replacementPasswordHash = await hashPassword(
+    randomBytes(48).toString('base64url'),
+  );
 
-  await invalidateUserTokens(subject.id);
-  await createResetToken(subject.id, token, expiresAt);
-  await deleteAllUserTokens(subject.id);
-  await getWriteQueue().enqueue((db) => {
-    db.prepare(`
-      UPDATE users
-      SET must_change_password = 1, updated_at = datetime('now')
-      WHERE id = ? AND deleted_at IS NULL
-    `).run(subject.id);
+  const resetStarted = await beginAdministrativePasswordReset({
+    userId: subject.id,
+    token,
+    expiresAt,
+    replacementPasswordHash,
   });
+  if (!resetStarted) {
+    return { delivered: false };
+  }
 
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/redefinir-senha?token=${token}`;
   const delivered = await sendEmail({

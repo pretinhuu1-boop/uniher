@@ -1,43 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const deps = vi.hoisted(() => ({
-  invalidateUserTokens: vi.fn(),
-  createResetToken: vi.fn(),
-  deleteAllUserTokens: vi.fn(),
-  enqueue: vi.fn(),
+  beginAdministrativePasswordReset: vi.fn(),
+  hashPassword: vi.fn(),
   sendEmail: vi.fn(),
 }));
 
 vi.mock('@/repositories/password-reset.repository', () => ({
-  invalidateUserTokens: deps.invalidateUserTokens,
-  createResetToken: deps.createResetToken,
-}));
-
-vi.mock('@/repositories/refresh-token.repository', () => ({
-  deleteAllUserTokens: deps.deleteAllUserTokens,
-}));
-
-vi.mock('@/lib/db', () => ({
-  getWriteQueue: () => ({ enqueue: deps.enqueue }),
+  beginAdministrativePasswordReset: deps.beginAdministrativePasswordReset,
 }));
 
 vi.mock('@/lib/mail', () => ({ sendEmail: deps.sendEmail }));
+vi.mock('@/lib/auth/password', () => ({ hashPassword: deps.hashPassword }));
 
 import { requestUserPasswordReset } from '@/lib/auth/request-user-password-reset';
 
 describe('password reset request', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    deps.invalidateUserTokens.mockResolvedValue(undefined);
-    deps.createResetToken.mockResolvedValue({ id: 'reset-1' });
-    deps.deleteAllUserTokens.mockResolvedValue(undefined);
-    deps.enqueue.mockImplementation(async (operation: any) => {
-      operation({ prepare: () => ({ run: vi.fn() }) });
-    });
+    deps.beginAdministrativePasswordReset.mockResolvedValue(true);
+    deps.hashPassword.mockResolvedValue('replacement-password-hash');
     deps.sendEmail.mockResolvedValue(true);
   });
 
-  it('revokes sessions, requires a password change, and emails a one-time link', async () => {
+  it('invalidates the old password and sessions before emailing a one-time link', async () => {
     const result = await requestUserPasswordReset({
       id: 'user-1',
       name: 'User One',
@@ -45,14 +31,13 @@ describe('password reset request', () => {
     });
 
     expect(result).toEqual({ delivered: true });
-    expect(deps.invalidateUserTokens).toHaveBeenCalledWith('user-1');
-    expect(deps.createResetToken).toHaveBeenCalledWith(
-      'user-1',
-      expect.any(String),
-      expect.any(String),
-    );
-    expect(deps.deleteAllUserTokens).toHaveBeenCalledWith('user-1');
-    expect(deps.enqueue).toHaveBeenCalledOnce();
+    expect(deps.hashPassword).toHaveBeenCalledWith(expect.any(String));
+    expect(deps.beginAdministrativePasswordReset).toHaveBeenCalledWith({
+      userId: 'user-1',
+      token: expect.any(String),
+      expiresAt: expect.any(String),
+      replacementPasswordHash: 'replacement-password-hash',
+    });
     expect(deps.sendEmail).toHaveBeenCalledWith(expect.objectContaining({
       to: 'user@example.com',
       html: expect.stringContaining('/redefinir-senha?token='),
