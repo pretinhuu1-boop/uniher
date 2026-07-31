@@ -244,6 +244,26 @@ function OverviewTab() {
 
 // ─── Companies Tab ────────────────────────────────────────────────────────────
 
+function PasswordResetNotice({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+        <h3 className="font-bold text-uni-text-900 text-lg">Redefinicao solicitada</h3>
+        <p className="text-sm text-uni-text-600">{message}</p>
+        <p className="text-xs text-uni-text-400">
+          Nenhuma senha foi exibida ou compartilhada com a administracao.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full py-2.5 bg-uni-text-900 text-white rounded-xl text-sm font-bold hover:bg-uni-text-600 transition-all"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGoToUsers?: () => void }) {
   const { data, mutate } = useSWR<{ users: CompanyUser[] }>(
     `/api/admin/companies/${companyId}/users`,
@@ -264,8 +284,8 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
         body: JSON.stringify({ action, ...extra }),
       });
       const json = await res.json();
-      if (action === 'reset_password' && json.tempPassword) {
-        setTempPass({ userId, pass: json.tempPassword });
+      if (action === 'reset_password' && json.message) {
+        setTempPass({ userId, pass: json.message });
       }
       mutate();
     } finally {
@@ -296,36 +316,7 @@ function CompanyUsersPanel({ companyId, onGoToUsers }: { companyId: string; onGo
 
   return (
     <div className="border-t border-border-1 bg-cream-50/50">
-      {tempPass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
-          <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <div className="flex items-center gap-2">
-                <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
-                <button
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(tempPass.pass);
-                  }}
-                  className="flex-shrink-0 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-all"
-                >
-                  Copiar Senha
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
-              <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela não será mostrada novamente.
-            </p>
-            <button
-              onClick={() => setTempPass(null)}
-              className="w-full py-2.5 bg-uni-text-900 text-white rounded-xl text-sm font-bold hover:bg-uni-text-600 transition-all"
-            >
-              Entendi, fechar
-            </button>
-          </div>
-        </div>
-      )}
+      {tempPass && <PasswordResetNotice message={tempPass.pass} onClose={() => setTempPass(null)} />}
 
       {/* Mobile */}
       <div className="md:hidden divide-y divide-border-1">
@@ -899,8 +890,8 @@ function UsersTab() {
         body: JSON.stringify({ action, ...extra }),
       });
       const json = await res.json();
-      if (action === 'reset_password' && json.tempPassword) {
-        setTempPass({ userId, pass: json.tempPassword });
+      if (action === 'reset_password' && json.message) {
+        setTempPass({ userId, pass: json.message });
       }
       await loadAllUsers();
     } finally {
@@ -1112,36 +1103,7 @@ function UsersTab() {
         </span>
       </div>
 
-      {tempPass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
-          <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <div className="flex items-center gap-2">
-                <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
-                <button
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(tempPass.pass);
-                  }}
-                  className="flex-shrink-0 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-all"
-                >
-                  Copiar Senha
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
-              <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela não será mostrada novamente.
-            </p>
-            <button
-              onClick={() => setTempPass(null)}
-              className="w-full py-2.5 bg-uni-text-900 text-white rounded-xl text-sm font-bold hover:bg-uni-text-600 transition-all"
-            >
-              Entendi, fechar
-            </button>
-          </div>
-        </div>
-      )}
+      {tempPass && <PasswordResetNotice message={tempPass.pass} onClose={() => setTempPass(null)} />}
 
       <div className="bg-white rounded-xl border border-border-1 overflow-hidden">
         <SectionHeader title="Usuários" count={filtered.length} action={
@@ -1411,8 +1373,8 @@ function AdminMasterTab() {
         body: JSON.stringify({ action }),
       });
       const json = await res.json();
-      if (action === 'reset_password' && json.tempPassword) {
-        setTempPass({ userId, pass: json.tempPassword });
+      if (action === 'reset_password' && json.message) {
+        setTempPass({ userId, pass: json.message });
       }
       mutate();
     } finally {
@@ -1430,36 +1392,7 @@ function AdminMasterTab() {
         </div>
       )}
 
-      {tempPass && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setTempPass(null)}>
-          <div className="bg-white rounded-2xl shadow-xl border border-border-1 p-6 max-w-sm w-full mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-uni-text-900 text-lg">Senha Temporária</h3>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <div className="flex items-center gap-2">
-                <code className="font-mono text-lg font-bold text-amber-800 break-all flex-1">{tempPass.pass}</code>
-                <button
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(tempPass.pass);
-                  }}
-                  className="flex-shrink-0 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-all"
-                >
-                  Copiar Senha
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-red-600 font-semibold flex items-start gap-1.5">
-              <span className="flex-shrink-0">&#9888;&#65039;</span>
-              Anote esta senha! Ela não será mostrada novamente.
-            </p>
-            <button
-              onClick={() => setTempPass(null)}
-              className="w-full py-2.5 bg-uni-text-900 text-white rounded-xl text-sm font-bold hover:bg-uni-text-600 transition-all"
-            >
-              Entendi, fechar
-            </button>
-          </div>
-        </div>
-      )}
+      {tempPass && <PasswordResetNotice message={tempPass.pass} onClose={() => setTempPass(null)} />}
 
       {/* Create Form */}
       {showForm && (

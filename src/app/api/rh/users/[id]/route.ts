@@ -9,6 +9,7 @@ import { initDb } from '@/lib/db/init';
 import { logAudit } from '@/lib/audit';
 import { checkAdminRateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
+import { requestUserPasswordReset } from '@/lib/auth/request-user-password-reset';
 
 const PatchSchema = z.object({
   action: z.enum(['block', 'unblock', 'change_department', 'change_role', 'update_profile', 'reset_password', 'soft_delete']),
@@ -157,20 +158,21 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
       break;
     }
     case 'reset_password': {
-      const { hashPassword } = await import('@/lib/auth/password');
-      const { nanoid } = await import('nanoid');
-      // Generate random password
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$';
-      let tempPass = '';
-      for (let i = 0; i < 12; i++) tempPass += chars[Math.floor(Math.random() * chars.length)];
-      // Ensure it meets requirements
-      tempPass = tempPass.slice(0, 8) + 'A1a@' + tempPass.slice(8);
-      const hash = await hashPassword(tempPass);
-      await wq.enqueue((db) => {
-        db.prepare("UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = datetime('now') WHERE id = ?").run(hash, userId);
+      const { delivered } = await requestUserPasswordReset({
+        id: targetUser.id,
+        name: targetUser.name,
+        email: targetUser.email,
       });
       await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });
-      return NextResponse.json({ success: true, temporaryPassword: tempPass });
+      return NextResponse.json(
+        {
+          success: delivered,
+          message: delivered
+            ? 'Link de redefinicao enviado para o email cadastrado'
+            : 'Nao foi possivel enviar o link de redefinicao',
+        },
+        { status: delivered ? 200 : 502 },
+      );
     }
     case 'soft_delete': {
       if (targetUser.role === 'rh' || targetUser.role === 'admin') {

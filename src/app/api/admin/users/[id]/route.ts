@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getWriteQueue, getReadDb } from '@/lib/db';
 import { z } from 'zod';
-import { hashPassword } from '@/lib/auth/password';
-import { nanoid } from 'nanoid';
 import { logAudit } from '@/lib/audit';
+import { requestUserPasswordReset } from '@/lib/auth/request-user-password-reset';
 
 const schema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('block') }),
@@ -32,7 +31,8 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
 
   const writeQueue = getWriteQueue();
   const db = getReadDb();
-  const targetUser = db.prepare('SELECT name, email FROM users WHERE id = ?').get(userId) as { name: string; email: string } | undefined;
+  const targetUser = db.prepare('SELECT id, name, email FROM users WHERE id = ? AND deleted_at IS NULL')
+    .get(userId) as { id: string; name: string; email: string } | undefined;
   const ip = req.headers.get('x-forwarded-for') ?? undefined;
 
   switch (parsed.data.action) {
@@ -71,12 +71,10 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
       return NextResponse.json({ success: true, message: 'Usuário desbloqueado' });
 
     case 'reset_password': {
-      // Generate a temporary password and return it (in production: send by email)
-      const tempPassword = nanoid(10);
-      const hash = await hashPassword(tempPassword);
-      await writeQueue.enqueue((d) => {
-        d.prepare(`UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?`).run(hash, userId);
-      });
+      if (!targetUser) {
+        return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 404 });
+      }
+      const { delivered } = await requestUserPasswordReset(targetUser);
       await logAudit({
         actorId: context.auth.userId,
         actorEmail: context.auth.userId,
@@ -88,7 +86,15 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
         details: { email: targetUser?.email },
         ip,
       });
-      return NextResponse.json({ success: true, tempPassword, message: 'Senha resetada' });
+      return NextResponse.json(
+        {
+          success: delivered,
+          message: delivered
+            ? 'Link de redefinicao enviado para o email cadastrado'
+            : 'Nao foi possivel enviar o link de redefinicao',
+        },
+        { status: delivered ? 200 : 502 },
+      );
     }
 
     case 'update_role': {

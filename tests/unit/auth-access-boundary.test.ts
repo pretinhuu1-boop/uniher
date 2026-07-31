@@ -142,4 +142,27 @@ describe('authenticated API boundary', () => {
     expect(response.status).toBe(403);
     expect(handler).not.toHaveBeenCalled();
   });
+
+  it('blocks normal APIs when persisted state requires a password change', async () => {
+    authBoundary.getUserById.mockReturnValue(activeUser({ must_change_password: 1 }));
+    const handler = vi.fn(async () => NextResponse.json({ ok: true }));
+
+    const response = await withAuth(handler)(requestWithBearerToken(), segmentData);
+
+    expect(response.status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('allows the password-change API while a password change is required', async () => {
+    authBoundary.getUserById.mockReturnValue(activeUser({ must_change_password: 1 }));
+    const handler = vi.fn(async () => NextResponse.json({ ok: true }));
+    const request = new NextRequest('http://localhost/api/users/me/change-password', {
+      headers: { Authorization: 'Bearer valid-token' },
+    });
+
+    const response = await withAuth(handler)(request, segmentData);
+
+    expect(response.status).toBe(200);
+    expect(handler).toHaveBeenCalledOnce();
+  });
 });

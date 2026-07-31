@@ -14,6 +14,16 @@ type ApiHandler = (
   context: AuthContext
 ) => Promise<NextResponse>;
 
+const PASSWORD_CHANGE_ALLOWED_PATHS = new Set([
+  '/api/auth/change-password',
+  '/api/auth/confirm-first-access',
+  '/api/auth/logout',
+  '/api/auth/me',
+  '/api/auth/refresh',
+  '/api/users/me',
+  '/api/users/me/change-password',
+]);
+
 function applyPrivateCachePolicy(response: NextResponse): NextResponse {
   response.headers.set('Cache-Control', 'private, no-store');
 
@@ -77,6 +87,16 @@ export function withAuth(handler: ApiHandler) {
 
       const payload = await verifyAccessToken(accessToken);
       const { auth } = getActiveSessionSubject(payload.userId);
+
+      if (
+        auth.mustChangePassword
+        && !PASSWORD_CHANGE_ALLOWED_PATHS.has(req.nextUrl.pathname)
+      ) {
+        return applyPrivateCachePolicy(NextResponse.json(
+          { error: 'Troca de senha obrigatoria', mustChangePassword: true },
+          { status: 403 },
+        ));
+      }
 
       return applyPrivateCachePolicy(await handler(req, {
         params: segmentData.params,

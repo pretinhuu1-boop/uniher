@@ -181,7 +181,7 @@ export default function ColaboradorasGestaoPage() {
       });
       const d = await res.json();
       if (res.ok) {
-        setResetResult(`Nova senha: ${d.temporaryPassword || d.password || 'Enviada por email'}`);
+        setResetResult(d.message || 'Link de redefinicao enviado por email');
       } else {
         setResetResult(d.error || 'Erro ao resetar');
       }
@@ -569,7 +569,7 @@ export default function ColaboradorasGestaoPage() {
                 {editSaving ? 'Salvando...' : 'Salvar Alterações'}
               </button>
               <button onClick={resetPassword} className="px-4 py-2 rounded-lg border border-amber-300 text-amber-700 text-sm font-bold hover:bg-amber-50">
-                🔑 Resetar Senha
+                Enviar link de redefinicao
               </button>
               <button onClick={softDelete} className="px-4 py-2 rounded-lg border border-red-300 text-red-700 text-sm font-bold hover:bg-red-50">
                 🗑 Remover
@@ -580,9 +580,8 @@ export default function ColaboradorasGestaoPage() {
             </div>
 
             {resetResult && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
-                <strong>🔑 {resetResult}</strong>
-                <button onClick={() => { navigator.clipboard.writeText(resetResult.replace('Nova senha: ', '')); }} className="ml-2 text-xs text-amber-700 underline">Copiar</button>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800">
+                <strong>{resetResult}</strong>
               </div>
             )}
           </div>
