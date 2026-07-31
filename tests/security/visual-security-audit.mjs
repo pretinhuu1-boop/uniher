@@ -96,6 +96,7 @@ async function auditInvites(browser, role) {
       createControlsAbsent: !body.includes('Enviar novo convite')
         && !body.includes('Convidar em massa')
         && !body.includes('Aprovacoes pendentes'),
+      readOnlyGuidanceVisible: body.includes('Acompanhe os convites enviados'),
     };
 
   await page.evaluate(() => window.scrollTo(0, 0));

@@ -254,7 +254,11 @@ export default function ConvitesPage() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Convites</h1>
-          <p className={styles.subtitle}>Convide colaboradoras e lideranças para a plataforma</p>
+          <p className={styles.subtitle}>
+            {canManageInvites
+              ? 'Convide colaboradoras e lideranças para a plataforma'
+              : 'Acompanhe os convites enviados para sua empresa'}
+          </p>
         </div>
       </div>
 
