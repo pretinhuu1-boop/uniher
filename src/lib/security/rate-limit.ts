@@ -77,11 +77,17 @@ const globalLimiter = new RateLimiterMemory({
   keyPrefix: 'global',
 });
 
-function getClientIp(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
+export function getClientIp(req: Request): string {
+  const realIp = req.headers.get('x-real-ip')?.trim();
+  if (realIp) return realIp;
+
+  const forwarded = req.headers
+    .get('x-forwarded-for')
+    ?.split(',')
+    .map((ip) => ip.trim())
+    .filter(Boolean);
+  if (forwarded?.length) return forwarded[forwarded.length - 1];
+
   return '127.0.0.1';
 }
 

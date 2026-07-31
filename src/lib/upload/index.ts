@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'svg'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Magic bytes signatures for validating file content matches declared MIME type
@@ -12,16 +12,9 @@ const MAGIC_BYTES: Record<string, number[][]> = {
   'image/jpeg': [[0xFF, 0xD8, 0xFF]],
   'image/png': [[0x89, 0x50, 0x4E, 0x47]],
   'image/webp': [[0x52, 0x49, 0x46, 0x46]], // RIFF header
-  'image/svg+xml': [], // SVG is text-based, validated separately
 };
 
 function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
-  // SVG is XML text — check for opening tag
-  if (mimeType === 'image/svg+xml') {
-    const head = buffer.subarray(0, 256).toString('utf-8').trimStart().toLowerCase();
-    return head.startsWith('<?xml') || head.startsWith('<svg');
-  }
-
   const signatures = MAGIC_BYTES[mimeType];
   if (!signatures || signatures.length === 0) return true;
 
@@ -62,7 +55,7 @@ export async function saveUploadedFile(
 ): Promise<{ url: string; filename: string }> {
   // Validate type
   if (!ALLOWED_TYPES.includes(file.type)) {
-    throw new Error('Tipo de arquivo não permitido. Use: JPG, PNG, WebP ou SVG.');
+    throw new Error('Tipo de arquivo não permitido. Use: JPG, PNG ou WebP.');
   }
   // Validate size
   if (file.size > MAX_SIZE) {

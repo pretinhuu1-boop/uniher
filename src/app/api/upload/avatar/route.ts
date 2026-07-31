@@ -17,7 +17,7 @@ export const POST = withAuth(async (req: NextRequest, context) => {
       );
     }
 
-    const { url } = await saveUploadedFile(file, 'avatars');
+    const { url } = await saveUploadedFile(file, 'avatars', context.auth.userId);
 
     await getWriteQueue().enqueue((db) => {
       db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(

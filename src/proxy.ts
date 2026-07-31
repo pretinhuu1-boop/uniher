@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = [
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/refresh',
+  '/api/auth/logout',
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
   '/api/leads',
@@ -21,7 +22,6 @@ const PUBLIC_ROUTES = [
 
 // Prefixos publicos
 const PUBLIC_PREFIXES = [
-  '/api/auth/',
   '/api/invites/',
   '/invite/',
   '/_next/',
@@ -31,8 +31,6 @@ const PUBLIC_PREFIXES = [
 function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.includes(pathname)) return true;
   if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
-  // Arquivos estaticos
-  if (pathname.includes('.')) return true;
   return false;
 }
 

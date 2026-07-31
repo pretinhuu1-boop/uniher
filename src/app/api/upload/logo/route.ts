@@ -17,7 +17,7 @@ export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) =>
       );
     }
 
-    const { url } = await saveUploadedFile(file, 'logos');
+    const { url } = await saveUploadedFile(file, 'logos', context.auth.userId);
 
     await getWriteQueue().enqueue((db) => {
       db.prepare('UPDATE companies SET logo_url = ? WHERE id = ?').run(
