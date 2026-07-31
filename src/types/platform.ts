@@ -74,13 +74,6 @@ export interface AgeDistribution {
   color: string;
 }
 
-export interface HealthRisk {
-  month: string;
-  low: number;
-  medium: number;
-  high: number;
-}
-
 export interface Badge {
   id: string;
   name: string;
@@ -165,14 +158,6 @@ export interface CollaboratorHome {
     openRate: number;
     actionsToday: number;
   };
-}
-
-export interface SemaforoItem {
-  dimension: string;
-  status: 'green' | 'yellow' | 'red';
-  score: number;
-  recommendation: string;
-  icon: string;
 }
 
 export interface NotificationItem {

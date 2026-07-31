@@ -26,10 +26,6 @@ vi.mock('@/lib/db/init', () => ({
   initDb: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/repositories/health-score.repository', () => ({
-  recordHealthScore: vi.fn().mockResolvedValue({ id: 'score-1' }),
-}));
-
 vi.mock('@/repositories/user.repository', () => ({
   getUserById: vi.fn(() => userState.user),
 }));

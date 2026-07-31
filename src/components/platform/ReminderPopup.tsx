@@ -18,20 +18,7 @@ interface ReminderNotification {
   timestamp: string;
 }
 
-interface SemaforoItem {
-  dimension: string;
-  status: 'green' | 'yellow' | 'red';
-}
-
 const POPUP_TYPES = new Set(['reminder', 'alert']);
-
-function normalizeDimension(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-}
 
 function getLocalDateValue(base = new Date()): string {
   const year = base.getFullYear();
@@ -64,13 +51,6 @@ function formatSchedule(date: string | null, time: string | null): string {
   });
 }
 
-function getStatusBadge(status?: 'green' | 'yellow' | 'red') {
-  if (status === 'red') return { label: 'Urgente', className: 'bg-rose-100 text-rose-700 border-rose-200' };
-  if (status === 'yellow') return { label: 'Atencao', className: 'bg-amber-100 text-amber-700 border-amber-200' };
-  if (status === 'green') return { label: 'Saudavel', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
-  return null;
-}
-
 export default function ReminderPopup() {
   const router = useRouter();
   const pathname = usePathname();
@@ -96,7 +76,7 @@ export default function ReminderPopup() {
 
   const canControlReminder = activeReminder?.type === 'reminder';
 
-  const semaforoDimension = useMemo(() => {
+  const relatedExam = useMemo(() => {
     if (!activeReminder) return null;
     const match = activeReminder.message.match(/^Lembrete de (.+?) - /i) || activeReminder.message.match(/^Lembrete de (.+)$/i);
     return match?.[1]?.trim() || null;
@@ -106,19 +86,6 @@ export default function ReminderPopup() {
     if (!activeReminder) return { title: '', date: null, time: null };
     return parseSchedule(activeReminder.message);
   }, [activeReminder]);
-
-  const { data: semaforoData } = useSWR<SemaforoItem[]>(
-    shouldLoad && semaforoDimension ? '/api/collaborator/semaforo' : null,
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 15000 }
-  );
-
-  const focusedSemaforoItem = useMemo(() => {
-    if (!semaforoDimension || !Array.isArray(semaforoData)) return null;
-    return semaforoData.find((item) => normalizeDimension(item.dimension) === normalizeDimension(semaforoDimension)) || null;
-  }, [semaforoData, semaforoDimension]);
-
-  const semaforoBadge = getStatusBadge(focusedSemaforoItem?.status);
 
   useEffect(() => {
     if (!activeReminder || typeof window === 'undefined') return;
@@ -172,15 +139,15 @@ export default function ReminderPopup() {
     try {
       await markAsRead(activeReminder.id);
       persistDismissal(activeReminder.id);
-      if (semaforoDimension) {
-        router.push(`/semaforo?focus=${encodeURIComponent(semaforoDimension)}`);
+      if (relatedExam) {
+        router.push(`/semaforo?focus=${encodeURIComponent(relatedExam)}`);
       } else {
         router.push('/agenda');
       }
     } finally {
       setActionLoading(null);
     }
-  }, [activeReminder, markAsRead, persistDismissal, router, semaforoDimension]);
+  }, [activeReminder, markAsRead, persistDismissal, relatedExam, router]);
 
   const handleReminderAction = useCallback(async (action: 'snooze_15m' | 'complete' | 'reschedule', date?: string, time?: string) => {
     if (!activeReminder) return;
@@ -240,27 +207,18 @@ export default function ReminderPopup() {
           <p className="mt-2 text-base font-semibold text-uni-text-900">{formatSchedule(scheduleInfo.date, scheduleInfo.time)}</p>
         </div>
 
-        {semaforoDimension && (
+        {relatedExam && (
           <div className="rounded-2xl border border-border-1 bg-white px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-uni-text-400">Dimensao relacionada</p>
-                <p className="mt-1 text-sm font-semibold text-uni-text-900">{semaforoDimension}</p>
-              </div>
-              {semaforoBadge && (
-                <span className={`rounded-full border px-3 py-1 text-xs font-bold ${semaforoBadge.className}`}>
-                  {semaforoBadge.label}
-                </span>
-              )}
-            </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-uni-text-400">Exame relacionado</p>
+            <p className="mt-1 text-sm font-semibold text-uni-text-900">{relatedExam}</p>
           </div>
         )}
 
         <div className="rounded-2xl border border-border-1 bg-cream-50 px-4 py-3">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-700">O que fazer agora</p>
           <p className="mt-2 text-sm leading-6 text-uni-text-600">
-            {semaforoDimension
-              ? `Abra o semaforo para revisar ${semaforoDimension.toLowerCase()}, reagende se precisar ou marque como feito.`
+            {relatedExam
+              ? `Abra o semaforo para revisar ${relatedExam.toLowerCase()}, reagende se precisar ou marque como feito.`
               : 'Abra sua agenda para confirmar o horario, reagendar ou marcar como realizado.'}
           </p>
         </div>
@@ -315,7 +273,7 @@ export default function ReminderPopup() {
           >
             {actionLoading === 'agenda'
               ? 'Abrindo...'
-              : semaforoDimension
+              : relatedExam
               ? 'Abrir no semaforo'
               : 'Abrir minha agenda'}
           </button>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useCollaboratorHome, useCollaboratorBadges, useCollaboratorChallenges, useNotifications, useDailyMissions, useCollaboratorFeed } from '@/hooks/useCollaborator';
 import useSWR from 'swr';
 import { cn } from '@/lib/utils';
@@ -44,7 +43,6 @@ interface FeedItem {
 }
 
 export default function ColaboradoraPage() {
-  const router = useRouter();
   const [feedScope, setFeedScope] = useState<FeedScope>('company');
   const { data } = useCollaboratorHome();
   const { badges: allBadges } = useCollaboratorBadges();
@@ -60,25 +58,24 @@ export default function ColaboradoraPage() {
   } = useCollaboratorFeed(feedScope);
   const { data: heartsData } = useSWR('/api/gamification/hearts', fetcher, { revalidateOnFocus: false });
 
-  // Redirect to quiz if no health scores exist (first access)
+  // Redirect to the onboarding profile only when it has not been completed.
   const [quizChecked, setQuizChecked] = useState(false);
   useEffect(() => {
-    fetch('/api/collaborator/semaforo').then(r => r.json()).then(d => {
-      const scores = d?.semaforo || d || [];
+    fetch('/api/quiz').then(r => r.json()).then(result => {
       // Don't redirect if user is viewing as collaborator (multi-role)
       const isViewMode = typeof window !== 'undefined' && sessionStorage.getItem('uniher-view-mode') === 'colaboradora';
       const skipQuiz = typeof window !== 'undefined' && sessionStorage.getItem('uniher-skip-quiz') === '1';
 
-      if (Array.isArray(scores) && scores.length === 0 && !quizChecked && !isViewMode && !skipQuiz) {
-        router.push('/welcome-colaboradora');
+      if (!result && !quizChecked && !isViewMode && !skipQuiz) {
+        window.location.href = '/welcome-colaboradora';
       }
-      if (Array.isArray(scores) && scores.length > 0 && typeof window !== 'undefined') {
+      if (result && typeof window !== 'undefined') {
         sessionStorage.removeItem('uniher-skip-quiz');
       }
 
       setQuizChecked(true);
     }).catch(() => setQuizChecked(true));
-  }, [router, quizChecked]);
+  }, [quizChecked]);
 
   useEffect(() => {
     if (feedScope === 'company' && feedSettings && !feedSettings.companyFeedEnabled) {
@@ -100,7 +97,7 @@ export default function ColaboradoraPage() {
   const [missionFeedback, setMissionFeedback] = useState<string | null>(null);
   const [levelUpBurst, setLevelUpBurst] = useState(false);
   const [activeMission, setActiveMission] = useState<DailyMission | null>(null);
-  const [missionPayload, setMissionPayload] = useState<{ mood?: string; glasses?: number; challengeId?: string; badgeId?: string; note?: string; confirmed?: boolean }>({});
+  const [missionPayload, setMissionPayload] = useState<{ mood?: string; glasses?: number; challengeId?: string; badgeId?: string; note?: string }>({});
   const [missionSubmitting, setMissionSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -918,29 +915,6 @@ export default function ColaboradoraPage() {
               </div>
             )}
 
-            {/* update_semaforo: must confirm via checkbox after opening page */}
-            {activeMission.action === 'update_semaforo' && (
-              <div className="space-y-3">
-                <a
-                  href="/semaforo"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-100 text-sm font-bold text-amber-700 hover:bg-amber-100 transition-colors"
-                >
-                  🚦 Abrir Semáforo de Saúde →
-                </a>
-                <label className="flex items-start gap-3 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 w-4 h-4 accent-rose-500 flex-shrink-0"
-                    checked={missionPayload.confirmed ?? false}
-                    onChange={e => setMissionPayload(p => ({ ...p, confirmed: e.target.checked }))}
-                  />
-                  <span className="text-sm text-uni-text-700">Confirmei que abri e atualizei meu Semáforo de Saúde hoje</span>
-                </label>
-              </div>
-            )}
-
             {/* read_content: must write what was read (min 10 chars) */}
             {activeMission.action === 'read_content' && (
               <div className="space-y-3">
@@ -1007,7 +981,6 @@ export default function ColaboradoraPage() {
                   (activeMission.action === 'check_in' && !missionPayload.mood) ||
                   (activeMission.action === 'drink_water' && !missionPayload.glasses) ||
                   (activeMission.action === 'complete_challenge' && !missionPayload.challengeId && activeChallenges.length > 0) ||
-                  (activeMission.action === 'update_semaforo' && !missionPayload.confirmed) ||
                   (activeMission.action === 'read_content' && (missionPayload.note?.trim().length ?? 0) < 10) ||
                   (activeMission.action === 'share_badge' && (!missionPayload.badgeId && unlockedBadges.length > 0))
                 }

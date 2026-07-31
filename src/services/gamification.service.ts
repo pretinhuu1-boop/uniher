@@ -108,9 +108,8 @@ export async function awardNr1Completion(
 }
 
 /**
- * Desbloqueia badges de PARTICIPAÇÃO — lê SÓ activity_log (NUNCA health_scores/score).
- * Separado de checkAndUnlockBadges DE PROPÓSITO: aquela função lê health_scores
- * (badge_equilibrio), e a conclusão da NR-1 não pode tocar dado clínico (muro LGPD).
+ * Desbloqueia badges de PARTICIPAÇÃO usando somente o activity_log.
+ * A conclusão da NR-1 não pode tocar dados clínicos nem inferir risco.
  * badge_nr1 tem points=0 → não credita XP (sem duplo-crédito com awardNr1Completion).
  */
 export async function checkParticipationBadges(userId: string): Promise<string[]> {
@@ -237,12 +236,6 @@ export async function dailyCheckIn(userId: string): Promise<{
   // Check badge unlocks
   const badgesUnlocked = await checkAndUnlockBadges(userId);
 
-  // Recalculate semaforo with objective data
-  try {
-    const { recalculateSemaforo } = await import('./semaforo-calculator.service');
-    await recalculateSemaforo(userId);
-  } catch { /* non-critical */ }
-
   return { ...result, badgesUnlocked };
 }
 
@@ -267,10 +260,6 @@ export async function checkAndUnlockBadges(userId: string): Promise<string[]> {
     "SELECT COUNT(*) as count FROM user_exams WHERE user_id = ? AND status = 'done'"
   ).get(userId) as { count: number } | undefined)?.count ?? 0;
 
-  // Check all 6 health dimensions > 7
-  const healthScores = db.prepare('SELECT score FROM health_scores WHERE user_id = ?').all(userId) as any[];
-  const allDimensionsHigh = healthScores.length >= 6 && healthScores.every(h => h.score >= 7.0);
-
   const CONDITIONS: { id: string; check: boolean }[] = [
     { id: 'badge_iniciante', check: user.streak >= 1 || completedChallenges >= 1 },
     { id: 'badge_streak7', check: user.streak >= 7 },
@@ -278,7 +267,6 @@ export async function checkAndUnlockBadges(userId: string): Promise<string[]> {
     { id: 'badge_streak30', check: user.streak >= 30 },
     { id: 'badge_mestra', check: getLevelFromPoints(user.points).level >= 10 },
     { id: 'badge_maratonista', check: completedChallenges >= 50 },
-    { id: 'badge_equilibrio', check: allDimensionsHigh },
   ];
 
   const writeQueue = getWriteQueue();

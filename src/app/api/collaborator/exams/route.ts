@@ -50,11 +50,5 @@ export const POST = withAuth(async (req: NextRequest, context: any) => {
     `).run(id, userId, exam_name, status, completed_date || null, due_date || null);
   });
 
-  // Recalculate semaforo after exam registration
-  try {
-    const { recalculateSemaforo } = await import('@/services/semaforo-calculator.service');
-    await recalculateSemaforo(userId);
-  } catch { /* non-critical */ }
-
   return NextResponse.json({ id, exam_name, status, completed_date });
 });

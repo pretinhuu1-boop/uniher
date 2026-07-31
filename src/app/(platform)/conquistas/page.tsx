@@ -21,7 +21,6 @@ const BADGE_REQUIREMENTS: Record<string, string> = {
   badge_streak30:   'Mantenha uma sequência de 30 dias consecutivos.',
   badge_mestra:     'Alcance o nível 10 na plataforma.',
   badge_maratonista:'Complete 50 desafios.',
-  badge_equilibrio: 'Atinja pontuação ≥ 7 em todas as 6 dimensões de saúde.',
   default:          'Continue participando das campanhas e completando desafios.',
 };
 

@@ -97,6 +97,57 @@ describe('health check-in migration numbering', () => {
     }
   });
 
+  it('retires legacy Semaforo missions without deleting archived health scores', async () => {
+    const dbPath = path.join(os.tmpdir(), `uniher-semaforo-retirement-${process.pid}-${Date.now()}.db`);
+    const database = new Database(dbPath);
+    const migrationPath = path.join(
+      process.cwd(),
+      'src/lib/db/migrations/069_retire_legacy_semaforo_runtime.sql'
+    );
+    const { applyMigration } = await import('../../src/lib/db/migrations/runner');
+
+    try {
+      database.exec(`
+        CREATE TABLE daily_missions (id TEXT PRIMARY KEY, action TEXT NOT NULL);
+        CREATE TABLE notification_preferences (user_id TEXT PRIMARY KEY, mission_reminders TEXT NOT NULL);
+        CREATE TABLE health_scores (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, dimension TEXT NOT NULL, score REAL NOT NULL);
+      `);
+      database.prepare('INSERT INTO daily_missions (id, action) VALUES (?, ?)').run('legacy', 'update_semaforo');
+      database.prepare('INSERT INTO daily_missions (id, action) VALUES (?, ?)').run('current', 'check_in');
+      database.prepare('INSERT INTO notification_preferences (user_id, mission_reminders) VALUES (?, ?)').run(
+        'user-1',
+        JSON.stringify({ check_in: true, update_semaforo: true })
+      );
+      database.prepare('INSERT INTO health_scores (id, user_id, dimension, score) VALUES (?, ?, ?, ?)').run(
+        'score-1',
+        'user-1',
+        'Sono',
+        7
+      );
+
+      expect(applyMigration(
+        database,
+        '069_retire_legacy_semaforo_runtime.sql',
+        readFileSync(migrationPath, 'utf8')
+      )).toBe('applied');
+
+      const missionActions = database.prepare('SELECT action FROM daily_missions ORDER BY action').all();
+      const preferences = database.prepare('SELECT mission_reminders FROM notification_preferences').get() as {
+        mission_reminders: string;
+      };
+      const archivedScores = database.prepare('SELECT COUNT(*) AS count FROM health_scores').get() as { count: number };
+
+      expect(missionActions).toEqual([{ action: 'check_in' }]);
+      expect(JSON.parse(preferences.mission_reminders)).toEqual({ check_in: true });
+      expect(archivedScores.count).toBe(1);
+    } finally {
+      database.close();
+      for (const file of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) {
+        rmSync(file, { force: true });
+      }
+    }
+  });
+
   it('does not rerun the renamed migration on databases that applied the old filename', async () => {
     const dbPath = path.join(os.tmpdir(), `uniher-health-checkin-migration-${process.pid}-${Date.now()}.db`);
     process.env.DATABASE_PATH = dbPath;

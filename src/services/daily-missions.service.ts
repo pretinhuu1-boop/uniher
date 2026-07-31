@@ -6,7 +6,6 @@ export type MissionAction =
   | 'complete_challenge'
   | 'drink_water'
   | 'read_content'
-  | 'update_semaforo'
   | 'share_badge';
 
 export interface DailyMission {
@@ -27,7 +26,6 @@ const MISSION_POOL: Omit<DailyMission, 'id' | 'user_id' | 'day' | 'completed' | 
   { title: 'Complete um Desafio', description: 'Avance em qualquer desafio ativo', xp: 40, category: 'Desafios', action: 'complete_challenge' },
   { title: 'Hidratação', description: 'Registre que bebeu água hoje', xp: 20, category: 'Saúde', action: 'drink_water' },
   { title: 'Leitura de Conteúdo', description: 'Leia um artigo de saúde feminina', xp: 30, category: 'Educação', action: 'read_content' },
-  { title: 'Atualizar Semáforo', description: 'Atualize seu semáforo de saúde', xp: 35, category: 'Saúde', action: 'update_semaforo' },
   { title: 'Compartilhar Badge', description: 'Compartilhe uma conquista desbloqueada', xp: 25, category: 'Social', action: 'share_badge' },
 ];
 

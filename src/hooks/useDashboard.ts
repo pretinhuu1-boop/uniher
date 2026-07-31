@@ -16,7 +16,6 @@ export function useDashboard() {
     campaigns: data?.campaigns ?? [],
     engagement: data?.engagement ?? [],
     ageDistribution: data?.ageDistribution ?? [],
-    healthRisk: data?.healthRisk ?? [],
     invites: data?.invites ?? { total: 0, pending: 0, accepted: 0, expired: 0 },
     reports: data?.reports ?? [],
     isLoading,

@@ -24,7 +24,7 @@ export const GET = withAuth(async (_req, { auth }) => {
       'SELECT id, name, email, role, department_id, company_id, points, level, league, avatar_url, created_at, updated_at FROM users WHERE id = ?'
     ).get(userId);
 
-    const healthScores = db.prepare(
+    const legacyHealthScores = db.prepare(
       'SELECT dimension, score, recorded_at FROM health_scores WHERE user_id = ? ORDER BY recorded_at DESC'
     ).all(userId);
 
@@ -55,7 +55,7 @@ export const GET = withAuth(async (_req, { auth }) => {
     const exportData = {
       exportedAt: new Date().toISOString(),
       user,
-      healthScores,
+      legacyHealthScores,
       quizResults,
       badges,
       challenges,

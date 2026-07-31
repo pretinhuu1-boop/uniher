@@ -123,7 +123,7 @@ const TOOLTIPS: Record<string, string> = {
   '/dashboard': 'Visão geral da empresa: KPIs, engajamento e resumo de atividades',
   '/colaboradoras-gestao': 'Gerencie as colaboradoras: aprovação, perfis e status',
   '/departamentos': 'Organize departamentos e vincule colaboradoras a cada setor',
-  '/semaforo': 'Indicadores de saúde por dimensão — identifique áreas de atenção',
+  '/semaforo': 'Prazos dos seus exames preventivos',
   '/campanhas': 'Crie e acompanhe campanhas de saúde e bem-estar',
   '/objetivos': 'Defina metas e recompensas para engajar as colaboradoras',
   '/desafios': 'Crie desafios gamificados com pontuação e prazos',

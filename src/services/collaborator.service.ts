@@ -3,8 +3,9 @@ import * as userRepo from '@/repositories/user.repository';
 import * as badgeRepo from '@/repositories/badge.repository';
 import * as challengeRepo from '@/repositories/challenge.repository';
 import * as campaignRepo from '@/repositories/campaign.repository';
-import * as healthRepo from '@/repositories/health-score.repository';
 import * as notifRepo from '@/repositories/notification.repository';
+
+const RETIRED_BADGE_IDS = new Set(['badge_equilibrio']);
 
 function getLevelFromPoints(points: number): { level: number; pointsToNext: number } {
   let level = 1;
@@ -51,7 +52,7 @@ export function getCollaboratorHome(userId: string, companyId: string) {
   if (!user) throw new Error('Usuário não encontrado');
 
   const { level, pointsToNext } = getLevelFromPoints(user.points);
-  const badges = badgeRepo.getUserBadges(userId);
+  const badges = badgeRepo.getUserBadges(userId).filter((badge) => !RETIRED_BADGE_IDS.has(badge.id));
   const unlockedBadges = badges.filter(b => b.unlocked);
   const challenges = challengeRepo.getUserChallenges(userId, 'active');
   const activeCampaigns = campaignRepo.countActiveCampaigns(companyId);
@@ -84,64 +85,19 @@ export function getCollaboratorHome(userId: string, companyId: string) {
   };
 }
 
-export function getCollaboratorSemaforo(userId: string) {
-  const scores = healthRepo.getLatestHealthScores(userId);
-
-  const RECOMMENDATIONS: Record<string, string[]> = {
-    'Prevenção': [
-      'Agende sua mamografia anual',
-      'Faça o Papanicolau em dia',
-      'Consulte seu ginecologista',
-    ],
-    'Sono': [
-      'Mantenha horários regulares de sono',
-      'Evite telas 1h antes de dormir',
-      'Pratique respiração profunda',
-    ],
-    'Energia': [
-      'Hidrate-se: 8 copos de água/dia',
-      'Faça pausas ativas de 5 min',
-      'Inclua proteínas no café da manhã',
-    ],
-    'Saúde Mental': [
-      'Pratique mindfulness por 10 min',
-      'Converse com alguém de confiança',
-      'Limite o tempo nas redes sociais',
-    ],
-    'Hábitos': [
-      'Inclua vegetais em todas as refeições',
-      'Faça 30 min de atividade física',
-      'Reduza o açúcar processado',
-    ],
-    'Engajamento': [
-      'Complete um desafio hoje',
-      'Participe da campanha ativa',
-      'Compartilhe uma conquista',
-    ],
-  };
-
-  return scores.map(s => ({
-    dimension: s.dimension,
-    status: s.status,
-    score: s.score,
-    recommendation: (RECOMMENDATIONS[s.dimension] || ['Mantenha seus hábitos saudáveis'])[0],
-    icon: s.icon,
-    history: healthRepo.getHealthScoreHistory(userId, s.dimension, 30).map(h => h.score),
-    tips: RECOMMENDATIONS[s.dimension] || [],
-  }));
-}
-
 export function getCollaboratorBadges(userId: string) {
-  return badgeRepo.getUserBadges(userId).map(b => ({
-    id: b.id,
-    name: b.name,
-    description: b.description,
-    icon: b.icon,
-    points: b.points,
-    rarity: b.rarity,
-    unlockedAt: b.unlocked_at,
-    unlocked: Boolean(b.unlocked),
-  }));
+  return badgeRepo.getUserBadges(userId)
+    .filter((badge) => !RETIRED_BADGE_IDS.has(badge.id))
+    .map(b => ({
+      id: b.id,
+      name: b.name,
+      description: b.description,
+      icon: b.icon,
+      points: b.points,
+      rarity: b.rarity,
+      unlockedAt: b.unlocked_at,
+      unlocked: Boolean(b.unlocked),
+    }));
 }
 
 export function getCollaboratorChallenges(userId: string) {

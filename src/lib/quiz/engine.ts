@@ -64,17 +64,3 @@ export function calculateArchetype(answers: number[]): ArchetypeResult {
     score: (stabilityVsChallenge + careVsBalance) / 2
   };
 }
-
-/**
- * Gera o Health Score inicial baseado nas dimensões do quiz.
- */
-export function calculateInitialHealthScore(answers: number[]) {
-  return [
-    { dimension: 'Prevenção', score: answers[2] || 70 },
-    { dimension: 'Sono', score: answers[3] || 60 },
-    { dimension: 'Energia', score: answers[4] || 65 },
-    { dimension: 'Saúde Mental', score: answers[5] || 75 },
-    { dimension: 'Hábitos', score: (answers[4] + answers[5]) / 2 },
-    { dimension: 'Engajamento', score: 100 }
-  ];
-}

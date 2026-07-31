@@ -17,7 +17,7 @@ function getOrCreatePrefs(db: ReturnType<typeof getReadDb>, userId: string) {
     row = {
       user_id: userId,
       reminder_times: '["08:00","18:00"]',
-      mission_reminders: '{"check_in":true,"drink_water":true,"complete_challenge":true,"update_semaforo":true}',
+      mission_reminders: '{"check_in":true,"drink_water":true,"complete_challenge":true,"read_content":true,"share_badge":true}',
       browser_enabled: 0,
     };
   }

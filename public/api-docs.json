@@ -706,13 +706,21 @@
         }
       }
     },
-    "/collaborator/semaforo": {
+    "/collaborator/health-checkin": {
       "get": {
         "tags": ["Colaboradora"],
-        "summary": "Semáforo de saúde da colaboradora",
+        "summary": "Consultar prazos dos exames preventivos",
         "security": [{ "cookieAuth": [] }],
         "responses": {
-          "200": { "description": "Status do semáforo de saúde" }
+          "200": { "description": "Exames aplicaveis e Semaforo por prazo" }
+        }
+      },
+      "post": {
+        "tags": ["Colaboradora"],
+        "summary": "Atualizar prazos dos exames preventivos",
+        "security": [{ "cookieAuth": [] }],
+        "responses": {
+          "200": { "description": "Semaforo preventivo atualizado" }
         }
       }
     },

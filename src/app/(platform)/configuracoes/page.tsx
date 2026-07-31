@@ -7,7 +7,6 @@ const MISSION_LABELS: Record<string, string> = {
   check_in: 'Check-in Diário',
   drink_water: 'Hidratação',
   complete_challenge: 'Desafios',
-  update_semaforo: 'Semáforo de Saúde',
   read_content: 'Leitura de Conteúdo',
   share_badge: 'Compartilhar Badge',
 };
@@ -86,7 +85,7 @@ export default function ConfiguracoesPage() {
   // Reminder preferences
   const [reminderTimes, setReminderTimes] = useState<string[]>(['08:00', '18:00']);
   const [missionReminders, setMissionReminders] = useState<Record<string, boolean>>({
-    check_in: true, drink_water: true, complete_challenge: true, update_semaforo: true,
+    check_in: true, drink_water: true, complete_challenge: true, read_content: true, share_badge: true,
   });
   const [browserEnabled, setBrowserEnabled] = useState(false);
   const [browserSupported, setBrowserSupported] = useState(false);

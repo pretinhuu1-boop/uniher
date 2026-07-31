@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import {
+  existsSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -17,7 +18,7 @@ function readProjectFile(...segments: string[]): string {
 }
 
 function listTrackedTextFiles(): string[] {
-  const result = spawnSync('git', ['ls-files', '-z'], {
+  const result = spawnSync('git', ['ls-files', '-co', '--exclude-standard', '-z'], {
     cwd: root,
     encoding: 'utf8',
   });
@@ -25,6 +26,7 @@ function listTrackedTextFiles(): string[] {
   expect(result.status, result.stderr).toBe(0);
   return result.stdout
     .split('\0')
+    .filter((file) => existsSync(path.join(root, file)))
     .filter((file) => /\.(?:[cm]?[jt]sx?|md|html|json|sql|sh|bat|cjs)$/.test(file));
 }
 

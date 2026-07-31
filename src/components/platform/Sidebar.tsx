@@ -22,7 +22,6 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { href: '/colaboradoras-gestao', label: 'Colaboradoras', icon: 'colaboradoras' },
     { href: '/departamentos', label: 'Departamentos', icon: 'departamentos' },
-    { href: '/semaforo', label: 'Semaforo de Saude', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
     { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios/gerenciar', label: 'Gerenciar Desafios', icon: 'desafios' },
@@ -36,7 +35,6 @@ const NAV_ITEMS_BY_ROLE: Record<string, NavItem[]> = {
   ],
   lideranca: [
     { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { href: '/semaforo', label: 'Semaforo da Equipe', icon: 'semaforo' },
     { href: '/campanhas', label: 'Campanhas', icon: 'campanhas' },
     { href: '/objetivos', label: 'Objetivos & Recompensas', icon: 'objetivos' },
     { href: '/desafios', label: 'Desafios', icon: 'desafios' },

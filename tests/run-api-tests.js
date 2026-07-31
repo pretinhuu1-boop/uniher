@@ -155,7 +155,7 @@ async function noAuthFetch(path) {
   console.log('\n═══ COLABORADORA ═══');
   if (colabToken) {
     for (const [m, p, l] of [
-      ['GET', '/api/collaborator/semaforo', 'Semaforo'],
+      ['GET', '/api/collaborator/health-checkin', 'Semaforo preventivo'],
       ['GET', '/api/collaborator/badges', 'Badges'],
       ['GET', '/api/collaborator/challenges', 'Desafios'],
       ['GET', '/api/collaborator/campaigns', 'Campanhas'],
@@ -163,21 +163,11 @@ async function noAuthFetch(path) {
       ['GET', '/api/collaborator/exams', 'Meus exames'],
       ['GET', '/api/notifications/count', 'Notificacoes'],
       ['POST', '/api/gamification/check-in', 'Check-in diario'],
-      ['POST', '/api/collaborator/semaforo/recalculate', 'Recalcular semaforo'],
     ]) {
       const r = await api(colabToken, m, p);
       log(r.status >= 200 && r.status < 300, l, r.status);
     }
 
-    // Verify semaforo has 6 dimensions
-    const sem = await api(colabToken, 'GET', '/api/collaborator/semaforo');
-    const semData = sem.data?.semaforo || sem.data || [];
-    if (Array.isArray(semData)) {
-      const uniqueDims = [...new Set(semData.map(s => s.dimension))];
-      log(uniqueDims.length === 6, 'Semaforo tem 6 dimensoes', `${uniqueDims.length} unicas de ${semData.length} registros`);
-    } else {
-      log(false, 'Semaforo tem 6 dimensoes', `resposta nao e array: ${typeof semData}`);
-    }
   } else {
     log(false, 'SKIP: Colaboradora endpoints (sem token)', 'N/A');
   }
@@ -255,7 +245,7 @@ async function noAuthFetch(path) {
   log(await noAuthFetch('/api/health') === 200, 'Health publico OK', 200);
   log(await noAuthFetch('/api/admin/companies') >= 400, 'Admin sem auth BLOQ', '');
   log(await noAuthFetch('/api/rh/users') >= 400, 'RH sem auth BLOQ', '');
-  log(await noAuthFetch('/api/collaborator/semaforo') >= 400, 'Colab sem auth BLOQ', '');
+  log(await noAuthFetch('/api/collaborator/health-checkin') >= 400, 'Semaforo preventivo sem auth BLOQ', '');
 
   // ═══ ATAQUES ═══
   console.log('\n═══ ATAQUES ═══');

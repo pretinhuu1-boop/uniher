@@ -10,12 +10,11 @@ export const GET = withRole('admin', 'rh', 'lideranca')(async (_req, { auth }) =
 
     const companyId = auth.companyId;
 
-    const [kpis, departments, engagement, ageDistribution, healthRisk, roi, invites, campaigns, reports] = await Promise.all([
+    const [kpis, departments, engagement, ageDistribution, roi, invites, campaigns, reports] = await Promise.all([
       Promise.resolve(dashService.getDashboardKPIs(companyId)),
       Promise.resolve(dashService.getDepartmentRanking(companyId)),
       Promise.resolve(dashService.getEngagementOverTime(companyId)),
       Promise.resolve(dashService.getAgeDistribution(companyId)),
-      Promise.resolve(dashService.getHealthRiskEvolution(companyId)),
       Promise.resolve(dashService.getROIData(companyId)),
       Promise.resolve(dashService.getInviteStatus(companyId)),
       Promise.resolve(dashService.getCampaignsDashboard(companyId)),
@@ -27,7 +26,6 @@ export const GET = withRole('admin', 'rh', 'lideranca')(async (_req, { auth }) =
       departments,
       engagement,
       ageDistribution,
-      healthRisk,
       roi,
       invites,
       campaigns,

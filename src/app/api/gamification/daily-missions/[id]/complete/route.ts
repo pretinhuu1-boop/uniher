@@ -7,14 +7,13 @@ import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 
 const MissionPayloadSchema = z.object({
-  mood: z.enum(['great', 'good', 'neutral', 'bad', 'terrible']).optional(),
+  mood: z.enum(['tired', 'ok', 'good', 'great']).optional(),
   glasses: z.number().int().min(0).max(20).optional(),
   minutes: z.number().int().min(0).max(480).optional(),
   hours: z.number().min(0).max(24).optional(),
   note: z.string().max(500).optional(),
   challengeId: z.string().max(100).optional(),
   badgeId: z.string().max(100).optional(),
-  confirmed: z.boolean().optional(),
 }).optional();
 
 export const POST = withAuth(async (req, context) => {
@@ -77,18 +76,6 @@ export const POST = withAuth(async (req, context) => {
       const noteSize = payload.note?.trim().length ?? 0;
       if (noteSize < 20) {
         return NextResponse.json({ error: 'Descreva brevemente o que voce leu (minimo 20 caracteres).' }, { status: 400 });
-      }
-    }
-
-    if (mission.action === 'update_semaforo') {
-      if (!payload.confirmed) {
-        return NextResponse.json({ error: 'Confirme que voce atualizou o Semaforo de Saude para concluir.' }, { status: 400 });
-      }
-      const updatedToday = db.prepare(
-        `SELECT COUNT(*) as c FROM health_scores WHERE user_id = ? AND DATE(recorded_at) = ?`
-      ).get(userId, today) as { c: number };
-      if (!updatedToday.c) {
-        return NextResponse.json({ error: 'Atualize o Semaforo hoje antes de concluir esta missao.' }, { status: 400 });
       }
     }
 

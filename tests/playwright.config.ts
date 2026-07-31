@@ -31,5 +31,6 @@ export default defineConfig({
     { name: 'integrado', testMatch: 'integrado.spec.ts' },
     { name: 'seguranca', testMatch: 'seguranca.spec.ts' },
     { name: 'visual-ux', testMatch: 'visual-ux.spec.ts', use: { headless: true } },
+    { name: 'semaforo-retirement', testMatch: 'semaforo-retirement.spec.ts', use: { headless: true } },
   ],
 });

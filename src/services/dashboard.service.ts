@@ -332,43 +332,6 @@ export function getAgeDistribution(companyId: string) {
   }
 }
 
-/* ── Health risk evolution ── */
-
-export function getHealthRiskEvolution(companyId: string) {
-  try {
-    const db = getReadDb();
-
-    const rows = db.prepare(`
-      SELECT
-        strftime('%Y-%m', hs.recorded_at) as ym,
-        SUM(CASE WHEN hs.score >= 7 THEN 1 ELSE 0 END) as low_count,
-        SUM(CASE WHEN hs.score >= 4 AND hs.score < 7 THEN 1 ELSE 0 END) as medium_count,
-        SUM(CASE WHEN hs.score < 4 THEN 1 ELSE 0 END) as high_count,
-        COUNT(*) as total
-      FROM health_scores hs
-      JOIN users u ON u.id = hs.user_id
-      WHERE u.company_id = ? AND hs.recorded_at >= datetime('now', '-6 months')
-      GROUP BY ym
-      ORDER BY ym ASC
-    `).all(companyId) as { ym: string; low_count: number; medium_count: number; high_count: number; total: number }[];
-
-    if (rows.length === 0) return [];
-
-    return rows.map(r => {
-      const mm = r.ym.split('-')[1];
-      return {
-        month: MONTH_LABELS[mm] ?? mm,
-        low: r.total > 0 ? Math.round((r.low_count / r.total) * 100) : 0,
-        medium: r.total > 0 ? Math.round((r.medium_count / r.total) * 100) : 0,
-        high: r.total > 0 ? Math.round((r.high_count / r.total) * 100) : 0,
-      };
-    });
-  } catch (err) {
-    console.error('[Dashboard] getHealthRiskEvolution error:', err);
-    return [];
-  }
-}
-
 /* ── Invites ── */
 
 export function getInviteStatus(companyId: string): InviteStatus {
