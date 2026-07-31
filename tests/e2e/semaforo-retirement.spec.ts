@@ -5,6 +5,7 @@ import path from 'node:path';
 const BASE_URL = process.env.UNIHER_E2E_BASE_URL!;
 const COLLABORATOR_EMAIL = process.env.UNIHER_E2E_COLLABORATOR_EMAIL!;
 const COLLABORATOR_PASSWORD = process.env.UNIHER_E2E_COLLABORATOR_PASSWORD!;
+const ARTIFACT_DIR = process.env.UNIHER_E2E_ARTIFACT_DIR || 'artifacts/semaforo-retirement';
 
 test('keeps only the preventive exam Semaforo on desktop and mobile', async ({ page }) => {
   await page.goto(`${BASE_URL}/auth`);
@@ -39,7 +40,7 @@ test('keeps only the preventive exam Semaforo on desktop and mobile', async ({ p
     expect(response.status(), legacyPath).toBe(404);
   }
 
-  const screenshotDir = path.join(process.cwd(), 'artifacts', 'semaforo-retirement');
+  const screenshotDir = path.resolve(process.cwd(), ARTIFACT_DIR);
   mkdirSync(screenshotDir, { recursive: true });
   await page.screenshot({
     path: path.join(screenshotDir, 'semaforo-desktop.png'),
