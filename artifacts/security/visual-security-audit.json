@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-07-31T15:06:05.283Z",
+  "baseUrl": "http://127.0.0.1:3118",
+  "agendaDesktop": {
+    "assertions": {
+      "suppressionVisible": true,
+      "identityAbsent": true,
+      "clinicalDetailAbsent": true,
+      "monthlyTotalAbsent": true
+    },
+    "consoleErrors": []
+  },
+  "agendaMobile": {
+    "assertions": {
+      "suppressionVisible": true,
+      "identityAbsent": true,
+      "clinicalDetailAbsent": true,
+      "monthlyTotalAbsent": true
+    },
+    "consoleErrors": []
+  },
+  "invitesRh": {
+    "assertions": {
+      "inviteVisible": true,
+      "copyControlVisible": true,
+      "revokeControlVisible": true
+    },
+    "consoleErrors": []
+  },
+  "invitesLeadership": {
+    "assertions": {
+      "inviteVisible": true,
+      "copyControlAbsent": true,
+      "revokeControlAbsent": true,
+      "rawTokenAbsent": true,
+      "createControlsAbsent": true,
+      "readOnlyGuidanceVisible": true
+    },
+    "consoleErrors": []
+  },
+  "passed": true
+}

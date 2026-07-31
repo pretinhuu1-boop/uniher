@@ -1,68 +1,124 @@
 # UniHER Public API Hardening Audit
 
 Date: 2026-07-31
-Candidate base: `bb30d75`
-Branch: `codex/security-public-api-hardening`
-Decision: `HOLD`
+Production base: `bb30d75`
+Candidate branch: `codex/security-public-api-hardening`
+Candidate code commit: `ec81a14`
+Decision: `PASS_LOCAL / READY_FOR_PROMOTION`
 
 ## Scope
 
-- Preserve the current landing page without changes.
-- Patch vulnerable dependencies without major-version force fixes.
-- Close anonymous account escalation and stale-session authorization.
-- Minimize the public health response.
-- Harden proxy, client IP attribution, and same-origin uploads.
-- Probe every implemented `GET` API anonymously with no writes.
+- Preserve the current landing page.
+- Find public APIs that expose private or operational data.
+- Close anonymous privilege escalation and stale authorization.
+- Enforce tenant and department boundaries in reads and writes.
+- Make password reset, first access, refresh rotation and invite acceptance safe.
+- Harden uploads, client IP attribution, caching and dependency vulnerabilities.
+- Validate behavior with isolated runtime probes, E2E flows and screenshots.
 
-## Implemented commits
+## Controls Implemented
 
-| Commit | Change |
-|---|---|
-| `a14c2a3` | Patch vulnerable dependencies and lock the safe transitive versions. |
-| `eaaa422` | Restrict public registration to a new RH account with a new company. |
-| `4f4e081` | Revalidate persisted user, role, tenant, approval, block, deletion, and company state. |
-| `a4ef279` | Return only `healthy` or `degraded` from the public health endpoint. |
-| `d21c949` | Close dotted-path and broad auth-prefix bypasses, trust the reverse proxy IP, reject SVG, and enforce upload quota identity. |
+- Public registration only creates a new RH account with a new company.
+- Authenticated requests reload persisted user, role, tenant and account state.
+- Access tokens carry `session_version`; password changes and resets revoke old access.
+- Refresh tokens carry a unique `jti`, have a unique persisted hash and rotate atomically.
+- The write queue no longer replays failed writes unless explicitly requested.
+- Administrative and public reset links, plus individual and batch invite links, require
+  the trusted HTTPS UniHER origin in production.
+- Invite acceptance atomically creates the account, consumes the invite and stores the
+  refresh token.
+- Invite and RH user department writes revalidate `company_id` inside the transaction.
+- Legacy duplicate refresh hashes are deduplicated before the unique index migration.
+- Campaign joining and challenge completion award points atomically and idempotently.
+- Production deploys run migrations without executing development seed data.
+- Development seed data creates reference records only, with no account or credential.
+- Historical credentials were removed from every tracked file, including local Claude
+  command history, and a policy test scans the full `git ls-files` set.
+- E2E, legacy penetration and visual security suites require credentials from the
+  environment and reject remote authenticated targets unless explicitly approved.
+- Agenda aggregates require a cohort of five and five distinct contributors.
+- Leadership invite data is department-scoped, read-only and contains no raw token.
+- Public invite validation masks the email address.
+- Uploads enforce trusted types, WebP signatures, quota reservation and retry-safe
+  compensation.
+- Health returns only `healthy` or `degraded`.
+- Protected navigation and API responses are not cached publicly.
+- Nginx templates overwrite forwarded client headers with the direct proxy address.
 
-## Verification
+## Final Local Evidence
 
 | Gate | Result |
 |---|---|
-| `npm audit` | 0 vulnerabilities |
-| Unit tests | 64 passed |
-| TypeScript | passed |
-| Next production build | passed, 132 pages generated |
-| Anonymous runtime probe | 65 of 65 GET routes passed |
-| Anonymous protected routes | 62 returned 401 |
-| Invalid invite probe | 1 returned 404 |
-| Explicit public routes | 2 returned minimal 200 responses |
-| Registration escalation probes | both returned 400 |
-| Isolated user count before/after probes | unchanged at 1 |
+| Unit tests | 50 files, 256 tests passed |
+| TypeScript | `npx tsc --noEmit` passed |
+| Production build | passed, 132 routes generated |
+| Dependency audit | 0 vulnerabilities |
+| Anonymous GET scanner | 65 of 65 routes passed |
+| Isolated method probes | 10 of 10 passed |
+| Database invariant | `PASS_ISOLATED_DATABASE_BOUND_AND_INVARIANT` |
+| Fresh database migration | 49 application tables; integrity OK; zero foreign-key violations |
+| Auth/tenant/security E2E | 131 of 131 passed, including 21 visual UX cases |
+| Visual security audit | passed on desktop and mobile; no console errors |
+| Landing source | page, layout and global CSS blobs unchanged from `bb30d75` |
 
-The machine-readable runtime evidence is in
-`artifacts/security/public-api-readonly-audit.json`.
+Machine-readable evidence:
 
-## Scanner policy
+- `artifacts/security/public-api-readonly-audit.json`
+- `artifacts/security/visual-security-audit.json`
+- `artifacts/security/screenshots/agenda-manager-suppressed.png`
+- `artifacts/security/screenshots/agenda-manager-suppressed-mobile.png`
+- `artifacts/security/screenshots/invites-rh-token-controls.png`
+- `artifacts/security/screenshots/invites-leadership-redacted.png`
 
-`npm run test:security:public`:
+## Review History
 
-- discovers every `src/app/api/**/route.ts` that exports `GET`;
-- uses only anonymous `GET` requests;
-- substitutes non-existent values for dynamic route parameters;
-- does not send cookies, bearer tokens, or write methods;
-- fails on unexpected 2xx, redirects or ambiguous statuses, 5xx responses,
-  request failures, sensitive response keys, or expanded public contracts;
-- allows only the minimal health and VAPID-key contracts.
+- Earlier independent review waves returned `HOLD`; their authorization, tenant,
+  invite, upload, refresh, seed and concurrency findings were fixed and retested.
+- Claude final review of `2026f49`: `PASS`, no P0/P1.
+- Independent review of `2026f49`: `HOLD` because the retired production credential
+  remained in tests; fixed in `c3412f5`.
+- Independent review of `c3412f5`: `HOLD` because tracked Claude command history and
+  the visual audit still held credentials or allowed an unapproved remote target;
+  fixed in `3aa8db3`.
+- Final independent review of `ec81a14`: `PASS`, no P0/P1.
+- Final Claude review of `ec81a14`: `PASS`, no P0/P1.
 
-## Remaining hold items
+## Production Preflight
 
-- Verify and reduce health-agenda PII visible to RH and leadership.
-- Remove raw invite tokens from authenticated list responses.
-- Revoke sessions during administrative password reset and stop returning
-  temporary passwords in response bodies.
-- Close league and leadership cross-tenant IDOR paths.
-- Complete independent review of this candidate.
-- Run authenticated role and tenant negative tests in the isolated environment.
-- Promote only after review, then repeat the read-only probe against production.
+- Online backup: `/var/backups/uniher-security-20260731-114505`.
+- Backup integrity: `ok`; permissions `0700` for the directory and `0600` for the
+  database and environment copy.
+- The historical Master Admin password was rotated through the authenticated flow;
+  old login returns `401`, while new login, `/api/auth/me` and logout return `200`.
+- A bcrypt comparison of all nine production users initially found four additional
+  demo accounts using the retired password. All four were rotated, their refresh
+  tokens were deleted, and the repeated comparison returned zero matches.
+- The pre-deploy backup contains five legacy foreign-key violations. Candidate
+  migration `071_repair_challenge_archetype_ids.sql` is expected to repair them and
+  production must report zero violations after migration.
 
-No production deploy was performed in this round.
+## Promotion Policy
+
+- Push the candidate branch first.
+- Fast-forward only `feat/yavix-copsoq-scaffold`, currently based on `bb30d75`.
+- Do not push or merge the unrelated `main` branch.
+- Back up the production database, environment and active Nginx files.
+- Verify `NEXT_PUBLIC_APP_URL=https://uniher.com.br`, run `nginx -t`, build, restart
+  PM2 and verify the listener remains bound to `127.0.0.1:3000`.
+- Run only anonymous GET probes and authenticated read-only smoke tests in production.
+
+## Residual Risk
+
+- The build emits the existing Next.js NFT dynamic-trace warning for
+  `src/app/api/admin/system/ops/route.ts`.
+- Claude recorded three non-blocking P2 observations: soft-deleted users remain visible
+  to Master Admin, one objective side-effect does not await its queue promise, and the
+  development-only guard accepts an optional request but fails closed.
+- The currently deployed schema predates `session_version`; access-token revocation for
+  the four demo accounts is completed only when migration `070_security_session_version.sql`
+  and the new middleware are live.
+- Retired credentials remain visible in historical Git objects even though they are
+  absent from the current tree and no production password hash matches them. Rewriting
+  shared history is deferred because it requires a coordinated force-push and fresh clones.
+- Production remains `HOLD` until migration, build, restart, read-only scanner and fresh
+  target evidence are recorded.
