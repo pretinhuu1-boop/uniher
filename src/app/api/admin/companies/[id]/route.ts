@@ -1,14 +1,10 @@
-/**
- * GET    /api/admin/companies/[id]        — company detail
- * PATCH  /api/admin/companies/[id]        — block | unblock | update
- * DELETE /api/admin/companies/[id]        — remove company (cascades)
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { withMasterAdmin } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
 import { logAudit } from '@/lib/audit';
+import { runAsActiveMasterAdminActor } from '@/lib/security/active-rh-actor';
 
 const PatchSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('block') }),
@@ -29,12 +25,35 @@ const PatchSchema = z.discriminatedUnion('action', [
   }),
 ]);
 
+interface CompanyLabel {
+  name: string;
+  trade_name: string | null;
+}
+
+function expiredAuthorizationResponse() {
+  return NextResponse.json(
+    { error: 'Autorizacao administrativa expirou' },
+    { status: 409 },
+  );
+}
+
+function changedCompanyResponse() {
+  return NextResponse.json(
+    { error: 'Empresa nao encontrada ou alterada' },
+    { status: 409 },
+  );
+}
+
 export const GET = withMasterAdmin(async (_req: NextRequest, context) => {
   await initDb();
   const { id } = await context.params;
   const db = getReadDb();
-  const company = db.prepare('SELECT * FROM companies WHERE id = ?').get(id);
-  if (!company) return NextResponse.json({ error: 'Não encontrada' }, { status: 404 });
+  const company = db.prepare(
+    'SELECT * FROM companies WHERE id = ? AND deleted_at IS NULL',
+  ).get(id);
+  if (!company) {
+    return NextResponse.json({ error: 'Nao encontrada' }, { status: 404 });
+  }
   return NextResponse.json({ company });
 });
 
@@ -44,78 +63,118 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
   const body = await req.json().catch(() => ({}));
   const parsed = PatchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
+    return NextResponse.json(
+      { error: parsed.error.issues[0].message },
+      { status: 422 },
+    );
   }
 
+  const actorId = context.auth.userId;
+  const ip = req.headers.get('x-forwarded-for') ?? undefined;
   const wq = getWriteQueue();
 
-  if (parsed.data.action === 'block') {
-    const db2 = getReadDb();
-    const company = db2.prepare('SELECT name, trade_name FROM companies WHERE id = ?').get(id) as { name: string; trade_name: string | null } | undefined;
-    await wq.enqueue((db) => {
-      db.prepare("UPDATE companies SET is_active = 0, updated_at = datetime('now') WHERE id = ?").run(id);
-    });
+  if (parsed.data.action === 'block' || parsed.data.action === 'unblock') {
+    const isActive = parsed.data.action === 'unblock' ? 1 : 0;
+    const outcome = await wq.enqueue((db) => (
+      runAsActiveMasterAdminActor(db, actorId, () => {
+        const company = db.prepare(`
+          SELECT name, trade_name
+          FROM companies
+          WHERE id = ? AND deleted_at IS NULL
+        `).get(id) as CompanyLabel | undefined;
+        if (!company) return null;
+
+        const updated = db.prepare(`
+          UPDATE companies
+          SET is_active = ?, updated_at = datetime('now')
+          WHERE id = ? AND deleted_at IS NULL
+        `).run(isActive, id);
+        return updated.changes === 1 ? company : null;
+      })
+    ), `${parsed.data.action} company as Master Admin`, { retryOnFailure: false });
+
+    if (!outcome.authorized) return expiredAuthorizationResponse();
+    if (!outcome.value) return changedCompanyResponse();
+
     await logAudit({
-      actorId: context.auth.userId,
-      actorEmail: context.auth.userId,
+      actorId,
+      actorEmail: actorId,
       actorRole: context.auth.role,
-      action: 'company_block',
+      action: parsed.data.action === 'block'
+        ? 'company_block'
+        : 'company_unblock',
       entityType: 'company',
       entityId: id,
-      entityLabel: company?.trade_name ?? company?.name ?? id,
-      ip: req.headers.get('x-forwarded-for') ?? undefined,
+      entityLabel: outcome.value.trade_name ?? outcome.value.name,
+      ip,
     });
     return NextResponse.json({ success: true });
   }
 
-  if (parsed.data.action === 'unblock') {
-    const db2 = getReadDb();
-    const company = db2.prepare('SELECT name, trade_name FROM companies WHERE id = ?').get(id) as { name: string; trade_name: string | null } | undefined;
-    await wq.enqueue((db) => {
-      db.prepare("UPDATE companies SET is_active = 1, updated_at = datetime('now') WHERE id = ?").run(id);
-    });
-    await logAudit({
-      actorId: context.auth.userId,
-      actorEmail: context.auth.userId,
-      actorRole: context.auth.role,
-      action: 'company_unblock',
-      entityType: 'company',
-      entityId: id,
-      entityLabel: company?.trade_name ?? company?.name ?? id,
-      ip: req.headers.get('x-forwarded-for') ?? undefined,
-    });
-    return NextResponse.json({ success: true });
-  }
-
-  // action === 'update'
-  const d = parsed.data;
+  const data = parsed.data;
   const fields: string[] = [];
   const values: unknown[] = [];
-  const keys = ['name','trade_name','cnpj','sector','plan','contact_name','contact_email','contact_phone','logo_url','primary_color','secondary_color'] as const;
-  for (const k of keys) {
-    if (k in d && (d as Record<string, unknown>)[k] !== undefined) {
-      fields.push(`${k} = ?`);
-      values.push((d as Record<string, unknown>)[k] ?? null);
+  const keys = [
+    'name',
+    'trade_name',
+    'cnpj',
+    'sector',
+    'plan',
+    'contact_name',
+    'contact_email',
+    'contact_phone',
+    'logo_url',
+    'primary_color',
+    'secondary_color',
+  ] as const;
+  for (const key of keys) {
+    if (key in data && (data as Record<string, unknown>)[key] !== undefined) {
+      fields.push(`${key} = ?`);
+      values.push((data as Record<string, unknown>)[key] ?? null);
     }
   }
-  if (!fields.length) return NextResponse.json({ error: 'Nenhum campo' }, { status: 400 });
+  if (fields.length === 0) {
+    return NextResponse.json({ error: 'Nenhum campo' }, { status: 400 });
+  }
 
-  const db2 = getReadDb();
-  const companyForEdit = db2.prepare('SELECT name, trade_name FROM companies WHERE id = ?').get(id) as { name: string; trade_name: string | null } | undefined;
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveMasterAdminActor(db, actorId, () => {
+      const company = db.prepare(`
+        SELECT name, trade_name
+        FROM companies
+        WHERE id = ? AND deleted_at IS NULL
+      `).get(id) as CompanyLabel | undefined;
+      if (!company) return null;
 
-  await wq.enqueue((db) => {
-    db.prepare(`UPDATE companies SET ${fields.join(', ')}, updated_at = datetime('now') WHERE id = ?`).run(...values, id);
-  });
+      const updated = db.prepare(`
+        UPDATE companies
+        SET ${fields.join(', ')}, updated_at = datetime('now')
+        WHERE id = ? AND deleted_at IS NULL
+      `).run(...values, id);
+      return updated.changes === 1 ? company : null;
+    })
+  ), 'update company as Master Admin', { retryOnFailure: false });
+
+  if (!outcome.authorized) return expiredAuthorizationResponse();
+  if (!outcome.value) return changedCompanyResponse();
+
   await logAudit({
-    actorId: context.auth.userId,
-    actorEmail: context.auth.userId,
+    actorId,
+    actorEmail: actorId,
     actorRole: context.auth.role,
     action: 'company_edit',
     entityType: 'company',
     entityId: id,
-    entityLabel: companyForEdit?.trade_name ?? companyForEdit?.name ?? id,
-    details: Object.fromEntries(keys.filter(k => k in d && (d as Record<string, unknown>)[k] !== undefined).map(k => [k, (d as Record<string, unknown>)[k]])),
-    ip: req.headers.get('x-forwarded-for') ?? undefined,
+    entityLabel: outcome.value.trade_name ?? outcome.value.name,
+    details: Object.fromEntries(
+      keys
+        .filter((key) => (
+          key in data
+          && (data as Record<string, unknown>)[key] !== undefined
+        ))
+        .map((key) => [key, (data as Record<string, unknown>)[key]]),
+    ),
+    ip,
   });
   return NextResponse.json({ success: true });
 });
@@ -123,23 +182,44 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
 export const DELETE = withMasterAdmin(async (req: NextRequest, context) => {
   await initDb();
   const { id } = await context.params;
-  const db2 = getReadDb();
-  const company = db2.prepare('SELECT name, trade_name FROM companies WHERE id = ? AND deleted_at IS NULL').get(id) as { name: string; trade_name: string | null } | undefined;
-  if (!company) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 404 });
-
+  const actorId = context.auth.userId;
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare("UPDATE companies SET deleted_at = datetime('now') WHERE id = ?").run(id);
-    db.prepare("UPDATE users SET deleted_at = datetime('now') WHERE company_id = ?").run(id);
-  });
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveMasterAdminActor(db, actorId, () => {
+      const company = db.prepare(`
+        SELECT name, trade_name
+        FROM companies
+        WHERE id = ? AND deleted_at IS NULL
+      `).get(id) as CompanyLabel | undefined;
+      if (!company) return null;
+
+      const deleted = db.prepare(`
+        UPDATE companies
+        SET deleted_at = datetime('now'), updated_at = datetime('now')
+        WHERE id = ? AND deleted_at IS NULL
+      `).run(id);
+      if (deleted.changes !== 1) return null;
+
+      db.prepare(`
+        UPDATE users
+        SET deleted_at = datetime('now'), updated_at = datetime('now')
+        WHERE company_id = ? AND deleted_at IS NULL
+      `).run(id);
+      return company;
+    })
+  ), 'delete company as Master Admin', { retryOnFailure: false });
+
+  if (!outcome.authorized) return expiredAuthorizationResponse();
+  if (!outcome.value) return changedCompanyResponse();
+
   await logAudit({
-    actorId: context.auth.userId,
-    actorEmail: context.auth.userId,
+    actorId,
+    actorEmail: actorId,
     actorRole: context.auth.role,
     action: 'company_delete',
     entityType: 'company',
     entityId: id,
-    entityLabel: company.trade_name ?? company.name,
+    entityLabel: outcome.value.trade_name ?? outcome.value.name,
     ip: req.headers.get('x-forwarded-for') ?? undefined,
   });
   return NextResponse.json({ success: true });

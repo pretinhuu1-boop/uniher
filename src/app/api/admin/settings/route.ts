@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { logAudit } from '@/lib/audit';
 import * as userRepo from '@/repositories/user.repository';
 import { verifyPassword } from '@/lib/auth/password';
+import { runAsActiveMasterAdminActor } from '@/lib/security/active-rh-actor';
 
 const ALLOWED_KEYS = [
   'app_name',
@@ -54,6 +55,7 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
   const wq = getWriteQueue();
   const { master_password, ...rest } = parsed.data;
   const updates = Object.entries(rest).filter(([, v]) => v !== undefined) as [SettingKey, string][];
+  let confirmedActorPasswordHash: string | null = null;
 
   if (updates.length === 0) return NextResponse.json({ success: true });
 
@@ -81,15 +83,52 @@ export const PATCH = withMasterAdmin(async (req: NextRequest, context) => {
       if (!validPassword) {
         return NextResponse.json({ error: 'Senha do master inválida.' }, { status: 403 });
       }
+      confirmedActorPasswordHash = actor.password_hash;
     }
   }
 
-  await wq.enqueue((db) => {
-    const stmt = db.prepare('INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)');
-    for (const [key, value] of updates) {
-      stmt.run(key, value);
-    }
-  });
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveMasterAdminActor(db, context.auth.userId, () => {
+      if (requestedEnabled !== undefined) {
+        const row = db.prepare(
+          'SELECT value FROM system_settings WHERE key = ? LIMIT 1',
+        ).get('auto_backup_enabled') as { value?: string } | undefined;
+        const currentEnabled = row?.value === '0' ? '0' : '1';
+        if (requestedEnabled !== currentEnabled) {
+          if (!confirmedActorPasswordHash) {
+            return 'confirmation_required' as const;
+          }
+          const actor = db.prepare(
+            'SELECT password_hash FROM users WHERE id = ?',
+          ).get(context.auth.userId) as { password_hash: string } | undefined;
+          if (actor?.password_hash !== confirmedActorPasswordHash) {
+            return 'actor_changed' as const;
+          }
+        }
+      }
+
+      const stmt = db.prepare(
+        'INSERT OR REPLACE INTO system_settings (key, value) VALUES (?, ?)',
+      );
+      for (const [key, value] of updates) {
+        stmt.run(key, value);
+      }
+      return 'updated' as const;
+    })
+  ), 'update settings as Master Admin', { retryOnFailure: false });
+
+  if (!outcome.authorized || outcome.value === 'actor_changed') {
+    return NextResponse.json(
+      { error: 'Autorizacao administrativa expirou' },
+      { status: 409 },
+    );
+  }
+  if (outcome.value === 'confirmation_required') {
+    return NextResponse.json(
+      { error: 'Confirme a senha do master para alterar o backup automatico' },
+      { status: 409 },
+    );
+  }
 
   const ip = req.headers.get('x-forwarded-for') ?? undefined;
   await logAudit({

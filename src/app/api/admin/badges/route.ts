@@ -4,6 +4,7 @@ import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
+import { runAsActiveMasterAdminActor } from '@/lib/security/active-rh-actor';
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
@@ -29,7 +30,7 @@ export const GET = withMasterAdmin(async (_req: NextRequest) => {
 });
 
 // POST — admin only
-export const POST = withMasterAdmin(async (req: NextRequest) => {
+export const POST = withMasterAdmin(async (req: NextRequest, context) => {
   await initDb();
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
@@ -41,12 +42,22 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
   const id = nanoid();
   const writeQueue = getWriteQueue();
 
-  await writeQueue.enqueue((db) => {
-    db.prepare(`
-      INSERT INTO badges (id, name, description, icon, points, rarity)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(id, name, description, icon, points, rarity);
-  });
+  const outcome = await writeQueue.enqueue((db) => (
+    runAsActiveMasterAdminActor(db, context.auth.userId, () => {
+      db.prepare(`
+        INSERT INTO badges (id, name, description, icon, points, rarity)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(id, name, description, icon, points, rarity);
+      return true;
+    })
+  ), 'create badge as Master Admin', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json(
+      { error: 'Autorizacao administrativa expirou' },
+      { status: 409 },
+    );
+  }
 
   return NextResponse.json({ success: true, id }, { status: 201 });
 });

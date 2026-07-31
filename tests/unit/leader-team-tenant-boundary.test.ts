@@ -34,15 +34,24 @@ describe('leader team tenant boundary', () => {
     deps.db?.close();
     deps.db = new Database(':memory:');
     deps.db.exec(`
+      CREATE TABLE companies (
+        id TEXT PRIMARY KEY,
+        is_active INTEGER,
+        deleted_at TEXT
+      );
       CREATE TABLE users (
         id TEXT PRIMARY KEY,
         company_id TEXT,
         department_id TEXT,
         role TEXT,
         approved INTEGER DEFAULT 0,
+        blocked INTEGER DEFAULT 0,
         can_approve INTEGER DEFAULT 0,
-        deleted_at TEXT
+        deleted_at TEXT,
+        updated_at TEXT
       );
+      INSERT INTO companies (id, is_active)
+      VALUES ('company-a', 1), ('company-b', 1);
       CREATE TABLE notifications (
         id TEXT,
         user_id TEXT,

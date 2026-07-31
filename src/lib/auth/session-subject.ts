@@ -22,7 +22,7 @@ function rejectRevokedSession(): never {
 function isRevokedUser(user: userRepo.UserRow): boolean {
   return Boolean(user.deleted_at)
     || user.blocked === 1
-    || user.approved === 0;
+    || user.approved !== 1;
 }
 
 function isInactiveCompany(company: companyRepo.CompanyRow | undefined): boolean {

@@ -114,6 +114,7 @@ describe('auth session revocation', () => {
     ['blocked user', { blocked: 1 }],
     ['deleted user', { deleted_at: '2026-07-27T10:00:00.000Z' }],
     ['unapproved user', { approved: 0 }],
+    ['user with unknown approval state', { approved: null }],
   ])('rejects refresh for a %s and revokes stored tokens', async (_state, overrides) => {
     authDeps.getUserById.mockReturnValue(activeUser(overrides));
 

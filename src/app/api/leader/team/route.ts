@@ -1,26 +1,42 @@
-/**
- * GET /api/leader/team — líder vê colaboradoras do seu setor
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
+import { getActiveLeaderApprover } from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
+import { z } from 'zod';
 
-export const GET = withRole('lideranca')(async (_req: NextRequest, context: any) => {
+const ApproveSchema = z.object({
+  action: z.literal('approve'),
+  targetUserId: z.string().min(1),
+});
+
+export const GET = withRole('lideranca')(async (
+  _req: NextRequest,
+  context,
+) => {
   await initDb();
   const db = getReadDb();
   const userId = context.auth.userId;
   const companyId = context.auth.companyId;
-
-  // Get leader's department
   const leader = db.prepare(`
     SELECT department_id, can_approve
     FROM users
-    WHERE id = ? AND company_id = ? AND role = 'lideranca' AND deleted_at IS NULL
-  `).get(userId, context.auth.companyId) as any;
+    WHERE id = ?
+      AND company_id = ?
+      AND role = 'lideranca'
+      AND approved = 1
+      AND blocked = 0
+      AND deleted_at IS NULL
+  `).get(userId, companyId) as {
+    department_id: string | null;
+    can_approve: number;
+  } | undefined;
   if (!leader?.department_id) {
-    return NextResponse.json({ error: 'Sem setor vinculado', team: [], stats: null }, { status: 200 });
+    return NextResponse.json(
+      { error: 'Sem setor vinculado', team: [], stats: null },
+      { status: 200 },
+    );
   }
 
   const team = db.prepare(`
@@ -29,78 +45,104 @@ export const GET = withRole('lideranca')(async (_req: NextRequest, context: any)
            d.name as department_name
     FROM users u
     LEFT JOIN departments d ON d.id = u.department_id
-    WHERE u.company_id = ? AND u.department_id = ? AND u.deleted_at IS NULL
-    AND u.id != ?
+    WHERE u.company_id = ?
+      AND u.department_id = ?
+      AND u.deleted_at IS NULL
+      AND u.id != ?
     ORDER BY u.name ASC
-  `).all(companyId, leader.department_id, userId);
+  `).all(companyId, leader.department_id, userId) as Array<{
+    blocked: number;
+    approved: number;
+  }>;
 
   const stats = {
     total: team.length,
-    active: team.filter((u: any) => !u.blocked).length,
-    blocked: team.filter((u: any) => u.blocked).length,
-    pendingApproval: team.filter((u: any) => !u.approved).length,
-    canApprove: Boolean(leader.can_approve),
+    active: team.filter((user) => user.blocked === 0).length,
+    blocked: team.filter((user) => user.blocked !== 0).length,
+    pendingApproval: team.filter((user) => user.approved !== 1).length,
+    canApprove: leader.can_approve === 1,
   };
 
   return NextResponse.json({ team, stats });
 });
 
-/**
- * POST /api/leader/team — líder aprova colaboradora (se habilitado)
- */
-export const POST = withRole('lideranca')(async (req: NextRequest, context: any) => {
+export const POST = withRole('lideranca')(async (
+  req: NextRequest,
+  context,
+) => {
   await initDb();
-  const db = getReadDb();
-  const userId = context.auth.userId;
-  const body = await req.json();
-  const { action, targetUserId } = body;
-
-  // Check if leader can approve
-  const leader = db.prepare('SELECT department_id, can_approve FROM users WHERE id = ?').get(userId) as any;
-  if (!leader?.can_approve) {
-    return NextResponse.json({ error: 'Sem permissão para aprovar. Solicite ao admin.' }, { status: 403 });
+  const body = await req.json().catch(() => ({}));
+  const parsed = ApproveSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Acao invalida', details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
-  const target = db.prepare(`
-    SELECT id
-    FROM users
-    WHERE id = ?
-      AND company_id = ?
-      AND department_id = ?
-      AND role = 'colaboradora'
-      AND deleted_at IS NULL
-  `).get(targetUserId, context.auth.companyId, leader.department_id) as any;
-  if (!target) {
-    return NextResponse.json({ error: 'Colaboradora não encontrada no seu setor' }, { status: 404 });
-  }
+  const companyId = context.auth.companyId;
+  const targetUserId = parsed.data.targetUserId;
+  const wq = getWriteQueue();
+  const outcome = await wq.enqueue((db) => {
+    const transaction = db.transaction(() => {
+      const leader = getActiveLeaderApprover(
+        db,
+        context.auth.userId,
+        companyId,
+      );
+      if (!leader) return 'invalid_actor' as const;
 
-  if (action === 'approve') {
-    const wq = getWriteQueue();
-    await wq.enqueue((db) => {
-      db.prepare(`
-        UPDATE users
-        SET approved = 1
+      const target = db.prepare(`
+        SELECT id
+        FROM users
         WHERE id = ?
           AND company_id = ?
           AND department_id = ?
           AND role = 'colaboradora'
+          AND approved = 0
+          AND blocked = 0
           AND deleted_at IS NULL
-      `).run(targetUserId, context.auth.companyId, leader.department_id);
+      `).get(targetUserId, companyId, leader.departmentId);
+      if (!target) return 'invalid_target' as const;
+
+      const approved = db.prepare(`
+        UPDATE users
+        SET approved = 1, updated_at = datetime('now')
+        WHERE id = ?
+          AND company_id = ?
+          AND department_id = ?
+          AND role = 'colaboradora'
+          AND approved = 0
+          AND blocked = 0
+          AND deleted_at IS NULL
+      `).run(targetUserId, companyId, leader.departmentId);
+      if (approved.changes !== 1) return 'invalid_target' as const;
+
+      db.prepare(`
+        INSERT INTO notifications (id, user_id, type, title, message)
+        VALUES (?, ?, 'system', ?, ?)
+      `).run(
+        nanoid(),
+        targetUserId,
+        'Cadastro aprovado!',
+        'Sua gestora aprovou seu cadastro. Bem-vinda a plataforma!',
+      );
+      return 'approved' as const;
     });
+    return transaction.immediate();
+  }, 'approve leader team user', { retryOnFailure: false });
 
-    // Notify the approved user
-    try {
-      const wq2 = getWriteQueue();
-      await wq2.enqueue((db) => {
-        db.prepare(`
-          INSERT INTO notifications (id, user_id, type, title, message)
-          VALUES (?, ?, 'system', 'Cadastro aprovado! 🎉', 'Sua gestora aprovou seu cadastro. Bem-vinda à plataforma!')
-        `).run(nanoid(), targetUserId);
-      });
-    } catch { /* non-critical */ }
-
-    return NextResponse.json({ success: true });
+  if (outcome === 'invalid_actor') {
+    return NextResponse.json(
+      { error: 'Autorizacao da lideranca expirou' },
+      { status: 409 },
+    );
   }
-
-  return NextResponse.json({ error: 'Ação inválida' }, { status: 400 });
+  if (outcome === 'invalid_target') {
+    return NextResponse.json(
+      { error: 'Colaboradora nao encontrada no seu setor' },
+      { status: 404 },
+    );
+  }
+  return NextResponse.json({ success: true });
 });

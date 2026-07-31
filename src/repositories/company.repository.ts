@@ -1,4 +1,5 @@
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import { runAsActiveMasterAdminActor } from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 
 export interface CompanyRow {
@@ -30,7 +31,7 @@ export function getCompanyByCnpj(cnpj: string): CompanyRow | undefined {
   return db.prepare('SELECT * FROM companies WHERE cnpj = ?').get(cnpj) as CompanyRow | undefined;
 }
 
-export async function createCompany(data: {
+export interface CreateCompanyInput {
   name: string;
   tradeName?: string;
   cnpj: string;
@@ -39,28 +40,49 @@ export async function createCompany(data: {
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
-}): Promise<CompanyRow> {
+}
+
+function insertCompany(
+  db: import('better-sqlite3').Database,
+  id: string,
+  data: CreateCompanyInput,
+): CompanyRow {
+  db.prepare(`
+    INSERT INTO companies (id, name, trade_name, cnpj, sector, plan, contact_name, contact_email, contact_phone)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.name,
+    data.tradeName || null,
+    data.cnpj,
+    data.sector || null,
+    data.plan || 'trial',
+    data.contactName || null,
+    data.contactEmail || null,
+    data.contactPhone || null
+  );
+
+  return db.prepare('SELECT * FROM companies WHERE id = ?').get(id) as CompanyRow;
+}
+
+export async function createCompany(data: CreateCompanyInput): Promise<CompanyRow> {
   const writeQueue = getWriteQueue();
   const id = nanoid();
 
-  return writeQueue.enqueue((db) => {
-    db.prepare(`
-      INSERT INTO companies (id, name, trade_name, cnpj, sector, plan, contact_name, contact_email, contact_phone)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
-      data.name,
-      data.tradeName || null,
-      data.cnpj,
-      data.sector || null,
-      data.plan || 'trial',
-      data.contactName || null,
-      data.contactEmail || null,
-      data.contactPhone || null
-    );
+  return writeQueue.enqueue((db) => insertCompany(db, id, data));
+}
 
-    return db.prepare('SELECT * FROM companies WHERE id = ?').get(id) as CompanyRow;
-  });
+export async function createCompanyAsMasterAdmin(
+  data: CreateCompanyInput,
+  actorId: string,
+): Promise<CompanyRow | null> {
+  const writeQueue = getWriteQueue();
+  const id = nanoid();
+  const result = await writeQueue.enqueue((db) => (
+    runAsActiveMasterAdminActor(db, actorId, () => insertCompany(db, id, data))
+  ), 'create company as Master Admin', { retryOnFailure: false });
+
+  return result.authorized ? result.value : null;
 }
 
 export interface CompanyWithStats extends CompanyRow {

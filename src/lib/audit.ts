@@ -9,7 +9,7 @@ export type AuditAction =
   | 'system_settings_update'
   // User actions (all roles)
   | 'profile_update' | 'quiz_submit' | 'challenge_complete' | 'challenge_create'
-  | 'campaign_join' | 'badge_unlock' | 'invite_sent' | 'invite_approved'
+  | 'campaign_join' | 'badge_unlock' | 'invite_sent' | 'invite_approved' | 'invite_rejected'
   | 'objective_create' | 'objective_update' | 'objective_delete';
 
 export interface AuditEntry {

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMasterAdmin } from '@/lib/auth/middleware';
-import { listAllCompanies, createCompany } from '@/repositories/company.repository';
+import {
+  createCompanyAsMasterAdmin,
+  listAllCompanies,
+} from '@/repositories/company.repository';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { z } from 'zod';
@@ -55,10 +58,16 @@ export const POST = withMasterAdmin(async (req: NextRequest, context) => {
   }
 
   try {
-    const company = await createCompany({
+    const company = await createCompanyAsMasterAdmin({
       name, tradeName: trade_name, cnpj, sector, plan,
       contactName: contact_name, contactEmail: contact_email, contactPhone: contact_phone,
-    });
+    }, context.auth.userId);
+    if (!company) {
+      return NextResponse.json(
+        { error: 'Autorizacao administrativa expirou' },
+        { status: 409 },
+      );
+    }
     await logAudit({
       actorId: context.auth.userId,
       actorEmail: context.auth.userId,
