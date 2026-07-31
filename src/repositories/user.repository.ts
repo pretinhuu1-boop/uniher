@@ -17,6 +17,8 @@ export interface UserRow {
   streak: number;
   blocked: number; // 0 or 1
   approved: number; // 0 = pending, 1 = approved
+  must_change_password: number; // 0 or 1
+  deleted_at: string | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   birth_date: string | null;

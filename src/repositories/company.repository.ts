@@ -15,6 +15,7 @@ export interface CompanyRow {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
