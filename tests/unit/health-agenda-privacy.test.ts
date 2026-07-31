@@ -73,10 +73,13 @@ describe('health agenda privacy', () => {
       INSERT INTO users (id, company_id, department_id, role, name, email)
       VALUES (?, 'company-a', ?, 'colaboradora', ?, ?)
     `);
+    const ids: string[] = [];
     for (let index = 0; index < count; index += 1) {
       const id = `extra-${departmentId}-${index}`;
       insert.run(id, departmentId, id, `${id}@example.com`);
+      ids.push(id);
     }
+    return ids;
   }
 
   it('suppresses every count when the company has fewer than five active collaborators', async () => {
@@ -125,7 +128,7 @@ describe('health agenda privacy', () => {
     });
   });
 
-  it('returns only the monthly total when cohort and metric cell reach the minimum', async () => {
+  it('suppresses five monthly events contributed by fewer than five users', async () => {
     addActiveCollaborators('department-2', 3);
     deps.db.prepare(`
       INSERT INTO health_events
@@ -146,20 +149,54 @@ describe('health agenda privacy', () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({
       events: [],
+      stats: { suppressed: true, minimumCohort: 5 },
+    });
+  });
+
+  it('returns only the monthly total when five distinct users contribute to the cell', async () => {
+    const extraUsers = addActiveCollaborators('department-2', 3);
+    deps.db.prepare(`DELETE FROM health_events WHERE id = 'event-2'`).run();
+    const insertEvent = deps.db.prepare(`
+      INSERT INTO health_events
+        (id, user_id, company_id, title, type, date, status)
+      VALUES (?, ?, 'company-a', 'Private event', 'consulta', '2026-07-13', 'pending')
+    `);
+    extraUsers.forEach((userId, index) => {
+      insertEvent.run(`event-extra-${index}`, userId);
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/rh/agenda?month=2026-07', {
+        headers: { 'x-test-role': 'rh' },
+      }),
+      { params: Promise.resolve({}) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      events: [],
       stats: { suppressed: false, minimumCohort: 5, total: 5 },
     });
   });
 
   it('defaults to the current month instead of exposing an all-time total', async () => {
-    addActiveCollaborators('department-2', 3);
+    const extraUsers = addActiveCollaborators('department-2', 3);
+    deps.db.prepare(`DELETE FROM health_events WHERE id = 'event-2'`).run();
     deps.db.prepare(`
       INSERT INTO health_events
         (id, user_id, company_id, title, type, date, status)
       VALUES
-        ('event-4', 'user-2', 'company-a', 'Private event', 'consulta', '2026-07-13', 'pending'),
-        ('event-5', 'user-2', 'company-a', 'Private event', 'exame', '2026-07-14', 'pending'),
         ('event-august', 'user-1', 'company-a', 'August event', 'exame', '2026-08-01', 'pending')
     `).run();
+    const insertEvent = deps.db.prepare(`
+      INSERT INTO health_events
+        (id, user_id, company_id, title, type, date, status)
+      VALUES (?, ?, 'company-a', 'Private event', 'consulta', '2026-07-13', 'pending')
+    `);
+    extraUsers.forEach((userId, index) => {
+      insertEvent.run(`event-extra-${index}`, userId);
+    });
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-20T12:00:00Z'));
 

@@ -62,16 +62,16 @@ export const GET = withRole('rh', 'lideranca', 'admin')(async (req: NextRequest,
   }
 
   const stats = db.prepare(`
-    SELECT COUNT(*) AS total
+    SELECT COUNT(*) AS total, COUNT(DISTINCT he.user_id) AS contributors
     FROM health_events he
     JOIN users u ON u.id = he.user_id
     WHERE he.company_id = ?
       AND he.deleted_at IS NULL
       AND he.date LIKE ?
       AND ${userScope.join(' AND ')}
-  `).get(companyId, `${month}%`, ...userParams) as { total: number };
+  `).get(companyId, `${month}%`, ...userParams) as { total: number; contributors: number };
 
-  if (stats.total < MINIMUM_COHORT) {
+  if (stats.total < MINIMUM_COHORT || stats.contributors < MINIMUM_COHORT) {
     return NextResponse.json({
       events: [],
       stats: { suppressed: true, minimumCohort: MINIMUM_COHORT },
