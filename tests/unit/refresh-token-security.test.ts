@@ -17,7 +17,11 @@ vi.mock('@/lib/db', () => ({
 }));
 
 import { signRefreshToken, verifyRefreshToken } from '@/lib/auth/jwt';
-import { rotateRefreshToken } from '@/repositories/refresh-token.repository';
+import {
+  cleanExpiredTokens,
+  findValidToken,
+  rotateRefreshToken,
+} from '@/repositories/refresh-token.repository';
 
 describe('refresh token security', () => {
   beforeEach(() => {
@@ -75,5 +79,22 @@ describe('refresh token security', () => {
     expect(deps.db.prepare(
       "SELECT COUNT(*) AS count FROM refresh_tokens WHERE user_id = 'user-1'",
     ).get()).toEqual({ count: 1 });
+  });
+
+  it('finds valid tokens and deletes expired tokens on strict SQLite builds', async () => {
+    const { createHash } = await import('crypto');
+    const valid = 'valid-refresh-token';
+    deps.db.prepare(`
+      INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at)
+      VALUES
+        ('valid', 'user-1', ?, datetime('now', '+1 day')),
+        ('expired', 'user-1', 'expired-hash', datetime('now', '-1 day'))
+    `).run(createHash('sha256').update(valid).digest('hex'));
+
+    expect(findValidToken(valid)).toMatchObject({ id: 'valid', user_id: 'user-1' });
+    await cleanExpiredTokens();
+    expect(deps.db.prepare(
+      'SELECT id FROM refresh_tokens ORDER BY id',
+    ).all()).toEqual([{ id: 'valid' }]);
   });
 });
