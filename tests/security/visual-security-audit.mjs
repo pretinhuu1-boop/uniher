@@ -3,8 +3,28 @@ import path from 'node:path';
 import process from 'node:process';
 import { chromium } from '@playwright/test';
 
-const baseUrl = (process.env.VISUAL_AUDIT_BASE_URL ?? 'http://127.0.0.1:3000')
-  .replace(/\/+$/, '');
+function requireEnvironment(name) {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`${name} is required for the isolated visual audit`);
+  return value;
+}
+
+const baseUrl = requireEnvironment('UNIHER_VISUAL_AUDIT_BASE_URL').replace(/\/+$/, '');
+const visualPassword = requireEnvironment('UNIHER_VISUAL_AUDIT_PASSWORD');
+const visualRhEmail = requireEnvironment('UNIHER_VISUAL_AUDIT_RH_EMAIL');
+const visualLeaderEmail = requireEnvironment('UNIHER_VISUAL_AUDIT_LEADER_EMAIL');
+const target = new URL(baseUrl);
+const loopbackHosts = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
+if (
+  !loopbackHosts.has(target.hostname)
+  && process.env.UNIHER_VISUAL_AUDIT_ALLOW_REMOTE_TARGET !== 'true'
+) {
+  throw new Error(
+    'Remote visual-audit targets are denied; set UNIHER_VISUAL_AUDIT_ALLOW_REMOTE_TARGET=true only for an approved isolated target',
+  );
+}
+
 const outputDir = path.resolve(
   process.env.VISUAL_AUDIT_OUTPUT_DIR
     ?? path.join(process.cwd(), 'artifacts', 'security', 'screenshots'),
@@ -16,7 +36,7 @@ fs.mkdirSync(outputDir, { recursive: true });
 async function createAuthenticatedContext(browser, email, viewport) {
   const context = await browser.newContext({ viewport });
   const response = await context.request.post(`${baseUrl}/api/auth/login`, {
-    data: { email, password: 'Visual@2026' },
+    data: { email, password: visualPassword },
   });
   if (response.status() !== 200) {
     throw new Error(`Visual fixture login failed for ${email}: ${response.status()}`);
@@ -36,7 +56,7 @@ function observeErrors(page) {
 async function auditAgenda(browser, viewport, filename) {
   const context = await createAuthenticatedContext(
     browser,
-    'rh-visual@example.com',
+    visualRhEmail,
     viewport,
   );
   const page = await context.newPage();
@@ -68,7 +88,7 @@ async function auditInvites(browser, role) {
   const isRh = role === 'rh';
   const context = await createAuthenticatedContext(
     browser,
-    isRh ? 'rh-visual@example.com' : 'leader-visual@example.com',
+    isRh ? visualRhEmail : visualLeaderEmail,
     { width: 1440, height: 1000 },
   );
   const page = await context.newPage();

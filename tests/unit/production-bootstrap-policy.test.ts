@@ -2,9 +2,7 @@ import Database from 'better-sqlite3';
 import {
   mkdtempSync,
   readFileSync,
-  readdirSync,
   rmSync,
-  statSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -18,16 +16,16 @@ function readProjectFile(...segments: string[]): string {
   return readFileSync(path.join(root, ...segments), 'utf8');
 }
 
-function listTextFiles(directory: string): string[] {
-  return readdirSync(directory).flatMap((entry) => {
-    const filePath = path.join(directory, entry);
-    if (statSync(filePath).isDirectory()) {
-      return listTextFiles(filePath);
-    }
-    return /\.(?:[cm]?[jt]sx?|md|html|json|sql|sh|bat|cjs)$/.test(entry)
-      ? [filePath]
-      : [];
+function listTrackedTextFiles(): string[] {
+  const result = spawnSync('git', ['ls-files', '-z'], {
+    cwd: root,
+    encoding: 'utf8',
   });
+  expect(result.error).toBeUndefined();
+  expect(result.status, result.stderr).toBe(0);
+  return result.stdout
+    .split('\0')
+    .filter((file) => /\.(?:[cm]?[jt]sx?|md|html|json|sql|sh|bat|cjs)$/.test(file));
 }
 
 describe('production database bootstrap policy', () => {
@@ -57,14 +55,12 @@ describe('production database bootstrap policy', () => {
   });
 
   it('keeps the retired production password out of source, tests and operator docs', () => {
-    const roots = ['src', 'tests', 'docs', 'deploy', 'public'];
-    const files = roots.flatMap((directory) =>
-      listTextFiles(path.join(root, directory)),
-    );
+    const files = listTrackedTextFiles();
 
     for (const file of files) {
-      expect(readFileSync(file, 'utf8'), file).not.toContain(retiredProductionPassword);
+      expect(readProjectFile(file), file).not.toContain(retiredProductionPassword);
     }
+    expect(files).not.toContain('.claude/settings.local.json');
   });
 
   it('runs the complete reference-data seed on a fresh database', () => {
