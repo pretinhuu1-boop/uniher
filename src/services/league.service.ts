@@ -31,7 +31,12 @@ export function getLeagueRanking(league: League, weekStart: string | undefined, 
     SELECT ul.user_id, ul.week_points, ul.league, u.name, u.avatar_url
     FROM user_leagues ul
     JOIN users u ON u.id = ul.user_id
-    WHERE ul.week_start = ? AND ul.league = ? AND u.company_id = ?
+    WHERE ul.week_start = ?
+      AND ul.league = ?
+      AND u.company_id = ?
+      AND u.blocked = 0
+      AND u.approved = 1
+      AND u.deleted_at IS NULL
     ORDER BY ul.week_points DESC
     LIMIT 50
   `).all(ws, league, companyId) as any[];
@@ -69,7 +74,13 @@ export function getUserLeagueStatus(userId: string): {
     SELECT COUNT(*) as c
     FROM user_leagues ul
     JOIN users u ON u.id = ul.user_id
-    WHERE ul.week_start = ? AND ul.league = ? AND ul.week_points > ? AND u.company_id = ?
+    WHERE ul.week_start = ?
+      AND ul.league = ?
+      AND ul.week_points > ?
+      AND u.company_id = ?
+      AND u.blocked = 0
+      AND u.approved = 1
+      AND u.deleted_at IS NULL
   `).get(ws, currentLeague, weekPoints, user?.company_id) as { c: number };
   const rank = above.c + 1;
 
@@ -77,7 +88,12 @@ export function getUserLeagueStatus(userId: string): {
     SELECT COUNT(*) as c
     FROM user_leagues ul
     JOIN users u ON u.id = ul.user_id
-    WHERE ul.week_start = ? AND ul.league = ? AND u.company_id = ?
+    WHERE ul.week_start = ?
+      AND ul.league = ?
+      AND u.company_id = ?
+      AND u.blocked = 0
+      AND u.approved = 1
+      AND u.deleted_at IS NULL
   `).get(ws, currentLeague, user?.company_id) as { c: number };
 
   const meta = LEAGUE_META[currentLeague];
@@ -96,7 +112,12 @@ export async function processLeagueTransitions(weekStart: string): Promise<void>
       const rows = db.prepare(`
         SELECT ul.user_id, ul.week_points, u.league as user_league, u.company_id
         FROM user_leagues ul JOIN users u ON u.id = ul.user_id
-        WHERE ul.week_start = ? AND ul.league = ? AND u.company_id IS NOT NULL
+        WHERE ul.week_start = ?
+          AND ul.league = ?
+          AND u.company_id IS NOT NULL
+          AND u.blocked = 0
+          AND u.approved = 1
+          AND u.deleted_at IS NULL
         ORDER BY ul.week_points DESC
       `).all(weekStart, league) as any[];
 

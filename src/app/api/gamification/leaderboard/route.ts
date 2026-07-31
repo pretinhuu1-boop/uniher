@@ -26,7 +26,11 @@ export const GET = withAuth(async (req, context) => {
 
   const totalRow = db.prepare(`
     SELECT COUNT(*) as total FROM users
-    WHERE company_id = ? AND role = 'colaboradora'
+    WHERE company_id = ?
+      AND role = 'colaboradora'
+      AND blocked = 0
+      AND approved = 1
+      AND deleted_at IS NULL
   `).get(user?.company_id) as { total: number };
 
   const rows = db.prepare(`
@@ -36,7 +40,11 @@ export const GET = withAuth(async (req, context) => {
     FROM users u
     LEFT JOIN user_leagues ul ON ul.user_id = u.id AND ul.week_start = ?
     LEFT JOIN departments d ON d.id = u.department_id
-    WHERE u.company_id = ? AND u.role = 'colaboradora'
+    WHERE u.company_id = ?
+      AND u.role = 'colaboradora'
+      AND u.blocked = 0
+      AND u.approved = 1
+      AND u.deleted_at IS NULL
     ORDER BY ul.week_points DESC NULLS LAST, u.points DESC
     LIMIT ? OFFSET ?
   `).all(ws, user?.company_id, limit, offset) as any[];

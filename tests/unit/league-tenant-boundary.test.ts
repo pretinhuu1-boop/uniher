@@ -40,6 +40,9 @@ describe('league tenant boundary', () => {
         name TEXT,
         avatar_url TEXT,
         league TEXT,
+        blocked INTEGER NOT NULL DEFAULT 0,
+        approved INTEGER NOT NULL DEFAULT 1,
+        deleted_at TEXT,
         updated_at TEXT
       );
       CREATE TABLE custom_leagues (
@@ -70,14 +73,22 @@ describe('league tenant boundary', () => {
         title TEXT,
         message TEXT
       );
-      INSERT INTO users VALUES
-        ('user-a', 'company-a', 'Alice', NULL, 'bronze', NULL),
-        ('user-b', 'company-b', 'Beatriz', NULL, 'bronze', NULL);
+      INSERT INTO users (
+        id, company_id, name, avatar_url, league, blocked, approved, deleted_at
+      ) VALUES
+        ('user-a', 'company-a', 'Alice', NULL, 'bronze', 0, 1, NULL),
+        ('user-b', 'company-b', 'Beatriz', NULL, 'bronze', 0, 1, NULL),
+        ('user-blocked', 'company-a', 'Blocked', NULL, 'bronze', 1, 1, NULL),
+        ('user-pending', 'company-a', 'Pending', NULL, 'bronze', 0, 0, NULL),
+        ('user-deleted', 'company-a', 'Deleted', NULL, 'bronze', 0, 1, '2026-07-01');
       INSERT INTO custom_leagues VALUES
         ('league-b', 'company-b', 'opt_in', 1);
       INSERT INTO user_leagues VALUES
         ('entry-a', 'user-a', 'bronze', 10, '2026-07-27'),
-        ('entry-b', 'user-b', 'bronze', 20, '2026-07-27');
+        ('entry-b', 'user-b', 'bronze', 20, '2026-07-27'),
+        ('entry-blocked', 'user-blocked', 'bronze', 40, '2026-07-27'),
+        ('entry-pending', 'user-pending', 'bronze', 30, '2026-07-27'),
+        ('entry-deleted', 'user-deleted', 'bronze', 50, '2026-07-27');
     `);
   });
 
@@ -112,7 +123,7 @@ describe('league tenant boundary', () => {
     ).toEqual({ count: 1 });
   });
 
-  it('scopes standard league ranking to the authenticated company', () => {
+  it('scopes ranking to active and approved users in the authenticated company', () => {
     const ranking = (getLeagueRanking as any)('bronze', '2026-07-27', 'company-a');
 
     expect(ranking.map((entry: any) => entry.name)).toEqual(['Alice']);
