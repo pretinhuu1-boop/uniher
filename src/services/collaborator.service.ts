@@ -35,7 +35,8 @@ function getExamsPercent(userId: string): { percent: number; total: number } {
     const db = getReadDb();
     const row = db.prepare(`
       SELECT COUNT(*) as total, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-      FROM user_exams WHERE user_id = ?
+      FROM user_exams
+      WHERE user_id = ? AND COALESCE(not_applicable, 0) = 0
     `).get(userId) as { total: number; completed: number } | undefined;
 
     if (!row || row.total === 0) return { percent: 0, total: 0 };

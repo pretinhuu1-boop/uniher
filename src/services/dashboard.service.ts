@@ -91,12 +91,14 @@ export function getDashboardKPIs(companyId: string): DashboardKPI[] {
     const totalExamsRow = db.prepare(`
       SELECT COUNT(*) as count FROM user_exams ue
       JOIN users u ON u.id = ue.user_id
-      WHERE u.company_id = ?
+      WHERE u.company_id = ? AND COALESCE(ue.not_applicable, 0) = 0
     `).get(companyId) as { count: number };
     const completedExamsRow = db.prepare(`
       SELECT COUNT(*) as count FROM user_exams ue
       JOIN users u ON u.id = ue.user_id
-      WHERE u.company_id = ? AND ue.status = 'completed'
+      WHERE u.company_id = ?
+        AND COALESCE(ue.not_applicable, 0) = 0
+        AND ue.status = 'completed'
     `).get(companyId) as { count: number };
     const examsPercent = totalExamsRow.count > 0
       ? Math.round((completedExamsRow.count / totalExamsRow.count) * 100)

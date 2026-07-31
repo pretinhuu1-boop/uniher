@@ -19,6 +19,7 @@ export interface UserRow {
   approved: number; // 0 = pending, 1 = approved
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
+  birth_date: string | null;
   last_active: string | null;
   also_collaborator: number; // 0 or 1
   created_at: string;

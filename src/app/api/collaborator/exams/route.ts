@@ -16,7 +16,7 @@ export const GET = withAuth(async (_req: NextRequest, context: any) => {
   const exams = db.prepare(`
     SELECT id, exam_name, status, due_date, completed_date, created_at
     FROM user_exams
-    WHERE user_id = ?
+    WHERE user_id = ? AND COALESCE(not_applicable, 0) = 0
     ORDER BY created_at DESC
   `).all(userId);
 
