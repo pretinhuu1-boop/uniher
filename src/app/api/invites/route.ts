@@ -76,7 +76,6 @@ export const POST = withRole('rh')(async (req, context) => {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
 
   const { name: inviteeName, email, role, department_id } = parsed.data;
-  const appOrigin = getPublicAppOrigin();
 
   // RH cannot invite other RH users — only admin can
   if (context.auth.role === 'rh' && role === 'rh') {
@@ -104,6 +103,7 @@ export const POST = withRole('rh')(async (req, context) => {
   const registered = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
   if (registered) return NextResponse.json({ error: 'Este email já possui uma conta na plataforma' }, { status: 409 });
 
+  const appOrigin = getPublicAppOrigin();
   const token = nanoid(32);
   const id = nanoid();
 

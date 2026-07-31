@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const deps = vi.hoisted(() => ({
@@ -59,6 +59,36 @@ describe('department tenant write boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deps.departmentExists = false;
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('applies role denial before evaluating production invite configuration', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000');
+    const request = new NextRequest('http://localhost/api/invites', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: 'rh-invite@example.com',
+        role: 'rh',
+      }),
+    });
+
+    const response = await createInvite(request, {
+      auth: {
+        userId: 'rh-a',
+        role: 'rh',
+        companyId: 'company-a',
+        sessionVersion: 1,
+      },
+      params: Promise.resolve({}),
+    } as any);
+
+    expect(response.status).toBe(403);
+    expect(deps.enqueue).not.toHaveBeenCalled();
   });
 
   it('rejects creating an invite with a department from another company', async () => {
