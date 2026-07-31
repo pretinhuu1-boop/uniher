@@ -169,23 +169,30 @@ test.describe('RH — Painel da Empresa', () => {
 
   // ─── Registro via convite e aprovação ────────────────────────────────────────
 
-  test('POST /api/auth/register — colaboradora se registra via convite', async ({ request }) => {
-    const res = await request.post('/api/auth/register', {
+  test('POST /api/invites/[token] — colaboradora aceita convite', async ({ request }) => {
+    const invitedEmail = `colab-rh-${ts}@email.com`;
+    const res = await request.post(`/api/invites/${inviteToken}`, {
       data: {
         name: `Colaboradora RH ${ts}`,
-        email: `colab-rh-${ts}@email.com`,
         password: 'Colab@2026',
-        role: 'colaboradora',
-        companyId,
-        inviteToken,
       },
     });
 
-    expect(res.status()).toBe(201);
+    expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty('user');
-    expect(body).toHaveProperty('accessToken');
-    invitedUserId = body.user.id;
+    expect(body.success).toBe(true);
+
+    const usersRes = await request.get(
+      `/api/rh/users?search=${encodeURIComponent(invitedEmail)}&role=colaboradora`,
+      { headers: { Cookie: `uniher-access-token=${rhToken}` } },
+    );
+    expect(usersRes.status()).toBe(200);
+    const usersBody = await usersRes.json();
+    const invitedUser = usersBody.users.find(
+      (user: { id: string; email: string }) => user.email === invitedEmail,
+    );
+    expect(invitedUser).toBeTruthy();
+    invitedUserId = invitedUser.id;
   });
 
   test('PATCH /api/invites/approve — RH aprova colaboradora', async ({ request }) => {

@@ -15,7 +15,13 @@ import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 
 const RegisterSchema = z.object({
   name: z.string().min(2).max(120),
-  password: z.string().min(8).max(72),
+  password: z.string()
+    .min(8, 'Senha deve ter pelo menos 8 caracteres')
+    .max(72)
+    .regex(/[A-Z]/, 'Senha precisa de pelo menos 1 letra maiuscula')
+    .regex(/[a-z]/, 'Senha precisa de pelo menos 1 letra minuscula')
+    .regex(/[0-9]/, 'Senha precisa de pelo menos 1 numero')
+    .regex(/[!@#$%&*]/, 'Senha precisa de 1 caractere especial (!@#$%&*)'),
 });
 
 // Público — validar token

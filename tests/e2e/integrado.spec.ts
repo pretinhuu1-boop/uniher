@@ -162,25 +162,31 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
   test('Step 8: Colaboradora se registra via convite', async ({ request }) => {
     test.skip(!inviteToken || !companyId, 'Convite não foi criado');
 
-    const res = await request.post('/api/auth/register', {
+    const res = await request.post(`/api/invites/${inviteToken}`, {
       data: {
         name: `Maria Integrada ${ts}`,
-        email: colabEmail,
         password: colabPassword,
-        role: 'colaboradora',
-        companyId,
-        inviteToken,
       },
     });
 
-    expect(res.status()).toBe(201);
+    expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty('user');
-    expect(body.user.role).toBe('colaboradora');
-    colabUserId = body.user.id;
+    expect(body.success).toBe(true);
     const regCookies = res.headers()['set-cookie'] || '';
     const regMatch = regCookies.match(/uniher-access-token=([^;]+)/);
     colabToken = regMatch?.[1] || '';
+
+    const usersRes = await request.get(
+      `/api/rh/users?search=${encodeURIComponent(colabEmail)}&role=colaboradora`,
+      { headers: { Cookie: `uniher-access-token=${rhToken}` } },
+    );
+    expect(usersRes.status()).toBe(200);
+    const usersBody = await usersRes.json();
+    const invitedUser = usersBody.users.find(
+      (user: { id: string; email: string }) => user.email === colabEmail,
+    );
+    expect(invitedUser).toBeTruthy();
+    colabUserId = invitedUser.id;
   });
 
   // ─── Step 9: RH aprova colaboradora ──────────────────────────────────────────

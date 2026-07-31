@@ -2,7 +2,7 @@
  * seguranca.spec.ts — Testes de Segurança
  * Cobre: SQL injection, XSS, auth obrigatória, controle de role, rate limiting, IDOR, path traversal
  */
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 
 const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
@@ -12,6 +12,18 @@ test.describe('Segurança — Testes de Proteção', () => {
   let rhToken: string;
   let colabToken: string;
   let companyId: string;
+  let passwordTestInviteToken: string;
+
+  async function createPasswordTestInvite(request: APIRequestContext, email: string) {
+    if (passwordTestInviteToken) return passwordTestInviteToken;
+    const inviteRes = await request.post('/api/invites', {
+      headers: { Cookie: `uniher-access-token=${rhToken}` },
+      data: { email, role: 'colaboradora' },
+    });
+    expect(inviteRes.status()).toBe(200);
+    passwordTestInviteToken = (await inviteRes.json()).token as string;
+    return passwordTestInviteToken;
+  }
 
   // ─── Setup ───────────────────────────────────────────────────────────────────
 
@@ -51,6 +63,7 @@ test.describe('Segurança — Testes de Proteção', () => {
           password: 'RhSeg@2026',
           role: 'rh',
           company_id: companyId,
+          mustChangePassword: false,
         },
       });
       const rhLoginRes = await request.post('/api/auth/login', {
@@ -71,24 +84,28 @@ test.describe('Segurança — Testes de Proteção', () => {
         invToken = (await inviteRes.json()).token;
       }
 
-      const regRes = await request.post('/api/auth/register', {
+      const regRes = await request.post(`/api/invites/${invToken}`, {
         data: {
           name: 'Colab Segurança',
-          email: colabEmail,
           password: 'ColabSeg@2026',
-          role: 'colaboradora',
-          companyId,
-          inviteToken: invToken,
         },
       });
-      if (regRes.status() === 201) {
-        const regBody = await regRes.json();
-        colabToken = regBody.accessToken;
+      if (regRes.status() === 200) {
+        const usersRes = await request.get(
+          `/api/rh/users?search=${encodeURIComponent(colabEmail)}&role=colaboradora`,
+          { headers: { Authorization: `Bearer ${rhToken}` } },
+        );
+        const usersBody = usersRes.status() === 200 ? await usersRes.json() : { users: [] };
+        const invitedUser = usersBody.users.find(
+          (user: { id: string; email: string }) => user.email === colabEmail,
+        );
         // Aprovar
-        await request.patch('/api/invites/approve', {
-          headers: { Authorization: `Bearer ${rhToken}` },
-          data: { userId: regBody.user.id, action: 'approve' },
-        });
+        if (invitedUser) {
+          await request.patch('/api/invites/approve', {
+            headers: { Authorization: `Bearer ${rhToken}` },
+            data: { userId: invitedUser.id, action: 'approve' },
+          });
+        }
         // Re-login para token limpo
         const colabLogin = await request.post('/api/auth/login', {
           data: { email: colabEmail, password: 'ColabSeg@2026' },
@@ -149,7 +166,7 @@ test.describe('Segurança — Testes de Proteção', () => {
 
   // ─── XSS ─────────────────────────────────────────────────────────────────────
 
-  test('XSS — script no campo nome do registro', async ({ request }) => {
+  test('XSS + escalação — registro público rejeita payload de colaboradora', async ({ request }) => {
     const ts = Date.now().toString().slice(-6);
 
     const res = await request.post('/api/auth/register', {
@@ -162,15 +179,7 @@ test.describe('Segurança — Testes de Proteção', () => {
       },
     });
 
-    if (res.status() === 201 || res.status() === 200) {
-      const body = await res.json();
-      // Se aceitou, deve ter sanitizado o nome
-      if (body.user?.name) {
-        expect(body.user.name).not.toContain('<script>');
-      }
-    }
-    // Também aceitável: rejeitar com 400
-    expect([200, 201, 400]).toContain(res.status());
+    expect(res.status()).toBe(400);
   });
 
   test('XSS — payload no campo nome ao criar empresa', async ({ request }) => {
@@ -319,6 +328,7 @@ test.describe('Segurança — Testes de Proteção', () => {
 
     for (let i = 0; i < attempts; i++) {
       const res = await request.post('/api/auth/login', {
+        headers: { 'X-Real-IP': '198.51.100.10' },
         data: { email: 'brute@force.com', password: `Wrong@Pass${i}` },
       });
 
@@ -419,55 +429,51 @@ test.describe('Segurança — Testes de Proteção', () => {
   // ─── Validação de Password ───────────────────────────────────────────────────
 
   test('Rejeita senha sem maiúscula', async ({ request }) => {
-    const res = await request.post('/api/auth/register', {
+    const email = `weak-pw-1-${Date.now()}@test.com`;
+    const inviteToken = await createPasswordTestInvite(request, email);
+    const res = await request.post(`/api/invites/${inviteToken}`, {
       data: {
         name: 'Teste Senha',
-        email: `weak-pw-1-${Date.now()}@test.com`,
         password: 'senha@2026',
-        role: 'colaboradora',
-        companyId: companyId || 'fake-id',
       },
     });
-    expect(res.status()).toBe(400);
+    expect(res.status()).toBe(422);
   });
 
   test('Rejeita senha sem especial', async ({ request }) => {
-    const res = await request.post('/api/auth/register', {
+    const email = `weak-pw-2-${Date.now()}@test.com`;
+    const inviteToken = await createPasswordTestInvite(request, email);
+    const res = await request.post(`/api/invites/${inviteToken}`, {
       data: {
         name: 'Teste Senha',
-        email: `weak-pw-2-${Date.now()}@test.com`,
         password: 'Senha2026a',
-        role: 'colaboradora',
-        companyId: companyId || 'fake-id',
       },
     });
-    expect(res.status()).toBe(400);
+    expect(res.status()).toBe(422);
   });
 
   test('Rejeita senha sem número', async ({ request }) => {
-    const res = await request.post('/api/auth/register', {
+    const email = `weak-pw-3-${Date.now()}@test.com`;
+    const inviteToken = await createPasswordTestInvite(request, email);
+    const res = await request.post(`/api/invites/${inviteToken}`, {
       data: {
         name: 'Teste Senha',
-        email: `weak-pw-3-${Date.now()}@test.com`,
         password: 'Senha@abcde',
-        role: 'colaboradora',
-        companyId: companyId || 'fake-id',
       },
     });
-    expect(res.status()).toBe(400);
+    expect(res.status()).toBe(422);
   });
 
   test('Rejeita senha curta (< 8 chars)', async ({ request }) => {
-    const res = await request.post('/api/auth/register', {
+    const email = `weak-pw-4-${Date.now()}@test.com`;
+    const inviteToken = await createPasswordTestInvite(request, email);
+    const res = await request.post(`/api/invites/${inviteToken}`, {
       data: {
         name: 'Teste Senha',
-        email: `weak-pw-4-${Date.now()}@test.com`,
         password: 'Ab@1',
-        role: 'colaboradora',
-        companyId: companyId || 'fake-id',
       },
     });
-    expect(res.status()).toBe(400);
+    expect(res.status()).toBe(422);
   });
 
   // ─── Email enumeration prevention ────────────────────────────────────────────

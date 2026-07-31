@@ -146,7 +146,7 @@ export const leadSchema = z.object({
   phone: z.string().max(20).optional(),
   company: z.string().max(255).optional(),
   archetype: z.string().optional(),
-  consent: z.boolean(),
+  consent: z.literal(true),
   source: z.string().max(50).optional(),
 });
 

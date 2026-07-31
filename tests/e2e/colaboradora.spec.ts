@@ -83,26 +83,32 @@ test.describe('Colaboradora — Gamificação e Jornada', () => {
     inviteToken = (await res.json()).token;
   });
 
-  test('POST /api/auth/register — colaboradora se registra via convite', async ({ request }) => {
-    const res = await request.post('/api/auth/register', {
+  test('POST /api/invites/[token] — colaboradora aceita convite', async ({ request }) => {
+    const res = await request.post(`/api/invites/${inviteToken}`, {
       data: {
         name: colabName,
-        email: colabEmail,
         password: colabPassword,
-        role: 'colaboradora',
-        companyId,
-        inviteToken,
       },
     });
 
-    expect(res.status()).toBe(201);
+    expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty('user');
+    expect(body.success).toBe(true);
     const cookies2 = res.headers()['set-cookie'] || '';
     const match2 = cookies2.match(/uniher-access-token=([^;]+)/);
     colabToken = match2?.[1] || '';
-    expect(body.user.role).toBe('colaboradora');
-    colabUserId = body.user.id;
+
+    const usersRes = await request.get(
+      `/api/rh/users?search=${encodeURIComponent(colabEmail)}&role=colaboradora`,
+      { headers: { Cookie: `uniher-access-token=${rhToken}` } },
+    );
+    expect(usersRes.status()).toBe(200);
+    const usersBody = await usersRes.json();
+    const invitedUser = usersBody.users.find(
+      (user: { id: string; email: string }) => user.email === colabEmail,
+    );
+    expect(invitedUser).toBeTruthy();
+    colabUserId = invitedUser.id;
   });
 
   test('Setup: RH aprova colaboradora', async ({ request }) => {
