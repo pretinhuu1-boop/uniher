@@ -26,6 +26,7 @@ self.addEventListener('notificationclick', function(event) {
 // PWA Cache strategy
 const CACHE_NAME = 'uniher-v4';
 const PRECACHE_URLS = ['/logo-uniher.png', '/manifest.json'];
+const PUBLIC_OFFLINE_PATHS = new Set(['/']);
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -59,7 +60,23 @@ self.addEventListener('fetch', event => {
     || event.request.headers.get('accept')?.includes('text/html');
 
   if (isNavigation) {
-    event.respondWith(fetch(event.request));
+    if (!PUBLIC_OFFLINE_PATHS.has(url.pathname)) {
+      event.respondWith(fetch(event.request));
+      return;
+    }
+
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, fresh.clone());
+        return fresh;
+      } catch {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        return Response.error();
+      }
+    })());
     return;
   }
 

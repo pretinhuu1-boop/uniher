@@ -53,4 +53,14 @@ describe('service worker cache version', () => {
 
     expect(source).toContain("const CACHE_VERSION = 'uniher-v4'");
   });
+
+  it('keeps an offline fallback only for the public landing navigation', () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), 'public', 'sw.js'),
+      'utf8',
+    );
+
+    expect(source).toContain("const PUBLIC_OFFLINE_PATHS = new Set(['/'])");
+    expect(source).toContain('PUBLIC_OFFLINE_PATHS.has(url.pathname)');
+  });
 });
