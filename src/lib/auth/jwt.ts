@@ -5,8 +5,10 @@ export interface TokenPayload extends JWTPayload {
   userId: string;
   role: string;
   companyId: string;
+  sessionVersion: number;
   isMasterAdmin?: boolean;
   mustChangePassword?: boolean;
+  passwordResetRequired?: boolean;
 }
 
 function getSecret(envKey: string): Uint8Array {
@@ -24,6 +26,7 @@ export async function signAccessToken(payload: {
   userId: string;
   role: string;
   companyId: string;
+  sessionVersion: number;
   isMasterAdmin?: boolean;
   mustChangePassword?: boolean;
 }): Promise<string> {
@@ -31,6 +34,7 @@ export async function signAccessToken(payload: {
     userId: payload.userId,
     role: payload.role,
     companyId: payload.companyId,
+    sessionVersion: payload.sessionVersion,
     isMasterAdmin: payload.isMasterAdmin ?? false,
     mustChangePassword: payload.mustChangePassword ?? false,
   })
@@ -48,6 +52,7 @@ export async function signRefreshToken(payload: {
     userId: payload.userId,
   })
     .setProtectedHeader({ alg: 'HS256' })
+    .setJti(randomUUID())
     .setIssuedAt()
     .setExpirationTime('48h')
     .sign(getSecret('JWT_REFRESH_SECRET'));

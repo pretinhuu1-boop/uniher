@@ -81,6 +81,18 @@ export const POST = withRole('rh')(async (req, context) => {
     return NextResponse.json({ error: 'RH não pode convidar outros usuários RH' }, { status: 403 });
   }
 
+  if (department_id) {
+    const department = db.prepare(
+      'SELECT id FROM departments WHERE id = ? AND company_id = ?',
+    ).get(department_id, user.company_id);
+    if (!department) {
+      return NextResponse.json(
+        { error: 'Departamento nao encontrado' },
+        { status: 404 },
+      );
+    }
+  }
+
   // Check if already invited and pending (same company)
   const existing = db.prepare("SELECT id FROM invites WHERE email = ? AND company_id = ? AND status = 'pending'").get(email, user.company_id);
   if (existing) return NextResponse.json({ error: 'Já existe um convite pendente para este email' }, { status: 409 });
@@ -112,12 +124,28 @@ export const POST = withRole('rh')(async (req, context) => {
   }
 
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare(`
-      INSERT INTO invites (id, company_id, email, role, department_id, token, status, invited_by, expires_at, name)
-      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
-    `).run(id, user.company_id, email, role, department_id || null, token, userId, expiresAt, inviteeName || null);
-  });
+  const created = await wq.enqueue((db) => {
+    const createInvite = db.transaction(() => {
+      if (department_id) {
+        const department = db.prepare(
+          'SELECT id FROM departments WHERE id = ? AND company_id = ?',
+        ).get(department_id, user.company_id);
+        if (!department) return false;
+      }
+      db.prepare(`
+        INSERT INTO invites (id, company_id, email, role, department_id, token, status, invited_by, expires_at, name)
+        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+      `).run(id, user.company_id, email, role, department_id || null, token, userId, expiresAt, inviteeName || null);
+      return true;
+    });
+    return createInvite.immediate();
+  }, 'create invite', { retryOnFailure: false });
+  if (!created) {
+    return NextResponse.json(
+      { error: 'Departamento nao encontrado' },
+      { status: 409 },
+    );
+  }
 
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`;
 

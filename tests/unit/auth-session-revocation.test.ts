@@ -8,6 +8,7 @@ const authDeps = vi.hoisted(() => ({
   findValidToken: vi.fn(),
   createRefreshToken: vi.fn(),
   deleteRefreshToken: vi.fn(),
+  rotateRefreshToken: vi.fn(),
   deleteAllUserTokens: vi.fn(),
   getUserById: vi.fn(),
   getCompanyById: vi.fn(),
@@ -27,6 +28,7 @@ vi.mock('@/repositories/refresh-token.repository', () => ({
   findValidToken: authDeps.findValidToken,
   createRefreshToken: authDeps.createRefreshToken,
   deleteRefreshToken: authDeps.deleteRefreshToken,
+  rotateRefreshToken: authDeps.rotateRefreshToken,
   deleteAllUserTokens: authDeps.deleteAllUserTokens,
 }));
 
@@ -51,6 +53,7 @@ function activeUser(overrides: Record<string, unknown> = {}) {
     deleted_at: null,
     must_change_password: 0,
     password_reset_required: 0,
+    session_version: 7,
     ...overrides,
   };
 }
@@ -73,6 +76,10 @@ describe('auth session revocation', () => {
     authDeps.getUserById.mockReturnValue(activeUser());
     authDeps.getCompanyById.mockReturnValue(activeCompany());
     authDeps.deleteRefreshToken.mockResolvedValue(undefined);
+    authDeps.rotateRefreshToken.mockResolvedValue({
+      id: 'new-token',
+      user_id: 'user-1',
+    });
     authDeps.deleteAllUserTokens.mockResolvedValue(undefined);
     authDeps.signAccessToken.mockResolvedValue('new-access-token');
     authDeps.signRefreshToken.mockResolvedValue('new-refresh-token');
@@ -89,12 +96,18 @@ describe('auth session revocation', () => {
       userId: 'user-1',
       role: 'colaboradora',
       companyId: 'company-1',
+      sessionVersion: 7,
       isMasterAdmin: false,
       mustChangePassword: false,
       passwordResetRequired: false,
     });
-    expect(authDeps.deleteRefreshToken).toHaveBeenCalledWith('old-refresh-token');
-    expect(authDeps.createRefreshToken).toHaveBeenCalledWith('user-1', 'new-refresh-token');
+    expect(authDeps.rotateRefreshToken).toHaveBeenCalledWith(
+      'user-1',
+      'old-refresh-token',
+      'new-refresh-token',
+    );
+    expect(authDeps.deleteRefreshToken).not.toHaveBeenCalled();
+    expect(authDeps.createRefreshToken).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -108,6 +121,7 @@ describe('auth session revocation', () => {
 
     expect(authDeps.deleteAllUserTokens).toHaveBeenCalledWith('user-1');
     expect(authDeps.deleteRefreshToken).not.toHaveBeenCalled();
+    expect(authDeps.rotateRefreshToken).not.toHaveBeenCalled();
     expect(authDeps.createRefreshToken).not.toHaveBeenCalled();
   });
 
@@ -122,6 +136,7 @@ describe('auth session revocation', () => {
 
     expect(authDeps.deleteAllUserTokens).toHaveBeenCalledWith('user-1');
     expect(authDeps.deleteRefreshToken).not.toHaveBeenCalled();
+    expect(authDeps.rotateRefreshToken).not.toHaveBeenCalled();
     expect(authDeps.createRefreshToken).not.toHaveBeenCalled();
   });
 
@@ -135,6 +150,14 @@ describe('auth session revocation', () => {
 
     expect(authDeps.deleteAllUserTokens).toHaveBeenCalledWith('user-1');
     expect(authDeps.signAccessToken).not.toHaveBeenCalled();
+    expect(authDeps.createRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it('rejects replay when the current refresh token loses the atomic rotation race', async () => {
+    authDeps.rotateRefreshToken.mockResolvedValueOnce(null);
+
+    await expect(refresh()).rejects.toMatchObject({ statusCode: 401 });
+
     expect(authDeps.createRefreshToken).not.toHaveBeenCalled();
   });
 });

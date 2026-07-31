@@ -69,7 +69,7 @@ self.addEventListener('fetch', event => {
       try {
         const fresh = await fetch(event.request);
         const cache = await caches.open(CACHE_NAME);
-        cache.put(event.request, fresh.clone());
+        await cache.put(event.request, fresh.clone());
         return fresh;
       } catch {
         const cached = await caches.match(event.request);
@@ -86,7 +86,7 @@ self.addEventListener('fetch', event => {
       try {
         const fresh = await fetch(event.request);
         const cache = await caches.open(CACHE_NAME);
-        cache.put(event.request, fresh.clone());
+        await cache.put(event.request, fresh.clone());
         return fresh;
       } catch {
         return Response.error();

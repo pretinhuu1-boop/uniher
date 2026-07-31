@@ -141,6 +141,17 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
       break;
     }
     case 'update_profile': {
+      if (body.department_id) {
+        const department = db.prepare(
+          'SELECT id FROM departments WHERE id = ? AND company_id = ?',
+        ).get(body.department_id, companyId);
+        if (!department) {
+          return NextResponse.json(
+            { error: 'Departamento nao encontrado' },
+            { status: 404 },
+          );
+        }
+      }
       const updates: string[] = ["updated_at = datetime('now')"];
       const values: any[] = [];
       if (body.name) { updates.push('name = ?'); values.push(body.name); }
@@ -151,9 +162,29 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         updates.push('department_id = ?'); values.push(body.department_id || null);
       }
       values.push(userId);
-      await wq.enqueue((db) => {
-        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
-      });
+      const updated = await wq.enqueue((db) => {
+        const updateProfile = db.transaction(() => {
+          if (body.department_id) {
+            const department = db.prepare(
+              'SELECT id FROM departments WHERE id = ? AND company_id = ?',
+            ).get(body.department_id, companyId);
+            if (!department) return false;
+          }
+          const result = db.prepare(`
+            UPDATE users
+            SET ${updates.join(', ')}
+            WHERE id = ? AND company_id = ?
+          `).run(...values.slice(0, -1), userId, companyId);
+          return result.changes === 1;
+        });
+        return updateProfile.immediate();
+      }, 'update RH user profile', { retryOnFailure: false });
+      if (!updated) {
+        return NextResponse.json(
+          { error: 'Usuario ou departamento nao encontrado' },
+          { status: 409 },
+        );
+      }
       await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'user_edit', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: { action: 'update_profile', changes: body }, ip });
       break;
     }
@@ -163,7 +194,9 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         name: targetUser.name,
         email: targetUser.email,
       });
-      await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });
+      if (delivered) {
+        await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });
+      }
       return NextResponse.json(
         {
           success: delivered,

@@ -26,6 +26,7 @@ describe('atomic password reset lifecycle', () => {
         password_hash TEXT NOT NULL,
         must_change_password INTEGER NOT NULL DEFAULT 0,
         password_reset_required INTEGER NOT NULL DEFAULT 0,
+        session_version INTEGER NOT NULL DEFAULT 0,
         deleted_at TEXT,
         updated_at TEXT
       );
@@ -55,12 +56,13 @@ describe('atomic password reset lifecycle', () => {
     })).resolves.toBe(true);
 
     expect(deps.db.prepare(`
-      SELECT password_hash, must_change_password, password_reset_required
+      SELECT password_hash, must_change_password, password_reset_required, session_version
       FROM users WHERE id = 'user-1'
     `).get()).toEqual({
       password_hash: 'unusable-random-hash',
       must_change_password: 1,
       password_reset_required: 1,
+      session_version: 1,
     });
     expect(deps.db.prepare(
       "SELECT COUNT(*) AS count FROM refresh_tokens WHERE user_id = 'user-1'",
@@ -85,12 +87,13 @@ describe('atomic password reset lifecycle', () => {
     )).resolves.toBe(false);
 
     expect(deps.db.prepare(`
-      SELECT password_hash, must_change_password, password_reset_required
+      SELECT password_hash, must_change_password, password_reset_required, session_version
       FROM users WHERE id = 'user-1'
     `).get()).toEqual({
       password_hash: 'new-password-hash',
       must_change_password: 0,
       password_reset_required: 0,
+      session_version: 2,
     });
   });
 });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const deps = vi.hoisted(() => ({
   beginAdministrativePasswordReset: vi.fn(),
@@ -21,6 +21,10 @@ describe('password reset request', () => {
     deps.beginAdministrativePasswordReset.mockResolvedValue(true);
     deps.hashPassword.mockResolvedValue('replacement-password-hash');
     deps.sendEmail.mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('invalidates the old password and sessions only after the link is delivered', async () => {
@@ -57,6 +61,20 @@ describe('password reset request', () => {
     });
 
     expect(result).toEqual({ delivered: false });
+    expect(deps.beginAdministrativePasswordReset).not.toHaveBeenCalled();
+  });
+
+  it('fails closed before sending when production reset origin is not HTTPS UniHER', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000');
+
+    await expect(requestUserPasswordReset({
+      id: 'user-1',
+      name: 'User One',
+      email: 'user@example.com',
+    })).rejects.toThrow('Invalid production password reset origin');
+
+    expect(deps.sendEmail).not.toHaveBeenCalled();
     expect(deps.beginAdministrativePasswordReset).not.toHaveBeenCalled();
   });
 });

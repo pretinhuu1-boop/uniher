@@ -34,26 +34,28 @@ export const POST = withAuth(async (req: NextRequest, context) => {
   }
 
   const passwordHash = await hashPassword(parsed.data.newPassword);
-  const accessToken = await signAccessToken({
-    userId: context.auth.userId,
-    role: context.auth.role,
-    companyId: context.auth.companyId,
-    isMasterAdmin: context.auth.isMasterAdmin,
-    mustChangePassword: false,
-  });
   const refreshToken = await signRefreshToken({ userId: context.auth.userId });
 
-  const completed = await completeForcedPasswordChange({
+  const sessionVersion = await completeForcedPasswordChange({
     userId: context.auth.userId,
     passwordHash,
     refreshToken,
   });
-  if (!completed) {
+  if (sessionVersion === null) {
     return NextResponse.json(
       { error: 'Troca de senha ja concluida ou indisponivel' },
       { status: 409 },
     );
   }
+
+  const accessToken = await signAccessToken({
+    userId: context.auth.userId,
+    role: context.auth.role,
+    companyId: context.auth.companyId,
+    sessionVersion,
+    isMasterAdmin: context.auth.isMasterAdmin,
+    mustChangePassword: false,
+  });
 
   return setAuthCookiesOnResponse(
     NextResponse.json({ success: true }),

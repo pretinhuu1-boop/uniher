@@ -8,6 +8,7 @@ export interface ActiveSessionSubject {
     userId: string;
     role: string;
     companyId: string;
+    sessionVersion: number;
     isMasterAdmin: boolean;
     mustChangePassword: boolean;
     passwordResetRequired: boolean;
@@ -49,6 +50,7 @@ export function getActiveSessionSubject(userId: string): ActiveSessionSubject {
       userId: user.id,
       role: user.role,
       companyId: user.company_id ?? '',
+      sessionVersion: user.session_version ?? 0,
       isMasterAdmin: user.is_master_admin === 1,
       mustChangePassword: user.must_change_password === 1,
       passwordResetRequired: user.password_reset_required === 1,

@@ -65,6 +65,8 @@ function applyPrivateCachePolicy(response: NextResponse): NextResponse {
 /** Wrapper que protege um API route handler com autenticacao JWT */
 export function withAuth(handler: ApiHandler) {
   return async (req: NextRequest, segmentData: { params: Promise<Record<string, string>> }) => {
+    let auth: ReturnType<typeof getActiveSessionSubject>['auth'];
+
     try {
       // Tentar ler token do cookie
       const token = await getAccessToken();
@@ -90,41 +92,47 @@ export function withAuth(handler: ApiHandler) {
       }
 
       const payload = await verifyAccessToken(accessToken);
-      const { auth } = getActiveSessionSubject(payload.userId);
-
+      auth = getActiveSessionSubject(payload.userId).auth;
       if (
-        auth.passwordResetRequired
-        && !PASSWORD_RESET_ALLOWED_PATHS.has(req.nextUrl.pathname)
+        !Number.isInteger(payload.sessionVersion)
+        || payload.sessionVersion !== auth.sessionVersion
       ) {
-        return applyPrivateCachePolicy(NextResponse.json(
-          {
-            error: 'Redefinicao de senha por link obrigatoria',
-            passwordResetRequired: true,
-          },
-          { status: 403 },
-        ));
+        throw new Error('Session version mismatch');
       }
-
-      if (
-        auth.mustChangePassword
-        && !PASSWORD_CHANGE_ALLOWED_PATHS.has(req.nextUrl.pathname)
-      ) {
-        return applyPrivateCachePolicy(NextResponse.json(
-          { error: 'Troca de senha obrigatoria', mustChangePassword: true },
-          { status: 403 },
-        ));
-      }
-
-      return applyPrivateCachePolicy(await handler(req, {
-        params: segmentData.params,
-        auth,
-      }));
     } catch {
       return applyPrivateCachePolicy(NextResponse.json(
         { error: 'Token inválido ou expirado' },
         { status: 401 }
       ));
     }
+
+    if (
+      auth.passwordResetRequired
+      && !PASSWORD_RESET_ALLOWED_PATHS.has(req.nextUrl.pathname)
+    ) {
+      return applyPrivateCachePolicy(NextResponse.json(
+        {
+          error: 'Redefinicao de senha por link obrigatoria',
+          passwordResetRequired: true,
+        },
+        { status: 403 },
+      ));
+    }
+
+    if (
+      auth.mustChangePassword
+      && !PASSWORD_CHANGE_ALLOWED_PATHS.has(req.nextUrl.pathname)
+    ) {
+      return applyPrivateCachePolicy(NextResponse.json(
+        { error: 'Troca de senha obrigatoria', mustChangePassword: true },
+        { status: 403 },
+      ));
+    }
+
+    return applyPrivateCachePolicy(await handler(req, {
+      params: segmentData.params,
+      auth,
+    }));
   };
 }
 

@@ -50,6 +50,7 @@ function activeUser(overrides: Record<string, unknown> = {}) {
     deleted_at: null,
     must_change_password: 0,
     password_reset_required: 0,
+    session_version: 7,
     ...overrides,
   };
 }
@@ -72,6 +73,7 @@ describe('authenticated API boundary', () => {
       userId: 'user-1',
       role: 'admin',
       companyId: 'other-company',
+      sessionVersion: 7,
       isMasterAdmin: true,
     });
     authBoundary.getUserById.mockReturnValue(activeUser());
@@ -92,12 +94,38 @@ describe('authenticated API boundary', () => {
           userId: 'user-1',
           role: 'colaboradora',
           companyId: 'company-1',
+          sessionVersion: 7,
           isMasterAdmin: false,
           mustChangePassword: false,
           passwordResetRequired: false,
         },
       }),
     );
+  });
+
+  it('rejects an access token issued before the current credential version', async () => {
+    authBoundary.verifyAccessToken.mockResolvedValue({
+      userId: 'user-1',
+      role: 'colaboradora',
+      companyId: 'company-1',
+      sessionVersion: 6,
+    });
+    const handler = vi.fn(async () => NextResponse.json({ ok: true }));
+
+    const response = await withAuth(handler)(requestWithBearerToken(), segmentData);
+
+    expect(response.status).toBe(401);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('does not disguise handler failures as invalid tokens', async () => {
+    const handler = vi.fn(async () => {
+      throw new Error('database unavailable');
+    });
+
+    await expect(
+      withAuth(handler)(requestWithBearerToken(), segmentData),
+    ).rejects.toThrow('database unavailable');
   });
 
   it.each([

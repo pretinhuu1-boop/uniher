@@ -10,6 +10,8 @@ const deps = vi.hoisted(() => ({
   setAuthCookiesOnResponse: vi.fn(),
   enqueue: vi.fn(),
   writeBatches: [] as string[][],
+  departmentExists: true,
+  enqueueOptions: [] as unknown[],
 }));
 
 const invite = {
@@ -67,21 +69,41 @@ describe('POST /api/invites/[token] rate limit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deps.writeBatches.length = 0;
+    deps.enqueueOptions.length = 0;
+    deps.departmentExists = true;
     deps.checkInviteAcceptRateLimit.mockResolvedValue(undefined);
     deps.hashPassword.mockResolvedValue('password-hash');
     deps.signAccessToken.mockResolvedValue('access-token');
     deps.signRefreshToken.mockResolvedValue('refresh-token');
     deps.setAuthCookiesOnResponse.mockImplementation((response) => response);
-    deps.enqueue.mockImplementation(async (operation: (db: typeof fakeDb) => unknown) => {
+    deps.enqueue.mockImplementation(async (
+      operation: (db: typeof fakeDb) => unknown,
+      _label?: string,
+      options?: unknown,
+    ) => {
       const statements: string[] = [];
       const writeDb = {
         prepare(sql: string) {
           statements.push(sql.replace(/\s+/g, ' ').trim());
-          return { run: () => undefined };
+          return {
+            get: () => {
+              if (sql.includes('FROM invites')) return invite;
+              if (sql.includes('FROM departments')) {
+                return deps.departmentExists ? { id: 'department-a' } : undefined;
+              }
+              return undefined;
+            },
+            run: () => ({ changes: 1 }),
+          };
+        },
+        transaction(operation: () => unknown) {
+          return { immediate: operation };
         },
       };
-      operation(writeDb as typeof fakeDb);
+      const result = operation(writeDb as unknown as typeof fakeDb);
       deps.writeBatches.push(statements);
+      deps.enqueueOptions.push(options);
+      return result;
     });
   });
 
@@ -118,6 +140,22 @@ describe('POST /api/invites/[token] rate limit', () => {
     expect(order).toEqual(['rate-limit', 'bcrypt']);
     expect(deps.writeBatches[0].some((sql) => sql.includes('INSERT INTO users'))).toBe(true);
     expect(deps.writeBatches[0].some((sql) => sql.includes("UPDATE invites SET status = 'accepted'"))).toBe(true);
+    expect(deps.writeBatches[0].some((sql) => sql.includes('INSERT INTO refresh_tokens'))).toBe(true);
+    expect(deps.enqueueOptions[0]).toEqual({ retryOnFailure: false });
+    expect(deps.signAccessToken).toHaveBeenCalledWith(expect.objectContaining({
+      sessionVersion: 0,
+    }));
+  });
+
+  it('rejects an invite whose department does not belong to its company', async () => {
+    deps.departmentExists = false;
+
+    const response = await POST(registerRequest(), {
+      params: Promise.resolve({ token: 'raw-invite-token' }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(deps.writeBatches[0].some((sql) => sql.includes('INSERT INTO users'))).toBe(false);
   });
 });
 

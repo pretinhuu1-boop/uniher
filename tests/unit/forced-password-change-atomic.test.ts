@@ -23,6 +23,7 @@ describe('atomic forced password change', () => {
         password_hash TEXT NOT NULL,
         must_change_password INTEGER NOT NULL DEFAULT 0,
         password_reset_required INTEGER NOT NULL DEFAULT 0,
+        session_version INTEGER NOT NULL DEFAULT 0,
         updated_at TEXT
       );
       CREATE TABLE refresh_tokens (
@@ -46,14 +47,15 @@ describe('atomic forced password change', () => {
       userId: 'user-1',
       passwordHash: 'new-password-hash',
       refreshToken: 'new-refresh-token',
-    })).resolves.toBe(true);
+    })).resolves.toBe(1);
 
     expect(deps.db.prepare(`
-      SELECT password_hash, must_change_password
+      SELECT password_hash, must_change_password, session_version
       FROM users WHERE id = 'user-1'
     `).get()).toEqual({
       password_hash: 'new-password-hash',
       must_change_password: 0,
+      session_version: 1,
     });
 
     const tokens = deps.db.prepare(`
@@ -75,7 +77,7 @@ describe('atomic forced password change', () => {
       userId: 'user-1',
       passwordHash: 'attacker-hash',
       refreshToken: 'attacker-refresh',
-    })).resolves.toBe(false);
+    })).resolves.toBeNull();
 
     expect(deps.db.prepare(
       "SELECT password_hash FROM users WHERE id = 'user-1'",

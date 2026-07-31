@@ -9,6 +9,7 @@ const deps = vi.hoisted(() => ({
     isMasterAdmin: false,
     mustChangePassword: true,
     passwordResetRequired: false,
+    sessionVersion: 0,
   },
   hashPassword: vi.fn(),
   signAccessToken: vi.fn(),
@@ -61,7 +62,7 @@ describe('forced password change route', () => {
     deps.hashPassword.mockResolvedValue('new-password-hash');
     deps.signAccessToken.mockResolvedValue('new-access-token');
     deps.signRefreshToken.mockResolvedValue('new-refresh-token');
-    deps.completeForcedPasswordChange.mockResolvedValue(true);
+    deps.completeForcedPasswordChange.mockResolvedValue(1);
     deps.setAuthCookiesOnResponse.mockImplementation((response: unknown) => response);
   });
 
@@ -80,6 +81,7 @@ describe('forced password change route', () => {
     expect(deps.signAccessToken).toHaveBeenCalledWith(expect.objectContaining({
       userId: 'user-1',
       mustChangePassword: false,
+      sessionVersion: 1,
     }));
     expect(deps.setAuthCookiesOnResponse).toHaveBeenCalledWith(
       expect.anything(),

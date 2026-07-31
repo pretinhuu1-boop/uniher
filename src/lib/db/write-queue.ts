@@ -54,7 +54,7 @@ export class WriteQueue {
         reject,
         enqueuedAt: Date.now(),
         retries: 0,
-        retryOnFailure: options.retryOnFailure ?? true,
+        retryOnFailure: options.retryOnFailure ?? false,
         label,
       });
       this.processNext();

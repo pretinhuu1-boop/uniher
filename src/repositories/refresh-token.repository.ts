@@ -37,7 +37,38 @@ export async function createRefreshToken(userId: string, token: string, expiresI
     `).run(id, userId, tokenHash, expiresInDays);
 
     return db.prepare('SELECT * FROM refresh_tokens WHERE id = ?').get(id) as RefreshTokenRow;
-  });
+  }, 'create refresh token', { retryOnFailure: false });
+}
+
+export async function rotateRefreshToken(
+  userId: string,
+  currentToken: string,
+  replacementToken: string,
+  expiresInDays = 2,
+): Promise<RefreshTokenRow | null> {
+  const currentHash = hashToken(currentToken);
+  const replacementHash = hashToken(replacementToken);
+  const replacementId = nanoid();
+
+  return getWriteQueue().enqueue((db) => {
+    const rotate = db.transaction(() => {
+      const deleted = db.prepare(
+        'DELETE FROM refresh_tokens WHERE user_id = ? AND token_hash = ?',
+      ).run(userId, currentHash);
+      if (deleted.changes !== 1) return null;
+
+      db.prepare(`
+        INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at)
+        VALUES (?, ?, ?, datetime('now', '+' || ? || ' days'))
+      `).run(replacementId, userId, replacementHash, expiresInDays);
+
+      return db.prepare(
+        'SELECT * FROM refresh_tokens WHERE id = ?',
+      ).get(replacementId) as RefreshTokenRow;
+    });
+
+    return rotate.immediate();
+  }, 'rotate refresh token', { retryOnFailure: false });
 }
 
 export async function deleteRefreshToken(token: string): Promise<void> {
@@ -46,7 +77,7 @@ export async function deleteRefreshToken(token: string): Promise<void> {
 
   await writeQueue.enqueue((db) => {
     db.prepare('DELETE FROM refresh_tokens WHERE token_hash = ?').run(tokenHash);
-  });
+  }, 'delete refresh token', { retryOnFailure: false });
 }
 
 export async function deleteAllUserTokens(userId: string): Promise<void> {
@@ -54,7 +85,7 @@ export async function deleteAllUserTokens(userId: string): Promise<void> {
 
   await writeQueue.enqueue((db) => {
     db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(userId);
-  });
+  }, 'delete all user refresh tokens', { retryOnFailure: false });
 }
 
 export async function cleanExpiredTokens(): Promise<void> {

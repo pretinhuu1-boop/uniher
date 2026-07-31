@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
+import { clearAuthCookiesOnResponse } from '@/lib/auth/cookies';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -31,10 +32,32 @@ export const POST = withAuth(async (req, context) => {
   }
 
   const newHash = await hashPassword(newPassword);
-  await getWriteQueue().enqueue(() => {
-    db.prepare('UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?')
-      .run(newHash, new Date().toISOString(), userId);
-  });
+  const changed = await getWriteQueue().enqueue((writeDb) => {
+    const changePassword = writeDb.transaction(() => {
+      const result = writeDb.prepare(`
+        UPDATE users
+        SET password_hash = ?,
+            must_change_password = 0,
+            session_version = session_version + 1,
+            updated_at = ?
+        WHERE id = ? AND password_hash = ?
+      `).run(newHash, new Date().toISOString(), userId, user.password_hash);
+      if (result.changes !== 1) return false;
+      writeDb.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(userId);
+      return true;
+    });
+    return changePassword.immediate();
+  }, 'change authenticated password', { retryOnFailure: false });
 
-  return NextResponse.json({ success: true, message: 'Senha alterada com sucesso!' });
+  if (!changed) {
+    return NextResponse.json(
+      { error: 'A senha foi alterada em outra sessao. Entre novamente.' },
+      { status: 409 },
+    );
+  }
+
+  return clearAuthCookiesOnResponse(NextResponse.json({
+    success: true,
+    message: 'Senha alterada com sucesso. Entre novamente.',
+  }));
 });

@@ -61,6 +61,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     userId: user.id,
     role: user.role,
     companyId: user.company_id ?? '',
+    sessionVersion: user.session_version ?? 0,
     isMasterAdmin: user.is_master_admin === 1,
   });
 
@@ -128,6 +129,7 @@ export async function login(input: LoginInput): Promise<AuthResult> {
     userId: user.id,
     role: user.role,
     companyId: user.company_id ?? '',
+    sessionVersion: user.session_version ?? 0,
     isMasterAdmin: user.is_master_admin === 1,
     mustChangePassword: (user as any).must_change_password === 1,
   });
@@ -179,13 +181,16 @@ export async function refresh(): Promise<{ accessToken: string; refreshToken: st
     throw new UnauthorizedError('Redefinicao de senha por link obrigatoria');
   }
 
-  // Rotacao: deletar token antigo, criar novo
-  await refreshTokenRepo.deleteRefreshToken(currentRefreshToken);
-
   const accessToken = await signAccessToken(auth);
-
   const newRefreshToken = await signRefreshToken({ userId: user.id });
-  await refreshTokenRepo.createRefreshToken(user.id, newRefreshToken);
+  const rotated = await refreshTokenRepo.rotateRefreshToken(
+    user.id,
+    currentRefreshToken,
+    newRefreshToken,
+  );
+  if (!rotated) {
+    throw new UnauthorizedError('Refresh token ja utilizado');
+  }
 
   return { accessToken, refreshToken: newRefreshToken };
 }
