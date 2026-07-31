@@ -16,6 +16,7 @@
     "test:colaboradora": "cd tests && npx playwright test --config=playwright.config.ts --project=colaboradora",
     "test:integrado": "cd tests && npx playwright test --config=playwright.config.ts --project=integrado",
     "test:seguranca": "cd tests && npx playwright test --config=playwright.config.ts --project=seguranca",
+    "test:security:public": "node tests/security/public-api-readonly-audit.mjs",
     "test:report": "cd tests && npx playwright test --config=playwright.config.ts && npx playwright show-report report"
   },
   "dependencies": {
