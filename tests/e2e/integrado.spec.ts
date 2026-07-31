@@ -4,9 +4,10 @@
  *        colaboradora aceita → RH aprova → colaboradora loga → check-in → missões
  */
 import { test, expect } from '@playwright/test';
-
-const ADMIN_EMAIL = 'admin@uniher.com.br';
-const ADMIN_PASSWORD = 'Admin@2026';
+import {
+  E2E_ADMIN_EMAIL as ADMIN_EMAIL,
+  E2E_ADMIN_PASSWORD as ADMIN_PASSWORD,
+} from '../test-environment';
 
 test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
   test.describe.configure({ mode: 'serial' });

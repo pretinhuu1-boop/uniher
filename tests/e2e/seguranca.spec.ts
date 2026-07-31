@@ -3,9 +3,10 @@
  * Cobre: SQL injection, XSS, auth obrigatória, controle de role, rate limiting, IDOR, path traversal
  */
 import { test, expect, type APIRequestContext } from '@playwright/test';
-
-const ADMIN_EMAIL = 'admin@uniher.com.br';
-const ADMIN_PASSWORD = 'Admin@2026';
+import {
+  E2E_ADMIN_EMAIL as ADMIN_EMAIL,
+  E2E_ADMIN_PASSWORD as ADMIN_PASSWORD,
+} from '../test-environment';
 
 test.describe('Segurança — Testes de Proteção', () => {
   test.describe.configure({ mode: 'serial' });
@@ -124,7 +125,7 @@ test.describe('Segurança — Testes de Proteção', () => {
   test('SQL Injection — login com payload no email', async ({ request }) => {
     const res = await request.post('/api/auth/login', {
       data: {
-        email: "admin@uniher.com.br' OR '1'='1",
+        email: `${ADMIN_EMAIL}' OR '1'='1`,
         password: 'qualquer',
       },
     });

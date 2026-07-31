@@ -6,10 +6,11 @@
  * Rodar: npx playwright test --project=visual-ux
  */
 import { test, expect, Page } from '@playwright/test';
-
-const BASE = process.env.BASE_URL || 'http://localhost:3000';
-const ADMIN_EMAIL = 'admin@uniher.com.br';
-const ADMIN_PASS = 'Admin@2026';
+import {
+  E2E_ADMIN_EMAIL as ADMIN_EMAIL,
+  E2E_ADMIN_PASSWORD as ADMIN_PASS,
+  E2E_BASE_URL as BASE,
+} from '../test-environment';
 const DEMO_RH_EMAIL = 'contabilidade@eduardaeyurimarketingltda.com.br';
 
 // Helper: ensure the demo RH user exists (idempotent)
@@ -149,9 +150,9 @@ test.describe('Master Admin — Visual UX', () => {
     await page.locator('button:has-text("Admin Master"), [role="tab"]:has-text("Admin Master")').first().click();
     await page.waitForTimeout(1000);
     await expect(page.locator('text=Admins Master')).toBeVisible();
-    // Verify admin list has at least one entry (the admin@uniher.com.br user)
+    // Verify the configured isolated administrator is listed.
     // The row may be off-screen; check count instead of visibility
-    const adminEmailCount = await page.locator('text=admin@uniher.com.br').count();
+    const adminEmailCount = await page.getByText(ADMIN_EMAIL, { exact: true }).count();
     expect(adminEmailCount).toBeGreaterThanOrEqual(1);
   });
 

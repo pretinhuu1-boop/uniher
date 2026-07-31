@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import os from 'os';
+import { E2E_BASE_URL } from './test-environment';
 
 // Detect available resources — use half the CPUs, min 1, max 3
 const cpus = os.cpus().length;
@@ -18,7 +19,7 @@ export default defineConfig({
     ['json', { outputFile: './results/results.json' }],
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: E2E_BASE_URL,
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'off',

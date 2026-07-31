@@ -1,4 +1,9 @@
-const BASE = 'http://localhost:3000';
+const {
+  baseUrl: BASE,
+  adminEmail: ADMIN_EMAIL,
+  adminPassword: ADMIN_PASSWORD,
+  temporaryPassword: TEST_PASSWORD,
+} = require('./security-test-environment.cjs');
 const results = { passed: 0, failed: 0, details: [] };
 
 function log(ok, label, status, extra) {
@@ -6,7 +11,7 @@ function log(ok, label, status, extra) {
   results.details.push({ ok, label, status, extra: extra || '' });
 }
 
-async function getToken(email, password = 'Admin@2026') {
+async function getToken(email, password) {
   const res = await fetch(BASE + '/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -39,7 +44,7 @@ async function noAuthFetch(path) {
 
   // ═══ LOGIN ADMIN MASTER ═══
   console.log('\n═══ LOGIN & AUTH ═══');
-  const adminToken = await getToken('admin@uniher.com.br');
+  const adminToken = await getToken(ADMIN_EMAIL, ADMIN_PASSWORD);
   log(!!adminToken, 'Login Master Admin', adminToken ? 200 : 'FAIL');
 
   if (!adminToken) {
@@ -63,7 +68,7 @@ async function noAuthFetch(path) {
 
   // 2. Admin cria usuario RH na empresa
   const rhEmail = `rh-test-${ts}@teste.com`;
-  const rhPass = 'Admin@2026';
+  const rhPass = TEST_PASSWORD;
   const rhCreate = await api(adminToken, 'POST', '/api/admin/users', {
     name: 'RH Teste',
     email: rhEmail,
@@ -80,7 +85,7 @@ async function noAuthFetch(path) {
 
   // 4. RH cria colaboradora via convite
   const colabEmail = `colab-test-${ts}@teste.com`;
-  const colabPass = 'Admin@2026';
+  const colabPass = TEST_PASSWORD;
   let colabToken = null;
 
   if (rhToken) {
@@ -99,7 +104,7 @@ async function noAuthFetch(path) {
   log(!!colabToken, 'Colaboradora registrada via convite', colabToken ? 200 : 'FAIL');
 
   // ═══ AUTH CHECKS ═══
-  const wrongPw = await fetch(BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'admin@uniher.com.br', password: 'Wrong@123' }) });
+  const wrongPw = await fetch(BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ADMIN_EMAIL, password: 'Wrong@123' }) });
   log(wrongPw.status === 401, 'Senha errada rejeita', wrongPw.status);
 
   const me = await api(adminToken, 'GET', '/api/auth/me');

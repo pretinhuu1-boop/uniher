@@ -2,7 +2,9 @@ import Database from 'better-sqlite3';
 import {
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
+  statSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -10,9 +12,22 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 
 const root = process.cwd();
+const retiredProductionPassword = ['Admin', '@2026'].join('');
 
 function readProjectFile(...segments: string[]): string {
   return readFileSync(path.join(root, ...segments), 'utf8');
+}
+
+function listTextFiles(directory: string): string[] {
+  return readdirSync(directory).flatMap((entry) => {
+    const filePath = path.join(directory, entry);
+    if (statSync(filePath).isDirectory()) {
+      return listTextFiles(filePath);
+    }
+    return /\.(?:[cm]?[jt]sx?|md|html|json|sql|sh|bat|cjs)$/.test(entry)
+      ? [filePath]
+      : [];
+  });
 }
 
 describe('production database bootstrap policy', () => {
@@ -32,11 +47,24 @@ describe('production database bootstrap policy', () => {
     const seed = readProjectFile('src', 'lib', 'db', 'seed.ts');
     const deployGuide = readProjectFile('docs', 'deploy-vps-hostinger.md');
 
-    expect(seed).not.toMatch(/Admin@2026|is_approved/);
+    expect(seed).not.toContain(retiredProductionPassword);
+    expect(seed).not.toContain('is_approved');
     expect(seed).not.toMatch(/(?:INSERT\s+INTO|UPDATE)\s+users\b/i);
     expect(seed).not.toMatch(/INSERT\s+INTO\s+companies\b/i);
     expect(seed).not.toContain('hashPassword');
-    expect(deployGuide).not.toMatch(/Admin@2026|Usu[aá]rios padr[aã]o do seed/);
+    expect(deployGuide).not.toContain(retiredProductionPassword);
+    expect(deployGuide).not.toMatch(/Usu[aá]rios padr[aã]o do seed/);
+  });
+
+  it('keeps the retired production password out of source, tests and operator docs', () => {
+    const roots = ['src', 'tests', 'docs', 'deploy', 'public'];
+    const files = roots.flatMap((directory) =>
+      listTextFiles(path.join(root, directory)),
+    );
+
+    for (const file of files) {
+      expect(readFileSync(file, 'utf8'), file).not.toContain(retiredProductionPassword);
+    }
   });
 
   it('runs the complete reference-data seed on a fresh database', () => {
@@ -57,8 +85,9 @@ describe('production database bootstrap policy', () => {
 
       expect(result.error).toBeUndefined();
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(`${result.stdout}\n${result.stderr}`).not.toContain(retiredProductionPassword);
       expect(`${result.stdout}\n${result.stderr}`).not.toMatch(
-        /Admin@2026|admin@uniher\.com\.br\s*\//,
+        /admin@uniher\.com\.br\s*\//,
       );
 
       const db = new Database(databasePath, { readonly: true });

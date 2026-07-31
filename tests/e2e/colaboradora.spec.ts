@@ -3,9 +3,10 @@
  * Cobre: registro via convite, login, dashboard, gamificação, missões, leaderboard, preferências
  */
 import { test, expect } from '@playwright/test';
-
-const ADMIN_EMAIL = 'admin@uniher.com.br';
-const ADMIN_PASSWORD = 'Admin@2026';
+import {
+  E2E_ADMIN_EMAIL as ADMIN_EMAIL,
+  E2E_ADMIN_PASSWORD as ADMIN_PASSWORD,
+} from '../test-environment';
 
 test.describe('Colaboradora — Gamificação e Jornada', () => {
   test.describe.configure({ mode: 'serial' });

@@ -3,9 +3,10 @@
  * Cobre: criação de RH via admin, login RH, dashboard, convites, aprovações, objetivos, permissões
  */
 import { test, expect } from '@playwright/test';
-
-const ADMIN_EMAIL = 'admin@uniher.com.br';
-const ADMIN_PASSWORD = 'Admin@2026';
+import {
+  E2E_ADMIN_EMAIL as ADMIN_EMAIL,
+  E2E_ADMIN_PASSWORD as ADMIN_PASSWORD,
+} from '../test-environment';
 
 test.describe('RH — Painel da Empresa', () => {
   test.describe.configure({ mode: 'serial' });

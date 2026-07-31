@@ -3,9 +3,10 @@
  * Cobre: login, empresas, usuários admin, health, system, backup, integrity
  */
 import { test, expect } from '@playwright/test';
-
-const ADMIN_EMAIL = 'admin@uniher.com.br';
-const ADMIN_PASSWORD = 'Admin@2026';
+import {
+  E2E_ADMIN_EMAIL as ADMIN_EMAIL,
+  E2E_ADMIN_PASSWORD as ADMIN_PASSWORD,
+} from '../test-environment';
 
 test.describe('Admin Master — Autenticação e Gestão', () => {
   test.describe.configure({ mode: 'serial' });
