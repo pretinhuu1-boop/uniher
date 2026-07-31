@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMasterAdmin } from '@/lib/auth/middleware';
-import { devOnlyGuard } from '@/lib/api/dev-only';
+import { activeMasterAdminEffectGuard, devOnlyGuard } from '@/lib/api/dev-only';
 import { getReadDb, walCheckpoint } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 
-export const POST = withMasterAdmin(async (_req: NextRequest) => {
-  const blocked = devOnlyGuard();
+export const POST = withMasterAdmin(async (req: NextRequest, { auth }) => {
+  const blocked = devOnlyGuard(req);
   if (blocked) return blocked;
+
+  const actorBlocked = activeMasterAdminEffectGuard(auth.userId);
+  if (actorBlocked) return actorBlocked;
+
   await initDb();
   const db = getReadDb();
 

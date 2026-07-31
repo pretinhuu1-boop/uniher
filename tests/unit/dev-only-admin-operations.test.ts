@@ -16,6 +16,8 @@ const deps = vi.hoisted(() => ({
   readdirSync: vi.fn(() => []),
   execSync: vi.fn(() => ''),
   hasActiveMasterAdminActor: vi.fn(() => true),
+  initDb: vi.fn(async () => undefined),
+  walCheckpoint: vi.fn(),
 }));
 
 vi.mock('@/lib/auth/middleware', () => ({
@@ -36,6 +38,11 @@ vi.mock('@/lib/auth/middleware', () => ({
 vi.mock('@/lib/db', () => ({
   getReadDb: () => deps.db,
   closeDb: deps.closeDb,
+  walCheckpoint: deps.walCheckpoint,
+}));
+
+vi.mock('@/lib/db/init', () => ({
+  initDb: deps.initDb,
 }));
 
 vi.mock('@/lib/security/active-rh-actor', () => ({
@@ -63,6 +70,7 @@ vi.mock('child_process', () => ({
 import { devOnlyGuard } from '@/lib/api/dev-only';
 import { POST as createBackup } from '@/app/api/admin/system/backup/route';
 import { POST as clearLogs } from '@/app/api/admin/system/clear-logs/route';
+import { POST as checkIntegrity } from '@/app/api/admin/system/integrity/route';
 import { POST as runOperation } from '@/app/api/admin/system/ops/route';
 
 function request(
@@ -72,16 +80,17 @@ function request(
     baseUrl?: string;
     origin?: string | null;
     forwardedFor?: string;
-    realIp?: string;
+    realIp?: string | null;
   } = {},
 ): NextRequest {
   const baseUrl = options.baseUrl ?? 'http://localhost:3000';
   const headers = new Headers({ 'content-type': 'application/json' });
   const origin = options.origin === undefined ? 'http://localhost:3000' : options.origin;
+  const realIp = options.realIp === undefined ? '127.0.0.1' : options.realIp;
 
   if (origin) headers.set('origin', origin);
   if (options.forwardedFor) headers.set('x-forwarded-for', options.forwardedFor);
-  if (options.realIp) headers.set('x-real-ip', options.realIp);
+  if (realIp) headers.set('x-real-ip', realIp);
 
   return new NextRequest(`${baseUrl}${path}`, {
     method: 'POST',
@@ -121,6 +130,10 @@ describe('devOnlyGuard trusted loopback boundary', () => {
       options: { baseUrl: 'https://staging.uniher.com.br' },
     },
     {
+      name: 'missing trusted client address',
+      options: { realIp: null },
+    },
+    {
       name: 'public forwarded client',
       options: { forwardedFor: '203.0.113.10' },
     },
@@ -154,6 +167,17 @@ describe('dev-only destructive operations', () => {
     deps.existsSync.mockReturnValue(true);
     deps.statSync.mockReturnValue({ size: 1024 });
     deps.hasActiveMasterAdminActor.mockImplementation(() => deps.actorActive);
+    Object.assign(deps.db, {
+      pragma: vi.fn((statement: string) => {
+        if (statement === 'integrity_check') return [{ integrity_check: 'ok' }];
+        if (statement === 'foreign_key_check') return [];
+        if (statement === 'wal_checkpoint(PASSIVE)') return [{ busy: 0, log: 0, checkpointed: 0 }];
+        return [];
+      }),
+      prepare: vi.fn(() => ({
+        get: vi.fn(() => ({ count: 1 })),
+      })),
+    });
   });
 
   afterEach(() => {
@@ -212,6 +236,20 @@ describe('dev-only destructive operations', () => {
     expect(deps.closeDb).not.toHaveBeenCalled();
     expect(deps.unlinkSync).not.toHaveBeenCalled();
     expect(deps.execSync).not.toHaveBeenCalled();
+  });
+
+  it('revalidates the actor before running the integrity checkpoint', async () => {
+    deps.actorActive = false;
+
+    const response = await checkIntegrity(
+      request('/api/admin/system/integrity'),
+      routeContext,
+    );
+
+    expect(response.status).toBe(403);
+    expect(deps.hasActiveMasterAdminActor).toHaveBeenCalledWith(deps.db, 'admin-1');
+    expect(deps.initDb).not.toHaveBeenCalled();
+    expect(deps.walCheckpoint).not.toHaveBeenCalled();
   });
 
   it('revalidates the actor inside the delayed restart callback', async () => {

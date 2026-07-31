@@ -42,7 +42,7 @@ function hasTrustedLoopbackOrigin(req: NextRequest): boolean {
     .filter((value): value is string => value !== null)
     .flatMap((value) => value.split(','));
 
-  return forwardedAddresses.every(isLoopback);
+  return forwardedAddresses.length > 0 && forwardedAddresses.every(isLoopback);
 }
 
 function forbidden(): NextResponse {
