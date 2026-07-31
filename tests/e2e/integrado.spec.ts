@@ -293,9 +293,6 @@ test.describe('Fluxo Integrado E2E — Jornada Completa', () => {
 
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body.status).toBe('healthy');
-    expect(body.db.status).toBe('ok');
-    expect(body.db.users).toBeGreaterThanOrEqual(3); // admin + rh + colab
-    expect(body.db.companies).toBeGreaterThanOrEqual(1);
+    expect(body).toEqual({ status: 'healthy' });
   });
 });

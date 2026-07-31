@@ -67,17 +67,11 @@ test.describe('Admin Master — Autenticação e Gestão', () => {
     expect(res.status()).toBe(200);
     const body = await res.json();
 
-    expect(body).toHaveProperty('status');
-    expect(['healthy', 'degraded']).toContain(body.status);
-    expect(body).toHaveProperty('db');
-    expect(body.db).toHaveProperty('status');
-    expect(body.db).toHaveProperty('users');
-    expect(body.db).toHaveProperty('companies');
-    expect(body).toHaveProperty('memory');
-    expect(body.memory).toHaveProperty('heapUsedMB');
-    expect(body.memory).toHaveProperty('rssMB');
-    expect(body).toHaveProperty('uptime');
-    expect(typeof body.uptimeSeconds).toBe('number');
+    expect(body).toEqual({ status: 'healthy' });
+    expect(body).not.toHaveProperty('db');
+    expect(body).not.toHaveProperty('memory');
+    expect(body).not.toHaveProperty('uptime');
+    expect(body).not.toHaveProperty('version');
   });
 
   // ─── Empresas ────────────────────────────────────────────────────────────────
