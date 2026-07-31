@@ -40,8 +40,8 @@ cp -R .next/static .next/standalone/.next/static
 rm -rf .next/standalone/public
 cp -R public .next/standalone/public
 
-echo "[5/6] Migracoes e seed base..."
-npm run db:seed
+echo "[5/6] Aplicando migracoes..."
+npm run db:migrate
 
 echo "[6/6] Reiniciando app..."
 pm2 startOrReload ecosystem.config.cjs --env production

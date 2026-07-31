@@ -7,6 +7,7 @@
     "dev:turbo": "next dev --turbo --port 3000",
     "build": "next build",
     "start": "next start",
+    "db:migrate": "tsx -e \"import { closeDb } from './src/lib/db'; import { initDb } from './src/lib/db/init'; initDb().then(() => closeDb()).catch((error) => { closeDb(); console.error(error); process.exit(1); })\"",
     "db:seed": "tsx src/lib/db/seed.ts",
     "db:reset": "del data\\uniher.db && npm run db:seed",
     "test": "cd tests && npx playwright test --config=playwright.config.ts",

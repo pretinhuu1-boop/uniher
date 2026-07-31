@@ -110,24 +110,23 @@ set +a
 npm run build
 ```
 
-## 6. Inicializar banco
+## 6. Aplicar migrations
 
-O banco SQLite é criado automaticamente quando a aplicação sobe. Para popular a base padrão:
+O deploy aplica somente migrations. Ele não cria contas, empresas ou credenciais:
 
 ```bash
 cd /var/www/uniher
 set -a
 source .env.production
 set +a
-npm run db:seed
+npm run db:migrate
 ```
 
-Usuários padrão do seed:
+Em uma instalação nova, o primeiro Master Admin deve ser provisionado por um
+procedimento administrativo separado e aprovado. A senha deve ser aleatória,
+fornecida por secret manager e nunca registrada em código, documentação ou logs.
+O comando `db:seed` é reservado a dados de referência e não cria usuários.
 
-- Admin: `admin@uniher.com.br / Admin@2026`
-- RH demo: `contabilidade@eduardaeyurimarketingltda.com.br / Admin@2026`
-
-Troque essas senhas depois do primeiro acesso.
 
 ## 7. Preparar standalone
 
@@ -200,7 +199,7 @@ Esse script:
 - roda `npm ci --include=dev`
 - garante `data/` e `backups/`
 - roda `build`
-- roda `db:seed`
+- aplica migrations com `db:migrate`
 - reinicia no PM2
 
 ## 12. O que revisar depois do deploy

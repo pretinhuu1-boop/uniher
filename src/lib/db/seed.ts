@@ -1,38 +1,20 @@
 /**
- * Seed de Homologação — UniHER
- * Cria apenas: 1 admin master + arquétipos + badges base
- * Sem empresas, usuários ou dados fake.
+ * Seed de dados de referência da UniHER.
+ * Não cria empresas, contas ou credenciais.
  */
-import { getWriteQueue, getReadDb } from './index';
+import { getWriteQueue } from './index';
 import { initDb } from './init';
-import { hashPassword } from '../auth/password';
 
 async function seed() {
-  console.log('[seed] Iniciando seed de homologação...');
+  console.log('[seed] Iniciando seed de dados de referência...');
   await initDb();
 
-  const db = getReadDb();
   const writeQueue = getWriteQueue();
-
-  const adminPassword = await hashPassword('Admin@2026');
 
   await writeQueue.enqueue((db) => {
     // Temporarily disable FK for seed (inserts in dependency order but same transaction)
     db.pragma('foreign_keys = OFF');
     db.transaction(() => {
-      // ─── Admin Master (único usuário criado no seed) ───
-      const existingAdmin = db.prepare('SELECT id FROM users WHERE role = ?').get('admin');
-      if (!existingAdmin) {
-        console.log('[seed] Criando admin master...');
-        db.prepare(`
-          INSERT INTO users (id, company_id, department_id, name, email, password_hash, role, is_master_admin, level, points)
-          VALUES ('user_admin', NULL, NULL, 'Admin UniHER', 'admin@uniher.com.br', ?, 'admin', 1, 99, 0)
-        `).run(adminPassword);
-      } else {
-        console.log('[seed] Admin master já existe, pulando...');
-        db.prepare(`UPDATE users SET is_master_admin = 1 WHERE email = 'admin@uniher.com.br'`).run();
-      }
-
       // ─── Arquétipos (estrutura base do sistema) ───
       const existingArch = db.prepare('SELECT COUNT(*) as c FROM archetypes').get() as { c: number };
       if (existingArch.c === 0) {
@@ -86,26 +68,7 @@ async function seed() {
         console.log('[seed] Desafios padrão já existem, pulando...');
       }
 
-      // ─── Demo Company + RH (usados pelos testes visuais E2E) ──────────────
-      const existingDemo = db.prepare("SELECT id FROM companies WHERE cnpj = '00.000.000/0001-00'").get();
-      if (!existingDemo) {
-        console.log('[seed] Criando empresa demo + RH para testes visuais...');
-        const demoCompanyId = 'company_demo_visual';
-        db.prepare(`
-          INSERT INTO companies (id, name, cnpj, sector, plan)
-          VALUES (?, 'Eduardo e Yurimara Marketing LTDA', '00.000.000/0001-00', 'Marketing', 'pro')
-        `).run(demoCompanyId);
-        db.prepare(`
-          INSERT INTO users (id, company_id, department_id, name, email, password_hash, role, level, points, is_approved)
-          VALUES (?, ?, NULL, 'Contabilidade RH', 'contabilidade@eduardaeyurimarketingltda.com.br', ?, 'rh', 1, 0, 1)
-        `).run('user_demo_rh', demoCompanyId, adminPassword);
-      } else {
-        console.log('[seed] Empresa demo já existe, pulando...');
-      }
-
-      console.log('[seed] ✅ Seed base concluído!');
-      console.log('[seed] Admin: admin@uniher.com.br / Admin@2026');
-      console.log('[seed] Demo RH: contabilidade@eduardaeyurimarketingltda.com.br / Admin@2026');
+      console.log('[seed] ✅ Dados de referência base concluídos!');
     })();
     db.pragma('foreign_keys = ON');
   });
@@ -126,7 +89,7 @@ async function seed() {
     console.warn('[seed] ⚠️ Gamification seed:', err.message);
   }
 
-  console.log('[seed] ✅ Seed de homologação completo!');
+  console.log('[seed] ✅ Seed de dados de referência completo!');
 }
 
 seed()
