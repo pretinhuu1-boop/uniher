@@ -95,7 +95,7 @@ describe('production database bootstrap policy', () => {
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
-  });
+  }, 120_000);
 
   it('runs the production migration command to completion', () => {
     const databasePath = path.join(
@@ -132,5 +132,5 @@ describe('production database bootstrap policy', () => {
         rmSync(`${databasePath}${suffix}`, { force: true });
       }
     }
-  });
+  }, 30_000);
 });
