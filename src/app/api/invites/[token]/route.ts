@@ -12,6 +12,8 @@ import { z } from 'zod';
 import { hashPassword } from '@/lib/auth/password';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
 import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
+import { checkInviteAcceptRateLimit } from '@/lib/security/rate-limit';
+import { handleApiError } from '@/lib/errors';
 
 const RegisterSchema = z.object({
   name: z.string().min(2).max(120),
@@ -60,6 +62,12 @@ export async function GET(req: Request, segmentData: { params: Promise<{ token: 
 // Público — aceitar convite e criar conta
 export async function POST(req: Request, segmentData: { params: Promise<{ token: string }> }) {
   const { token } = await segmentData.params;
+  try {
+    await checkInviteAcceptRateLimit(req, token);
+  } catch (error) {
+    return handleApiError(error);
+  }
+
   await initDb();
   const db = getReadDb();
 

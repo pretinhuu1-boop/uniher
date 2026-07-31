@@ -1,4 +1,5 @@
 import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { createHash } from 'node:crypto';
 import { RateLimitError } from '../errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
@@ -68,6 +69,19 @@ const publicLimiter = new RateLimiterMemory({
   points: 30,
   duration: 60,
   keyPrefix: 'public',
+});
+
+// Invite acceptance reaches bcrypt, so it has stricter per-IP and per-invite budgets.
+const inviteAcceptIpLimiter = new RateLimiterMemory({
+  points: 5,
+  duration: 60,
+  keyPrefix: 'invite-accept-ip',
+});
+
+const inviteAcceptTokenLimiter = new RateLimiterMemory({
+  points: 5,
+  duration: 60,
+  keyPrefix: 'invite-accept-token',
 });
 
 // Rate limiter global por IP: 200 req/min (proteção DDoS básica)
@@ -187,6 +201,20 @@ export async function checkPublicRateLimit(req: Request): Promise<void> {
     await publicLimiter.consume(ip);
   } catch {
     throw new RateLimitError('Muitas requisições. Aguarde 1 minuto.');
+  }
+}
+
+export async function checkInviteAcceptRateLimit(req: Request, token: string): Promise<void> {
+  const ip = getClientIp(req);
+  const tokenHash = createHash('sha256').update(token).digest('hex');
+
+  try {
+    await Promise.all([
+      inviteAcceptIpLimiter.consume(ip),
+      inviteAcceptTokenLimiter.consume(tokenHash),
+    ]);
+  } catch {
+    throw new RateLimitError('Muitas tentativas de aceitar este convite. Aguarde 1 minuto.');
   }
 }
 
