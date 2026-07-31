@@ -8,6 +8,8 @@ const ADMIN_EMAIL = 'admin@uniher.com.br';
 const ADMIN_PASSWORD = 'Admin@2026';
 
 test.describe('Segurança — Testes de Proteção', () => {
+  test.describe.configure({ mode: 'serial' });
+
   let adminToken: string;
   let rhToken: string;
   let colabToken: string;

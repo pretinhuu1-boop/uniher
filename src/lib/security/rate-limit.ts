@@ -73,7 +73,7 @@ const publicLimiter = new RateLimiterMemory({
 
 // Invite acceptance reaches bcrypt, so it has stricter per-IP and per-invite budgets.
 const inviteAcceptIpLimiter = new RateLimiterMemory({
-  points: 5,
+  points: 30,
   duration: 60,
   keyPrefix: 'invite-accept-ip',
 });
