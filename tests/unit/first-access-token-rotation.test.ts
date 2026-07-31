@@ -105,4 +105,27 @@ describe('first access token rotation', () => {
     expect(deps.signAccessToken).not.toHaveBeenCalled();
     expect(deps.createRefreshToken).not.toHaveBeenCalled();
   });
+
+  it('refuses to clear a required password change without a new password', async () => {
+    deps.getUser.mockReturnValue({
+      id: 'user-1',
+      role: 'colaboradora',
+      company_id: 'company-1',
+      is_master_admin: 0,
+      must_change_password: 1,
+      password_reset_required: 0,
+    });
+
+    const response = await POST(
+      new NextRequest('http://localhost/api/auth/confirm-first-access', {
+        method: 'POST',
+      }),
+      { params: Promise.resolve({}) },
+    );
+
+    expect(response.status).toBe(403);
+    expect(deps.enqueue).not.toHaveBeenCalled();
+    expect(deps.signAccessToken).not.toHaveBeenCalled();
+    expect(deps.createRefreshToken).not.toHaveBeenCalled();
+  });
 });

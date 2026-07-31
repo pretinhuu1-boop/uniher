@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
-import { getReadDb, getWriteQueue } from '@/lib/db';
+import { getReadDb } from '@/lib/db';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
 import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 import * as refreshTokenRepo from '@/repositories/refresh-token.repository';
@@ -34,13 +34,10 @@ export const POST = withAuth(async (_req, context) => {
   }
 
   if (user.must_change_password) {
-    await getWriteQueue().enqueue((writeDb) => {
-      writeDb.prepare(`
-        UPDATE users
-        SET must_change_password = 0, updated_at = datetime('now')
-        WHERE id = ? AND password_reset_required = 0
-      `).run(userId);
-    });
+    return NextResponse.json(
+      { error: 'Troca de senha obrigatoria' },
+      { status: 403 },
+    );
   }
 
   const accessToken = await signAccessToken({

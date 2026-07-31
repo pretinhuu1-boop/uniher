@@ -42,6 +42,11 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
   const resend = getResend();
 
   if (!resend) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[EMAIL] RESEND_API_KEY ausente em producao');
+      return false;
+    }
+
     console.log('\n[EMAIL] (sem API key — modo dev)');
     console.log(`  Para: ${to}`);
     console.log(`  Assunto: ${subject}`);

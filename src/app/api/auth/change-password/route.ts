@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { hashPassword } from '@/lib/auth/password';
-import { getWriteQueue } from '@/lib/db';
+import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
+import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 import { initDb } from '@/lib/db/init';
+import { completeForcedPasswordChange } from '@/repositories/first-access.repository';
 import { z } from 'zod';
 
 const Schema = z.object({
@@ -15,6 +17,16 @@ const Schema = z.object({
 
 export const POST = withAuth(async (req: NextRequest, context) => {
   await initDb();
+  if (
+    !context.auth.mustChangePassword
+    || context.auth.passwordResetRequired
+  ) {
+    return NextResponse.json(
+      { error: 'Troca forcada de senha nao autorizada' },
+      { status: 403 },
+    );
+  }
+
   const body = await req.json().catch(() => ({}));
   const parsed = Schema.safeParse(body);
   if (!parsed.success) {
@@ -22,11 +34,30 @@ export const POST = withAuth(async (req: NextRequest, context) => {
   }
 
   const passwordHash = await hashPassword(parsed.data.newPassword);
-  const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare("UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = datetime('now') WHERE id = ?")
-      .run(passwordHash, context.auth.userId);
+  const accessToken = await signAccessToken({
+    userId: context.auth.userId,
+    role: context.auth.role,
+    companyId: context.auth.companyId,
+    isMasterAdmin: context.auth.isMasterAdmin,
+    mustChangePassword: false,
   });
+  const refreshToken = await signRefreshToken({ userId: context.auth.userId });
 
-  return NextResponse.json({ success: true });
+  const completed = await completeForcedPasswordChange({
+    userId: context.auth.userId,
+    passwordHash,
+    refreshToken,
+  });
+  if (!completed) {
+    return NextResponse.json(
+      { error: 'Troca de senha ja concluida ou indisponivel' },
+      { status: 409 },
+    );
+  }
+
+  return setAuthCookiesOnResponse(
+    NextResponse.json({ success: true }),
+    accessToken,
+    refreshToken,
+  );
 });

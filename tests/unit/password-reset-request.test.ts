@@ -23,7 +23,7 @@ describe('password reset request', () => {
     deps.sendEmail.mockResolvedValue(true);
   });
 
-  it('invalidates the old password and sessions before emailing a one-time link', async () => {
+  it('invalidates the old password and sessions only after the link is delivered', async () => {
     const result = await requestUserPasswordReset({
       id: 'user-1',
       name: 'User One',
@@ -42,5 +42,21 @@ describe('password reset request', () => {
       to: 'user@example.com',
       html: expect.stringContaining('/redefinir-senha?token='),
     }));
+    expect(deps.sendEmail.mock.invocationCallOrder[0]).toBeLessThan(
+      deps.beginAdministrativePasswordReset.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('keeps the account unchanged when the reset email is not delivered', async () => {
+    deps.sendEmail.mockResolvedValue(false);
+
+    const result = await requestUserPasswordReset({
+      id: 'user-1',
+      name: 'User One',
+      email: 'user@example.com',
+    });
+
+    expect(result).toEqual({ delivered: false });
+    expect(deps.beginAdministrativePasswordReset).not.toHaveBeenCalled();
   });
 });

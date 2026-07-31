@@ -20,16 +20,6 @@ export async function requestUserPasswordReset(
     randomBytes(48).toString('base64url'),
   );
 
-  const resetStarted = await beginAdministrativePasswordReset({
-    userId: subject.id,
-    token,
-    expiresAt,
-    replacementPasswordHash,
-  });
-  if (!resetStarted) {
-    return { delivered: false };
-  }
-
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/redefinir-senha?token=${token}`;
   const delivered = await sendEmail({
     to: subject.email,
@@ -39,6 +29,16 @@ export async function requestUserPasswordReset(
       resetUrl,
     }),
   });
+  if (!delivered) {
+    return { delivered: false };
+  }
 
-  return { delivered };
+  const resetStarted = await beginAdministrativePasswordReset({
+    userId: subject.id,
+    token,
+    expiresAt,
+    replacementPasswordHash,
+  });
+
+  return { delivered: resetStarted };
 }
