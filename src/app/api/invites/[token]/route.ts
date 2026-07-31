@@ -13,6 +13,7 @@ import { hashPassword } from '@/lib/auth/password';
 import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
 import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
 import { checkInviteAcceptRateLimit } from '@/lib/security/rate-limit';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 import { handleApiError } from '@/lib/errors';
 import { createHash } from 'crypto';
 
@@ -56,9 +57,6 @@ export async function GET(req: Request, segmentData: { params: Promise<{ token: 
   if (!invite) return NextResponse.json({ error: 'Convite inválido' }, { status: 404 });
   if (invite.status !== 'pending') return NextResponse.json({ error: 'Este convite já foi utilizado ou expirou', status: invite.status }, { status: 410 });
   if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-    // Expire it
-    const wq = getWriteQueue();
-    wq.enqueue((db) => { db.prepare(`UPDATE invites SET status = 'expired' WHERE token = ?`).run(token); });
     return NextResponse.json({ error: 'Convite expirado' }, { status: 410 });
   }
 
@@ -208,6 +206,7 @@ export async function POST(req: Request, segmentData: { params: Promise<{ token:
 // RH — revogar convite
 export const DELETE = withRole('rh')(async (_req, context) => {
   const userId = context.auth.userId;
+  const companyId = context.auth.companyId;
   const { token } = await context.params;
   await initDb();
   const db = getReadDb();
@@ -219,9 +218,30 @@ export const DELETE = withRole('rh')(async (_req, context) => {
   if (invite.company_id !== user?.company_id) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
 
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare(`UPDATE invites SET status = 'expired' WHERE token = ?`).run(token);
-  });
+  const outcome = await wq.enqueue((writeDb) => (
+    runAsActiveRhActor(writeDb, userId, companyId, () => (
+      writeDb.prepare(`
+        UPDATE invites
+        SET status = 'expired'
+        WHERE token = ?
+          AND company_id = ?
+          AND status = 'pending'
+      `).run(token, companyId).changes === 1
+    ))
+  ), 'revoke RH invite', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json(
+      { error: 'Autorizacao do RH expirou' },
+      { status: 409 },
+    );
+  }
+  if (!outcome.value) {
+    return NextResponse.json(
+      { error: 'Convite nao encontrado ou ja processado' },
+      { status: 409 },
+    );
+  }
 
   return NextResponse.json({ success: true });
 });
