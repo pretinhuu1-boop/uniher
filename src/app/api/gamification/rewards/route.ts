@@ -4,6 +4,10 @@ import { initDb } from '@/lib/db/init';
 import { withAuth, withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import {
+  runAsActiveCompanyActor,
+  runAsActiveRhActor,
+} from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 
 // GET /api/gamification/rewards - List rewards for user's company
@@ -69,15 +73,32 @@ export const POST = withRole('admin', 'rh')(async (req, { auth }) => {
 
     const { title, description, points_cost, type, quantity_available, active } = parsed.data;
     const companyId = auth.companyId;
+    if (!companyId || !['admin', 'rh'].includes(auth.role)) {
+      return NextResponse.json({ error: 'Gestor não vinculado a empresa' }, { status: 400 });
+    }
     const id = nanoid();
 
     const writeQueue = getWriteQueue();
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare(
-        `INSERT INTO rewards (id, company_id, title, description, points_cost, type, quantity_available, active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(id, companyId, title, description || null, points_cost, type, quantity_available, active);
-    });
+    const outcome = await writeQueue.enqueue((wdb) => {
+      const operation = () => {
+        wdb.prepare(`
+          INSERT INTO rewards (
+            id, company_id, title, description, points_cost, type,
+            quantity_available, active
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, companyId, title, description || null, points_cost, type, quantity_available, active);
+        return true;
+      };
+
+      return auth.role === 'rh'
+        ? runAsActiveRhActor(wdb, auth.userId, companyId, operation)
+        : runAsActiveCompanyActor(wdb, auth.userId, companyId, 'admin', operation);
+    }, 'create managed reward', { retryOnFailure: false });
+
+    if (!outcome.authorized) {
+      return NextResponse.json({ error: 'Autorização de gestão expirou' }, { status: 409 });
+    }
 
     return NextResponse.json({ id, title, description, points_cost, type, quantity_available, active, company_id: companyId }, { status: 201 });
   } catch (error) {

@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { initDb } from '@/lib/db/init';
 import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
-import { getReadDb, getWriteQueue } from '@/lib/db';
+import { getWriteQueue } from '@/lib/db';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -31,15 +32,9 @@ export const PATCH = withRole('rh')(async (req, context) => {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
 
-    const db = getReadDb();
-    const campaign = db.prepare('SELECT * FROM campaigns WHERE id = ?').get(id) as { company_id: string } | undefined;
-
-    if (!campaign) {
-      return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 });
-    }
-
-    if (campaign.company_id !== context.auth.companyId) {
-      return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+    const companyId = context.auth.companyId;
+    if (!companyId || context.auth.role !== 'rh') {
+      return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
     }
 
     const { name, status, color, status_label, start_date, end_date, theme, theme_color } = parsed.data;
@@ -61,12 +56,31 @@ export const PATCH = withRole('rh')(async (req, context) => {
       return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
     }
 
-    values.push(id);
-    const sql = `UPDATE campaigns SET ${fields.join(', ')} WHERE id = ?`;
     const writeQueue = getWriteQueue();
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare(sql).run(...values);
-    });
+    const outcome = await writeQueue.enqueue((wdb) => (
+      runAsActiveRhActor(wdb, context.auth.userId, companyId, () => {
+        const campaign = wdb.prepare(`
+          SELECT id
+          FROM campaigns
+          WHERE id = ? AND company_id = ?
+        `).get(id, companyId);
+        if (!campaign) return false;
+
+        const updated = wdb.prepare(`
+          UPDATE campaigns
+          SET ${fields.join(', ')}
+          WHERE id = ? AND company_id = ?
+        `).run(...values, id, companyId);
+        return updated.changes === 1;
+      })
+    ), 'update RH campaign', { retryOnFailure: false });
+
+    if (!outcome.authorized) {
+      return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+    }
+    if (!outcome.value) {
+      return NextResponse.json({ error: 'Campanha não encontrada ou alterada' }, { status: 409 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -80,21 +94,35 @@ export const DELETE = withRole('rh')(async (_req, context) => {
     await initDb();
 
     const { id } = await context.params;
-    const db = getReadDb();
-    const campaign = db.prepare('SELECT * FROM campaigns WHERE id = ?').get(id) as { company_id: string } | undefined;
-
-    if (!campaign) {
-      return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 });
-    }
-
-    if (campaign.company_id !== context.auth.companyId) {
-      return NextResponse.json({ error: 'Permissão insuficiente' }, { status: 403 });
+    const companyId = context.auth.companyId;
+    if (!companyId || context.auth.role !== 'rh') {
+      return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
     }
 
     const writeQueue = getWriteQueue();
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare('DELETE FROM campaigns WHERE id = ?').run(id);
-    });
+    const outcome = await writeQueue.enqueue((wdb) => (
+      runAsActiveRhActor(wdb, context.auth.userId, companyId, () => {
+        const campaign = wdb.prepare(`
+          SELECT id
+          FROM campaigns
+          WHERE id = ? AND company_id = ?
+        `).get(id, companyId);
+        if (!campaign) return false;
+
+        const deleted = wdb.prepare(`
+          DELETE FROM campaigns
+          WHERE id = ? AND company_id = ?
+        `).run(id, companyId);
+        return deleted.changes === 1;
+      })
+    ), 'delete RH campaign', { retryOnFailure: false });
+
+    if (!outcome.authorized) {
+      return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+    }
+    if (!outcome.value) {
+      return NextResponse.json({ error: 'Campanha não encontrada ou alterada' }, { status: 409 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

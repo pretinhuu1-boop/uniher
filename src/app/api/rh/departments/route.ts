@@ -8,6 +8,7 @@ import { getReadDb, getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 import { checkWriteRateLimit, checkReadRateLimit } from '@/lib/security/rate-limit';
 import { logAudit } from '@/lib/audit';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
@@ -41,24 +42,40 @@ export const POST = withRole('rh')(async (req, context) => {
   await initDb();
 
   const companyId = context.auth.companyId;
-  if (!companyId) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
+  if (!companyId || context.auth.role !== 'rh') {
+    return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
 
   const { name, color } = parsed.data;
-  const db = getReadDb();
-
-  // Check if department name already exists in company
-  const existing = db.prepare('SELECT id FROM departments WHERE company_id = ? AND LOWER(name) = LOWER(?)').get(companyId, name);
-  if (existing) return NextResponse.json({ error: 'Já existe um departamento com este nome' }, { status: 409 });
-
   const id = nanoid();
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare('INSERT INTO departments (id, company_id, name, color) VALUES (?, ?, ?, ?)').run(id, companyId, name, color);
-  });
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveRhActor(db, context.auth.userId, companyId, () => {
+      const existing = db.prepare(`
+        SELECT id
+        FROM departments
+        WHERE company_id = ? AND LOWER(name) = LOWER(?)
+      `).get(companyId, name);
+      if (existing) return { status: 'duplicate' as const };
+
+      db.prepare(`
+        INSERT INTO departments (id, company_id, name, color)
+        VALUES (?, ?, ?, ?)
+      `).run(id, companyId, name, color);
+      return { status: 'created' as const };
+    })
+  ), 'create RH department', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+  }
+  if (outcome.value.status === 'duplicate') {
+    return NextResponse.json({ error: 'Já existe um departamento com este nome' }, { status: 409 });
+  }
 
   await logAudit({
     actorId: context.auth.userId,

@@ -4,8 +4,9 @@
  */
 import { NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
-import { getReadDb, getWriteQueue } from '@/lib/db';
+import { getWriteQueue } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 import { z } from 'zod';
 
 const PatchSchema = z.object({
@@ -19,13 +20,11 @@ const PatchSchema = z.object({
 export const PATCH = withRole('rh')(async (req, context) => {
   await initDb();
   const userId = context.auth.userId;
+  const companyId = context.auth.companyId;
+  if (!companyId || context.auth.role !== 'rh') {
+    return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+  }
   const { id } = await context.params;
-  const db = getReadDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
-  const league = db.prepare('SELECT * FROM custom_leagues WHERE id = ?').get(id) as any;
-
-  if (!league) return NextResponse.json({ error: 'Liga não encontrada' }, { status: 404 });
-  if (league.company_id !== user?.company_id) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
   const parsed = PatchSchema.safeParse(body);
@@ -43,26 +42,65 @@ export const PATCH = withRole('rh')(async (req, context) => {
   if (!fields.length) return NextResponse.json({ error: 'Nenhum campo' }, { status: 400 });
 
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare(`UPDATE custom_leagues SET ${fields.join(', ')}, updated_at = datetime('now') WHERE id = ?`).run(...values, id);
-  });
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveRhActor(db, userId, companyId, () => {
+      const league = db.prepare(`
+        SELECT id
+        FROM custom_leagues
+        WHERE id = ? AND company_id = ?
+      `).get(id, companyId);
+      if (!league) return false;
+
+      const updated = db.prepare(`
+        UPDATE custom_leagues
+        SET ${fields.join(', ')}, updated_at = datetime('now')
+        WHERE id = ? AND company_id = ?
+      `).run(...values, id, companyId);
+      return updated.changes === 1;
+    })
+  ), 'update RH league', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+  }
+  if (!outcome.value) {
+    return NextResponse.json({ error: 'Liga não encontrada ou alterada' }, { status: 409 });
+  }
   return NextResponse.json({ success: true });
 });
 
 export const DELETE = withRole('rh')(async (_req, context) => {
   await initDb();
   const userId = context.auth.userId;
+  const companyId = context.auth.companyId;
+  if (!companyId || context.auth.role !== 'rh') {
+    return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+  }
   const { id } = await context.params;
-  const db = getReadDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
-  const league = db.prepare('SELECT company_id FROM custom_leagues WHERE id = ?').get(id) as any;
-
-  if (!league) return NextResponse.json({ error: 'Não encontrada' }, { status: 404 });
-  if (league.company_id !== user?.company_id) return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
 
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare('DELETE FROM custom_leagues WHERE id = ?').run(id);
-  });
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveRhActor(db, userId, companyId, () => {
+      const league = db.prepare(`
+        SELECT id
+        FROM custom_leagues
+        WHERE id = ? AND company_id = ?
+      `).get(id, companyId);
+      if (!league) return false;
+
+      const deleted = db.prepare(`
+        DELETE FROM custom_leagues
+        WHERE id = ? AND company_id = ?
+      `).run(id, companyId);
+      return deleted.changes === 1;
+    })
+  ), 'delete RH league', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+  }
+  if (!outcome.value) {
+    return NextResponse.json({ error: 'Liga não encontrada ou alterada' }, { status: 409 });
+  }
   return NextResponse.json({ success: true });
 });

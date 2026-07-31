@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
@@ -38,9 +39,10 @@ export const GET = withRole('rh', 'lideranca')(async (_req, context) => {
 
 export const POST = withRole('rh')(async (req, context) => {
   const userId = context.auth.userId;
-  const db = getReadDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
-  if (!user?.company_id) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
+  const companyId = context.auth.companyId;
+  if (!companyId || context.auth.role !== 'rh') {
+    return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const parsed = CreateSchema.safeParse(body);
@@ -50,12 +52,22 @@ export const POST = withRole('rh')(async (req, context) => {
   const id = nanoid();
 
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare(`
-      INSERT INTO challenges (id, title, description, category, points, total_steps, deadline, company_id, created_by, is_default, is_active, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, datetime('now'))
-    `).run(id, title, description, category, points, total_steps, deadline || null, user.company_id, userId);
-  });
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveRhActor(db, userId, companyId, () => {
+      db.prepare(`
+        INSERT INTO challenges (
+          id, title, description, category, points, total_steps, deadline,
+          company_id, created_by, is_default, is_active, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, datetime('now'))
+      `).run(id, title, description, category, points, total_steps, deadline || null, companyId, userId);
+      return true;
+    })
+  ), 'create RH challenge', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+  }
 
   return NextResponse.json({ success: true, id });
 });

@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { initDb } from '@/lib/db/init';
 import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
-import { getReadDb, getWriteQueue } from '@/lib/db';
+import { getWriteQueue } from '@/lib/db';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 
 const LESSON_TYPES = [
   'pilula',
@@ -68,28 +69,8 @@ export const PATCH = withRole('rh')(async (req, { auth, params }) => {
     await initDb();
     const { id } = await params;
     const companyId = auth.companyId;
-    const db = getReadDb();
-
-    const lesson = db.prepare(
-      'SELECT id, company_id FROM daily_lessons WHERE id = ?'
-    ).get(id) as { id: string; company_id: string | null } | undefined;
-
-    if (!lesson) {
-      return NextResponse.json({ error: 'Lição não encontrada' }, { status: 404 });
-    }
-
-    if (lesson.company_id === null) {
-      return NextResponse.json(
-        { error: 'Não é possível editar lições globais' },
-        { status: 403 }
-      );
-    }
-
-    if (lesson.company_id !== companyId) {
-      return NextResponse.json(
-        { error: 'Permissão insuficiente' },
-        { status: 403 }
-      );
+    if (!companyId || auth.role !== 'rh') {
+      return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
     }
 
     const body = await req.json();
@@ -103,56 +84,76 @@ export const PATCH = withRole('rh')(async (req, { auth, params }) => {
     }
 
     const data = parsed.data;
-    const currentLesson = db.prepare(
-      'SELECT type FROM daily_lessons WHERE id = ?'
-    ).get(id) as { type: string } | undefined;
-    const nextType = data.type ?? currentLesson?.type;
-
-    if (nextType === 'reflexao') {
-      if (!data.content_json) {
-        return NextResponse.json(
-          { error: 'Reflexao obrigatoria: envie content_json.reflection.' },
-          { status: 400 }
-        );
-      }
-      const normalized = normalizeReflectionContent(data.content_json);
-      if (!normalized.reflection) {
-        return NextResponse.json(
-          { error: 'Reflexao obrigatoria: preencha o campo reflection.' },
-          { status: 400 }
-        );
-      }
-      data.content_json = normalized;
-    }
-    const fields: string[] = [];
-    const values: unknown[] = [];
-
-    for (const [key, val] of Object.entries(data)) {
-      if (val === undefined) continue;
-      if (key === 'content_json') {
-        fields.push('content_json = ?');
-        values.push(JSON.stringify(val));
-      } else {
-        fields.push(`${key} = ?`);
-        values.push(val);
-      }
-    }
-
-    if (fields.length === 0) {
+    if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
     }
 
-    fields.push("updated_at = datetime('now')");
-    values.push(id);
-
     const writeQueue = getWriteQueue();
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare(
-        `UPDATE daily_lessons SET ${fields.join(', ')} WHERE id = ?`
-      ).run(...values);
-    });
+    const outcome = await writeQueue.enqueue((wdb) => (
+      runAsActiveRhActor(wdb, auth.userId, companyId, () => {
+        const lesson = wdb.prepare(`
+          SELECT id, type
+          FROM daily_lessons
+          WHERE id = ? AND company_id = ?
+        `).get(id, companyId) as { id: string; type: string } | undefined;
+        if (!lesson) return { status: 'missing' as const };
 
-    const updated = db.prepare('SELECT * FROM daily_lessons WHERE id = ?').get(id) as Record<string, unknown>;
+        const updateData = { ...data };
+        const nextType = updateData.type ?? lesson.type;
+        if (nextType === 'reflexao') {
+          if (!updateData.content_json) {
+            return { status: 'reflection_required' as const };
+          }
+          const normalized = normalizeReflectionContent(updateData.content_json);
+          if (!normalized.reflection) {
+            return { status: 'reflection_invalid' as const };
+          }
+          updateData.content_json = normalized;
+        }
+
+        const fields: string[] = [];
+        const values: unknown[] = [];
+        for (const [key, value] of Object.entries(updateData)) {
+          if (value === undefined) continue;
+          if (key === 'content_json') {
+            fields.push('content_json = ?');
+            values.push(JSON.stringify(value));
+          } else {
+            fields.push(`${key} = ?`);
+            values.push(value);
+          }
+        }
+        fields.push("updated_at = datetime('now')");
+
+        const updated = wdb.prepare(`
+          UPDATE daily_lessons
+          SET ${fields.join(', ')}
+          WHERE id = ? AND company_id = ?
+        `).run(...values, id, companyId);
+        if (updated.changes !== 1) return { status: 'missing' as const };
+
+        const value = wdb.prepare(`
+          SELECT *
+          FROM daily_lessons
+          WHERE id = ? AND company_id = ?
+        `).get(id, companyId) as Record<string, unknown>;
+        return { status: 'updated' as const, value };
+      })
+    ), 'update RH lesson', { retryOnFailure: false });
+
+    if (!outcome.authorized) {
+      return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+    }
+    if (outcome.value.status === 'missing') {
+      return NextResponse.json({ error: 'Lição não encontrada ou alterada' }, { status: 409 });
+    }
+    if (outcome.value.status === 'reflection_required') {
+      return NextResponse.json({ error: 'Reflexao obrigatoria: envie content_json.reflection.' }, { status: 400 });
+    }
+    if (outcome.value.status === 'reflection_invalid') {
+      return NextResponse.json({ error: 'Reflexao obrigatoria: preencha o campo reflection.' }, { status: 400 });
+    }
+    const updated = outcome.value.value;
 
     return NextResponse.json({
       ...updated,
@@ -170,34 +171,34 @@ export const DELETE = withRole('rh')(async (_req, { auth, params }) => {
     await initDb();
     const { id } = await params;
     const companyId = auth.companyId;
-    const db = getReadDb();
-
-    const lesson = db.prepare(
-      'SELECT id, company_id FROM daily_lessons WHERE id = ?'
-    ).get(id) as { id: string; company_id: string | null } | undefined;
-
-    if (!lesson) {
-      return NextResponse.json({ error: 'Lição não encontrada' }, { status: 404 });
-    }
-
-    if (lesson.company_id === null) {
-      return NextResponse.json(
-        { error: 'Não é possível excluir lições globais' },
-        { status: 403 }
-      );
-    }
-
-    if (lesson.company_id !== companyId) {
-      return NextResponse.json(
-        { error: 'Permissão insuficiente' },
-        { status: 403 }
-      );
+    if (!companyId || auth.role !== 'rh') {
+      return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
     }
 
     const writeQueue = getWriteQueue();
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare('DELETE FROM daily_lessons WHERE id = ?').run(id);
-    });
+    const outcome = await writeQueue.enqueue((wdb) => (
+      runAsActiveRhActor(wdb, auth.userId, companyId, () => {
+        const lesson = wdb.prepare(`
+          SELECT id
+          FROM daily_lessons
+          WHERE id = ? AND company_id = ?
+        `).get(id, companyId);
+        if (!lesson) return false;
+
+        const deleted = wdb.prepare(`
+          DELETE FROM daily_lessons
+          WHERE id = ? AND company_id = ?
+        `).run(id, companyId);
+        return deleted.changes === 1;
+      })
+    ), 'delete RH lesson', { retryOnFailure: false });
+
+    if (!outcome.authorized) {
+      return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+    }
+    if (!outcome.value) {
+      return NextResponse.json({ error: 'Lição não encontrada ou alterada' }, { status: 409 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

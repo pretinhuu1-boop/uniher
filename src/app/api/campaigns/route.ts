@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { initDb } from '@/lib/db/init';
 import { withAuth } from '@/lib/auth/middleware';
-import { handleApiError, UnauthorizedError } from '@/lib/errors';
+import { handleApiError } from '@/lib/errors';
+import { getWriteQueue } from '@/lib/db';
+import {
+  runAsActiveCompanyActor,
+  runAsActiveRhActor,
+} from '@/lib/security/active-rh-actor';
 import * as campaignRepo from '@/repositories/campaign.repository';
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -41,8 +46,9 @@ export const GET = withAuth(async (_req, { auth }) => {
 // POST /api/campaigns - Criar nova campanha (Apenas RH)
 export const POST = withAuth(async (req, { auth }) => {
   try {
-    if (auth.role !== 'rh' && auth.role !== 'admin') {
-      throw new UnauthorizedError('Apenas Admin Empresa ou Admin Master podem criar campanhas');
+    const companyId = auth.companyId;
+    if (!['admin', 'rh'].includes(auth.role) || !companyId) {
+      return NextResponse.json({ error: 'Gestor não vinculado à empresa' }, { status: 403 });
     }
 
     await initDb();
@@ -55,20 +61,47 @@ export const POST = withAuth(async (req, { auth }) => {
 
     const { name, month, color, status, statusLabel, start_date, end_date, theme, theme_color } = parsed.data;
 
-    const campaign = await campaignRepo.createCampaign({
-      name,
-      month: month || '',
-      color,
-      status,
-      statusLabel: statusLabel || 'Próxima',
-      companyId: auth.companyId,
-      start_date,
-      end_date,
-      theme,
-      theme_color,
-    });
+    const id = `camp_${Math.random().toString(36).slice(2, 9)}`;
+    const writeQueue = getWriteQueue();
+    const outcome = await writeQueue.enqueue((db) => {
+      const operation = () => {
+        db.prepare(`
+          INSERT INTO campaigns (
+            id, name, month, color, status, status_label, company_id,
+            start_date, end_date, theme, theme_color
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          id,
+          name,
+          month || '',
+          color,
+          status,
+          statusLabel || 'Próxima',
+          companyId,
+          start_date || null,
+          end_date || null,
+          theme || null,
+          theme_color || null,
+        );
 
-    return NextResponse.json(campaign, { status: 201 });
+        return db.prepare(`
+          SELECT *
+          FROM campaigns
+          WHERE id = ? AND company_id = ?
+        `).get(id, companyId);
+      };
+
+      return auth.role === 'rh'
+        ? runAsActiveRhActor(db, auth.userId, companyId, operation)
+        : runAsActiveCompanyActor(db, auth.userId, companyId, 'admin', operation);
+    }, 'create managed campaign', { retryOnFailure: false });
+
+    if (!outcome.authorized) {
+      return NextResponse.json({ error: 'Autorização de gestão expirou' }, { status: 409 });
+    }
+
+    return NextResponse.json(outcome.value, { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

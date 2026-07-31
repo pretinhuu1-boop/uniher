@@ -4,6 +4,10 @@ import { initDb } from '@/lib/db/init';
 import { withAuth, withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import {
+  runAsActiveCompanyActor,
+  runAsActiveRhActor,
+} from '@/lib/security/active-rh-actor';
 
 const DEFAULTS = {
   xp_checkin: 50,
@@ -85,60 +89,79 @@ export const PATCH = withRole('admin', 'rh')(async (req, { auth }) => {
     }
 
     const companyId = auth.companyId;
-    const db = getReadDb();
-    const existing = db.prepare('SELECT company_id FROM gamification_config WHERE company_id = ?').get(companyId);
-
-    const writeQueue = getWriteQueue();
-
-    if (!existing) {
-      // Create new config with defaults + overrides
-      const data = { ...DEFAULTS, ...parsed.data };
-      const activeThemes = Array.isArray(data.active_themes) ? JSON.stringify(data.active_themes) : data.active_themes;
-      const themeOrder = Array.isArray(data.theme_order) ? JSON.stringify(data.theme_order) : data.theme_order;
-
-      await writeQueue.enqueue((wdb) => {
-        wdb.prepare(
-          `INSERT INTO gamification_config (company_id, xp_checkin, xp_lesson, xp_quiz, xp_challenge, xp_exam,
-           streak_notifications, streak_min_days, hearts_enabled, hearts_per_day, hearts_refill_hours,
-           league_enabled, league_anonymous, daily_xp_goal, active_themes, theme_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).run(
-          companyId, data.xp_checkin, data.xp_lesson, data.xp_quiz, data.xp_challenge, data.xp_exam,
-          data.streak_notifications, data.streak_min_days, data.hearts_enabled, data.hearts_per_day,
-          data.hearts_refill_hours, data.league_enabled, data.league_anonymous, data.daily_xp_goal,
-          activeThemes, themeOrder
-        );
-      });
-    } else {
-      // Dynamic update
-      const fields: string[] = [];
-      const values: unknown[] = [];
-
-      for (const [key, val] of Object.entries(parsed.data)) {
-        if (val === undefined) continue;
-        if (key === 'active_themes' || key === 'theme_order') {
-          fields.push(`${key} = ?`);
-          values.push(JSON.stringify(val));
-        } else {
-          fields.push(`${key} = ?`);
-          values.push(val);
-        }
-      }
-
-      if (fields.length === 0) {
-        return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
-      }
-
-      fields.push("updated_at = datetime('now')");
-      values.push(companyId);
-
-      await writeQueue.enqueue((wdb) => {
-        wdb.prepare(`UPDATE gamification_config SET ${fields.join(', ')} WHERE company_id = ?`).run(...values);
-      });
+    if (!companyId || !['admin', 'rh'].includes(auth.role)) {
+      return NextResponse.json({ error: 'Gestor não vinculado a empresa' }, { status: 400 });
     }
 
-    // Return updated config
-    const updated = db.prepare('SELECT * FROM gamification_config WHERE company_id = ?').get(companyId) as Record<string, unknown>;
+    const writeQueue = getWriteQueue();
+    const outcome = await writeQueue.enqueue((wdb) => {
+      const operation = () => {
+        const existing = wdb.prepare(`
+          SELECT company_id
+          FROM gamification_config
+          WHERE company_id = ?
+        `).get(companyId);
+
+        if (!existing) {
+          const data = { ...DEFAULTS, ...parsed.data };
+          const activeThemes = Array.isArray(data.active_themes) ? JSON.stringify(data.active_themes) : data.active_themes;
+          const themeOrder = Array.isArray(data.theme_order) ? JSON.stringify(data.theme_order) : data.theme_order;
+          wdb.prepare(`
+            INSERT INTO gamification_config (
+              company_id, xp_checkin, xp_lesson, xp_quiz, xp_challenge, xp_exam,
+              streak_notifications, streak_min_days, hearts_enabled, hearts_per_day,
+              hearts_refill_hours, league_enabled, league_anonymous, daily_xp_goal,
+              active_themes, theme_order
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            companyId, data.xp_checkin, data.xp_lesson, data.xp_quiz, data.xp_challenge, data.xp_exam,
+            data.streak_notifications, data.streak_min_days, data.hearts_enabled, data.hearts_per_day,
+            data.hearts_refill_hours, data.league_enabled, data.league_anonymous, data.daily_xp_goal,
+            activeThemes, themeOrder,
+          );
+        } else {
+          const fields: string[] = [];
+          const values: unknown[] = [];
+          for (const [key, value] of Object.entries(parsed.data)) {
+            if (value === undefined) continue;
+            if (key === 'active_themes' || key === 'theme_order') {
+              fields.push(`${key} = ?`);
+              values.push(JSON.stringify(value));
+            } else {
+              fields.push(`${key} = ?`);
+              values.push(value);
+            }
+          }
+          if (fields.length === 0) return { status: 'empty' as const };
+          fields.push("updated_at = datetime('now')");
+          wdb.prepare(`
+            UPDATE gamification_config
+            SET ${fields.join(', ')}
+            WHERE company_id = ?
+          `).run(...values, companyId);
+        }
+
+        const value = wdb.prepare(`
+          SELECT *
+          FROM gamification_config
+          WHERE company_id = ?
+        `).get(companyId) as Record<string, unknown>;
+        return { status: 'saved' as const, value };
+      };
+
+      return auth.role === 'rh'
+        ? runAsActiveRhActor(wdb, auth.userId, companyId, operation)
+        : runAsActiveCompanyActor(wdb, auth.userId, companyId, 'admin', operation);
+    }, 'update managed gamification config', { retryOnFailure: false });
+
+    if (!outcome.authorized) {
+      return NextResponse.json({ error: 'Autorização de gestão expirou' }, { status: 409 });
+    }
+    if (outcome.value.status === 'empty') {
+      return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
+    }
+    const updated = outcome.value.value;
 
     return NextResponse.json({
       ...updated,

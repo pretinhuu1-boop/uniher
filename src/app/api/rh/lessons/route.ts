@@ -4,6 +4,7 @@ import { initDb } from '@/lib/db/init';
 import { withRole } from '@/lib/auth/middleware';
 import { handleApiError } from '@/lib/errors';
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 
 const LESSON_TYPES = [
@@ -61,15 +62,12 @@ function normalizeReflectionContent(content: Record<string, unknown>) {
   return { reflection: invalid ? '' : reflection };
 }
 
-async function ensureWeeklyReflections(companyId: string, weekNumber: number) {
-  const db = getReadDb();
+async function ensureWeeklyReflections(
+  actorId: string,
+  companyId: string,
+  weekNumber: number,
+): Promise<boolean> {
   const writeQueue = getWriteQueue();
-  const existingRows = db.prepare(
-    `SELECT day_of_week FROM daily_lessons
-     WHERE company_id = ? AND week_number = ? AND type = 'reflexao' AND active = 1`
-  ).all(companyId, weekNumber) as { day_of_week: number }[];
-  const existingDays = new Set(existingRows.map((r) => r.day_of_week));
-
   const defaults = [
     'Segunda: Qual cuidado simples com sua saude voce quer priorizar hoje?',
     'Terca: O que te ajudou a manter energia e foco nesta semana?',
@@ -80,35 +78,48 @@ async function ensureWeeklyReflections(companyId: string, weekNumber: number) {
     'Domingo: Qual intencao de autocuidado voce leva para a proxima semana?',
   ];
 
-  for (let day = 1; day <= 7; day++) {
-    if (existingDays.has(day)) continue;
+  const outcome = await writeQueue.enqueue((wdb) => (
+    runAsActiveRhActor(wdb, actorId, companyId, () => {
+      const existingRows = wdb.prepare(`
+        SELECT day_of_week
+        FROM daily_lessons
+        WHERE company_id = ? AND week_number = ? AND type = 'reflexao' AND active = 1
+      `).all(companyId, weekNumber) as { day_of_week: number }[];
+      const existingDays = new Set(existingRows.map((row) => row.day_of_week));
 
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare(
-        `INSERT INTO daily_lessons
-          (id, company_id, title, description, type, theme, week_number, day_of_week,
-           order_index, xp_reward, duration_seconds, active, campaign_context, content_json)
-         VALUES (?, ?, ?, ?, 'reflexao', 'mental', ?, ?, 900, 20, 90, 1, ?, ?)`
-      ).run(
-        nanoid(),
-        companyId,
-        `Reflexao do dia ${day}`,
-        'Reflexao diaria para fortalecer autocuidado e constancia.',
-        weekNumber,
-        day,
-        'Reflexoes diarias',
-        JSON.stringify({ reflection: defaults[day - 1] })
-      );
-    });
-  }
+      for (let day = 1; day <= 7; day += 1) {
+        if (existingDays.has(day)) continue;
+        wdb.prepare(`
+          INSERT INTO daily_lessons
+            (id, company_id, title, description, type, theme, week_number, day_of_week,
+             order_index, xp_reward, duration_seconds, active, campaign_context, content_json)
+          VALUES (?, ?, ?, ?, 'reflexao', 'mental', ?, ?, 900, 20, 90, 1, ?, ?)
+        `).run(
+          nanoid(),
+          companyId,
+          `Reflexao do dia ${day}`,
+          'Reflexao diaria para fortalecer autocuidado e constancia.',
+          weekNumber,
+          day,
+          'Reflexoes diarias',
+          JSON.stringify({ reflection: defaults[day - 1] }),
+        );
+      }
+      return true;
+    })
+  ), 'provision RH weekly reflections', { retryOnFailure: false });
+
+  return outcome.authorized;
 }
 
 // GET /api/rh/lessons
 export const GET = withRole('rh')(async (req, { auth }) => {
   try {
     await initDb();
-    const db = getReadDb();
     const companyId = auth.companyId;
+    if (!companyId || auth.role !== 'rh') {
+      return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+    }
 
     const url = new URL(req.url);
     const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10));
@@ -146,7 +157,11 @@ export const GET = withRole('rh')(async (req, { auth }) => {
     }
 
     const weekForProvision = week ? parseInt(week, 10) : getCurrentWeek();
-    await ensureWeeklyReflections(companyId, weekForProvision);
+    const provisioned = await ensureWeeklyReflections(auth.userId, companyId, weekForProvision);
+    if (!provisioned) {
+      return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+    }
+    const db = getReadDb();
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -223,6 +238,9 @@ export const POST = withRole('rh')(async (req, { auth }) => {
 
     const data = parsed.data;
     const companyId = auth.companyId;
+    if (!companyId || auth.role !== 'rh') {
+      return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+    }
     const id = nanoid();
     const weekNumber = data.week_number ?? getCurrentWeek();
     const dayOfWeek = data.day_of_week ?? getCurrentDayOfWeek();
@@ -240,31 +258,40 @@ export const POST = withRole('rh')(async (req, { auth }) => {
 
     const writeQueue = getWriteQueue();
 
-    await writeQueue.enqueue((wdb) => {
-      wdb.prepare(
-        `INSERT INTO daily_lessons
+    const outcome = await writeQueue.enqueue((wdb) => (
+      runAsActiveRhActor(wdb, auth.userId, companyId, () => {
+        wdb.prepare(
+          `INSERT INTO daily_lessons
           (id, company_id, title, description, type, theme, week_number, day_of_week,
            order_index, xp_reward, duration_seconds, active, campaign_context, content_json)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
-      ).run(
-        id,
-        companyId,
-        data.title,
-        data.description,
-        data.type,
-        data.theme,
-        weekNumber,
-        dayOfWeek,
-        data.order_index,
-        data.xp_reward,
-        data.duration_seconds,
-        data.campaign_context ?? null,
-        JSON.stringify(contentToSave)
-      );
-    });
+        ).run(
+          id,
+          companyId,
+          data.title,
+          data.description,
+          data.type,
+          data.theme,
+          weekNumber,
+          dayOfWeek,
+          data.order_index,
+          data.xp_reward,
+          data.duration_seconds,
+          data.campaign_context ?? null,
+          JSON.stringify(contentToSave),
+        );
+        return wdb.prepare(`
+          SELECT *
+          FROM daily_lessons
+          WHERE id = ? AND company_id = ?
+        `).get(id, companyId) as Record<string, unknown>;
+      })
+    ), 'create RH lesson', { retryOnFailure: false });
 
-    const db = getReadDb();
-    const created = db.prepare('SELECT * FROM daily_lessons WHERE id = ?').get(id) as Record<string, unknown>;
+    if (!outcome.authorized) {
+      return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+    }
+    const created = outcome.value;
 
     return NextResponse.json(
       {

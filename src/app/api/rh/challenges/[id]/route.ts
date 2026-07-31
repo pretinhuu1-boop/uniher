@@ -5,7 +5,8 @@
  */
 import { NextResponse } from 'next/server';
 import { withRole } from '@/lib/auth/middleware';
-import { getReadDb, getWriteQueue } from '@/lib/db';
+import { getWriteQueue } from '@/lib/db';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
@@ -24,21 +25,26 @@ const PatchSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('restore_default') }), // re-creates from original default
 ]);
 
+interface ChallengeWriteRow {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  points: number;
+  total_steps: number;
+  deadline: string | null;
+  company_id: string | null;
+  is_default: number;
+  overridden_from: string | null;
+}
+
 export const PATCH = withRole('rh')(async (req, context) => {
   const userId = context.auth.userId;
+  const companyId = context.auth.companyId;
+  if (!companyId || context.auth.role !== 'rh') {
+    return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+  }
   const { id } = await context.params;
-  const db = getReadDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
-  if (!user?.company_id) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
-
-  // Pre-filter: only fetch challenges belonging to this company or defaults
-  const challenge = db.prepare(
-    'SELECT * FROM challenges WHERE id = ? AND (company_id = ? OR is_default = 1)'
-  ).get(id, user.company_id) as any;
-  if (!challenge) return NextResponse.json({ error: 'Desafio não encontrado' }, { status: 404 });
-
-  const isDefault = challenge.is_default === 1;
-  const isOwn = challenge.company_id === user.company_id;
 
   const body = await req.json().catch(() => ({}));
   const parsed = PatchSchema.safeParse(body);
@@ -46,78 +52,154 @@ export const PATCH = withRole('rh')(async (req, context) => {
 
   const data = parsed.data;
   const wq = getWriteQueue();
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveRhActor(db, userId, companyId, () => {
+      const challenge = db.prepare(`
+        SELECT *
+        FROM challenges
+        WHERE id = ?
+          AND (
+            (company_id = ? AND is_default = 0)
+            OR (company_id IS NULL AND is_default = 1)
+          )
+      `).get(id, companyId) as ChallengeWriteRow | undefined;
+      if (!challenge) return { status: 'missing' as const };
 
-  if (data.action === 'deactivate') {
-    if (isDefault) {
-      // Create a company-specific override that marks it inactive
-      await wq.enqueue((db) => {
-        db.prepare(`
-          INSERT OR REPLACE INTO challenges (id, title, description, category, points, total_steps, deadline, company_id, created_by, is_default, is_active, overridden_from, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, datetime('now'))
-        `).run(nanoid(), challenge.title, challenge.description, challenge.category, challenge.points,
-            challenge.total_steps, challenge.deadline, user.company_id, userId, challenge.id);
-      });
-    } else {
-      await wq.enqueue((db) => {
-        db.prepare(`UPDATE challenges SET is_active = 0, updated_at = datetime('now') WHERE id = ?`).run(id);
-      });
-    }
-    return NextResponse.json({ success: true, action: 'deactivated' });
+      const isGlobalDefault = challenge.company_id === null && challenge.is_default === 1;
+      if (data.action === 'deactivate') {
+        if (isGlobalDefault) {
+          const existingOverride = db.prepare(`
+            SELECT id
+            FROM challenges
+            WHERE company_id = ? AND overridden_from = ? AND is_default = 0
+          `).get(companyId, id) as { id: string } | undefined;
+          if (existingOverride) {
+            db.prepare(`
+              UPDATE challenges
+              SET is_active = 0, updated_at = datetime('now')
+              WHERE id = ? AND company_id = ? AND is_default = 0
+            `).run(existingOverride.id, companyId);
+          } else {
+            db.prepare(`
+              INSERT INTO challenges (
+                id, title, description, category, points, total_steps, deadline,
+                company_id, created_by, is_default, is_active, overridden_from, updated_at
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, datetime('now'))
+            `).run(
+              nanoid(), challenge.title, challenge.description, challenge.category,
+              challenge.points, challenge.total_steps, challenge.deadline,
+              companyId, userId, challenge.id,
+            );
+          }
+        } else {
+          const updated = db.prepare(`
+            UPDATE challenges
+            SET is_active = 0, updated_at = datetime('now')
+            WHERE id = ? AND company_id = ? AND is_default = 0
+          `).run(id, companyId);
+          if (updated.changes !== 1) return { status: 'missing' as const };
+        }
+        return { status: 'success' as const, action: 'deactivated' as const };
+      }
+
+      if (data.action === 'activate') {
+        if (isGlobalDefault) return { status: 'global_forbidden' as const };
+        const updated = db.prepare(`
+          UPDATE challenges
+          SET is_active = 1, updated_at = datetime('now')
+          WHERE id = ? AND company_id = ? AND is_default = 0
+        `).run(id, companyId);
+        return updated.changes === 1
+          ? { status: 'success' as const, action: 'activated' as const }
+          : { status: 'missing' as const };
+      }
+
+      if (data.action === 'restore_default') {
+        if (isGlobalDefault || !challenge.overridden_from) {
+          return { status: 'not_override' as const };
+        }
+        const deleted = db.prepare(`
+          DELETE FROM challenges
+          WHERE id = ? AND company_id = ? AND is_default = 0
+        `).run(id, companyId);
+        return deleted.changes === 1
+          ? { status: 'success' as const, action: 'restored' as const }
+          : { status: 'missing' as const };
+      }
+
+      if (isGlobalDefault) return { status: 'global_forbidden' as const };
+      const fields: string[] = [];
+      const values: unknown[] = [];
+      if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
+      if (data.description !== undefined) { fields.push('description = ?'); values.push(data.description); }
+      if (data.category !== undefined) { fields.push('category = ?'); values.push(data.category); }
+      if (data.points !== undefined) { fields.push('points = ?'); values.push(data.points); }
+      if (data.total_steps !== undefined) { fields.push('total_steps = ?'); values.push(data.total_steps); }
+      if ('deadline' in data) { fields.push('deadline = ?'); values.push(data.deadline || null); }
+      if (!fields.length) return { status: 'empty' as const };
+
+      const updated = db.prepare(`
+        UPDATE challenges
+        SET ${fields.join(', ')}, updated_at = datetime('now')
+        WHERE id = ? AND company_id = ? AND is_default = 0
+      `).run(...values, id, companyId);
+      return updated.changes === 1
+        ? { status: 'success' as const, action: 'updated' as const }
+        : { status: 'missing' as const };
+    })
+  ), 'update RH challenge', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+  }
+  if (outcome.value.status === 'missing') {
+    return NextResponse.json({ error: 'Desafio não encontrado ou alterado' }, { status: 409 });
+  }
+  if (outcome.value.status === 'global_forbidden') {
+    return NextResponse.json({ error: 'Desafio global não pode ser alterado pelo RH' }, { status: 403 });
+  }
+  if (outcome.value.status === 'not_override') {
+    return NextResponse.json({ error: 'Este desafio não é uma sobrescrita de padrão' }, { status: 400 });
+  }
+  if (outcome.value.status === 'empty') {
+    return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
   }
 
-  if (data.action === 'activate') {
-    await wq.enqueue((db) => {
-      db.prepare(`UPDATE challenges SET is_active = 1, updated_at = datetime('now') WHERE id = ?`).run(id);
-    });
-    return NextResponse.json({ success: true, action: 'activated' });
-  }
-
-  if (data.action === 'restore_default') {
-    if (!challenge.overridden_from) return NextResponse.json({ error: 'Este desafio não é uma sobrescrita de padrão' }, { status: 400 });
-    // Delete the override, restoring visibility of the original
-    await wq.enqueue((db) => {
-      db.prepare('DELETE FROM challenges WHERE id = ? AND company_id = ? AND is_default = 0').run(id, user.company_id);
-    });
-    return NextResponse.json({ success: true, action: 'restored' });
-  }
-
-  if (data.action === 'update') {
-    if (isDefault) return NextResponse.json({ error: 'Não é possível editar desafios padrão diretamente. Crie uma cópia personalizada.' }, { status: 400 });
-    const fields: string[] = [];
-    const values: any[] = [];
-    if (data.title) { fields.push('title = ?'); values.push(data.title); }
-    if (data.description) { fields.push('description = ?'); values.push(data.description); }
-    if (data.category) { fields.push('category = ?'); values.push(data.category); }
-    if (data.points !== undefined) { fields.push('points = ?'); values.push(data.points); }
-    if (data.total_steps !== undefined) { fields.push('total_steps = ?'); values.push(data.total_steps); }
-    if ('deadline' in data) { fields.push('deadline = ?'); values.push(data.deadline || null); }
-    if (!fields.length) return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
-
-    await wq.enqueue((db) => {
-      db.prepare(`UPDATE challenges SET ${fields.join(', ')}, updated_at = datetime('now') WHERE id = ?`).run(...values, id);
-    });
-    return NextResponse.json({ success: true, action: 'updated' });
-  }
-
-  return NextResponse.json({ error: 'Ação inválida' }, { status: 400 });
+  return NextResponse.json({ success: true, action: outcome.value.action });
 });
 
 export const DELETE = withRole('rh')(async (_req, context) => {
   const userId = context.auth.userId;
+  const companyId = context.auth.companyId;
+  if (!companyId || context.auth.role !== 'rh') {
+    return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+  }
   const { id } = await context.params;
-  const db = getReadDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
-
-  // Pre-filter by company_id to prevent IDOR
-  const challenge = db.prepare(
-    'SELECT * FROM challenges WHERE id = ? AND company_id = ?'
-  ).get(id, user?.company_id) as any;
-  if (!challenge) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });
-  if (challenge.is_default) return NextResponse.json({ error: 'Desafios padrão não podem ser excluídos' }, { status: 403 });
 
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare('DELETE FROM challenges WHERE id = ?').run(id);
-  });
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveRhActor(db, userId, companyId, () => {
+      const challenge = db.prepare(`
+        SELECT id
+        FROM challenges
+        WHERE id = ? AND company_id = ? AND is_default = 0
+      `).get(id, companyId);
+      if (!challenge) return false;
+
+      const deleted = db.prepare(`
+        DELETE FROM challenges
+        WHERE id = ? AND company_id = ? AND is_default = 0
+      `).run(id, companyId);
+      return deleted.changes === 1;
+    })
+  ), 'delete RH challenge', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+  }
+  if (!outcome.value) {
+    return NextResponse.json({ error: 'Desafio não encontrado ou alterado' }, { status: 409 });
+  }
   return NextResponse.json({ success: true });
 });

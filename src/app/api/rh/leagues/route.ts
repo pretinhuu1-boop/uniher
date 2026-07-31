@@ -10,6 +10,7 @@ import { initDb } from '@/lib/db/init';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { getWeekStart } from '@/services/gamification.service';
+import { runAsActiveRhActor } from '@/lib/security/active-rh-actor';
 
 const CreateSchema = z.object({
   name: z.string().min(2).max(80),
@@ -44,9 +45,10 @@ export const GET = withRole('rh', 'lideranca')(async (_req, context) => {
 export const POST = withRole('rh')(async (req, context) => {
   await initDb();
   const userId = context.auth.userId;
-  const db = getReadDb();
-  const user = db.prepare('SELECT company_id FROM users WHERE id = ?').get(userId) as any;
-  if (!user?.company_id) return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 400 });
+  const companyId = context.auth.companyId;
+  if (!companyId || context.auth.role !== 'rh') {
+    return NextResponse.json({ error: 'Empresa ou papel RH não encontrado' }, { status: 400 });
+  }
 
   const body = await req.json().catch(() => ({}));
   const parsed = CreateSchema.safeParse(body);
@@ -56,32 +58,67 @@ export const POST = withRole('rh')(async (req, context) => {
   const id = nanoid();
 
   const wq = getWriteQueue();
-  await wq.enqueue((db) => {
-    db.prepare(`
-      INSERT INTO custom_leagues (id, company_id, name, description, type, department_id, icon, color, created_by, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-    `).run(id, user.company_id, name, description || null, type, department_id || null, icon, color, userId);
-
-    // For department leagues, auto-enroll all department members
-    if (type === 'department' && department_id) {
-      const ws = getWeekStart();
-      const deptUsers = db.prepare('SELECT id FROM users WHERE department_id = ? AND company_id = ?').all(department_id, user.company_id) as any[];
-      for (const du of deptUsers) {
-        db.prepare('INSERT OR IGNORE INTO custom_league_members (id, league_id, user_id, week_points, week_start) VALUES (?, ?, ?, 0, ?)')
-          .run(nanoid(), id, du.id, ws);
+  const outcome = await wq.enqueue((db) => (
+    runAsActiveRhActor(db, userId, companyId, () => {
+      if (type === 'department' && !department_id) {
+        return { status: 'invalid_department' as const };
       }
-    }
-
-    // For company leagues, auto-enroll everyone
-    if (type === 'company') {
-      const ws = getWeekStart();
-      const companyUsers = db.prepare('SELECT id FROM users WHERE company_id = ? AND role = ?').all(user.company_id, 'colaboradora') as any[];
-      for (const cu of companyUsers) {
-        db.prepare('INSERT OR IGNORE INTO custom_league_members (id, league_id, user_id, week_points, week_start) VALUES (?, ?, ?, 0, ?)')
-          .run(nanoid(), id, cu.id, ws);
+      if (department_id) {
+        const department = db.prepare(`
+          SELECT id
+          FROM departments
+          WHERE id = ? AND company_id = ?
+        `).get(department_id, companyId);
+        if (!department) return { status: 'invalid_department' as const };
       }
-    }
-  });
+
+      db.prepare(`
+        INSERT INTO custom_leagues (id, company_id, name, description, type, department_id, icon, color, created_by, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+      `).run(id, companyId, name, description || null, type, department_id || null, icon, color, userId);
+
+      if (type === 'department' && department_id) {
+        const ws = getWeekStart();
+        const deptUsers = db.prepare(`
+          SELECT id
+          FROM users
+          WHERE department_id = ? AND company_id = ?
+        `).all(department_id, companyId) as { id: string }[];
+        for (const departmentUser of deptUsers) {
+          db.prepare(`
+            INSERT OR IGNORE INTO custom_league_members
+              (id, league_id, user_id, week_points, week_start)
+            VALUES (?, ?, ?, 0, ?)
+          `).run(nanoid(), id, departmentUser.id, ws);
+        }
+      }
+
+      if (type === 'company') {
+        const ws = getWeekStart();
+        const companyUsers = db.prepare(`
+          SELECT id
+          FROM users
+          WHERE company_id = ? AND role = 'colaboradora'
+        `).all(companyId) as { id: string }[];
+        for (const companyUser of companyUsers) {
+          db.prepare(`
+            INSERT OR IGNORE INTO custom_league_members
+              (id, league_id, user_id, week_points, week_start)
+            VALUES (?, ?, ?, 0, ?)
+          `).run(nanoid(), id, companyUser.id, ws);
+        }
+      }
+
+      return { status: 'created' as const };
+    })
+  ), 'create RH league', { retryOnFailure: false });
+
+  if (!outcome.authorized) {
+    return NextResponse.json({ error: 'Autorização do RH expirou' }, { status: 409 });
+  }
+  if (outcome.value.status === 'invalid_department') {
+    return NextResponse.json({ error: 'Departamento não pertence à empresa' }, { status: 409 });
+  }
 
   return NextResponse.json({ success: true, id });
 });
