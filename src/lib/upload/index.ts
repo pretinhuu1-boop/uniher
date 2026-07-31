@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import fs from 'fs';
 import path from 'path';
-import { getReadDb, getWriteQueue } from '@/lib/db';
+import { getWriteQueue } from '@/lib/db';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -33,19 +33,56 @@ function sanitizeFilename(name: string): string {
 
 const MAX_USER_STORAGE = 50 * 1024 * 1024; // 50MB per user
 
-function getUserStorageUsed(userId: string): number {
-  const db = getReadDb();
-  const row = db.prepare('SELECT COALESCE(SUM(file_size), 0) as total FROM user_uploads WHERE user_id = ?').get(userId) as { total: number };
-  return row.total;
+const STORAGE_LIMIT_ERROR = 'Limite de armazenamento excedido (50MB). Remova arquivos antigos antes de enviar novos.';
+
+async function reserveUploadQuota(
+  userId: string,
+  filePath: string,
+  fileSize: number,
+  category: string,
+): Promise<string> {
+  const reservationId = nanoid();
+  const writeQueue = getWriteQueue();
+
+  await writeQueue.enqueue((db) => {
+    const reserve = db.transaction(() => {
+      const row = db
+        .prepare('SELECT COALESCE(SUM(file_size), 0) AS total FROM user_uploads WHERE user_id = ?')
+        .get(userId) as { total: number };
+
+      if (row.total + fileSize > MAX_USER_STORAGE) {
+        throw new Error(STORAGE_LIMIT_ERROR);
+      }
+
+      db.prepare(`
+        INSERT INTO user_uploads (id, user_id, file_path, file_size, category)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(reservationId, userId, filePath, fileSize, category);
+    });
+
+    try {
+      reserve.immediate();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (
+        message.includes('SQLITE_BUSY')
+        || message.includes('SQLITE_LOCKED')
+        || message.includes('database is locked')
+      ) {
+        // Do not let the queue retry later and create an orphan reservation.
+        throw new Error('Nao foi possivel reservar a cota de upload. Tente novamente.');
+      }
+      throw error;
+    }
+  }, 'reserve upload quota');
+
+  return reservationId;
 }
 
-function trackUpload(userId: string, filePath: string, fileSize: number, category: string): void {
-  const writeQueue = getWriteQueue();
-  writeQueue.enqueue((db) => {
-    db.prepare('INSERT INTO user_uploads (id, user_id, file_path, file_size, category) VALUES (?, ?, ?, ?, ?)').run(
-      nanoid(), userId, filePath, fileSize, category
-    );
-  });
+async function releaseUploadReservation(reservationId: string): Promise<void> {
+  await getWriteQueue().enqueue((db) => {
+    db.prepare('DELETE FROM user_uploads WHERE id = ?').run(reservationId);
+  }, 'release upload quota reservation');
 }
 
 export async function saveUploadedFile(
@@ -77,32 +114,32 @@ export async function saveUploadedFile(
     throw new Error('Conteúdo do arquivo não corresponde ao tipo declarado.');
   }
 
-  // Per-user storage limit check
-  if (userId) {
-    const currentUsage = getUserStorageUsed(userId);
-    if (currentUsage + file.size > MAX_USER_STORAGE) {
-      throw new Error('Limite de armazenamento excedido (50MB). Remova arquivos antigos antes de enviar novos.');
-    }
-  }
-
   // Generate unique filename
   const filename = `${nanoid(12)}.${ext}`;
-
-  // Ensure directory exists
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', category);
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
-  // Write file
-  const filePath = path.join(uploadDir, filename);
-  fs.writeFileSync(filePath, buffer);
-
   const url = `/uploads/${category}/${filename}`;
+  const reservationId = userId
+    ? await reserveUploadQuota(userId, url, file.size, category)
+    : null;
 
-  // Track upload in DB for storage accounting
-  if (userId) {
-    trackUpload(userId, url, file.size, category);
+  try {
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', category);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    fs.writeFileSync(path.join(uploadDir, filename), buffer);
+  } catch (writeError) {
+    if (reservationId) {
+      try {
+        await releaseUploadReservation(reservationId);
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [writeError, cleanupError],
+          'Falha ao salvar o arquivo e liberar a reserva de cota.',
+        );
+      }
+    }
+    throw writeError;
   }
 
   return { url, filename };
