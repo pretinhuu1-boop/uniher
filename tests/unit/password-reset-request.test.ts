@@ -72,7 +72,7 @@ describe('password reset request', () => {
       id: 'user-1',
       name: 'User One',
       email: 'user@example.com',
-    })).rejects.toThrow('Invalid production password reset origin');
+    })).rejects.toThrow('Invalid production application origin');
 
     expect(deps.sendEmail).not.toHaveBeenCalled();
     expect(deps.beginAdministrativePasswordReset).not.toHaveBeenCalled();

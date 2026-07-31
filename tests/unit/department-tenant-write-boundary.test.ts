@@ -81,7 +81,7 @@ describe('department tenant write boundary', () => {
         sessionVersion: 1,
       },
       params: Promise.resolve({}),
-    });
+    } as any);
 
     expect(response.status).toBe(404);
     expect(deps.enqueue).not.toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe('department tenant write boundary', () => {
         sessionVersion: 1,
       },
       params: Promise.resolve({ id: 'user-a' }),
-    });
+    } as any);
 
     expect(response.status).toBe(404);
     expect(deps.enqueue).not.toHaveBeenCalled();

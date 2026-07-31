@@ -4,6 +4,7 @@ import { hashPassword } from '@/lib/auth/password';
 import { sendEmail } from '@/lib/mail';
 import { passwordResetEmailHtml } from '@/lib/mail/templates';
 import { beginAdministrativePasswordReset } from '@/repositories/password-reset.repository';
+import { getPublicAppOrigin } from '@/lib/security/public-app-origin';
 
 interface PasswordResetSubject {
   id: string;
@@ -11,30 +12,10 @@ interface PasswordResetSubject {
   email: string;
 }
 
-function getPasswordResetOrigin(): string {
-  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (process.env.NODE_ENV !== 'production') {
-    return new URL(configuredUrl || 'http://localhost:3000').origin;
-  }
-  if (!configuredUrl) {
-    throw new Error('NEXT_PUBLIC_APP_URL is required for password reset in production');
-  }
-
-  const url = new URL(configuredUrl);
-  const hostname = url.hostname.toLowerCase();
-  if (
-    url.protocol !== 'https:'
-    || (hostname !== 'uniher.com.br' && !hostname.endsWith('.uniher.com.br'))
-  ) {
-    throw new Error('Invalid production password reset origin');
-  }
-  return url.origin;
-}
-
 export async function requestUserPasswordReset(
   subject: PasswordResetSubject,
 ): Promise<{ delivered: boolean }> {
-  const resetOrigin = getPasswordResetOrigin();
+  const resetOrigin = getPublicAppOrigin();
   const token = nanoid(32);
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   const replacementPasswordHash = await hashPassword(

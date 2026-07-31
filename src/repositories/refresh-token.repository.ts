@@ -25,7 +25,7 @@ export function findValidToken(token: string): RefreshTokenRow | undefined {
   return findByTokenHash(hashToken(token));
 }
 
-export async function createRefreshToken(userId: string, token: string, expiresInDays = 7): Promise<RefreshTokenRow> {
+export async function createRefreshToken(userId: string, token: string, expiresInDays = 2): Promise<RefreshTokenRow> {
   const writeQueue = getWriteQueue();
   const id = nanoid();
   const tokenHash = hashToken(token);
@@ -93,5 +93,5 @@ export async function cleanExpiredTokens(): Promise<void> {
 
   await writeQueue.enqueue((db) => {
     db.prepare('DELETE FROM refresh_tokens WHERE expires_at <= datetime("now")').run();
-  });
+  }, 'clean expired refresh tokens', { retryOnFailure: false });
 }

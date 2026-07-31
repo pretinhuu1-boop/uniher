@@ -12,6 +12,7 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { checkAdminRateLimit } from '@/lib/security/rate-limit';
 import { logAudit } from '@/lib/audit';
+import { getPublicAppOrigin } from '@/lib/security/public-app-origin';
 
 const MAX_EXPIRY_DAYS = 3;
 
@@ -75,6 +76,7 @@ export const POST = withRole('rh')(async (req, context) => {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
 
   const { name: inviteeName, email, role, department_id } = parsed.data;
+  const appOrigin = getPublicAppOrigin();
 
   // RH cannot invite other RH users — only admin can
   if (context.auth.role === 'rh' && role === 'rh') {
@@ -147,7 +149,7 @@ export const POST = withRole('rh')(async (req, context) => {
     );
   }
 
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`;
+  const inviteUrl = `${appOrigin}/invite/${token}`;
 
   // Fetch company name for the email
   const company = db.prepare('SELECT name FROM companies WHERE id = ?').get(user.company_id) as { name: string } | undefined;
