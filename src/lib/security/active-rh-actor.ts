@@ -42,6 +42,50 @@ export function runAsActiveRhActor<T>(
   return transaction.immediate();
 }
 
+export function hasActiveCompanyActor(
+  db: Database.Database,
+  actorId: string,
+  companyId: string,
+  allowedRoles: string | readonly string[],
+): boolean {
+  const roles = typeof allowedRoles === 'string' ? [allowedRoles] : allowedRoles;
+  if (roles.length === 0) {
+    return false;
+  }
+
+  const actor = db.prepare(`
+    SELECT u.role
+    FROM users u
+    JOIN companies c ON c.id = u.company_id
+    WHERE u.id = ?
+      AND u.company_id = ?
+      AND u.approved = 1
+      AND u.blocked = 0
+      AND u.deleted_at IS NULL
+      AND c.is_active = 1
+      AND c.deleted_at IS NULL
+  `).get(actorId, companyId) as { role: string } | undefined;
+
+  return Boolean(actor && roles.includes(actor.role));
+}
+
+export function runAsActiveCompanyActor<T>(
+  db: Database.Database,
+  actorId: string,
+  companyId: string,
+  allowedRoles: string | readonly string[],
+  operation: () => T,
+): ActiveActorTransactionResult<T> {
+  const transaction = db.transaction(() => {
+    if (!hasActiveCompanyActor(db, actorId, companyId, allowedRoles)) {
+      return { authorized: false } as const;
+    }
+    return { authorized: true, value: operation() } as const;
+  });
+
+  return transaction.immediate();
+}
+
 export function hasActiveMasterAdminActor(
   db: Database.Database,
   actorId: string,

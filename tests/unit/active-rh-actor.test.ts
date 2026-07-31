@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  hasActiveCompanyActor,
   hasActiveMasterAdminActor,
   hasActiveRhActor,
 } from '@/lib/security/active-rh-actor';
@@ -72,5 +73,17 @@ describe('active RH actor contract', () => {
     db.prepare(sql).run('admin-1');
 
     expect(hasActiveMasterAdminActor(db, 'admin-1')).toBe(false);
+  });
+
+  it('binds a company actor to one allowed role or an allowed role list', () => {
+    db.prepare('UPDATE users SET company_id = ? WHERE id = ?').run('company-a', 'admin-1');
+
+    expect(hasActiveCompanyActor(db, 'admin-1', 'company-a', 'admin')).toBe(true);
+    expect(hasActiveCompanyActor(db, 'admin-1', 'company-a', ['rh', 'admin'])).toBe(true);
+    expect(hasActiveCompanyActor(db, 'admin-1', 'company-a', [])).toBe(false);
+    expect(hasActiveCompanyActor(db, 'admin-1', 'company-b', 'admin')).toBe(false);
+
+    db.prepare('UPDATE companies SET is_active = 0 WHERE id = ?').run('company-a');
+    expect(hasActiveCompanyActor(db, 'admin-1', 'company-a', 'admin')).toBe(false);
   });
 });

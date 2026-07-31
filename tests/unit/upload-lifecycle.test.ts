@@ -28,6 +28,16 @@ vi.mock('@/lib/security/rate-limit', () => ({
   checkUploadRateLimit: uploadDeps.checkUploadRateLimit,
 }));
 
+vi.mock('@/lib/security/active-rh-actor', () => ({
+  runAsActiveCompanyActor: (
+    _db: unknown,
+    _actorId: string,
+    _companyId: string,
+    _role: string,
+    operation: () => unknown,
+  ) => ({ authorized: true, value: operation() }),
+}));
+
 vi.mock('@/lib/db', () => ({
   getWriteQueue: () => ({ enqueue: uploadDeps.enqueue }),
 }));
@@ -88,9 +98,12 @@ describe('upload replacement lifecycle', () => {
     field,
   }) => {
     uploadDeps.enqueue.mockImplementation(async (operation: any) => operation({
-      prepare: (sql: string) => sql.includes(`SELECT ${field}`)
-        ? { get: () => null }
-        : { run: () => ({ changes: 0 }) },
+      prepare: (sql: string) => {
+        if (sql.includes('FROM user_uploads')) return { get: () => ({ id: 'reservation-1' }) };
+        return sql.includes(`SELECT ${field}`)
+          ? { get: () => null }
+          : { run: () => ({ changes: 0 }) };
+      },
     }));
 
     const response = await handler(uploadRequest(), { params: Promise.resolve({}) });
@@ -105,9 +118,12 @@ describe('upload replacement lifecycle', () => {
     field,
   }) => {
     uploadDeps.enqueue.mockImplementation(async (operation: any) => operation({
-      prepare: (sql: string) => sql.includes(`SELECT ${field}`)
-        ? { get: () => { throw new Error('SQLITE_BUSY'); } }
-        : { run: () => ({ changes: 1 }) },
+      prepare: (sql: string) => {
+        if (sql.includes('FROM user_uploads')) return { get: () => ({ id: 'reservation-1' }) };
+        return sql.includes(`SELECT ${field}`)
+          ? { get: () => { throw new Error('SQLITE_BUSY'); } }
+          : { run: () => ({ changes: 1 }) };
+      },
     }));
 
     const response = await handler(uploadRequest(), { params: Promise.resolve({}) });
@@ -132,6 +148,9 @@ describe('upload replacement lifecycle', () => {
     let pointerUpdated = false;
     uploadDeps.enqueue.mockImplementation(async (operation: any) => operation({
       prepare: (sql: string) => {
+        if (sql.includes('FROM user_uploads')) {
+          return { get: () => ({ id: 'reservation-1' }) };
+        }
         if (sql.includes(`SELECT ${field}`)) {
           return { get: () => ({ [field]: previousUrl }) };
         }
@@ -164,9 +183,12 @@ describe('upload replacement lifecycle', () => {
     previousUrl,
   }) => {
     uploadDeps.enqueue.mockImplementation(async (operation: any) => operation({
-      prepare: (sql: string) => sql.includes(`SELECT ${field}`)
-        ? { get: () => ({ [field]: previousUrl }) }
-        : { run: () => ({ changes: 1 }) },
+      prepare: (sql: string) => {
+        if (sql.includes('FROM user_uploads')) return { get: () => ({ id: 'reservation-1' }) };
+        return sql.includes(`SELECT ${field}`)
+          ? { get: () => ({ [field]: previousUrl }) }
+          : { run: () => ({ changes: 1 }) };
+      },
     }));
     uploadDeps.removeUploadedFile.mockRejectedValue(new Error('old file unavailable'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);

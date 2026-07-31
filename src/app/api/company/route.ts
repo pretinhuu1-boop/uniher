@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
-import { getCompanyById, updateCompany } from '@/repositories/company.repository';
+import { getCompanyById, updateCompanyProfileAsActor } from '@/repositories/company.repository';
 import { getUserById } from '@/repositories/user.repository';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
@@ -68,8 +68,7 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
     return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
   }
 
-  const user = getUserById(context.auth.userId);
-  if (!user?.company_id) {
+  if (!context.auth.companyId) {
     return NextResponse.json({ error: 'Empresa não encontrada' }, { status: 404 });
   }
 
@@ -79,26 +78,26 @@ export const PATCH = withAuth(async (req: NextRequest, context) => {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
   }
 
-  const updated = await updateCompany(user.company_id, {
-    name: parsed.data.name,
-    tradeName: parsed.data.tradeName,
-    sector: parsed.data.sector,
-    logoUrl: parsed.data.logoUrl ?? undefined,
-    primaryColor: parsed.data.primaryColor ?? undefined,
-    secondaryColor: parsed.data.secondaryColor ?? undefined,
-    contactName: parsed.data.contactName,
-    contactEmail: parsed.data.contactEmail,
-    contactPhone: parsed.data.contactPhone,
+  const updated = await updateCompanyProfileAsActor({
+    actorId: context.auth.userId,
+    actorRole: context.auth.role,
+    companyId: context.auth.companyId,
+    company: {
+      name: parsed.data.name,
+      tradeName: parsed.data.tradeName,
+      sector: parsed.data.sector,
+      logoUrl: parsed.data.logoUrl ?? undefined,
+      primaryColor: parsed.data.primaryColor ?? undefined,
+      secondaryColor: parsed.data.secondaryColor ?? undefined,
+      contactName: parsed.data.contactName,
+      contactEmail: parsed.data.contactEmail,
+      contactPhone: parsed.data.contactPhone,
+    },
+    feedCompanyEnabled: parsed.data.feedCompanyEnabled,
   });
 
-  if (parsed.data.feedCompanyEnabled !== undefined) {
-    const db = getReadDb();
-    db.prepare(`
-      INSERT INTO company_settings (id, company_id, setting_key, setting_value, updated_at)
-      VALUES (lower(hex(randomblob(16))), ?, 'feed_company_enabled', ?, datetime('now'))
-      ON CONFLICT(company_id, setting_key)
-      DO UPDATE SET setting_value = excluded.setting_value, updated_at = datetime('now')
-    `).run(user.company_id, parsed.data.feedCompanyEnabled ? '1' : '0');
+  if (!updated) {
+    return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
   }
 
   return NextResponse.json({ company: updated });

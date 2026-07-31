@@ -1,5 +1,8 @@
 import { getReadDb, getWriteQueue } from '@/lib/db';
-import { runAsActiveMasterAdminActor } from '@/lib/security/active-rh-actor';
+import {
+  runAsActiveCompanyActor,
+  runAsActiveMasterAdminActor,
+} from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 
 export interface CompanyRow {
@@ -90,6 +93,61 @@ export interface CompanyWithStats extends CompanyRow {
   department_count: number;
 }
 
+export interface UpdateCompanyInput {
+  name?: string;
+  tradeName?: string;
+  sector?: string;
+  plan?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
+function updateCompanyRow(
+  db: import('better-sqlite3').Database,
+  id: string,
+  data: UpdateCompanyInput,
+  activeOnly = false,
+): CompanyRow {
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+  if (data.tradeName !== undefined) { fields.push('trade_name = ?'); values.push(data.tradeName); }
+  if (data.sector !== undefined) { fields.push('sector = ?'); values.push(data.sector); }
+  if (data.plan !== undefined) { fields.push('plan = ?'); values.push(data.plan); }
+  if (data.logoUrl !== undefined) { fields.push('logo_url = ?'); values.push(data.logoUrl); }
+  if (data.primaryColor !== undefined) { fields.push('primary_color = ?'); values.push(data.primaryColor); }
+  if (data.secondaryColor !== undefined) { fields.push('secondary_color = ?'); values.push(data.secondaryColor); }
+  if (data.contactName !== undefined) { fields.push('contact_name = ?'); values.push(data.contactName); }
+  if (data.contactEmail !== undefined) { fields.push('contact_email = ?'); values.push(data.contactEmail); }
+  if (data.contactPhone !== undefined) { fields.push('contact_phone = ?'); values.push(data.contactPhone); }
+
+  const activePredicate = activeOnly ? ' AND is_active = 1 AND deleted_at IS NULL' : '';
+  if (fields.length > 0) {
+    fields.push("updated_at = datetime('now')");
+    values.push(id);
+    const result = db.prepare(
+      `UPDATE companies SET ${fields.join(', ')} WHERE id = ?${activePredicate}`,
+    ).run(...values);
+    if (result.changes !== 1) {
+      throw new Error('Empresa nao encontrada ou inativa.');
+    }
+  }
+
+  const company = db.prepare(
+    `SELECT * FROM companies WHERE id = ?${activePredicate}`,
+  ).get(id) as CompanyRow | undefined;
+  if (!company) {
+    throw new Error('Empresa nao encontrada ou inativa.');
+  }
+
+  return company;
+}
+
 export function listAllCompanies(): CompanyWithStats[] {
   const db = getReadDb();
   return db.prepare(`
@@ -102,44 +160,37 @@ export function listAllCompanies(): CompanyWithStats[] {
   `).all() as CompanyWithStats[];
 }
 
-export async function updateCompany(id: string, data: Partial<{
-  name: string;
-  tradeName: string;
-  sector: string;
-  plan: string;
-  logoUrl: string;
-  primaryColor: string;
-  secondaryColor: string;
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-}>): Promise<CompanyRow> {
+export async function updateCompany(id: string, data: UpdateCompanyInput): Promise<CompanyRow> {
   const writeQueue = getWriteQueue();
 
-  return writeQueue.enqueue((db) => {
-    const fields: string[] = [];
-    const values: unknown[] = [];
+  return writeQueue.enqueue((db) => updateCompanyRow(db, id, data));
+}
 
-    if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
-    if (data.tradeName !== undefined) { fields.push('trade_name = ?'); values.push(data.tradeName); }
-    if (data.sector !== undefined) { fields.push('sector = ?'); values.push(data.sector); }
-    if (data.plan !== undefined) { fields.push('plan = ?'); values.push(data.plan); }
-    if (data.logoUrl !== undefined) { fields.push('logo_url = ?'); values.push(data.logoUrl); }
-    if (data.primaryColor !== undefined) { fields.push('primary_color = ?'); values.push(data.primaryColor); }
-    if (data.secondaryColor !== undefined) { fields.push('secondary_color = ?'); values.push(data.secondaryColor); }
-    if (data.contactName !== undefined) { fields.push('contact_name = ?'); values.push(data.contactName); }
-    if (data.contactEmail !== undefined) { fields.push('contact_email = ?'); values.push(data.contactEmail); }
-    if (data.contactPhone !== undefined) { fields.push('contact_phone = ?'); values.push(data.contactPhone); }
+export async function updateCompanyProfileAsActor(input: {
+  actorId: string;
+  actorRole: 'rh' | 'admin';
+  companyId: string;
+  company: UpdateCompanyInput;
+  feedCompanyEnabled?: boolean;
+}): Promise<CompanyRow | null> {
+  const result = await getWriteQueue().enqueue((db) => runAsActiveCompanyActor(
+    db,
+    input.actorId,
+    input.companyId,
+    input.actorRole,
+    () => {
+      const company = updateCompanyRow(db, input.companyId, input.company, true);
+      if (input.feedCompanyEnabled !== undefined) {
+        db.prepare(`
+          INSERT INTO company_settings (id, company_id, setting_key, setting_value, updated_at)
+          VALUES (lower(hex(randomblob(16))), ?, 'feed_company_enabled', ?, datetime('now'))
+          ON CONFLICT(company_id, setting_key)
+          DO UPDATE SET setting_value = excluded.setting_value, updated_at = datetime('now')
+        `).run(input.companyId, input.feedCompanyEnabled ? '1' : '0');
+      }
+      return company;
+    },
+  ), 'update company profile as active actor', { retryOnFailure: false });
 
-    if (fields.length === 0) {
-      return db.prepare('SELECT * FROM companies WHERE id = ?').get(id) as CompanyRow;
-    }
-
-    fields.push("updated_at = datetime('now')");
-    values.push(id);
-
-    db.prepare(`UPDATE companies SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-
-    return db.prepare('SELECT * FROM companies WHERE id = ?').get(id) as CompanyRow;
-  });
+  return result.authorized ? result.value : null;
 }

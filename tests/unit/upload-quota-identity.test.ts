@@ -28,6 +28,16 @@ vi.mock('@/lib/security/rate-limit', () => ({
   checkUploadRateLimit: uploadDeps.checkUploadRateLimit,
 }));
 
+vi.mock('@/lib/security/active-rh-actor', () => ({
+  runAsActiveCompanyActor: (
+    _db: unknown,
+    _actorId: string,
+    _companyId: string,
+    _role: string,
+    operation: () => unknown,
+  ) => ({ authorized: true, value: operation() }),
+}));
+
 vi.mock('@/lib/db', () => ({
   getWriteQueue: () => ({ enqueue: uploadDeps.enqueue }),
 }));
@@ -58,9 +68,13 @@ describe('upload quota identity', () => {
     });
     uploadDeps.enqueue.mockImplementation(async (operation: any) => {
       return operation({
-        prepare: (sql: string) => sql.includes('SELECT')
-          ? { get: () => null }
-          : { run: () => ({ changes: 1 }) },
+        prepare: (sql: string) => {
+          if (sql.includes('FROM user_uploads')) return { get: () => ({ id: 'reservation-1' }) };
+          if (sql.includes('SELECT logo_url')) return { get: () => ({ logo_url: null }) };
+          return sql.includes('SELECT')
+            ? { get: () => null }
+            : { run: () => ({ changes: 1 }) };
+        },
       });
     });
   });

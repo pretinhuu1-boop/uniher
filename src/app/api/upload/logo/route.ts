@@ -4,6 +4,9 @@ import { removeUploadedFile, saveUploadedFile } from '@/lib/upload';
 import { getWriteQueue } from '@/lib/db';
 import { checkUploadRateLimit } from '@/lib/security/rate-limit';
 import { handleApiError, RateLimitError } from '@/lib/errors';
+import { runAsActiveCompanyActor } from '@/lib/security/active-rh-actor';
+
+class InactiveCompanyActorError extends Error {}
 
 function uploadErrorResponse(error: unknown): NextResponse {
   if (error instanceof RateLimitError) return handleApiError(error);
@@ -33,6 +36,11 @@ function uploadErrorResponse(error: unknown): NextResponse {
 
 export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) => {
   try {
+    const actorRole = context.auth.role;
+    if (actorRole !== 'rh' && actorRole !== 'admin') {
+      return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
+    }
+
     await checkUploadRateLimit(req);
     const formData = await req.formData();
     const file = formData.get('file') as File;
@@ -48,21 +56,46 @@ export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) =>
     let previousUrl: string | null;
 
     try {
-      previousUrl = await getWriteQueue().enqueue((db) => {
-        const previous = db
-          .prepare('SELECT logo_url FROM companies WHERE id = ?')
-          .get(context.auth.companyId) as { logo_url: string | null } | undefined;
-        const result = db.prepare('UPDATE companies SET logo_url = ? WHERE id = ?').run(
-          url,
-          context.auth.companyId
+      const pointerResult = await getWriteQueue().enqueue((db) => {
+        return runAsActiveCompanyActor(
+          db,
+          context.auth.userId,
+          context.auth.companyId,
+          actorRole,
+          () => {
+            const reservation = db.prepare(`
+              SELECT id
+              FROM user_uploads
+              WHERE user_id = ? AND file_path = ? AND category = 'logos'
+              LIMIT 1
+            `).get(context.auth.userId, url);
+            if (!reservation) {
+              throw new Error('Reserva do upload nao encontrada.');
+            }
+
+            const previous = db.prepare(`
+              SELECT logo_url
+              FROM companies
+              WHERE id = ? AND is_active = 1 AND deleted_at IS NULL
+            `).get(context.auth.companyId) as { logo_url: string | null } | undefined;
+            const result = db.prepare(`
+              UPDATE companies
+              SET logo_url = ?, updated_at = datetime('now')
+              WHERE id = ? AND is_active = 1 AND deleted_at IS NULL
+            `).run(url, context.auth.companyId);
+
+            if (!previous || result.changes !== 1) {
+              throw new Error('Nao foi possivel atualizar o logo da empresa.');
+            }
+
+            return previous.logo_url;
+          },
         );
-
-        if (result.changes !== 1) {
-          throw new Error('Nao foi possivel atualizar o logo da empresa.');
-        }
-
-        return previous?.logo_url ?? null;
       }, 'replace logo upload pointer', { retryOnFailure: false });
+      if (!pointerResult.authorized) {
+        throw new InactiveCompanyActorError();
+      }
+      previousUrl = pointerResult.value;
     } catch (updateError) {
       try {
         await removeUploadedFile(url);
@@ -71,6 +104,9 @@ export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) =>
           [updateError, cleanupError],
           'Falha ao atualizar o logo e compensar o novo upload.',
         );
+      }
+      if (updateError instanceof InactiveCompanyActorError) {
+        return NextResponse.json({ error: 'Sem permissao' }, { status: 403 });
       }
       throw updateError;
     }
