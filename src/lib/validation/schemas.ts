@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getSaoPauloDateOnly } from '@/lib/health-checkin/mapper';
 
 // === AUTH ===
 
@@ -51,12 +52,68 @@ export const quizSubmitSchema = z.object({
   archetypeKey: z.enum(['guardia', 'protetora', 'guerreira', 'equilibrista']),
 });
 
+const dateOnlySchema = z.string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'invalid date')
+  .refine((value) => {
+    const parsed = new Date(`${value}T00:00:00.000Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  }, 'invalid date');
+
+export const healthCheckinExamAnswerSchema = z.object({
+  completedDate: dateOnlySchema.nullable().optional(),
+  dueDate: dateOnlySchema.nullable().optional(),
+  unknown: z.boolean().optional(),
+  notApplicable: z.boolean().optional(),
+}).superRefine((answer, context) => {
+  const completedDate = answer.completedDate ?? null;
+  const dueDate = answer.dueDate ?? null;
+
+  if (completedDate && completedDate > getSaoPauloDateOnly()) {
+    context.addIssue({
+      code: 'custom',
+      path: ['completedDate'],
+      message: 'completed date cannot be in the future',
+    });
+  }
+  if (completedDate && dueDate && dueDate < completedDate) {
+    context.addIssue({
+      code: 'custom',
+      path: ['dueDate'],
+      message: 'due date cannot be before completed date',
+    });
+  }
+  if (answer.notApplicable) {
+    if (answer.unknown || completedDate || dueDate) {
+      context.addIssue({
+        code: 'custom',
+        message: 'not applicable cannot include dates or unknown state',
+      });
+    }
+    return;
+  }
+  if (answer.unknown) {
+    if (dueDate) {
+      context.addIssue({
+        code: 'custom',
+        path: ['dueDate'],
+        message: 'unknown due date cannot include a due date',
+      });
+    }
+    return;
+  }
+  if (!dueDate) {
+    context.addIssue({
+      code: 'custom',
+      path: ['dueDate'],
+      message: 'due date or unknown state is required',
+    });
+  }
+});
+
 export const healthCheckinAnswersSchema = z.object({
-  age: z.number().int().min(20).max(120),
-  exams: z.record(
-    z.string(),
-    z.enum(['in_day', 'due_soon', 'overdue', 'not_sure', 'not_applicable'])
-  ),
+  birthDate: dateOnlySchema.optional(),
+  exams: z.record(z.string(), healthCheckinExamAnswerSchema)
+    .refine((exams) => Object.keys(exams).length > 0, 'at least one exam is required'),
 });
 
 export const healthCheckinSchema = z.object({

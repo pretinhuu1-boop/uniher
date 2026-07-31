@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  calculateAge,
+  classifyExamDueDate,
   EXAM_CATALOG,
   getApplicableExams,
   mapHealthCheckinToSemaphore,
@@ -39,44 +41,146 @@ describe('exam-based health check-in mapper', () => {
     expect(getApplicableExams(70).map((exam) => exam.id)).toContain('cognitive_assessment');
   });
 
-  it('maps only age-applicable exam answers to the preventive semaphore', () => {
+  it('derives age from birth date instead of trusting a typed age', () => {
+    expect(calculateAge('1981-07-30', '2026-07-30')).toBe(45);
+    expect(calculateAge('1981-07-31', '2026-07-30')).toBe(44);
+  });
+
+  it('classifies the exact preventive due-date boundaries', () => {
+    const referenceDate = '2026-07-30';
+
+    expect(classifyExamDueDate('2026-09-29', referenceDate)).toBe('safe');
+    expect(classifyExamDueDate('2026-09-28', referenceDate)).toBe('attention');
+    expect(classifyExamDueDate('2026-07-01', referenceDate)).toBe('attention');
+    expect(classifyExamDueDate('2026-06-30', referenceDate)).toBe('urgent');
+    expect(classifyExamDueDate(null, referenceDate)).toBe('attention');
+  });
+
+  it('maps only age-applicable dated exam answers to the preventive semaphore', () => {
     const result = mapHealthCheckinToSemaphore({
-      age: 45,
+      birthDate: '1981-07-30',
       exams: {
-        papanicolau: 'overdue',
-        mammography: 'overdue',
-        clinical_breast_exam: 'due_soon',
-        cbc_ferritin: 'in_day',
+        papanicolau: {
+          completedDate: '2023-06-15',
+          dueDate: '2026-06-30',
+        },
+        mammography: {
+          completedDate: '2024-06-15',
+          dueDate: '2026-06-29',
+        },
+        clinical_breast_exam: {
+          completedDate: '2025-08-01',
+          dueDate: '2026-08-01',
+        },
+        cbc_ferritin: {
+          completedDate: '2026-01-15',
+          dueDate: '2027-01-15',
+        },
       },
-    }, { conciergeEnabled: true });
+    }, { conciergeEnabled: true, referenceDate: '2026-07-30' });
 
     expect(result.source).toBe('semaforo_exam_quiz_v1');
     expect(result.overallStatus).toBe('urgent');
     expect(result.nextAction).toBe('offer_concierge');
-    expect(result.createConciergeCase).toBe(false);
+    expect(result.conciergeRequired).toBe(true);
     expect(result.counts).toEqual({
       green: 1,
       yellow: expect.any(Number),
       red: 2,
     });
     expect(result.examItems).toEqual(expect.arrayContaining([
-      expect.objectContaining({ examName: 'Papanicolau', status: 'overdue', priority: 'urgent' }),
-      expect.objectContaining({ examName: 'Mamografia', status: 'overdue', priority: 'urgent' }),
-      expect.objectContaining({ examName: 'Exame clinico das mamas', status: 'pending', priority: 'attention' }),
+      expect.objectContaining({
+        examId: 'papanicolau',
+        examName: 'Papanicolau',
+        completedDate: '2023-06-15',
+        dueDate: '2026-06-30',
+        status: 'overdue',
+        priority: 'urgent',
+      }),
+      expect.objectContaining({
+        examName: 'Mamografia',
+        dueDate: '2026-06-29',
+        status: 'overdue',
+        priority: 'urgent',
+      }),
+      expect.objectContaining({
+        examName: 'Exame clinico das mamas',
+        status: 'pending',
+        priority: 'attention',
+      }),
     ]));
   });
 
   it('does not include mammography before the age indicated by the matrix', () => {
     const result = mapHealthCheckinToSemaphore({
-      age: 25,
+      birthDate: '2001-07-30',
       exams: {
-        mammography: 'overdue',
-        papanicolau: 'in_day',
+        mammography: { dueDate: '2026-06-01' },
+        papanicolau: { dueDate: '2027-01-01' },
       },
-    });
+    }, { referenceDate: '2026-07-30' });
 
     expect(result.examItems).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ examName: 'Mamografia' }),
+    ]));
+  });
+
+  it('does not allow required exams to be excluded as not applicable', () => {
+    const result = mapHealthCheckinToSemaphore({
+      birthDate: '1991-07-30',
+      exams: {
+        papanicolau: { notApplicable: true },
+      },
+    }, { referenceDate: '2026-07-30' });
+
+    expect(result.examItems).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        examId: 'papanicolau',
+        status: 'pending',
+        priority: 'attention',
+      }),
+    ]));
+  });
+
+  it('preserves an overdue legacy result until the user supplies a real due date', () => {
+    const result = mapHealthCheckinToSemaphore({
+      birthDate: '1981-07-30',
+      exams: {
+        mammography: {
+          dueDate: null,
+          unknown: true,
+          legacyStatus: 'overdue',
+        },
+      },
+    }, { referenceDate: '2026-07-30' });
+
+    expect(result.examItems).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        examId: 'mammography',
+        status: 'overdue',
+        priority: 'urgent',
+      }),
+    ]));
+  });
+
+  it('does not mark a completed legacy result as safe without a real due date', () => {
+    const result = mapHealthCheckinToSemaphore({
+      birthDate: '1981-07-30',
+      exams: {
+        mammography: {
+          dueDate: null,
+          unknown: true,
+          legacyStatus: 'completed',
+        },
+      },
+    }, { referenceDate: '2026-07-30' });
+
+    expect(result.examItems).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        examId: 'mammography',
+        status: 'pending',
+        priority: 'attention',
+      }),
     ]));
   });
 
@@ -88,13 +192,94 @@ describe('exam-based health check-in mapper', () => {
         version: 'semaforo-exams-v1',
       },
       answers: {
-        age: 35,
+        birthDate: '1991-07-30',
         exams: {
-          papanicolau: 'in_day',
+          papanicolau: {
+            completedDate: '2025-01-15',
+            dueDate: '2027-01-15',
+          },
         },
       },
     };
 
     expect(() => healthCheckinSchema.parse(payload)).toThrow(/consent/i);
+  });
+
+  it('rejects empty, contradictory and chronologically invalid exam answers', () => {
+    const payload = {
+      source: 'semaforo_exam_quiz_v1' as const,
+      consent: {
+        accepted: true,
+        version: 'semaforo-exams-v1' as const,
+      },
+      answers: {
+        birthDate: '1991-07-30',
+        exams: {},
+      },
+    };
+
+    expect(() => healthCheckinSchema.parse(payload)).toThrow();
+    expect(() => healthCheckinSchema.parse({
+      ...payload,
+      answers: {
+        ...payload.answers,
+        exams: {
+          papanicolau: {
+            unknown: true,
+            dueDate: '2027-01-15',
+          },
+        },
+      },
+    })).toThrow();
+    expect(() => healthCheckinSchema.parse({
+      ...payload,
+      answers: {
+        ...payload.answers,
+        exams: {
+          papanicolau: {
+            completedDate: '2025-01-15',
+            dueDate: '2024-01-15',
+          },
+        },
+      },
+    })).toThrow();
+    expect(() => healthCheckinSchema.parse({
+      ...payload,
+      answers: {
+        ...payload.answers,
+        exams: {
+          papanicolau: {
+            completedDate: '2999-01-15',
+            dueDate: '2999-02-15',
+          },
+        },
+      },
+    })).toThrow();
+  });
+
+  it('uses the Sao Paulo calendar day when rejecting future completed dates', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-31T02:30:00.000Z'));
+
+    try {
+      expect(() => healthCheckinSchema.parse({
+        source: 'semaforo_exam_quiz_v1',
+        consent: {
+          accepted: true,
+          version: 'semaforo-exams-v1',
+        },
+        answers: {
+          birthDate: '1991-07-30',
+          exams: {
+            papanicolau: {
+              completedDate: '2026-07-31',
+              dueDate: '2027-07-31',
+            },
+          },
+        },
+      })).toThrow();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

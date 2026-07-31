@@ -1,5 +1,12 @@
 export type HealthCheckinStatus = 'safe' | 'attention' | 'urgent';
-export type ExamAnswer = 'in_day' | 'due_soon' | 'overdue' | 'not_sure' | 'not_applicable';
+
+export interface ExamAnswer {
+  completedDate?: string | null;
+  dueDate?: string | null;
+  unknown?: boolean;
+  notApplicable?: boolean;
+  legacyStatus?: 'completed' | 'pending' | 'overdue';
+}
 
 export interface ExamDefinition {
   id: string;
@@ -10,7 +17,7 @@ export interface ExamDefinition {
 }
 
 export interface HealthCheckinAnswers {
-  age: number;
+  birthDate: string;
   exams: Record<string, ExamAnswer>;
 }
 
@@ -18,13 +25,15 @@ export interface HealthCheckinResult {
   source: 'semaforo_exam_quiz_v1';
   overallStatus: HealthCheckinStatus;
   nextAction: 'continue_semaforo' | 'update_agenda' | 'offer_concierge';
-  createConciergeCase: false;
+  conciergeRequired: boolean;
   counts: { green: number; yellow: number; red: number };
   examItems: {
     examId: string;
     examName: string;
     status: 'completed' | 'pending' | 'overdue';
     priority: HealthCheckinStatus;
+    completedDate: string | null;
+    dueDate: string | null;
   }[];
 }
 
@@ -47,6 +56,58 @@ export const EXAM_CATALOG: ExamDefinition[] = [
   { id: 'mental_health_screening', name: 'Triagem estruturada de saude mental', minAge: 20 },
 ];
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function parseDateOnly(value: string): number {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) throw new Error(`Invalid date: ${value}`);
+
+  const timestamp = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (new Date(timestamp).toISOString().slice(0, 10) !== value) {
+    throw new Error(`Invalid date: ${value}`);
+  }
+  return timestamp;
+}
+
+export function getSaoPauloDateOnly(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+export function calculateAge(birthDate: string, referenceDate = getSaoPauloDateOnly()): number {
+  const birth = new Date(parseDateOnly(birthDate));
+  const reference = new Date(parseDateOnly(referenceDate));
+  let age = reference.getUTCFullYear() - birth.getUTCFullYear();
+
+  const beforeBirthday = reference.getUTCMonth() < birth.getUTCMonth()
+    || (
+      reference.getUTCMonth() === birth.getUTCMonth()
+      && reference.getUTCDate() < birth.getUTCDate()
+    );
+  if (beforeBirthday) age -= 1;
+  return age;
+}
+
+export function classifyExamDueDate(
+  dueDate: string | null | undefined,
+  referenceDate = getSaoPauloDateOnly()
+): HealthCheckinStatus {
+  if (!dueDate) return 'attention';
+
+  const daysUntilDue = Math.round(
+    (parseDateOnly(dueDate) - parseDateOnly(referenceDate)) / DAY_MS
+  );
+  if (daysUntilDue <= -30) return 'urgent';
+  if (daysUntilDue <= 60) return 'attention';
+  return 'safe';
+}
+
 export function getApplicableExams(age: number): ExamDefinition[] {
   return EXAM_CATALOG.filter((exam) => (
     age >= exam.minAge && (exam.maxAge === undefined || age <= exam.maxAge)
@@ -68,52 +129,47 @@ function mostSevere(priorities: HealthCheckinStatus[]): HealthCheckinStatus {
 
 function mapExamAnswer(
   exam: ExamDefinition,
-  answer: ExamAnswer
+  answer: ExamAnswer,
+  referenceDate: string
 ): HealthCheckinResult['examItems'][number] | null {
-  if (answer === 'not_applicable') return null;
-  if (answer === 'overdue') {
-    return {
-      examId: exam.id,
-      examName: exam.name,
-      status: 'overdue',
-      priority: 'urgent',
-    };
-  }
-  if (answer === 'due_soon' || answer === 'not_sure') {
-    return {
-      examId: exam.id,
-      examName: exam.name,
-      status: 'pending',
-      priority: 'attention',
-    };
-  }
+  if (answer.notApplicable && exam.conditional) return null;
+
+  const priority = !answer.dueDate && answer.legacyStatus === 'overdue'
+    ? 'urgent'
+    : classifyExamDueDate(answer.unknown ? null : answer.dueDate, referenceDate);
+
   return {
     examId: exam.id,
     examName: exam.name,
-    status: 'completed',
-    priority: 'safe',
+    status: priority === 'urgent' ? 'overdue' : priority === 'safe' ? 'completed' : 'pending',
+    priority,
+    completedDate: answer.completedDate ?? null,
+    dueDate: answer.unknown ? null : answer.dueDate ?? null,
   };
 }
 
 export function mapHealthCheckinToSemaphore(
   answers: HealthCheckinAnswers,
-  options: { conciergeEnabled?: boolean } = {}
+  options: { conciergeEnabled?: boolean; referenceDate?: string } = {}
 ): HealthCheckinResult {
-  const examItems = getApplicableExams(answers.age)
-    .map((exam) => mapExamAnswer(exam, answers.exams[exam.id] ?? 'not_sure'))
+  const referenceDate = options.referenceDate ?? getSaoPauloDateOnly();
+  const age = calculateAge(answers.birthDate, referenceDate);
+  const examItems = getApplicableExams(age)
+    .map((exam) => mapExamAnswer(exam, answers.exams[exam.id] ?? { unknown: true }, referenceDate))
     .filter((item): item is HealthCheckinResult['examItems'][number] => item !== null);
 
   const overallStatus = mostSevere(examItems.map((item) => item.priority));
+  const conciergeRequired = overallStatus === 'urgent';
 
   return {
     source: 'semaforo_exam_quiz_v1',
     overallStatus,
-    nextAction: overallStatus === 'urgent' && options.conciergeEnabled
+    nextAction: conciergeRequired && options.conciergeEnabled
       ? 'offer_concierge'
       : overallStatus === 'safe'
         ? 'continue_semaforo'
         : 'update_agenda',
-    createConciergeCase: false,
+    conciergeRequired,
     counts: {
       green: examItems.filter((item) => item.priority === 'safe').length,
       yellow: examItems.filter((item) => item.priority === 'attention').length,

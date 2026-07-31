@@ -64,7 +64,8 @@ function getObjectiveData(userId: string): ObjectiveData {
       SELECT
         COUNT(*) as total,
         COUNT(CASE WHEN status = 'completed' THEN 1 END) as on_time
-      FROM user_exams WHERE user_id = ?
+      FROM user_exams
+      WHERE user_id = ? AND COALESCE(not_applicable, 0) = 0
     `).get(userId) as any;
     examsOnTime = exams?.on_time || 0;
     totalExams = exams?.total || 0;

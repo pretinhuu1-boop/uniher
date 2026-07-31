@@ -1,32 +1,27 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, CircleAlert, ClipboardCheck } from 'lucide-react';
 import {
-  ExamAnswer,
+  calculateAge,
+  type ExamAnswer,
   getApplicableExams,
-  HealthCheckinStatus,
+  type HealthCheckinResult,
 } from '@/lib/health-checkin/mapper';
 
-type Result = {
-  overallStatus: HealthCheckinStatus;
-  nextAction: 'continue_semaforo' | 'update_agenda' | 'offer_concierge';
-  createConciergeCase: false;
-  counts: { green: number; yellow: number; red: number };
-  examItems: {
-    examId: string;
-    examName: string;
-    status: 'completed' | 'pending' | 'overdue';
-    priority: HealthCheckinStatus;
-  }[];
+type ConciergeCase = {
+  id: string;
+  status: 'open' | 'in_progress';
+  severity: 'safe' | 'attention' | 'urgent';
 };
 
-const ANSWER_OPTIONS: { value: ExamAnswer; label: string }[] = [
-  { value: 'in_day', label: 'Em dia - proximo prazo a mais de 2 meses' },
-  { value: 'due_soon', label: 'Atencao - vence em ate 2 meses' },
-  { value: 'overdue', label: 'Atrasado - vencido ha 1 mes ou mais' },
-  { value: 'not_sure', label: 'Nao sei - preciso confirmar' },
-];
+type SavedState = {
+  birthDate: string | null;
+  age: number | null;
+  exams: Record<string, ExamAnswer>;
+  result: HealthCheckinResult | null;
+  conciergeCase: ConciergeCase | null;
+};
 
 const STATUS_COPY = {
   safe: {
@@ -55,25 +50,93 @@ const ITEM_STATUS_COPY = {
   urgent: { label: 'Atrasado', className: 'bg-rose-100 text-rose-700' },
 };
 
+function hasExamAnswer(answer: ExamAnswer | undefined): boolean {
+  return Boolean(answer?.notApplicable || answer?.unknown || answer?.dueDate);
+}
+
 export default function ExamSemaphoreQuiz() {
-  const [age, setAge] = useState(35);
-  const [answers, setAnswers] = useState<Partial<Record<string, ExamAnswer>>>({});
+  const [birthDate, setBirthDate] = useState('');
+  const [profileHasBirthDate, setProfileHasBirthDate] = useState(false);
+  const [answers, setAnswers] = useState<Record<string, ExamAnswer>>({});
   const [consent, setConsent] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<HealthCheckinResult | null>(null);
+  const [conciergeCase, setConciergeCase] = useState<ConciergeCase | null>(null);
 
-  const applicableExams = useMemo(() => getApplicableExams(age), [age]);
-  const answeredCount = applicableExams.filter((exam) => answers[exam.id]).length;
+  useEffect(() => {
+    let active = true;
+
+    async function loadSavedState() {
+      try {
+        const response = await fetch('/api/collaborator/health-checkin');
+        const body = await response.json() as SavedState & { error?: string };
+        if (!response.ok) {
+          throw new Error(body.error || 'Nao foi possivel carregar seu Semaforo.');
+        }
+        if (!active) return;
+
+        setBirthDate(body.birthDate ?? '');
+        setProfileHasBirthDate(Boolean(body.birthDate));
+        setAnswers(body.exams ?? {});
+        setResult(body.result ?? null);
+        setConciergeCase(body.conciergeCase ?? null);
+      } catch (loadError) {
+        if (active) {
+          setError(loadError instanceof Error
+            ? loadError.message
+            : 'Nao foi possivel carregar seu Semaforo.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadSavedState();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const age = useMemo(() => {
+    if (!birthDate) return null;
+    try {
+      return calculateAge(birthDate);
+    } catch {
+      return null;
+    }
+  }, [birthDate]);
+  const applicableExams = useMemo(
+    () => age === null ? [] : getApplicableExams(age),
+    [age]
+  );
+  const answeredCount = applicableExams.filter((exam) => hasExamAnswer(answers[exam.id])).length;
   const statusCopy = result ? STATUS_COPY[result.overallStatus] : null;
+
+  function updateExam(examId: string, patch: Partial<ExamAnswer>) {
+    setAnswers((current) => ({
+      ...current,
+      [examId]: {
+        ...current[examId],
+        ...patch,
+      },
+    }));
+    setResult(null);
+    setConciergeCase(null);
+    if (error) setError('');
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
-    setResult(null);
 
+    if (!birthDate || age === null || age < 20 || age > 120) {
+      setError('Informe uma data de nascimento valida.');
+      return;
+    }
     if (answeredCount !== applicableExams.length) {
-      setError('Responda a situacao de todos os exames exibidos.');
+      setError('Informe o proximo prazo ou marque que ainda nao sabe em todos os exames.');
       return;
     }
     if (!consent) {
@@ -85,7 +148,7 @@ export default function ExamSemaphoreQuiz() {
 
     try {
       const examAnswers = Object.fromEntries(
-        applicableExams.map((exam) => [exam.id, answers[exam.id] as ExamAnswer])
+        applicableExams.map((exam) => [exam.id, answers[exam.id]])
       );
       const response = await fetch('/api/collaborator/health-checkin', {
         method: 'POST',
@@ -93,7 +156,10 @@ export default function ExamSemaphoreQuiz() {
         body: JSON.stringify({
           source: 'semaforo_exam_quiz_v1',
           consent: { accepted: consent, version: 'semaforo-exams-v1' },
-          answers: { age, exams: examAnswers },
+          answers: {
+            birthDate: profileHasBirthDate ? undefined : birthDate,
+            exams: examAnswers,
+          },
         }),
       });
 
@@ -103,12 +169,22 @@ export default function ExamSemaphoreQuiz() {
         return;
       }
 
+      setProfileHasBirthDate(true);
       setResult(body.result);
+      setConciergeCase(body.conciergeCase ?? null);
     } catch {
       setError('Falha de conexao. Tente novamente em alguns segundos.');
     } finally {
       setSaving(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="border-y border-border-1 bg-white py-6 text-sm font-semibold text-uni-text-500 sm:border sm:p-5">
+        Carregando seu Semaforo...
+      </div>
+    );
   }
 
   return (
@@ -125,98 +201,161 @@ export default function ExamSemaphoreQuiz() {
             </p>
           </div>
 
-          <label className="w-full md:w-44">
-            <span className="text-xs font-bold text-uni-text-600">Sua idade</span>
-            <input
-              type="number"
-              min={20}
-              max={120}
-              value={age}
-              onChange={(event) => {
-                const nextAge = Number(event.target.value);
-                setAge(Number.isFinite(nextAge) ? nextAge : 20);
-                setResult(null);
-                if (error) setError('');
-              }}
-              className="mt-2 w-full rounded-md border border-border-1 bg-white px-3 py-2 text-sm text-uni-text-800 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
-            />
-          </label>
-        </div>
-
-        <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-uni-text-500">
-          <ClipboardCheck size={16} aria-hidden="true" />
-          {answeredCount} de {applicableExams.length} respondidos
-        </div>
-      </section>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          {applicableExams.map((exam) => (
-            <label key={exam.id} className="block rounded-md border border-border-1 bg-white p-4">
-              <span className="flex min-h-10 items-start justify-between gap-3 text-sm font-bold text-uni-text-800">
-                {exam.name}
-                {exam.conditional && (
-                  <span className="shrink-0 rounded bg-cream-100 px-2 py-1 text-[10px] uppercase text-uni-text-500">
-                    Se indicado
-                  </span>
-                )}
-              </span>
-              <select
+          {profileHasBirthDate && age !== null ? (
+            <div className="text-sm font-bold text-uni-text-700">
+              Idade considerada: {age} anos
+            </div>
+          ) : (
+            <label className="w-full md:w-52">
+              <span className="text-xs font-bold text-uni-text-600">Data de nascimento</span>
+              <input
+                type="date"
                 required
-                aria-label={`Situacao de ${exam.name}`}
-                className="mt-3 w-full rounded-md border border-border-1 bg-white px-3 py-2 text-sm text-uni-text-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
-                value={answers[exam.id] ?? ''}
+                value={birthDate}
                 onChange={(event) => {
-                  setAnswers((current) => ({
-                    ...current,
-                    [exam.id]: event.target.value as ExamAnswer,
-                  }));
+                  setBirthDate(event.target.value);
+                  setResult(null);
+                  setConciergeCase(null);
                   if (error) setError('');
                 }}
-              >
-                <option value="" disabled>Selecione a situacao</option>
-                {ANSWER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-                {exam.conditional && (
-                  <option value="not_applicable">Nao indicado para mim neste momento</option>
-                )}
-              </select>
+                className="mt-2 w-full rounded-md border border-border-1 bg-white px-3 py-2 text-sm text-uni-text-800 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+              />
             </label>
-          ))}
-        </section>
-
-        <section className="border-y border-border-1 bg-white py-5 sm:border sm:p-5">
-          <label className="flex items-start gap-3 text-sm text-uni-text-600">
-            <input
-              type="checkbox"
-              className="mt-1 h-4 w-4 rounded border-border-1 accent-rose-600"
-              checked={consent}
-              onChange={(event) => {
-                setConsent(event.target.checked);
-                if (error) setError('');
-              }}
-            />
-            <span>
-              Autorizo o uso privado destas respostas para atualizar meu Semaforo e minha lista de exames.
-            </span>
-          </label>
-
-          {error && (
-            <p className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
-              {error}
-            </p>
           )}
+        </div>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="mt-4 w-full rounded-md bg-rose-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-          >
-            {saving ? 'Atualizando...' : 'Ver meu resultado'}
-          </button>
-        </section>
-      </form>
+        {birthDate && (
+          <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-uni-text-500">
+            <ClipboardCheck size={16} aria-hidden="true" />
+            {answeredCount} de {applicableExams.length} preenchidos
+          </div>
+        )}
+      </section>
+
+      {birthDate && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {applicableExams.map((exam) => {
+              const answer = answers[exam.id] ?? {};
+              const disabled = Boolean(answer.unknown || answer.notApplicable);
+
+              return (
+                <fieldset key={exam.id} className="min-w-0 rounded-md border border-border-1 bg-white p-4">
+                  <legend className="sr-only">{exam.name}</legend>
+                  <div className="flex min-h-10 items-start justify-between gap-3 text-sm font-bold text-uni-text-800">
+                    <span>{exam.name}</span>
+                    {exam.conditional && (
+                      <span className="shrink-0 rounded bg-cream-100 px-2 py-1 text-[10px] uppercase text-uni-text-500">
+                        Se indicado
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="min-w-0">
+                      <span className="text-xs font-bold text-uni-text-600">Ultimo exame</span>
+                      <input
+                        type="date"
+                        value={answer.completedDate ?? ''}
+                        disabled={Boolean(answer.notApplicable)}
+                        onChange={(event) => updateExam(exam.id, {
+                          completedDate: event.target.value || null,
+                          notApplicable: false,
+                        })}
+                        className="mt-1 w-full min-w-0 rounded-md border border-border-1 bg-white px-3 py-2 text-sm text-uni-text-800 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 disabled:bg-cream-50 disabled:text-uni-text-400"
+                      />
+                    </label>
+                    <label className="min-w-0">
+                      <span className="text-xs font-bold text-uni-text-600">Proximo prazo</span>
+                      <input
+                        type="date"
+                        value={answer.dueDate ?? ''}
+                        disabled={disabled}
+                        onChange={(event) => updateExam(exam.id, {
+                          dueDate: event.target.value || null,
+                          unknown: false,
+                          notApplicable: false,
+                        })}
+                        className="mt-1 w-full min-w-0 rounded-md border border-border-1 bg-white px-3 py-2 text-sm text-uni-text-800 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 disabled:bg-cream-50 disabled:text-uni-text-400"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-2 text-xs font-semibold text-uni-text-600 sm:flex-row sm:gap-5">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(answer.unknown)}
+                        disabled={Boolean(answer.notApplicable)}
+                        onChange={(event) => updateExam(exam.id, {
+                          unknown: event.target.checked,
+                          dueDate: event.target.checked ? null : answer.dueDate,
+                        })}
+                        className="h-4 w-4 rounded border-border-1 accent-rose-600"
+                      />
+                      Ainda nao sei o prazo
+                    </label>
+                    {exam.conditional && (
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(answer.notApplicable)}
+                          onChange={(event) => updateExam(exam.id, {
+                            notApplicable: event.target.checked,
+                            unknown: false,
+                            completedDate: event.target.checked ? null : answer.completedDate,
+                            dueDate: event.target.checked ? null : answer.dueDate,
+                          })}
+                          className="h-4 w-4 rounded border-border-1 accent-rose-600"
+                        />
+                        Nao indicado agora
+                      </label>
+                    )}
+                  </div>
+                </fieldset>
+              );
+            })}
+          </section>
+
+          <section className="border-y border-border-1 bg-white py-5 sm:border sm:p-5">
+            <label className="flex items-start gap-3 text-sm text-uni-text-600">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 rounded border-border-1 accent-rose-600"
+                checked={consent}
+                onChange={(event) => {
+                  setConsent(event.target.checked);
+                  if (error) setError('');
+                }}
+              />
+              <span>
+                Autorizo o uso privado destas respostas para atualizar meu Semaforo e minha lista de exames.
+              </span>
+            </label>
+
+            {error && (
+              <p className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-rose-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            >
+              <ClipboardCheck size={17} aria-hidden="true" />
+              {saving ? 'Atualizando...' : 'Ver meu resultado'}
+            </button>
+          </section>
+        </form>
+      )}
+
+      {!birthDate && error && (
+        <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+          {error}
+        </p>
+      )}
 
       {result && statusCopy && (
         <section className="space-y-5 border-y border-border-1 bg-white py-5 sm:border sm:p-5">
@@ -251,7 +390,12 @@ export default function ExamSemaphoreQuiz() {
               const itemCopy = ITEM_STATUS_COPY[item.priority];
               return (
                 <div key={item.examId} className="flex items-center justify-between gap-3 rounded-md border border-border-1 bg-cream-50 p-3">
-                  <p className="text-sm font-bold text-uni-text-800">{item.examName}</p>
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-bold text-uni-text-800">{item.examName}</p>
+                    {item.dueDate && (
+                      <p className="mt-1 text-xs text-uni-text-500">Prazo: {item.dueDate}</p>
+                    )}
+                  </div>
                   <span className={`shrink-0 rounded px-2 py-1 text-[10px] font-black uppercase ${itemCopy.className}`}>
                     {itemCopy.label}
                   </span>
@@ -259,6 +403,12 @@ export default function ExamSemaphoreQuiz() {
               );
             })}
           </div>
+
+          {conciergeCase && result.overallStatus === 'urgent' && (
+            <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">
+              Encaminhamento registrado para o Concierge.
+            </p>
+          )}
 
           {result.nextAction !== 'continue_semaforo' && (
             <a
