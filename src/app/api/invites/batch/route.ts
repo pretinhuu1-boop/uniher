@@ -62,13 +62,17 @@ export const POST = withRole('rh')(async (req, context) => {
       const outcome = await wq.enqueue((writeDb) => {
         const createInvite = writeDb.transaction(() => {
           const activeActor = writeDb.prepare(`
-            SELECT id
-            FROM users
-            WHERE id = ?
-              AND company_id = ?
-              AND role = 'rh'
-              AND COALESCE(blocked, 0) = 0
-              AND deleted_at IS NULL
+            SELECT u.id
+            FROM users u
+            JOIN companies c ON c.id = u.company_id
+            WHERE u.id = ?
+              AND u.company_id = ?
+              AND u.role = 'rh'
+              AND COALESCE(u.approved, 1) = 1
+              AND COALESCE(u.blocked, 0) = 0
+              AND u.deleted_at IS NULL
+              AND COALESCE(c.is_active, 1) = 1
+              AND c.deleted_at IS NULL
           `).get(userId, user.company_id);
           if (!activeActor) return 'invalid_actor';
 

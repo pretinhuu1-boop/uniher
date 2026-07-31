@@ -10,6 +10,7 @@ interface PasswordResetSubject {
   id: string;
   name: string;
   email: string;
+  expectedCompanyId?: string;
 }
 
 export async function requestUserPasswordReset(
@@ -40,6 +41,9 @@ export async function requestUserPasswordReset(
     token,
     expiresAt,
     replacementPasswordHash,
+    ...(subject.expectedCompanyId
+      ? { expectedCompanyId: subject.expectedCompanyId }
+      : {}),
   });
 
   return { delivered: resetStarted };

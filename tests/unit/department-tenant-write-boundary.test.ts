@@ -5,6 +5,8 @@ const deps = vi.hoisted(() => ({
   enqueue: vi.fn(),
   departmentExists: false,
   writeDepartmentExists: false,
+  writeActorActive: true,
+  managedUserUpdateChanges: 1,
   writeStatements: [] as string[],
   logAudit: vi.fn(),
   sendEmailAsync: vi.fn(),
@@ -77,6 +79,8 @@ describe('department tenant write boundary', () => {
     vi.clearAllMocks();
     deps.departmentExists = false;
     deps.writeDepartmentExists = false;
+    deps.writeActorActive = true;
+    deps.managedUserUpdateChanges = 1;
     deps.writeStatements.length = 0;
     deps.enqueue.mockImplementation(async (
       operation: (db: any) => unknown,
@@ -90,10 +94,16 @@ describe('department tenant write boundary', () => {
                 ? { id: 'department-a' }
                 : undefined;
             }
-            if (sql.includes("role = 'rh'")) return { id: 'rh-a' };
+            if (sql.includes("role = 'rh'")) {
+              return deps.writeActorActive ? { id: 'rh-a' } : undefined;
+            }
             return undefined;
           },
-          run: () => ({ changes: 1 }),
+          run: () => ({
+            changes: sql.includes('UPDATE users')
+              ? deps.managedUserUpdateChanges
+              : 1,
+          }),
         };
       },
       transaction(callback: () => unknown) {
@@ -147,6 +157,33 @@ describe('department tenant write boundary', () => {
     expect(deps.sendEmailAsync).not.toHaveBeenCalled();
   });
 
+  it('rejects an invite when the RH actor is revoked before the write', async () => {
+    deps.writeActorActive = false;
+    const request = new NextRequest('http://localhost/api/invites', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Invitee',
+        email: 'revoked-actor@example.com',
+        role: 'colaboradora',
+      }),
+    });
+
+    const response = await createInvite(request, {
+      params: Promise.resolve({}),
+    });
+
+    expect(response.status).toBe(409);
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes('JOIN companies')
+      && sql.includes("u.role = 'rh'"),
+    )).toBe(true);
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes('INSERT INTO invites'),
+    )).toBe(false);
+    expect(deps.sendEmailAsync).not.toHaveBeenCalled();
+  });
+
   it('rejects update_profile with a department from another company', async () => {
     const request = new NextRequest('http://localhost/api/rh/users/user-a', {
       method: 'PATCH',
@@ -190,6 +227,28 @@ describe('department tenant write boundary', () => {
     expect(deps.logAudit).not.toHaveBeenCalled();
   });
 
+  it('does not update a user promoted to a protected role before the write', async () => {
+    deps.managedUserUpdateChanges = 0;
+    const request = new NextRequest('http://localhost/api/rh/users/user-a', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        action: 'change_role',
+        role: 'lideranca',
+      }),
+    });
+
+    const response = await updateRhUser(request, {
+      params: Promise.resolve({ id: 'user-a' }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes("role IN ('lideranca', 'colaboradora')"),
+    )).toBe(true);
+    expect(deps.logAudit).not.toHaveBeenCalled();
+  });
+
   it('does not create a batch invite when the department fails write-time validation', async () => {
     deps.departmentExists = true;
     deps.writeDepartmentExists = false;
@@ -210,6 +269,36 @@ describe('department tenant write boundary', () => {
 
     expect(response.status).toBe(200);
     expect(body).toMatchObject({ successCount: 0, errorCount: 1 });
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes('INSERT INTO invites'),
+    )).toBe(false);
+    expect(deps.sendEmailAsync).not.toHaveBeenCalled();
+  });
+
+  it('does not create a batch invite after the RH actor is revoked', async () => {
+    deps.writeActorActive = false;
+    const request = new NextRequest('http://localhost/api/invites/batch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        emails: ['revoked-batch@example.com'],
+        role: 'colaboradora',
+      }),
+    });
+
+    const response = await createBatchInvites(request, {
+      params: Promise.resolve({}),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ successCount: 0, errorCount: 1 });
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes('JOIN companies')
+      && sql.includes("u.role = 'rh'")
+      && sql.includes('COALESCE(u.approved, 1) = 1')
+      && sql.includes('COALESCE(c.is_active, 1) = 1'),
+    )).toBe(true);
     expect(deps.writeStatements.some((sql) =>
       sql.includes('INSERT INTO invites'),
     )).toBe(false);

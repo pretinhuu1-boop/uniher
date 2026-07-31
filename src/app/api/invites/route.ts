@@ -126,25 +126,64 @@ export const POST = withRole('rh')(async (req, context) => {
   }
 
   const wq = getWriteQueue();
-  const created = await wq.enqueue((db) => {
+  const outcome = await wq.enqueue((db) => {
     const createInvite = db.transaction(() => {
+      const activeActor = db.prepare(`
+        SELECT u.id
+        FROM users u
+        JOIN companies c ON c.id = u.company_id
+        WHERE u.id = ?
+          AND u.company_id = ?
+          AND u.role = 'rh'
+          AND COALESCE(u.approved, 1) = 1
+          AND COALESCE(u.blocked, 0) = 0
+          AND u.deleted_at IS NULL
+          AND COALESCE(c.is_active, 1) = 1
+          AND c.deleted_at IS NULL
+      `).get(userId, user.company_id);
+      if (!activeActor) return 'invalid_actor';
+
       if (department_id) {
         const department = db.prepare(
           'SELECT id FROM departments WHERE id = ? AND company_id = ?',
         ).get(department_id, user.company_id);
-        if (!department) return false;
+        if (!department) return 'invalid_department';
       }
+      const pending = db.prepare(`
+        SELECT id
+        FROM invites
+        WHERE email = ? AND company_id = ? AND status = 'pending'
+      `).get(email, user.company_id);
+      if (pending) return 'pending';
+
+      const existingUser = db.prepare(
+        'SELECT id FROM users WHERE email = ?',
+      ).get(email);
+      if (existingUser) return 'registered';
+
       db.prepare(`
         INSERT INTO invites (id, company_id, email, role, department_id, token, status, invited_by, expires_at, name)
         VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
       `).run(id, user.company_id, email, role, department_id || null, token, userId, expiresAt, inviteeName || null);
-      return true;
+      return 'created';
     });
     return createInvite.immediate();
   }, 'create invite', { retryOnFailure: false });
-  if (!created) {
+  if (outcome === 'pending') {
     return NextResponse.json(
-      { error: 'Departamento nao encontrado' },
+      { error: 'Ja existe um convite pendente para este email' },
+      { status: 409 },
+    );
+  }
+  if (outcome === 'registered') {
+    return NextResponse.json(
+      { error: 'Este email ja possui uma conta na plataforma' },
+      { status: 409 },
+    );
+  }
+  if (outcome !== 'created') {
+    return NextResponse.json(
+      { error: 'Empresa ou departamento nao encontrado' },
       { status: 409 },
     );
   }

@@ -48,6 +48,12 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 422 });
   }
+  if (targetUser.role === 'rh' || targetUser.role === 'admin') {
+    return NextResponse.json(
+      { error: 'Nao e possivel alterar este usuario' },
+      { status: 403 },
+    );
+  }
 
   const { action, department_id, role } = parsed.data;
   const wq = getWriteQueue();
@@ -55,15 +61,20 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
 
   switch (action) {
     case 'block': {
-      if (targetUser.role === 'rh' || targetUser.role === 'admin') {
-        return NextResponse.json({ error: 'Não é possível bloquear este usuário' }, { status: 403 });
-      }
-      await wq.enqueue((db) => {
-        db.prepare(`
-          UPDATE users SET blocked = 1, updated_at = datetime('now')
-          WHERE id = ? AND company_id = ?
-        `).run(userId, companyId);
+      const blocked = await wq.enqueue((db) => {
+        const blockUser = db.transaction(() => db.prepare(`
+          UPDATE users
+          SET blocked = 1, updated_at = datetime('now')
+          WHERE id = ?
+            AND company_id = ?
+            AND role IN ('lideranca', 'colaboradora')
+            AND deleted_at IS NULL
+        `).run(userId, companyId).changes === 1);
+        return blockUser.immediate();
       }, 'block RH company user', { retryOnFailure: false });
+      if (!blocked) {
+        return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 409 });
+      }
       await logAudit({
         actorId: context.auth.userId,
         actorEmail: context.auth.userId,
@@ -78,12 +89,20 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
       break;
     }
     case 'unblock': {
-      await wq.enqueue((db) => {
-        db.prepare(`
-          UPDATE users SET blocked = 0, updated_at = datetime('now')
-          WHERE id = ? AND company_id = ?
-        `).run(userId, companyId);
+      const unblocked = await wq.enqueue((db) => {
+        const unblockUser = db.transaction(() => db.prepare(`
+          UPDATE users
+          SET blocked = 0, updated_at = datetime('now')
+          WHERE id = ?
+            AND company_id = ?
+            AND role IN ('lideranca', 'colaboradora')
+            AND deleted_at IS NULL
+        `).run(userId, companyId).changes === 1);
+        return unblockUser.immediate();
       }, 'unblock RH company user', { retryOnFailure: false });
+      if (!unblocked) {
+        return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 409 });
+      }
       await logAudit({
         actorId: context.auth.userId,
         actorEmail: context.auth.userId,
@@ -116,7 +135,10 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
           const result = db.prepare(`
             UPDATE users
             SET department_id = ?, updated_at = datetime('now')
-            WHERE id = ? AND company_id = ? AND deleted_at IS NULL
+            WHERE id = ?
+              AND company_id = ?
+              AND role IN ('lideranca', 'colaboradora')
+              AND deleted_at IS NULL
           `).run(department_id || null, userId, companyId);
           return result.changes === 1;
         });
@@ -145,16 +167,20 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
       if (!role) {
         return NextResponse.json({ error: 'Role é obrigatório' }, { status: 422 });
       }
-      // Cannot change to rh or admin
-      if (targetUser.role === 'rh' || targetUser.role === 'admin') {
-        return NextResponse.json({ error: 'Não é possível alterar o papel deste usuário' }, { status: 403 });
-      }
-      await wq.enqueue((db) => {
-        db.prepare(`
-          UPDATE users SET role = ?, updated_at = datetime('now')
-          WHERE id = ? AND company_id = ?
-        `).run(role, userId, companyId);
+      const roleChanged = await wq.enqueue((db) => {
+        const changeRole = db.transaction(() => db.prepare(`
+          UPDATE users
+          SET role = ?, updated_at = datetime('now')
+          WHERE id = ?
+            AND company_id = ?
+            AND role IN ('lideranca', 'colaboradora')
+            AND deleted_at IS NULL
+        `).run(role, userId, companyId).changes === 1);
+        return changeRole.immediate();
       }, 'change RH company user role', { retryOnFailure: false });
+      if (!roleChanged) {
+        return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 409 });
+      }
       await logAudit({
         actorId: context.auth.userId,
         actorEmail: context.auth.userId,
@@ -201,7 +227,10 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
           const result = db.prepare(`
             UPDATE users
             SET ${updates.join(', ')}
-            WHERE id = ? AND company_id = ?
+            WHERE id = ?
+              AND company_id = ?
+              AND role IN ('lideranca', 'colaboradora')
+              AND deleted_at IS NULL
           `).run(...values.slice(0, -1), userId, companyId);
           return result.changes === 1;
         });
@@ -221,6 +250,7 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         id: targetUser.id,
         name: targetUser.name,
         email: targetUser.email,
+        expectedCompanyId: companyId,
       });
       if (delivered) {
         await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });
@@ -236,16 +266,20 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
       );
     }
     case 'soft_delete': {
-      if (targetUser.role === 'rh' || targetUser.role === 'admin') {
-        return NextResponse.json({ error: 'Não é possível remover este usuário' }, { status: 403 });
-      }
-      await wq.enqueue((db) => {
-        db.prepare(`
+      const deleted = await wq.enqueue((db) => {
+        const deleteUser = db.transaction(() => db.prepare(`
           UPDATE users
           SET deleted_at = datetime('now'), updated_at = datetime('now')
-          WHERE id = ? AND company_id = ?
-        `).run(userId, companyId);
+          WHERE id = ?
+            AND company_id = ?
+            AND role IN ('lideranca', 'colaboradora')
+            AND deleted_at IS NULL
+        `).run(userId, companyId).changes === 1);
+        return deleteUser.immediate();
       }, 'delete RH company user', { retryOnFailure: false });
+      if (!deleted) {
+        return NextResponse.json({ error: 'Usuario nao encontrado' }, { status: 409 });
+      }
       await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'user_delete', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: { soft: true }, ip });
       break;
     }

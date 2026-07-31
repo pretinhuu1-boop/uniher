@@ -64,6 +64,19 @@ describe('password reset request', () => {
     expect(deps.beginAdministrativePasswordReset).not.toHaveBeenCalled();
   });
 
+  it('carries the RH tenant boundary into the reset transaction', async () => {
+    await requestUserPasswordReset({
+      id: 'user-1',
+      name: 'User One',
+      email: 'user@example.com',
+      expectedCompanyId: 'company-a',
+    });
+
+    expect(deps.beginAdministrativePasswordReset).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedCompanyId: 'company-a' }),
+    );
+  });
+
   it('fails closed before sending when production reset origin is not HTTPS UniHER', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3000');

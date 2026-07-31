@@ -23,6 +23,8 @@ describe('atomic password reset lifecycle', () => {
     deps.db.exec(`
       CREATE TABLE users (
         id TEXT PRIMARY KEY,
+        company_id TEXT,
+        role TEXT NOT NULL DEFAULT 'colaboradora',
         password_hash TEXT NOT NULL,
         must_change_password INTEGER NOT NULL DEFAULT 0,
         password_reset_required INTEGER NOT NULL DEFAULT 0,
@@ -42,9 +44,56 @@ describe('atomic password reset lifecycle', () => {
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL
       );
-      INSERT INTO users (id, password_hash) VALUES ('user-1', 'old-password-hash');
+      INSERT INTO users (id, company_id, password_hash)
+      VALUES ('user-1', 'company-a', 'old-password-hash');
       INSERT INTO refresh_tokens (id, user_id) VALUES ('refresh-1', 'user-1');
     `);
+  });
+
+  it('does not reset a user moved outside the RH company boundary', async () => {
+    await expect(beginAdministrativePasswordReset({
+      userId: 'user-1',
+      expectedCompanyId: 'company-b',
+      token: 'cross-tenant-token',
+      expiresAt: '2999-01-01T00:00:00.000Z',
+      replacementPasswordHash: 'attacker-hash',
+    })).resolves.toBe(false);
+
+    expect(deps.db.prepare(`
+      SELECT password_hash, session_version
+      FROM users WHERE id = 'user-1'
+    `).get()).toEqual({
+      password_hash: 'old-password-hash',
+      session_version: 0,
+    });
+    expect(deps.db.prepare(
+      'SELECT COUNT(*) AS count FROM password_reset_tokens',
+    ).get()).toEqual({ count: 0 });
+  });
+
+  it('does not reset a user promoted to a protected role', async () => {
+    deps.db.prepare(
+      "UPDATE users SET role = 'rh' WHERE id = 'user-1'",
+    ).run();
+
+    await expect(beginAdministrativePasswordReset({
+      userId: 'user-1',
+      expectedCompanyId: 'company-a',
+      token: 'protected-role-token',
+      expiresAt: '2999-01-01T00:00:00.000Z',
+      replacementPasswordHash: 'attacker-hash',
+    })).resolves.toBe(false);
+
+    expect(deps.db.prepare(`
+      SELECT password_hash, session_version
+      FROM users WHERE id = 'user-1'
+    `).get()).toEqual({
+      password_hash: 'old-password-hash',
+      session_version: 0,
+    });
+    expect(deps.db.prepare(
+      'SELECT COUNT(*) AS count FROM password_reset_tokens',
+    ).get()).toEqual({ count: 0 });
   });
 
   it('atomically invalidates the old password and all sessions for an administrative reset', async () => {

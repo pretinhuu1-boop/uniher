@@ -15,6 +15,7 @@ interface AdministrativePasswordResetInput {
   token: string;
   expiresAt: string;
   replacementPasswordHash: string;
+  expectedCompanyId?: string;
 }
 
 export async function beginAdministrativePasswordReset(
@@ -24,9 +25,18 @@ export async function beginAdministrativePasswordReset(
 
   return getWriteQueue().enqueue((db) => {
     const reset = db.transaction(() => {
-      const user = db.prepare(
-        'SELECT id FROM users WHERE id = ? AND deleted_at IS NULL',
-      ).get(input.userId);
+      const user = input.expectedCompanyId
+        ? db.prepare(`
+            SELECT id
+            FROM users
+            WHERE id = ?
+              AND company_id = ?
+              AND role IN ('lideranca', 'colaboradora')
+              AND deleted_at IS NULL
+          `).get(input.userId, input.expectedCompanyId)
+        : db.prepare(
+            'SELECT id FROM users WHERE id = ? AND deleted_at IS NULL',
+          ).get(input.userId);
       if (!user) return false;
 
       db.prepare(
@@ -37,15 +47,32 @@ export async function beginAdministrativePasswordReset(
         VALUES (?, ?, ?, ?)
       `).run(id, input.userId, input.token, input.expiresAt);
       db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').run(input.userId);
-      const result = db.prepare(`
-        UPDATE users
-        SET password_hash = ?,
-            must_change_password = 1,
-            password_reset_required = 1,
-            session_version = session_version + 1,
-            updated_at = datetime('now')
-        WHERE id = ? AND deleted_at IS NULL
-      `).run(input.replacementPasswordHash, input.userId);
+      const result = input.expectedCompanyId
+        ? db.prepare(`
+            UPDATE users
+            SET password_hash = ?,
+                must_change_password = 1,
+                password_reset_required = 1,
+                session_version = session_version + 1,
+                updated_at = datetime('now')
+            WHERE id = ?
+              AND company_id = ?
+              AND role IN ('lideranca', 'colaboradora')
+              AND deleted_at IS NULL
+          `).run(
+            input.replacementPasswordHash,
+            input.userId,
+            input.expectedCompanyId,
+          )
+        : db.prepare(`
+            UPDATE users
+            SET password_hash = ?,
+                must_change_password = 1,
+                password_reset_required = 1,
+                session_version = session_version + 1,
+                updated_at = datetime('now')
+            WHERE id = ? AND deleted_at IS NULL
+          `).run(input.replacementPasswordHash, input.userId);
 
       return result.changes === 1;
     });
