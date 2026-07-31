@@ -6,6 +6,8 @@ import { withRole } from '@/lib/auth/middleware';
 import { getReadDb } from '@/lib/db';
 import { initDb } from '@/lib/db/init';
 
+const MINIMUM_COHORT = 5;
+
 export const GET = withRole('rh', 'lideranca', 'admin')(async (req: NextRequest, context: any) => {
   await initDb();
   const db = getReadDb();
@@ -16,11 +18,19 @@ export const GET = withRole('rh', 'lideranca', 'admin')(async (req: NextRequest,
   }
 
   const url = new URL(req.url);
-  const month = url.searchParams.get('month');
-  const type = url.searchParams.get('type');
+  const requestedMonth = url.searchParams.get('month');
+  const month = requestedMonth && /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth)
+    ? requestedMonth
+    : new Date().toISOString().slice(0, 7);
 
-  const where = ['he.company_id = ?', 'he.deleted_at IS NULL'];
-  const params: any[] = [companyId];
+  const userScope = [
+    'u.company_id = ?',
+    "u.role = 'colaboradora'",
+    'COALESCE(u.blocked, 0) = 0',
+    'COALESCE(u.approved, 1) = 1',
+    'u.deleted_at IS NULL',
+  ];
+  const userParams: string[] = [companyId];
 
   if (context.auth.role === 'lideranca') {
     const leader = db.prepare(`
@@ -31,44 +41,49 @@ export const GET = withRole('rh', 'lideranca', 'admin')(async (req: NextRequest,
     if (!leader?.department_id) {
       return NextResponse.json({
         events: [],
-        stats: { total: 0, pending: 0, completed: 0, missed: 0, exames: 0, consultas: 0 },
+        stats: { suppressed: true, minimumCohort: MINIMUM_COHORT },
       });
     }
-    where.push('u.department_id = ?');
-    params.push(leader.department_id);
+    userScope.push('u.department_id = ?');
+    userParams.push(leader.department_id);
   }
 
-  if (month) {
-    where.push('he.date LIKE ?');
-    params.push(month + '%');
-  }
+  const cohort = db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM users u
+    WHERE ${userScope.join(' AND ')}
+  `).get(...userParams) as { count: number };
 
-  if (type && type !== 'all') {
-    where.push('he.type = ?');
-    params.push(type);
+  if (cohort.count < MINIMUM_COHORT) {
+    return NextResponse.json({
+      events: [],
+      stats: { suppressed: true, minimumCohort: MINIMUM_COHORT },
+    });
   }
-
-  const events = db.prepare(`
-    SELECT he.date, he.type, he.status, COUNT(*) as count
-    FROM health_events he
-    JOIN users u ON u.id = he.user_id
-    WHERE ${where.join(' AND ')}
-    GROUP BY he.date, he.type, he.status
-    ORDER BY he.date ASC, he.type ASC, he.status ASC
-  `).all(...params);
 
   const stats = db.prepare(`
-    SELECT
-      COUNT(*) as total,
-      COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-      COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-      COUNT(CASE WHEN status = 'missed' THEN 1 END) as missed,
-      COUNT(CASE WHEN type = 'exame' THEN 1 END) as exames,
-      COUNT(CASE WHEN type = 'consulta' THEN 1 END) as consultas
+    SELECT COUNT(*) AS total
     FROM health_events he
     JOIN users u ON u.id = he.user_id
-    WHERE ${where.join(' AND ')}
-  `).get(...params);
+    WHERE he.company_id = ?
+      AND he.deleted_at IS NULL
+      AND he.date LIKE ?
+      AND ${userScope.join(' AND ')}
+  `).get(companyId, `${month}%`, ...userParams) as { total: number };
 
-  return NextResponse.json({ events, stats });
+  if (stats.total < MINIMUM_COHORT) {
+    return NextResponse.json({
+      events: [],
+      stats: { suppressed: true, minimumCohort: MINIMUM_COHORT },
+    });
+  }
+
+  return NextResponse.json({
+    events: [],
+    stats: {
+      suppressed: false,
+      minimumCohort: MINIMUM_COHORT,
+      total: stats.total,
+    },
+  });
 });

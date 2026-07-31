@@ -28,7 +28,7 @@ export default function AgendaPage() {
   // Collaborator: own events. Manager: privacy-preserving team aggregates.
   const apiBase = isManager ? '/api/rh/agenda' : '/api/collaborator/agenda';
   const params = new URLSearchParams({ month });
-  if (filterType) params.set('type', filterType);
+  if (!isManager && filterType) params.set('type', filterType);
 
   const { data, mutate, isLoading } = useSWR(`${apiBase}?${params}`, fetcher, { revalidateOnFocus: false });
   const events = data?.events ?? [];
@@ -114,20 +114,25 @@ export default function AgendaPage() {
         )}
       </div>
 
-      {/* Stats (manager) */}
-      {isManager && stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
-          {[
-            { label: 'Total', value: stats.total, color: '#1a2a4a' },
-            { label: 'Pendentes', value: stats.pending, color: '#C9A264' },
-            { label: 'Realizados', value: stats.completed, color: '#16a34a' },
-            { label: 'Perdidos', value: stats.missed, color: '#dc2626' },
-          ].map(s => (
-            <div key={s.label} style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e8dfd0', textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: s.color, fontFamily: 'var(--ff-display)' }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: '#8a7a6a', textTransform: 'uppercase', letterSpacing: 1 }}>{s.label}</div>
-            </div>
-          ))}
+      {/* Privacy-preserving monthly total (manager) */}
+      {isManager && isLoading && (
+        <div style={{ textAlign: 'center', padding: 40, color: '#8a7a6a' }}>Carregando...</div>
+      )}
+      {isManager && !isLoading && stats?.suppressed && (
+        <div role="status" style={{ background: '#fff', borderRadius: 8, padding: 20, border: '1px solid #e8dfd0', marginBottom: 20 }}>
+          <p style={{ color: '#1a2a4a', fontWeight: 700, margin: 0 }}>Indicadores protegidos</p>
+          <p style={{ color: '#8a7a6a', fontSize: 13, margin: '6px 0 0' }}>
+            Os totais aparecem apenas quando a coorte e o volume mensal atingem o minimo de {stats.minimumCohort}.
+          </p>
+        </div>
+      )}
+      {isManager && !isLoading && stats && !stats.suppressed && (
+        <div style={{ background: '#fff', borderRadius: 8, padding: 20, border: '1px solid #e8dfd0', marginBottom: 20 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#1a2a4a', fontFamily: 'var(--ff-display)' }}>{stats.total}</div>
+          <div style={{ fontSize: 12, color: '#8a7a6a', textTransform: 'uppercase' }}>Total mensal</div>
+          <p style={{ color: '#8a7a6a', fontSize: 13, margin: '8px 0 0' }}>
+            Datas, tipos, status e eventos individuais nao sao exibidos nesta visao.
+          </p>
         </div>
       )}
 
@@ -204,19 +209,21 @@ export default function AgendaPage() {
       </div>
 
       {/* Type filter */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        {['', 'exame', 'consulta', 'lembrete'].map(t => (
-          <button key={t} onClick={() => setFilterType(t)} style={{
-            padding: '6px 14px', borderRadius: 20, border: '1px solid #e8dfd0', fontSize: 13, cursor: 'pointer',
-            background: filterType === t ? '#C9A264' : '#fff', color: filterType === t ? '#fff' : '#5a4a3a', fontWeight: filterType === t ? 600 : 400,
-          }}>
-            {t ? `${TYPE_ICONS[t]} ${TYPE_LABELS[t]}` : 'Todos'}
-          </button>
-        ))}
-      </div>
+      {!isManager && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+          {['', 'exame', 'consulta', 'lembrete'].map(t => (
+            <button key={t} onClick={() => setFilterType(t)} style={{
+              padding: '6px 14px', borderRadius: 20, border: '1px solid #e8dfd0', fontSize: 13, cursor: 'pointer',
+              background: filterType === t ? '#C9A264' : '#fff', color: filterType === t ? '#fff' : '#5a4a3a', fontWeight: filterType === t ? 600 : 400,
+            }}>
+              {t ? `${TYPE_ICONS[t]} ${TYPE_LABELS[t]}` : 'Todos'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Events list */}
-      {isLoading ? (
+      {!isManager && (isLoading ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#8a7a6a' }}>Carregando...</div>
       ) : Object.keys(grouped).length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: '#8a7a6a', background: '#fff', borderRadius: 12, border: '1px solid #e8dfd0' }}>
@@ -265,7 +272,7 @@ export default function AgendaPage() {
             </div>
           ))}
         </div>
-      )}
+      ))}
     </div>
   );
 }
