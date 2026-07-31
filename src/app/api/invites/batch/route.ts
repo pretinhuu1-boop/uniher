@@ -12,6 +12,7 @@ import { inviteEmailHtml } from '@/lib/mail/templates';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { getPublicAppOrigin } from '@/lib/security/public-app-origin';
+import { hasActiveRhActor } from '@/lib/security/active-rh-actor';
 
 const MAX_BATCH_SIZE = 50;
 const MAX_EXPIRY_DAYS = 3;
@@ -61,20 +62,9 @@ export const POST = withRole('rh')(async (req, context) => {
       const id = nanoid();
       const outcome = await wq.enqueue((writeDb) => {
         const createInvite = writeDb.transaction(() => {
-          const activeActor = writeDb.prepare(`
-            SELECT u.id
-            FROM users u
-            JOIN companies c ON c.id = u.company_id
-            WHERE u.id = ?
-              AND u.company_id = ?
-              AND u.role = 'rh'
-              AND COALESCE(u.approved, 1) = 1
-              AND COALESCE(u.blocked, 0) = 0
-              AND u.deleted_at IS NULL
-              AND COALESCE(c.is_active, 1) = 1
-              AND c.deleted_at IS NULL
-          `).get(userId, user.company_id);
-          if (!activeActor) return 'invalid_actor';
+          if (!hasActiveRhActor(writeDb, userId, user.company_id)) {
+            return 'invalid_actor';
+          }
 
           if (department_id) {
             const department = writeDb.prepare(`

@@ -10,6 +10,7 @@ import { logAudit } from '@/lib/audit';
 import { checkAdminRateLimit } from '@/lib/security/rate-limit';
 import { z } from 'zod';
 import { requestUserPasswordReset } from '@/lib/auth/request-user-password-reset';
+import { hasActiveRhActor } from '@/lib/security/active-rh-actor';
 
 const PatchSchema = z.object({
   action: z.enum(['block', 'unblock', 'change_department', 'change_role', 'update_profile', 'reset_password', 'soft_delete']),
@@ -62,14 +63,19 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
   switch (action) {
     case 'block': {
       const blocked = await wq.enqueue((db) => {
-        const blockUser = db.transaction(() => db.prepare(`
-          UPDATE users
-          SET blocked = 1, updated_at = datetime('now')
-          WHERE id = ?
-            AND company_id = ?
-            AND role IN ('lideranca', 'colaboradora')
-            AND deleted_at IS NULL
-        `).run(userId, companyId).changes === 1);
+        const blockUser = db.transaction(() => {
+          if (!hasActiveRhActor(db, context.auth.userId, companyId)) {
+            return false;
+          }
+          return db.prepare(`
+            UPDATE users
+            SET blocked = 1, updated_at = datetime('now')
+            WHERE id = ?
+              AND company_id = ?
+              AND role IN ('lideranca', 'colaboradora')
+              AND deleted_at IS NULL
+          `).run(userId, companyId).changes === 1;
+        });
         return blockUser.immediate();
       }, 'block RH company user', { retryOnFailure: false });
       if (!blocked) {
@@ -90,14 +96,19 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
     }
     case 'unblock': {
       const unblocked = await wq.enqueue((db) => {
-        const unblockUser = db.transaction(() => db.prepare(`
-          UPDATE users
-          SET blocked = 0, updated_at = datetime('now')
-          WHERE id = ?
-            AND company_id = ?
-            AND role IN ('lideranca', 'colaboradora')
-            AND deleted_at IS NULL
-        `).run(userId, companyId).changes === 1);
+        const unblockUser = db.transaction(() => {
+          if (!hasActiveRhActor(db, context.auth.userId, companyId)) {
+            return false;
+          }
+          return db.prepare(`
+            UPDATE users
+            SET blocked = 0, updated_at = datetime('now')
+            WHERE id = ?
+              AND company_id = ?
+              AND role IN ('lideranca', 'colaboradora')
+              AND deleted_at IS NULL
+          `).run(userId, companyId).changes === 1;
+        });
         return unblockUser.immediate();
       }, 'unblock RH company user', { retryOnFailure: false });
       if (!unblocked) {
@@ -126,6 +137,9 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
       }
       const changed = await wq.enqueue((db) => {
         const changeDepartment = db.transaction(() => {
+          if (!hasActiveRhActor(db, context.auth.userId, companyId)) {
+            return false;
+          }
           if (department_id) {
             const department = db.prepare(`
               SELECT id FROM departments WHERE id = ? AND company_id = ?
@@ -168,14 +182,19 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         return NextResponse.json({ error: 'Role é obrigatório' }, { status: 422 });
       }
       const roleChanged = await wq.enqueue((db) => {
-        const changeRole = db.transaction(() => db.prepare(`
-          UPDATE users
-          SET role = ?, updated_at = datetime('now')
-          WHERE id = ?
-            AND company_id = ?
-            AND role IN ('lideranca', 'colaboradora')
-            AND deleted_at IS NULL
-        `).run(role, userId, companyId).changes === 1);
+        const changeRole = db.transaction(() => {
+          if (!hasActiveRhActor(db, context.auth.userId, companyId)) {
+            return false;
+          }
+          return db.prepare(`
+            UPDATE users
+            SET role = ?, updated_at = datetime('now')
+            WHERE id = ?
+              AND company_id = ?
+              AND role IN ('lideranca', 'colaboradora')
+              AND deleted_at IS NULL
+          `).run(role, userId, companyId).changes === 1;
+        });
         return changeRole.immediate();
       }, 'change RH company user role', { retryOnFailure: false });
       if (!roleChanged) {
@@ -218,6 +237,9 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
       values.push(userId);
       const updated = await wq.enqueue((db) => {
         const updateProfile = db.transaction(() => {
+          if (!hasActiveRhActor(db, context.auth.userId, companyId)) {
+            return false;
+          }
           if (body.department_id) {
             const department = db.prepare(
               'SELECT id FROM departments WHERE id = ? AND company_id = ?',
@@ -251,6 +273,7 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         name: targetUser.name,
         email: targetUser.email,
         expectedCompanyId: companyId,
+        expectedActorId: context.auth.userId,
       });
       if (delivered) {
         await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'password_reset', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: {}, ip });
@@ -267,14 +290,19 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
     }
     case 'soft_delete': {
       const deleted = await wq.enqueue((db) => {
-        const deleteUser = db.transaction(() => db.prepare(`
-          UPDATE users
-          SET deleted_at = datetime('now'), updated_at = datetime('now')
-          WHERE id = ?
-            AND company_id = ?
-            AND role IN ('lideranca', 'colaboradora')
-            AND deleted_at IS NULL
-        `).run(userId, companyId).changes === 1);
+        const deleteUser = db.transaction(() => {
+          if (!hasActiveRhActor(db, context.auth.userId, companyId)) {
+            return false;
+          }
+          return db.prepare(`
+            UPDATE users
+            SET deleted_at = datetime('now'), updated_at = datetime('now')
+            WHERE id = ?
+              AND company_id = ?
+              AND role IN ('lideranca', 'colaboradora')
+              AND deleted_at IS NULL
+          `).run(userId, companyId).changes === 1;
+        });
         return deleteUser.immediate();
       }, 'delete RH company user', { retryOnFailure: false });
       if (!deleted) {

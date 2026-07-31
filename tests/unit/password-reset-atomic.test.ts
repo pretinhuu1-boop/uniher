@@ -25,12 +25,20 @@ describe('atomic password reset lifecycle', () => {
         id TEXT PRIMARY KEY,
         company_id TEXT,
         role TEXT NOT NULL DEFAULT 'colaboradora',
+        email TEXT NOT NULL,
+        approved INTEGER,
+        blocked INTEGER,
         password_hash TEXT NOT NULL,
         must_change_password INTEGER NOT NULL DEFAULT 0,
         password_reset_required INTEGER NOT NULL DEFAULT 0,
         session_version INTEGER NOT NULL DEFAULT 0,
         deleted_at TEXT,
         updated_at TEXT
+      );
+      CREATE TABLE companies (
+        id TEXT PRIMARY KEY,
+        is_active INTEGER,
+        deleted_at TEXT
       );
       CREATE TABLE password_reset_tokens (
         id TEXT PRIMARY KEY,
@@ -44,16 +52,33 @@ describe('atomic password reset lifecycle', () => {
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL
       );
-      INSERT INTO users (id, company_id, password_hash)
-      VALUES ('user-1', 'company-a', 'old-password-hash');
+      INSERT INTO companies (id, is_active) VALUES ('company-a', 1);
+      INSERT INTO companies (id, is_active) VALUES ('company-b', 1);
+      INSERT INTO users (
+        id, company_id, role, email, approved, blocked, password_hash
+      ) VALUES (
+        'user-1', 'company-a', 'colaboradora', 'user@example.com', 1, 0,
+        'old-password-hash'
+      );
+      INSERT INTO users (
+        id, company_id, role, email, approved, blocked, password_hash
+      ) VALUES (
+        'rh-1', 'company-a', 'rh', 'rh@example.com', 1, 0, 'rh-hash'
+      );
       INSERT INTO refresh_tokens (id, user_id) VALUES ('refresh-1', 'user-1');
     `);
   });
 
   it('does not reset a user moved outside the RH company boundary', async () => {
+    deps.db.prepare(
+      "UPDATE users SET company_id = 'company-b' WHERE id = 'user-1'",
+    ).run();
+
     await expect(beginAdministrativePasswordReset({
       userId: 'user-1',
-      expectedCompanyId: 'company-b',
+      expectedEmail: 'user@example.com',
+      expectedCompanyId: 'company-a',
+      expectedActorId: 'rh-1',
       token: 'cross-tenant-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'attacker-hash',
@@ -78,8 +103,64 @@ describe('atomic password reset lifecycle', () => {
 
     await expect(beginAdministrativePasswordReset({
       userId: 'user-1',
+      expectedEmail: 'user@example.com',
       expectedCompanyId: 'company-a',
+      expectedActorId: 'rh-1',
       token: 'protected-role-token',
+      expiresAt: '2999-01-01T00:00:00.000Z',
+      replacementPasswordHash: 'attacker-hash',
+    })).resolves.toBe(false);
+
+    expect(deps.db.prepare(`
+      SELECT password_hash, session_version
+      FROM users WHERE id = 'user-1'
+    `).get()).toEqual({
+      password_hash: 'old-password-hash',
+      session_version: 0,
+    });
+    expect(deps.db.prepare(
+      'SELECT COUNT(*) AS count FROM password_reset_tokens',
+    ).get()).toEqual({ count: 0 });
+  });
+
+  it('does not reset after the RH actor is revoked', async () => {
+    deps.db.prepare(
+      "UPDATE users SET blocked = 1 WHERE id = 'rh-1'",
+    ).run();
+
+    await expect(beginAdministrativePasswordReset({
+      userId: 'user-1',
+      expectedEmail: 'user@example.com',
+      expectedCompanyId: 'company-a',
+      expectedActorId: 'rh-1',
+      token: 'revoked-actor-token',
+      expiresAt: '2999-01-01T00:00:00.000Z',
+      replacementPasswordHash: 'attacker-hash',
+    })).resolves.toBe(false);
+
+    expect(deps.db.prepare(`
+      SELECT password_hash, session_version
+      FROM users WHERE id = 'user-1'
+    `).get()).toEqual({
+      password_hash: 'old-password-hash',
+      session_version: 0,
+    });
+    expect(deps.db.prepare(
+      'SELECT COUNT(*) AS count FROM password_reset_tokens',
+    ).get()).toEqual({ count: 0 });
+  });
+
+  it('does not activate a reset token sent to a stale email', async () => {
+    deps.db.prepare(
+      "UPDATE users SET email = 'changed@example.com' WHERE id = 'user-1'",
+    ).run();
+
+    await expect(beginAdministrativePasswordReset({
+      userId: 'user-1',
+      expectedEmail: 'user@example.com',
+      expectedCompanyId: 'company-a',
+      expectedActorId: 'rh-1',
+      token: 'stale-email-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'attacker-hash',
     })).resolves.toBe(false);
@@ -99,6 +180,7 @@ describe('atomic password reset lifecycle', () => {
   it('atomically invalidates the old password and all sessions for an administrative reset', async () => {
     await expect(beginAdministrativePasswordReset({
       userId: 'user-1',
+      expectedEmail: 'user@example.com',
       token: 'reset-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'unusable-random-hash',
@@ -121,6 +203,7 @@ describe('atomic password reset lifecycle', () => {
   it('consumes a reset token once and clears both reset flags with the password update', async () => {
     await beginAdministrativePasswordReset({
       userId: 'user-1',
+      expectedEmail: 'user@example.com',
       token: 'single-use-token',
       expiresAt: '2999-01-01T00:00:00.000Z',
       replacementPasswordHash: 'unusable-random-hash',

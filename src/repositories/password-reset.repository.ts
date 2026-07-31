@@ -1,4 +1,5 @@
 import { getReadDb, getWriteQueue } from '@/lib/db';
+import { hasActiveRhActor } from '@/lib/security/active-rh-actor';
 import { nanoid } from 'nanoid';
 
 export interface PasswordResetTokenRow {
@@ -15,7 +16,9 @@ interface AdministrativePasswordResetInput {
   token: string;
   expiresAt: string;
   replacementPasswordHash: string;
+  expectedEmail: string;
   expectedCompanyId?: string;
+  expectedActorId?: string;
 }
 
 export async function beginAdministrativePasswordReset(
@@ -25,18 +28,37 @@ export async function beginAdministrativePasswordReset(
 
   return getWriteQueue().enqueue((db) => {
     const reset = db.transaction(() => {
+      if (
+        input.expectedCompanyId
+        && (
+          !input.expectedActorId
+          || !hasActiveRhActor(
+            db,
+            input.expectedActorId,
+            input.expectedCompanyId,
+          )
+        )
+      ) {
+        return false;
+      }
+
       const user = input.expectedCompanyId
         ? db.prepare(`
             SELECT id
             FROM users
             WHERE id = ?
+              AND email = ?
               AND company_id = ?
               AND role IN ('lideranca', 'colaboradora')
               AND deleted_at IS NULL
-          `).get(input.userId, input.expectedCompanyId)
+          `).get(
+            input.userId,
+            input.expectedEmail,
+            input.expectedCompanyId,
+          )
         : db.prepare(
-            'SELECT id FROM users WHERE id = ? AND deleted_at IS NULL',
-          ).get(input.userId);
+            'SELECT id FROM users WHERE id = ? AND email = ? AND deleted_at IS NULL',
+          ).get(input.userId, input.expectedEmail);
       if (!user) return false;
 
       db.prepare(
@@ -56,12 +78,14 @@ export async function beginAdministrativePasswordReset(
                 session_version = session_version + 1,
                 updated_at = datetime('now')
             WHERE id = ?
+              AND email = ?
               AND company_id = ?
               AND role IN ('lideranca', 'colaboradora')
               AND deleted_at IS NULL
           `).run(
             input.replacementPasswordHash,
             input.userId,
+            input.expectedEmail,
             input.expectedCompanyId,
           )
         : db.prepare(`
@@ -71,8 +95,12 @@ export async function beginAdministrativePasswordReset(
                 password_reset_required = 1,
                 session_version = session_version + 1,
                 updated_at = datetime('now')
-            WHERE id = ? AND deleted_at IS NULL
-          `).run(input.replacementPasswordHash, input.userId);
+            WHERE id = ? AND email = ? AND deleted_at IS NULL
+          `).run(
+            input.replacementPasswordHash,
+            input.userId,
+            input.expectedEmail,
+          );
 
       return result.changes === 1;
     });

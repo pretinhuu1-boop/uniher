@@ -41,6 +41,7 @@ describe('password reset request', () => {
       token: expect.any(String),
       expiresAt: expect.any(String),
       replacementPasswordHash: 'replacement-password-hash',
+      expectedEmail: 'user@example.com',
     });
     expect(deps.sendEmail).toHaveBeenCalledWith(expect.objectContaining({
       to: 'user@example.com',
@@ -70,10 +71,15 @@ describe('password reset request', () => {
       name: 'User One',
       email: 'user@example.com',
       expectedCompanyId: 'company-a',
+      expectedActorId: 'rh-1',
     });
 
     expect(deps.beginAdministrativePasswordReset).toHaveBeenCalledWith(
-      expect.objectContaining({ expectedCompanyId: 'company-a' }),
+      expect.objectContaining({
+        expectedEmail: 'user@example.com',
+        expectedCompanyId: 'company-a',
+        expectedActorId: 'rh-1',
+      }),
     );
   });
 

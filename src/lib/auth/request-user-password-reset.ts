@@ -11,6 +11,7 @@ interface PasswordResetSubject {
   name: string;
   email: string;
   expectedCompanyId?: string;
+  expectedActorId?: string;
 }
 
 export async function requestUserPasswordReset(
@@ -41,8 +42,12 @@ export async function requestUserPasswordReset(
     token,
     expiresAt,
     replacementPasswordHash,
+    expectedEmail: subject.email,
     ...(subject.expectedCompanyId
       ? { expectedCompanyId: subject.expectedCompanyId }
+      : {}),
+    ...(subject.expectedActorId
+      ? { expectedActorId: subject.expectedActorId }
       : {}),
   });
 

@@ -249,6 +249,32 @@ describe('department tenant write boundary', () => {
     expect(deps.logAudit).not.toHaveBeenCalled();
   });
 
+  it('does not mutate a user after the RH actor is revoked', async () => {
+    deps.writeActorActive = false;
+    const request = new NextRequest('http://localhost/api/rh/users/user-a', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'block' }),
+    });
+
+    const response = await updateRhUser(request, {
+      params: Promise.resolve({ id: 'user-a' }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes('JOIN companies')
+      && sql.includes("u.role = 'rh'")
+      && sql.includes('u.approved = 1')
+      && sql.includes('u.blocked = 0')
+      && sql.includes('c.is_active = 1'),
+    )).toBe(true);
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes('UPDATE users'),
+    )).toBe(false);
+    expect(deps.logAudit).not.toHaveBeenCalled();
+  });
+
   it('does not create a batch invite when the department fails write-time validation', async () => {
     deps.departmentExists = true;
     deps.writeDepartmentExists = false;
@@ -296,8 +322,8 @@ describe('department tenant write boundary', () => {
     expect(deps.writeStatements.some((sql) =>
       sql.includes('JOIN companies')
       && sql.includes("u.role = 'rh'")
-      && sql.includes('COALESCE(u.approved, 1) = 1')
-      && sql.includes('COALESCE(c.is_active, 1) = 1'),
+      && sql.includes('u.approved = 1')
+      && sql.includes('c.is_active = 1'),
     )).toBe(true);
     expect(deps.writeStatements.some((sql) =>
       sql.includes('INSERT INTO invites'),
