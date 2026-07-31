@@ -13,10 +13,7 @@ export const registerSchema = z.object({
     .regex(/[a-z]/, 'Senha precisa de pelo menos 1 letra minúscula')
     .regex(/[0-9]/, 'Senha precisa de pelo menos 1 número')
     .regex(/[!@#$%&*]/, 'Senha precisa de 1 caractere especial (!@#$%&*)'),
-  role: z.enum(['admin', 'rh', 'lideranca', 'colaboradora']),
-  companyId: z.string().optional(),
-  departmentId: z.string().optional(),
-  inviteToken: z.string().optional(),
+  role: z.literal('rh'),
   company: z.object({
     name: z.string().min(2).max(255),
     cnpj: z.string().regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido'),
@@ -25,8 +22,8 @@ export const registerSchema = z.object({
     contactName: z.string().max(255).optional(),
     contactEmail: z.string().email().optional(),
     contactPhone: z.string().max(20).optional(),
-  }).optional(),
-});
+  }),
+}).strict();
 
 export const loginSchema = z.object({
   email: z.string().email('Email inválido'),

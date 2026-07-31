@@ -4,7 +4,7 @@ import { getRefreshTokenCookie } from '@/lib/auth/cookies';
 import * as userRepo from '@/repositories/user.repository';
 import * as companyRepo from '@/repositories/company.repository';
 import * as refreshTokenRepo from '@/repositories/refresh-token.repository';
-import { ConflictError, UnauthorizedError, ValidationError } from '@/lib/errors';
+import { ConflictError, UnauthorizedError } from '@/lib/errors';
 import type { RegisterInput, LoginInput } from '@/lib/validation/schemas';
 import { sanitizeObject } from '@/lib/security/sanitize';
 import { logAudit } from '@/lib/audit';
@@ -35,28 +35,15 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     throw new ConflictError('Não foi possível criar a conta. Verifique os dados e tente novamente.');
   }
 
-  // Se role = rh e nao tem companyId, precisa criar empresa
-  let companyId = sanitized.companyId;
-  if (!companyId) {
-    if (sanitized.role === 'rh') {
-      if (sanitized.company) {
-        const company = await companyRepo.createCompany({
-          name: sanitized.company.name,
-          tradeName: sanitized.company.tradeName || sanitized.company.name,
-          cnpj: sanitized.company.cnpj,
-          sector: sanitized.company.sector,
-          contactName: sanitized.company.contactName || sanitized.name,
-          contactEmail: sanitized.company.contactEmail || sanitized.email,
-          contactPhone: sanitized.company.contactPhone,
-        });
-        companyId = company.id;
-      } else {
-        throw new ValidationError('Dados da empresa são obrigatórios para novo cadastro de RH');
-      }
-    } else {
-      throw new ValidationError('companyId é obrigatório para colaboradoras e lideranças');
-    }
-  }
+  const company = await companyRepo.createCompany({
+    name: sanitized.company.name,
+    tradeName: sanitized.company.tradeName || sanitized.company.name,
+    cnpj: sanitized.company.cnpj,
+    sector: sanitized.company.sector,
+    contactName: sanitized.company.contactName || sanitized.name,
+    contactEmail: sanitized.company.contactEmail || sanitized.email,
+    contactPhone: sanitized.company.contactPhone,
+  });
 
   const passwordHash = await hashPassword(sanitized.password);
 
@@ -64,10 +51,9 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     name: sanitized.name,
     email: sanitized.email,
     passwordHash,
-    role: sanitized.role,
-    companyId,
-    departmentId: sanitized.departmentId,
-    isMasterAdmin: sanitized.role === 'admin',
+    role: 'rh',
+    companyId: company.id,
+    isMasterAdmin: false,
   });
 
   const accessToken = await signAccessToken({
