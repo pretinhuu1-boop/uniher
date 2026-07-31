@@ -59,8 +59,11 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         return NextResponse.json({ error: 'Não é possível bloquear este usuário' }, { status: 403 });
       }
       await wq.enqueue((db) => {
-        db.prepare('UPDATE users SET blocked = 1, updated_at = datetime(\'now\') WHERE id = ?').run(userId);
-      });
+        db.prepare(`
+          UPDATE users SET blocked = 1, updated_at = datetime('now')
+          WHERE id = ? AND company_id = ?
+        `).run(userId, companyId);
+      }, 'block RH company user', { retryOnFailure: false });
       await logAudit({
         actorId: context.auth.userId,
         actorEmail: context.auth.userId,
@@ -76,8 +79,11 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
     }
     case 'unblock': {
       await wq.enqueue((db) => {
-        db.prepare('UPDATE users SET blocked = 0, updated_at = datetime(\'now\') WHERE id = ?').run(userId);
-      });
+        db.prepare(`
+          UPDATE users SET blocked = 0, updated_at = datetime('now')
+          WHERE id = ? AND company_id = ?
+        `).run(userId, companyId);
+      }, 'unblock RH company user', { retryOnFailure: false });
       await logAudit({
         actorId: context.auth.userId,
         actorEmail: context.auth.userId,
@@ -99,10 +105,29 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
           return NextResponse.json({ error: 'Departamento não encontrado' }, { status: 404 });
         }
       }
-      await wq.enqueue((db) => {
-        db.prepare('UPDATE users SET department_id = ?, updated_at = datetime(\'now\') WHERE id = ?')
-          .run(department_id || null, userId);
-      });
+      const changed = await wq.enqueue((db) => {
+        const changeDepartment = db.transaction(() => {
+          if (department_id) {
+            const department = db.prepare(`
+              SELECT id FROM departments WHERE id = ? AND company_id = ?
+            `).get(department_id, companyId);
+            if (!department) return false;
+          }
+          const result = db.prepare(`
+            UPDATE users
+            SET department_id = ?, updated_at = datetime('now')
+            WHERE id = ? AND company_id = ? AND deleted_at IS NULL
+          `).run(department_id || null, userId, companyId);
+          return result.changes === 1;
+        });
+        return changeDepartment.immediate();
+      }, 'change RH user department', { retryOnFailure: false });
+      if (!changed) {
+        return NextResponse.json(
+          { error: 'Usuario ou departamento nao encontrado' },
+          { status: 409 },
+        );
+      }
       await logAudit({
         actorId: context.auth.userId,
         actorEmail: context.auth.userId,
@@ -125,8 +150,11 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         return NextResponse.json({ error: 'Não é possível alterar o papel deste usuário' }, { status: 403 });
       }
       await wq.enqueue((db) => {
-        db.prepare('UPDATE users SET role = ?, updated_at = datetime(\'now\') WHERE id = ?').run(role, userId);
-      });
+        db.prepare(`
+          UPDATE users SET role = ?, updated_at = datetime('now')
+          WHERE id = ? AND company_id = ?
+        `).run(role, userId, companyId);
+      }, 'change RH company user role', { retryOnFailure: false });
       await logAudit({
         actorId: context.auth.userId,
         actorEmail: context.auth.userId,
@@ -212,8 +240,12 @@ export const PATCH = withRole('rh')(async (req: NextRequest, context) => {
         return NextResponse.json({ error: 'Não é possível remover este usuário' }, { status: 403 });
       }
       await wq.enqueue((db) => {
-        db.prepare("UPDATE users SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(userId);
-      });
+        db.prepare(`
+          UPDATE users
+          SET deleted_at = datetime('now'), updated_at = datetime('now')
+          WHERE id = ? AND company_id = ?
+        `).run(userId, companyId);
+      }, 'delete RH company user', { retryOnFailure: false });
       await logAudit({ actorId: context.auth.userId, actorEmail: context.auth.userId, actorRole: 'rh', action: 'user_delete', entityType: 'user', entityId: userId, entityLabel: targetUser.name, details: { soft: true }, ip });
       break;
     }

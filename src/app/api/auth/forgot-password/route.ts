@@ -8,6 +8,7 @@ import { handleApiError } from '@/lib/errors';
 import { sendEmail } from '@/lib/mail';
 import { passwordResetEmailHtml } from '@/lib/mail/templates';
 import { createResetToken, invalidateUserTokens } from '@/repositories/password-reset.repository';
+import { getPublicAppOrigin } from '@/lib/security/public-app-origin';
 
 const Schema = z.object({
   email: z.string().email(),
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
 
     const { email } = parsed.data;
     await checkForgotPasswordRateLimit(req, email);
+    const appOrigin = getPublicAppOrigin();
     const user = getReadDb().prepare('SELECT id, name, email FROM users WHERE email = ?').get(email) as
       | { id: string; name: string; email: string }
       | undefined;
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
       await invalidateUserTokens(user.id);
       await createResetToken(user.id, token, expiresAt);
 
-      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/redefinir-senha?token=${token}`;
+      const resetUrl = `${appOrigin}/redefinir-senha?token=${token}`;
 
       await sendEmail({
         to: user.email,

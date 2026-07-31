@@ -4,6 +4,8 @@ import { NextRequest } from 'next/server';
 const deps = vi.hoisted(() => ({
   enqueue: vi.fn(),
   departmentExists: false,
+  writeDepartmentExists: false,
+  writeStatements: [] as string[],
   logAudit: vi.fn(),
   sendEmailAsync: vi.fn(),
 }));
@@ -30,6 +32,9 @@ const fakeDb = {
         if (sql.includes('SELECT company_id, name FROM users')) {
           return { company_id: 'company-a', name: 'RH User' };
         }
+        if (sql.includes('SELECT name FROM companies')) {
+          return { name: 'Company A' };
+        }
         return undefined;
       },
     };
@@ -37,7 +42,18 @@ const fakeDb = {
 };
 
 vi.mock('@/lib/auth/middleware', () => ({
-  withRole: () => (handler: unknown) => handler,
+  withRole: () => (handler: any) => (
+    req: NextRequest,
+    segmentData: { params: Promise<Record<string, string>> },
+  ) => handler(req, {
+    ...segmentData,
+    auth: {
+      userId: 'rh-a',
+      role: 'rh',
+      companyId: 'company-a',
+      sessionVersion: 1,
+    },
+  }),
 }));
 vi.mock('@/lib/db', () => ({
   getReadDb: () => fakeDb,
@@ -53,12 +69,37 @@ vi.mock('@/lib/auth/request-user-password-reset', () => ({
 }));
 
 import { POST as createInvite } from '@/app/api/invites/route';
+import { POST as createBatchInvites } from '@/app/api/invites/batch/route';
 import { PATCH as updateRhUser } from '@/app/api/rh/users/[id]/route';
 
 describe('department tenant write boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deps.departmentExists = false;
+    deps.writeDepartmentExists = false;
+    deps.writeStatements.length = 0;
+    deps.enqueue.mockImplementation(async (
+      operation: (db: any) => unknown,
+    ) => operation({
+      prepare(sql: string) {
+        deps.writeStatements.push(sql.replace(/\s+/g, ' ').trim());
+        return {
+          get: () => {
+            if (sql.includes('FROM departments')) {
+              return deps.writeDepartmentExists
+                ? { id: 'department-a' }
+                : undefined;
+            }
+            if (sql.includes("role = 'rh'")) return { id: 'rh-a' };
+            return undefined;
+          },
+          run: () => ({ changes: 1 }),
+        };
+      },
+      transaction(callback: () => unknown) {
+        return { immediate: callback };
+      },
+    }));
   });
 
   afterEach(() => {
@@ -78,14 +119,8 @@ describe('department tenant write boundary', () => {
     });
 
     const response = await createInvite(request, {
-      auth: {
-        userId: 'rh-a',
-        role: 'rh',
-        companyId: 'company-a',
-        sessionVersion: 1,
-      },
       params: Promise.resolve({}),
-    } as any);
+    });
 
     expect(response.status).toBe(403);
     expect(deps.enqueue).not.toHaveBeenCalled();
@@ -104,14 +139,8 @@ describe('department tenant write boundary', () => {
     });
 
     const response = await createInvite(request, {
-      auth: {
-        userId: 'rh-a',
-        role: 'rh',
-        companyId: 'company-a',
-        sessionVersion: 1,
-      },
       params: Promise.resolve({}),
-    } as any);
+    });
 
     expect(response.status).toBe(404);
     expect(deps.enqueue).not.toHaveBeenCalled();
@@ -129,17 +158,61 @@ describe('department tenant write boundary', () => {
     });
 
     const response = await updateRhUser(request, {
-      auth: {
-        userId: 'rh-a',
-        role: 'rh',
-        companyId: 'company-a',
-        sessionVersion: 1,
-      },
       params: Promise.resolve({ id: 'user-a' }),
-    } as any);
+    });
 
     expect(response.status).toBe(404);
     expect(deps.enqueue).not.toHaveBeenCalled();
     expect(deps.logAudit).not.toHaveBeenCalled();
+  });
+
+  it('revalidates change_department inside the write transaction', async () => {
+    deps.departmentExists = true;
+    deps.writeDepartmentExists = false;
+    const request = new NextRequest('http://localhost/api/rh/users/user-a', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        action: 'change_department',
+        department_id: 'department-a',
+      }),
+    });
+
+    const response = await updateRhUser(request, {
+      params: Promise.resolve({ id: 'user-a' }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes('FROM departments')
+      && sql.includes('company_id = ?'),
+    )).toBe(true);
+    expect(deps.logAudit).not.toHaveBeenCalled();
+  });
+
+  it('does not create a batch invite when the department fails write-time validation', async () => {
+    deps.departmentExists = true;
+    deps.writeDepartmentExists = false;
+    const request = new NextRequest('http://localhost/api/invites/batch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        emails: ['batch@example.com'],
+        role: 'colaboradora',
+        department_id: 'department-a',
+      }),
+    });
+
+    const response = await createBatchInvites(request, {
+      params: Promise.resolve({}),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ successCount: 0, errorCount: 1 });
+    expect(deps.writeStatements.some((sql) =>
+      sql.includes('INSERT INTO invites'),
+    )).toBe(false);
+    expect(deps.sendEmailAsync).not.toHaveBeenCalled();
   });
 });
