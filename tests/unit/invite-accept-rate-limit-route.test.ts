@@ -18,7 +18,10 @@ const invite = {
   department_id: 'department-a',
   email: 'invitee@example.com',
   role: 'colaboradora',
+  status: 'pending',
   expires_at: '2099-08-01T00:00:00Z',
+  company_name: 'Example Company',
+  department_name: 'People',
 };
 
 const fakeDb = {
@@ -50,7 +53,7 @@ vi.mock('@/lib/auth/cookies', () => ({
   setAuthCookiesOnResponse: deps.setAuthCookiesOnResponse,
 }));
 
-import { POST } from '@/app/api/invites/[token]/route';
+import { GET, POST } from '@/app/api/invites/[token]/route';
 
 function registerRequest() {
   return new Request('http://localhost/api/invites/raw-invite-token', {
@@ -115,5 +118,20 @@ describe('POST /api/invites/[token] rate limit', () => {
     expect(order).toEqual(['rate-limit', 'bcrypt']);
     expect(deps.writeBatches[0].some((sql) => sql.includes('INSERT INTO users'))).toBe(true);
     expect(deps.writeBatches[0].some((sql) => sql.includes("UPDATE invites SET status = 'accepted'"))).toBe(true);
+  });
+});
+
+describe('GET /api/invites/[token] public projection', () => {
+  it('does not return the full invite email address', async () => {
+    const response = await GET(
+      new Request('http://localhost/api/invites/raw-invite-token'),
+      { params: Promise.resolve({ token: 'raw-invite-token' }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.email).not.toBe(invite.email);
+    expect(body.email).not.toContain('invitee@example.com');
+    expect(body.email).toContain('*');
   });
 });

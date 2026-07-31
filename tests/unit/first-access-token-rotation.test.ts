@@ -62,7 +62,7 @@ describe('first access token rotation', () => {
     deps.setAuthCookiesOnResponse.mockImplementation((response: unknown) => response);
   });
 
-  it('rotates stale tokens even when the password flag was already cleared', async () => {
+  it('acknowledges a completed password change without rotating tokens again', async () => {
     const response = await POST(
       new NextRequest('http://localhost/api/auth/confirm-first-access', {
         method: 'POST',
@@ -71,17 +71,10 @@ describe('first access token rotation', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(deps.signAccessToken).toHaveBeenCalledWith(expect.objectContaining({
-      userId: 'user-1',
-      mustChangePassword: false,
-    }));
-    expect(deps.deleteAllUserTokens).toHaveBeenCalledWith('user-1');
-    expect(deps.createRefreshToken).toHaveBeenCalledWith('user-1', 'new-refresh-token');
-    expect(deps.setAuthCookiesOnResponse).toHaveBeenCalledWith(
-      expect.anything(),
-      'clean-access-token',
-      'new-refresh-token',
-    );
+    expect(deps.signAccessToken).not.toHaveBeenCalled();
+    expect(deps.deleteAllUserTokens).not.toHaveBeenCalled();
+    expect(deps.createRefreshToken).not.toHaveBeenCalled();
+    expect(deps.setAuthCookiesOnResponse).not.toHaveBeenCalled();
   });
 
   it('refuses token rotation when an email-token reset is required', async () => {

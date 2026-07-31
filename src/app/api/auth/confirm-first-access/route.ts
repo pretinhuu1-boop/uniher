@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/middleware';
 import { getReadDb } from '@/lib/db';
-import { signAccessToken, signRefreshToken } from '@/lib/auth/jwt';
-import { setAuthCookiesOnResponse } from '@/lib/auth/cookies';
-import * as refreshTokenRepo from '@/repositories/refresh-token.repository';
 
 export const POST = withAuth(async (_req, context) => {
   const userId = context.auth.userId;
@@ -40,18 +37,5 @@ export const POST = withAuth(async (_req, context) => {
     );
   }
 
-  const accessToken = await signAccessToken({
-    userId: user.id,
-    role: user.role,
-    companyId: user.company_id ?? '',
-    isMasterAdmin: user.is_master_admin === 1,
-    mustChangePassword: false,
-  });
-
-  await refreshTokenRepo.deleteAllUserTokens(userId);
-  const refreshToken = await signRefreshToken({ userId });
-  await refreshTokenRepo.createRefreshToken(userId, refreshToken);
-
-  const response = NextResponse.json({ success: true });
-  return setAuthCookiesOnResponse(response, accessToken, refreshToken);
+  return NextResponse.json({ success: true });
 });

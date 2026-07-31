@@ -26,6 +26,16 @@ const RegisterSchema = z.object({
     .regex(/[!@#$%&*]/, 'Senha precisa de 1 caractere especial (!@#$%&*)'),
 });
 
+function maskInviteEmail(email: string): string {
+  const [localPart, domainPart] = email.split('@');
+  if (!localPart || !domainPart) return '***';
+
+  const domainSegments = domainPart.split('.');
+  const domainName = domainSegments.shift() ?? '';
+  const suffix = domainSegments.length > 0 ? `.${domainSegments.join('.')}` : '';
+  return `${localPart[0]}***@${domainName[0] ?? '*'}***${suffix}`;
+}
+
 // Público — validar token
 export async function GET(req: Request, segmentData: { params: Promise<{ token: string }> }) {
   const { token } = await segmentData.params;
@@ -52,7 +62,7 @@ export async function GET(req: Request, segmentData: { params: Promise<{ token: 
   return NextResponse.json({
     valid: true,
     name: invite.name || '',
-    email: invite.email,
+    email: maskInviteEmail(invite.email),
     role: invite.role,
     companyName: invite.company_name,
     departmentName: invite.department_name,
