@@ -7,19 +7,22 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
-// Magic bytes signatures for validating file content matches declared MIME type
-const MAGIC_BYTES: Record<string, number[][]> = {
-  'image/jpeg': [[0xFF, 0xD8, 0xFF]],
-  'image/png': [[0x89, 0x50, 0x4E, 0x47]],
-  'image/webp': [[0x52, 0x49, 0x46, 0x46]], // RIFF header
+// Magic byte requirements for validating file content matches declared MIME type
+const MAGIC_BYTES: Record<string, Array<{ offset: number; bytes: number[] }>> = {
+  'image/jpeg': [{ offset: 0, bytes: [0xFF, 0xD8, 0xFF] }],
+  'image/png': [{ offset: 0, bytes: [0x89, 0x50, 0x4E, 0x47] }],
+  'image/webp': [
+    { offset: 0, bytes: [0x52, 0x49, 0x46, 0x46] },
+    { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] },
+  ],
 };
 
 function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
-  const signatures = MAGIC_BYTES[mimeType];
-  if (!signatures || signatures.length === 0) return true;
+  const requirements = MAGIC_BYTES[mimeType];
+  if (!requirements || requirements.length === 0) return true;
 
-  return signatures.some((sig) =>
-    sig.every((byte, i) => buffer.length > i && buffer[i] === byte)
+  return requirements.every(({ offset, bytes }) =>
+    bytes.every((byte, index) => buffer[offset + index] === byte)
   );
 }
 
@@ -32,6 +35,7 @@ function sanitizeFilename(name: string): string {
 }
 
 const MAX_USER_STORAGE = 50 * 1024 * 1024; // 50MB per user
+const MANAGED_UPLOAD_URL = /^\/uploads\/(avatars|logos|general)\/([a-zA-Z0-9_-]{12}\.(?:jpe?g|png|webp))$/;
 
 const STORAGE_LIMIT_ERROR = 'Limite de armazenamento excedido (50MB). Remova arquivos antigos antes de enviar novos.';
 
@@ -83,6 +87,58 @@ async function releaseUploadReservation(reservationId: string): Promise<void> {
   await getWriteQueue().enqueue((db) => {
     db.prepare('DELETE FROM user_uploads WHERE id = ?').run(reservationId);
   }, 'release upload quota reservation');
+}
+
+async function releaseUploadByPath(uploadUrl: string): Promise<void> {
+  await getWriteQueue().enqueue((db) => {
+    db.prepare('DELETE FROM user_uploads WHERE file_path = ?').run(uploadUrl);
+  }, 'release uploaded file quota');
+}
+
+function resolveManagedUploadPath(uploadUrl: string): string | null {
+  const match = MANAGED_UPLOAD_URL.exec(uploadUrl);
+  if (!match) return null;
+
+  const uploadRoot = path.resolve(process.cwd(), 'public', 'uploads');
+  const filePath = path.resolve(uploadRoot, match[1], match[2]);
+  const relativePath = path.relative(uploadRoot, filePath);
+
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    return null;
+  }
+
+  return filePath;
+}
+
+export async function removeUploadedFile(uploadUrl: string): Promise<boolean> {
+  const filePath = resolveManagedUploadPath(uploadUrl);
+  if (!filePath) return false;
+
+  let fileError: unknown;
+  let quotaError: unknown;
+
+  try {
+    fs.rmSync(filePath, { force: true });
+  } catch (error) {
+    fileError = error;
+  }
+
+  try {
+    await releaseUploadByPath(uploadUrl);
+  } catch (error) {
+    quotaError = error;
+  }
+
+  if (fileError && quotaError) {
+    throw new AggregateError(
+      [fileError, quotaError],
+      'Falha ao remover o arquivo e liberar sua cota.',
+    );
+  }
+  if (fileError) throw fileError;
+  if (quotaError) throw quotaError;
+
+  return true;
 }
 
 export async function saveUploadedFile(

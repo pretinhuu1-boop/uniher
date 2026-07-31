@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 
 const uploadDeps = vi.hoisted(() => ({
   saveUploadedFile: vi.fn(),
+  removeUploadedFile: vi.fn(),
   checkUploadRateLimit: vi.fn(),
   enqueue: vi.fn(),
 }));
@@ -20,6 +21,7 @@ vi.mock('@/lib/auth/middleware', () => ({
 
 vi.mock('@/lib/upload', () => ({
   saveUploadedFile: uploadDeps.saveUploadedFile,
+  removeUploadedFile: uploadDeps.removeUploadedFile,
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
@@ -55,7 +57,11 @@ describe('upload quota identity', () => {
       filename: 'test.png',
     });
     uploadDeps.enqueue.mockImplementation(async (operation: any) => {
-      operation({ prepare: () => ({ run: vi.fn() }) });
+      return operation({
+        prepare: (sql: string) => sql.includes('SELECT')
+          ? { get: () => null }
+          : { run: () => ({ changes: 1 }) },
+      });
     });
   });
 
