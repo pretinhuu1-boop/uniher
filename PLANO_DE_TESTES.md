@@ -5,7 +5,7 @@
 ## 1. MASTER ADMIN
 
 ### Login & Acesso
-- [ ] Login com `admin@uniher.com.br` / `Admin@2026`
+- [ ] Login com as credenciais isoladas definidas em `E2E_ADMIN_EMAIL` e `E2E_ADMIN_PASSWORD`
 - [ ] Redirect para `/admin` após login
 - [ ] Acessar `/colaboradora` → redireciona para `/admin`
 - [ ] Logout → cookies limpos → redirect para `/auth`

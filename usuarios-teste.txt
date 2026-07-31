@@ -1,24 +1,15 @@
-UniHER — Usuarios de Teste (Homologacao)
-==========================================
+UniHER - Usuarios de Teste (Homologacao)
+========================================
 
-Admin Master (sistema)
-  Email: admin@uniher.com.br
-  Senha: Admin@2026
-  Role:  admin
+As credenciais de homologacao nao ficam no repositorio.
 
-Admin Empresa (RH)
-  Email: rh@teste.com
-  Senha: Admin@2026
-  Role:  rh
-  Empresa: Empresa Teste (Teste Ltda)
+Defina os usuarios e senhas no ambiente isolado de testes:
 
-Colaboradora
-  Email: colab@teste.com
-  Senha: Admin@2026
-  Role:  colaboradora
-  Empresa: Empresa Teste (Teste Ltda)
+  E2E_ADMIN_EMAIL
+  E2E_ADMIN_PASSWORD
+  E2E_RH_EMAIL
+  E2E_RH_PASSWORD
+  E2E_COLLAB_EMAIL
+  E2E_COLLAB_PASSWORD
 
-==========================================
-Todas as senhas: Admin@2026
-Banco: data/uniher.db
-Porta: 3000
+Nunca reutilize credenciais de homologacao em producao.

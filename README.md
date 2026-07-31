@@ -19,16 +19,15 @@ App local:
 npm run build
 ```
 
-## Seed base
+## Dados de referência
 
 ```bash
 npm run db:seed
 ```
 
-Usuário master padrão:
-
-- Email: `admin@uniher.com.br`
-- Senha: `Admin@2026`
+O seed não cria contas ou credenciais. Em uma instalação nova, provisione o
+primeiro Master Admin por procedimento administrativo separado, com senha
+aleatória armazenada fora do repositório.
 
 ## Deploy na VPS
 
@@ -40,7 +39,7 @@ Deploy padrão:
 
 ```bash
 cd /var/www/uniher
-bash deploy/vps/deploy.sh main
+bash deploy/vps/deploy.sh feat/yavix-copsoq-scaffold
 ```
 
 O script:
@@ -49,7 +48,7 @@ O script:
 - instala dependências
 - faz build
 - prepara standalone
-- roda seed
+- aplica migrations sem criar contas
 - recarrega PM2
 - espera a aplicação responder em `/api/health`
 
