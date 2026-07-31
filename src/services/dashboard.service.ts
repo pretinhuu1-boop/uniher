@@ -218,6 +218,28 @@ export function getDepartmentRanking(companyId: string) {
 
 /* ── Engagement over time ── */
 
+export const ENGAGEMENT_RETENTION_QUERY = `
+  SELECT
+    curr.ym as ym,
+    COUNT(DISTINCT curr.user_id) as retained
+  FROM (
+    SELECT DISTINCT strftime('%Y-%m', al.created_at) as ym, al.user_id
+    FROM activity_log al
+    JOIN users u ON u.id = al.user_id
+    WHERE u.company_id = ? AND al.created_at >= datetime('now', '-7 months')
+  ) curr
+  INNER JOIN (
+    SELECT DISTINCT strftime('%Y-%m', al.created_at) as ym, al.user_id
+    FROM activity_log al
+    JOIN users u ON u.id = al.user_id
+    WHERE u.company_id = ? AND al.created_at >= datetime('now', '-7 months')
+  ) prev ON curr.user_id = prev.user_id
+    AND prev.ym = strftime('%Y-%m', date(curr.ym || '-01', '-1 month'))
+  WHERE curr.ym >= strftime('%Y-%m', datetime('now', '-6 months'))
+  GROUP BY curr.ym
+  ORDER BY curr.ym ASC
+`;
+
 export function getEngagementOverTime(companyId: string): EngagementPoint[] {
   try {
     const db = getReadDb();
@@ -240,27 +262,8 @@ export function getEngagementOverTime(companyId: string): EngagementPoint[] {
     if (totalUsers === 0) return [];
 
     // Retained users: those active in consecutive months
-    const retainedRows = db.prepare(`
-      SELECT
-        curr.ym as ym,
-        COUNT(DISTINCT curr.user_id) as retained
-      FROM (
-        SELECT DISTINCT strftime('%Y-%m', created_at) as ym, user_id
-        FROM activity_log al
-        JOIN users u ON u.id = al.user_id
-        WHERE u.company_id = ? AND al.created_at >= datetime('now', '-7 months')
-      ) curr
-      INNER JOIN (
-        SELECT DISTINCT strftime('%Y-%m', created_at) as ym, user_id
-        FROM activity_log al
-        JOIN users u ON u.id = al.user_id
-        WHERE u.company_id = ? AND al.created_at >= datetime('now', '-7 months')
-      ) prev ON curr.user_id = prev.user_id
-        AND prev.ym = strftime('%Y-%m', date(curr.ym || '-01', '-1 month'))
-      WHERE curr.ym >= strftime('%Y-%m', datetime('now', '-6 months'))
-      GROUP BY curr.ym
-      ORDER BY curr.ym ASC
-    `).all(companyId, companyId) as { ym: string; retained: number }[];
+    const retainedRows = db.prepare(ENGAGEMENT_RETENTION_QUERY)
+      .all(companyId, companyId) as { ym: string; retained: number }[];
 
     const retainedMap = new Map(retainedRows.map(r => [r.ym, r.retained]));
 
