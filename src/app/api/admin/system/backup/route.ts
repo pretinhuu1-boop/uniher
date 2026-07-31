@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMasterAdmin } from '@/lib/auth/middleware';
-import { devOnlyGuard } from '@/lib/api/dev-only';
+import { activeMasterAdminEffectGuard, devOnlyGuard } from '@/lib/api/dev-only';
 import fs from 'fs';
 import path from 'path';
 
-export const POST = withMasterAdmin(async (_req: NextRequest) => {
-  const blocked = devOnlyGuard();
+export const POST = withMasterAdmin(async (req: NextRequest, context) => {
+  const blocked = devOnlyGuard(req);
   if (blocked) return blocked;
   const cwd = process.cwd();
   const dbPath = process.env.DATABASE_PATH || path.join(cwd, 'data', 'uniher.db');
@@ -14,6 +14,9 @@ export const POST = withMasterAdmin(async (_req: NextRequest) => {
   if (!fs.existsSync(dbPath)) {
     return NextResponse.json({ error: 'Banco de dados não encontrado' }, { status: 404 });
   }
+
+  const inactiveActor = activeMasterAdminEffectGuard(context.auth.userId);
+  if (inactiveActor) return inactiveActor;
 
   // Create backups dir if needed
   if (!fs.existsSync(backupsDir)) {

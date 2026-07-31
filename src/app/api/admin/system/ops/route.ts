@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withMasterAdmin } from '@/lib/auth/middleware';
-import { devOnlyGuard } from '@/lib/api/dev-only';
+import { activeMasterAdminEffectGuard, devOnlyGuard } from '@/lib/api/dev-only';
+import { closeDb } from '@/lib/db';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-export const POST = withMasterAdmin(async (req: NextRequest) => {
-  const blocked = devOnlyGuard();
+export const POST = withMasterAdmin(async (req: NextRequest, context) => {
+  const blocked = devOnlyGuard(req);
   if (blocked) return blocked;
 
   const { action } = await req.json() as { action: string };
@@ -105,6 +106,9 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
     case 'clear-cache': {
       try {
         const nextDir = path.join(cwd, '.next');
+        const inactiveActor = activeMasterAdminEffectGuard(context.auth.userId);
+        if (inactiveActor) return inactiveActor;
+
         if (fs.existsSync(nextDir)) {
           fs.rmSync(nextDir, { recursive: true, force: true });
         }
@@ -117,8 +121,10 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
     // ─── Reset DB ───
     case 'reset-db': {
       try {
+        const inactiveActor = activeMasterAdminEffectGuard(context.auth.userId);
+        if (inactiveActor) return inactiveActor;
+
         // Close current connection first
-        const { closeDb } = require('@/lib/db');
         closeDb();
 
         const dbPath = process.env.DATABASE_PATH || path.join(cwd, 'data', 'uniher.db');
@@ -148,6 +154,8 @@ export const POST = withMasterAdmin(async (req: NextRequest) => {
     case 'restart': {
       // Respond first, then exit — watchdog will restart
       setTimeout(() => {
+        if (activeMasterAdminEffectGuard(context.auth.userId)) return;
+
         console.log('[UniHER] Restart requested via control panel');
         process.exit(0);
       }, 500);
