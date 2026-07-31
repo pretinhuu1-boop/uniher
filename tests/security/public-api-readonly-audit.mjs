@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import process from 'node:process';
@@ -10,12 +11,14 @@ const apiRoot = path.join(projectRoot, 'src', 'app', 'api');
 const baseUrl = (process.env.SECURITY_AUDIT_BASE_URL ?? 'http://127.0.0.1:3000')
   .replace(/\/+$/, '');
 const allowIsolatedMethodProbes = process.env.SECURITY_AUDIT_ALLOW_WRITES === '1';
-const isolatedDatabasePath = process.env.SECURITY_AUDIT_DATABASE_PATH
-  ? path.resolve(process.env.SECURITY_AUDIT_DATABASE_PATH)
-  : null;
+const configuredIsolatedDatabasePath = process.env.SECURITY_AUDIT_DATABASE_PATH ?? null;
 const outputPath = process.env.SECURITY_AUDIT_OUTPUT
   ? path.resolve(process.env.SECURITY_AUDIT_OUTPUT)
   : path.join(projectRoot, 'artifacts', 'security', 'public-api-readonly-audit.json');
+const defaultDatabasePath = path.join(projectRoot, 'data', 'uniher.db');
+const methodProbeRunId = randomUUID();
+const dynamicProbeSegment = `security-probe-${methodProbeRunId}`;
+const databaseBindingProbeEmail = `security-probe-${methodProbeRunId}@example.invalid`;
 
 const ISOLATED_METHOD_PROBES = [
   {
@@ -78,7 +81,7 @@ const ISOLATED_METHOD_PROBES = [
     path: '/api/auth/login',
     expectedStatuses: [401],
     body: {
-      email: 'security-probe-login@example.com',
+      email: databaseBindingProbeEmail,
       password: 'Wrong@2026',
     },
   },
@@ -141,6 +144,15 @@ const PUBLIC_GET_RULES = new Map([
       return disabled || enabled;
     },
   }],
+  ['/api/invites/[token]', {
+    statuses: [404],
+    validate(body) {
+      const keys = body && typeof body === 'object' ? Object.keys(body) : [];
+      return keys.length === 1
+        && keys[0] === 'error'
+        && typeof body.error === 'string';
+    },
+  }],
 ]);
 
 const SENSITIVE_KEYS = new Set([
@@ -164,15 +176,6 @@ const SENSITIVE_KEYS = new Set([
   'memory',
 ]);
 
-const DOMAIN_TABLES = [
-  'companies',
-  'users',
-  'invites',
-  'leads',
-  'password_reset_tokens',
-  'refresh_tokens',
-];
-
 function listRouteFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(dir, entry.name);
@@ -193,9 +196,9 @@ function routeTemplate(filePath) {
 
 function probePath(template) {
   return template
-    .replace(/\[\[\.\.\.[^\]]+\]\]/g, 'security-probe')
-    .replace(/\[\.\.\.[^\]]+\]/g, 'security-probe')
-    .replace(/\[[^\]]+\]/g, 'security-probe');
+    .replace(/\[\[\.\.\.[^\]]+\]\]/g, dynamicProbeSegment)
+    .replace(/\[\.\.\.[^\]]+\]/g, dynamicProbeSegment)
+    .replace(/\[[^\]]+\]/g, dynamicProbeSegment);
 }
 
 function collectSensitiveKeys(value, found = new Set()) {
@@ -223,7 +226,15 @@ function assertSensitiveKeyClassifier() {
   }
 }
 
-function readDomainCounts(databasePath) {
+function quoteIdentifier(identifier) {
+  return `"${identifier.replaceAll('"', '""')}"`;
+}
+
+function sha256(value) {
+  return createHash('sha256').update(value).digest('hex');
+}
+
+function readDatabaseSnapshot(databasePath) {
   const require = createRequire(import.meta.url);
   const Database = require('better-sqlite3');
   const db = new Database(databasePath, {
@@ -231,13 +242,180 @@ function readDomainCounts(databasePath) {
     fileMustExist: true,
   });
   try {
-    return Object.fromEntries(DOMAIN_TABLES.map((table) => [
-      table,
-      db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count,
-    ]));
+    db.exec('BEGIN');
+    const definitions = db.prepare(`
+      SELECT name, sql
+      FROM sqlite_master
+      WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+      ORDER BY name
+    `).all();
+    const schemaHash = createHash('sha256');
+    const contentHash = createHash('sha256');
+    const tables = {};
+
+    for (const definition of definitions) {
+      schemaHash.update(`${definition.name}\0${definition.sql ?? ''}\0`);
+      const tableHash = createHash('sha256');
+      const rows = db.prepare(
+        `SELECT * FROM ${quoteIdentifier(definition.name)} ORDER BY rowid`,
+      ).all();
+      for (const row of rows) {
+        tableHash.update(JSON.stringify(row));
+        tableHash.update('\n');
+      }
+      const tableDigest = tableHash.digest('hex');
+      tables[definition.name] = {
+        rowCount: rows.length,
+        contentSha256: tableDigest,
+      };
+      contentHash.update(`${definition.name}\0${rows.length}\0${tableDigest}\0`);
+    }
+
+    const snapshot = {
+      schemaSha256: schemaHash.digest('hex'),
+      contentSha256: contentHash.digest('hex'),
+      tables,
+    };
+    db.exec('COMMIT');
+    return snapshot;
+  } catch (error) {
+    if (db.inTransaction) db.exec('ROLLBACK');
+    throw error;
   } finally {
     db.close();
   }
+}
+
+function resolveIsolatedDatabase() {
+  const target = new URL(baseUrl);
+  const loopbackHosts = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
+  if (!loopbackHosts.has(target.hostname)) {
+    throw new Error(
+      'SECURITY_AUDIT_ALLOW_WRITES=1 is restricted to a loopback isolated runtime',
+    );
+  }
+  if (!configuredIsolatedDatabasePath) {
+    throw new Error(
+      'SECURITY_AUDIT_DATABASE_PATH is required for isolated persistence verification',
+    );
+  }
+  if (!path.isAbsolute(configuredIsolatedDatabasePath)) {
+    throw new Error(
+      'SECURITY_AUDIT_DATABASE_PATH must be absolute to bind method evidence unambiguously',
+    );
+  }
+
+  const realPath = fs.realpathSync.native(configuredIsolatedDatabasePath);
+  const defaultRealPath = fs.existsSync(defaultDatabasePath)
+    ? fs.realpathSync.native(defaultDatabasePath)
+    : path.resolve(defaultDatabasePath);
+  if (realPath.toLowerCase() === defaultRealPath.toLowerCase()) {
+    throw new Error('Isolated method probes refuse the default data/uniher.db database');
+  }
+
+  const stat = fs.statSync(realPath);
+  if (!stat.isFile()) {
+    throw new Error('SECURITY_AUDIT_DATABASE_PATH must resolve to a database file');
+  }
+  return {
+    configuredPath: configuredIsolatedDatabasePath,
+    realPath,
+    sizeBytesBefore: stat.size,
+  };
+}
+
+function readBindingReceipts(databasePath) {
+  const require = createRequire(import.meta.url);
+  const Database = require('better-sqlite3');
+  const db = new Database(databasePath, {
+    readonly: true,
+    fileMustExist: true,
+  });
+  try {
+    return db.prepare(`
+      SELECT actor_id, actor_email, actor_role, action, entity_type, details
+      FROM audit_logs
+      WHERE actor_email = ? AND action = 'login_failed'
+      ORDER BY rowid
+    `).all(databaseBindingProbeEmail);
+  } finally {
+    db.close();
+  }
+}
+
+async function waitForBindingReceipt(databasePath) {
+  const deadline = Date.now() + 5_000;
+  let receipts = [];
+  do {
+    receipts = readBindingReceipts(databasePath);
+    if (receipts.length > 0) return receipts;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  } while (Date.now() < deadline);
+  return receipts;
+}
+
+function compareDatabaseSnapshots(before, after, receipts) {
+  const tableNames = new Set([
+    ...Object.keys(before.tables),
+    ...Object.keys(after.tables),
+  ]);
+  const unexpectedTableDrift = {};
+  for (const tableName of [...tableNames].sort()) {
+    if (tableName === 'audit_logs') continue;
+    const beforeTable = before.tables[tableName] ?? null;
+    const afterTable = after.tables[tableName] ?? null;
+    if (JSON.stringify(beforeTable) !== JSON.stringify(afterTable)) {
+      unexpectedTableDrift[tableName] = { before: beforeTable, after: afterTable };
+    }
+  }
+
+  const auditBefore = before.tables.audit_logs ?? null;
+  const auditAfter = after.tables.audit_logs ?? null;
+  const auditLogDelta = auditBefore && auditAfter
+    ? auditAfter.rowCount - auditBefore.rowCount
+    : null;
+  const parsedReceipts = receipts.map((receipt) => {
+    let details = null;
+    try {
+      details = JSON.parse(receipt.details);
+    } catch {
+      details = null;
+    }
+    return {
+      actorId: receipt.actor_id,
+      actorRole: receipt.actor_role,
+      action: receipt.action,
+      entityType: receipt.entity_type,
+      reason: details?.reason ?? null,
+    };
+  });
+  const validBindingReceipt = parsedReceipts.length === 1
+    && parsedReceipts[0].actorId === 'anonymous'
+    && parsedReceipts[0].actorRole === 'unknown'
+    && parsedReceipts[0].action === 'login_failed'
+    && parsedReceipts[0].entityType === 'auth'
+    && parsedReceipts[0].reason === 'User not found';
+  const schemaUnchanged = before.schemaSha256 === after.schemaSha256;
+  const contentInvariantPassed = schemaUnchanged
+    && Object.keys(unexpectedTableDrift).length === 0
+    && auditLogDelta === 1
+    && validBindingReceipt;
+
+  return {
+    verdict: contentInvariantPassed
+      ? 'PASS_ISOLATED_DATABASE_BOUND_AND_INVARIANT'
+      : 'FAIL_ISOLATED_DATABASE_BINDING_OR_CONTENT_DRIFT',
+    schemaUnchanged,
+    nonAuditTablesUnchanged: Object.keys(unexpectedTableDrift).length === 0,
+    unexpectedTableDrift,
+    auditLogDelta,
+    bindingReceipt: {
+      probeEmailSha256: sha256(databaseBindingProbeEmail),
+      observedCount: parsedReceipts.length,
+      expected: 'exactly one anonymous login_failed/User not found receipt',
+      observed: parsedReceipts,
+    },
+  };
 }
 
 async function readResponse(response) {
@@ -274,10 +452,28 @@ function classify(route, status, body) {
   if (status >= 500) {
     return { verdict: 'FAIL_SERVER_ERROR', exposedKeys };
   }
-  if ([401, 403, 404, 405, 410].includes(status)) {
+  if ([401, 403].includes(status)) {
     return { verdict: 'PASS_PROTECTED', exposedKeys };
   }
-  return { verdict: 'FAIL_AMBIGUOUS_PROTECTION', exposedKeys };
+  return { verdict: 'FAIL_PRIVATE_AUTH_STATUS', exposedKeys };
+}
+
+function assertPrivateGetClassifier() {
+  const privateRoute = { template: '/api/private-resource/[id]' };
+  const unauthorized = classify(privateRoute, 401, { error: 'Nao autenticado' });
+  const forbidden = classify(privateRoute, 403, { error: 'Sem permissao' });
+  const missingFakeId = classify(privateRoute, 404, { error: 'Nao encontrado' });
+  const knownPublicMissingToken = classify(
+    { template: '/api/invites/[token]' },
+    404,
+    { error: 'Convite invalido' },
+  );
+  if (unauthorized.verdict !== 'PASS_PROTECTED'
+    || forbidden.verdict !== 'PASS_PROTECTED'
+    || missingFakeId.verdict !== 'FAIL_PRIVATE_AUTH_STATUS'
+    || knownPublicMissingToken.verdict !== 'PASS_PUBLIC_MINIMAL') {
+    throw new Error('GET classifier must require 401/403 except for explicit public contracts');
+  }
 }
 
 async function probe(route) {
@@ -374,23 +570,11 @@ async function probeIsolatedMethod(probeDefinition) {
 }
 
 assertSensitiveKeyClassifier();
+assertPrivateGetClassifier();
 
-let domainCountsBefore = null;
-if (allowIsolatedMethodProbes) {
-  const target = new URL(baseUrl);
-  const loopbackHosts = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
-  if (!loopbackHosts.has(target.hostname)) {
-    throw new Error(
-      'SECURITY_AUDIT_ALLOW_WRITES=1 is restricted to a loopback isolated runtime',
-    );
-  }
-  if (!isolatedDatabasePath) {
-    throw new Error(
-      'SECURITY_AUDIT_DATABASE_PATH is required for isolated persistence verification',
-    );
-  }
-  domainCountsBefore = readDomainCounts(isolatedDatabasePath);
-}
+const isolatedDatabase = allowIsolatedMethodProbes
+  ? resolveIsolatedDatabase()
+  : null;
 
 const routes = listRouteFiles(apiRoot)
   .filter((filePath) => exportsGet(fs.readFileSync(filePath, 'utf8')))
@@ -400,87 +584,128 @@ const routes = listRouteFiles(apiRoot)
       template,
       path: probePath(template),
       source: path.relative(projectRoot, filePath).split(path.sep).join('/'),
+      accessExpectation: PUBLIC_GET_RULES.has(template)
+        ? 'known-public-contract'
+        : 'private-requires-401-or-403',
     };
   })
   .sort((a, b) => a.template.localeCompare(b.template));
 
-const results = [];
+const readonlyGetResults = [];
 for (const route of routes) {
-  results.push(await probe(route));
+  readonlyGetResults.push(await probe(route));
 }
+
+const databaseSnapshotBefore = isolatedDatabase
+  ? readDatabaseSnapshot(isolatedDatabase.realPath)
+  : null;
+if (databaseSnapshotBefore && !databaseSnapshotBefore.tables.audit_logs) {
+  throw new Error('Isolated database must contain audit_logs for runtime binding evidence');
+}
+
+const isolatedMethodResults = [];
 if (allowIsolatedMethodProbes) {
   for (const probeDefinition of ISOLATED_METHOD_PROBES) {
-    results.push(await probeIsolatedMethod(probeDefinition));
+    isolatedMethodResults.push(await probeIsolatedMethod(probeDefinition));
   }
 }
 
-const domainCountsAfter = allowIsolatedMethodProbes
-  ? readDomainCounts(isolatedDatabasePath)
+const bindingReceipts = isolatedDatabase
+  ? await waitForBindingReceipt(isolatedDatabase.realPath)
+  : [];
+const databaseSnapshotAfter = isolatedDatabase
+  ? readDatabaseSnapshot(isolatedDatabase.realPath)
   : null;
-const domainPersistenceDrift = allowIsolatedMethodProbes
-  ? Object.fromEntries(DOMAIN_TABLES
-    .filter((table) => domainCountsBefore[table] !== domainCountsAfter[table])
-    .map((table) => [table, {
-      before: domainCountsBefore[table],
-      after: domainCountsAfter[table],
-    }]))
-  : {};
-if (Object.keys(domainPersistenceDrift).length > 0) {
-  results.push({
-    id: 'domain-persistence-invariant',
-    template: 'isolated-database',
-    path: isolatedDatabasePath,
-    method: 'DATABASE',
-    url: null,
-    status: null,
-    expectedStatuses: [],
-    contentType: null,
-    verdict: 'FAIL_DOMAIN_PERSISTENCE',
-    exposedKeys: [],
-    preview: JSON.stringify(domainPersistenceDrift),
-  });
-}
+const databaseInvariant = databaseSnapshotBefore && databaseSnapshotAfter
+  ? compareDatabaseSnapshots(databaseSnapshotBefore, databaseSnapshotAfter, bindingReceipts)
+  : null;
 
-const failures = results.filter((result) => result.verdict.startsWith('FAIL_'));
+const readonlyGetFailures = readonlyGetResults
+  .filter((result) => result.verdict.startsWith('FAIL_'));
+const isolatedMethodFailures = isolatedMethodResults
+  .filter((result) => result.verdict.startsWith('FAIL_'));
+const databaseInvariantFailed = databaseInvariant?.verdict.startsWith('FAIL_') ?? false;
+const isolatedMethodFailureCount = isolatedMethodFailures.length
+  + (databaseInvariantFailed ? 1 : 0);
+const totalFailed = readonlyGetFailures.length + isolatedMethodFailureCount;
 const report = {
+  schemaVersion: 2,
   generatedAt: new Date().toISOString(),
-  mode: allowIsolatedMethodProbes
-    ? 'readonly-anonymous-get+isolated-method-contracts'
-    : 'readonly-anonymous-get',
   baseUrl,
-  isolatedMethodProbesEnabled: allowIsolatedMethodProbes,
-  isolatedMethodProbeCount: allowIsolatedMethodProbes ? ISOLATED_METHOD_PROBES.length : 0,
-  sensitiveClassifierSelfCheck: 'keys-only-pass',
-  domainCountsBefore,
-  domainCountsAfter,
-  domainPersistenceDrift,
-  telemetryPersistenceNote: allowIsolatedMethodProbes
-    ? 'invalid login may append an audit_logs security receipt'
-    : null,
-  persistenceGuard: allowIsolatedMethodProbes
-    ? 'loopback-only with automatic domain-table count invariant'
-    : 'no state-changing methods executed',
-  routeCount: results.length,
-  passed: results.length - failures.length,
-  failed: failures.length,
-  failures,
-  results,
+  classifierSelfChecks: [
+    'sensitive-response-keys-only',
+    'private-get-requires-401-or-403',
+    'known-public-get-contracts-only',
+  ],
+  readonlyGetEvidence: {
+    evidenceKind: 'anonymous-get-only',
+    executionPolicy: 'GET requests only; no state-changing methods in this evidence set',
+    knownPublicTemplates: [...PUBLIC_GET_RULES.keys()].sort(),
+    privateAcceptedStatuses: [401, 403],
+    routeCount: readonlyGetResults.length,
+    passed: readonlyGetResults.length - readonlyGetFailures.length,
+    failed: readonlyGetFailures.length,
+    failures: readonlyGetFailures,
+    results: readonlyGetResults,
+  },
+  isolatedMethodEvidence: {
+    evidenceKind: 'loopback-isolated-database-method-contracts',
+    enabled: allowIsolatedMethodProbes,
+    executionPolicy: allowIsolatedMethodProbes
+      ? 'POST/PATCH/DELETE probes permitted only on loopback with a non-default absolute SQLite path'
+      : 'not executed; SECURITY_AUDIT_ALLOW_WRITES was not 1',
+    methodProbeRunId: allowIsolatedMethodProbes ? methodProbeRunId : null,
+    probeCount: isolatedMethodResults.length,
+    probePassed: isolatedMethodResults.length - isolatedMethodFailures.length,
+    probeFailed: isolatedMethodFailures.length,
+    evidenceFailureCount: isolatedMethodFailureCount,
+    failures: isolatedMethodFailures,
+    results: isolatedMethodResults,
+    database: isolatedDatabase ? {
+      configuredPath: isolatedDatabase.configuredPath,
+      realPath: isolatedDatabase.realPath,
+      defaultDatabaseRejected: true,
+      snapshotKind: 'all-user-tables-row-count-and-content-sha256',
+      sizeBytesBefore: isolatedDatabase.sizeBytesBefore,
+      sizeBytesAfter: fs.statSync(isolatedDatabase.realPath).size,
+      snapshotBefore: databaseSnapshotBefore,
+      snapshotAfter: databaseSnapshotAfter,
+      invariant: databaseInvariant,
+    } : null,
+  },
+  totalFailed,
 };
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`);
 
 console.log(JSON.stringify({
-  mode: report.mode,
   baseUrl: report.baseUrl,
-  routeCount: report.routeCount,
-  passed: report.passed,
-  failed: report.failed,
+  readonlyGet: {
+    routeCount: report.readonlyGetEvidence.routeCount,
+    passed: report.readonlyGetEvidence.passed,
+    failed: report.readonlyGetEvidence.failed,
+  },
+  isolatedMethods: {
+    enabled: report.isolatedMethodEvidence.enabled,
+    probeCount: report.isolatedMethodEvidence.probeCount,
+    probePassed: report.isolatedMethodEvidence.probePassed,
+    probeFailed: report.isolatedMethodEvidence.probeFailed,
+    evidenceFailureCount: report.isolatedMethodEvidence.evidenceFailureCount,
+    databaseInvariant: report.isolatedMethodEvidence.database?.invariant.verdict ?? 'NOT_RUN',
+  },
+  totalFailed: report.totalFailed,
   outputPath,
 }, null, 2));
 
-for (const failure of failures) {
+for (const failure of readonlyGetFailures) {
+  console.error(`GET ${failure.verdict} ${failure.status ?? 'ERR'} ${failure.template}`);
+}
+for (const failure of isolatedMethodFailures) {
   console.error(`${failure.verdict} ${failure.status ?? 'ERR'} ${failure.template}`);
 }
+if (databaseInvariantFailed) {
+  console.error(`${databaseInvariant.verdict} ${isolatedDatabase.realPath}`);
+}
 
-process.exitCode = failures.length === 0 ? 0 : 1;
+process.exitCode = totalFailed === 0 ? 0 : 1;
