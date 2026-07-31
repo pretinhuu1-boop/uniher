@@ -45,7 +45,7 @@ describe('public boundary hardening', () => {
     const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
 
     expect(source).toContain(
-      "if (isNavigation) {\n    event.respondWith(fetch(event.request));\n    return;\n  }",
+      "if (!PUBLIC_OFFLINE_PATHS.has(url.pathname)) {\n      event.respondWith(fetch(event.request));",
     );
   });
 

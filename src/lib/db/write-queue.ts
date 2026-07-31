@@ -6,6 +6,7 @@ type WriteOperation<T = unknown> = {
   reject: (error: Error) => void;
   enqueuedAt: number;
   retries: number;
+  retryOnFailure: boolean;
   label?: string;
 };
 
@@ -15,7 +16,12 @@ type DLQItem = {
   enqueuedAt: number;
   failedAt: number;
   retries: number;
+  retryOnFailure: boolean;
   label?: string;
+};
+
+type WriteQueueOptions = {
+  retryOnFailure?: boolean;
 };
 
 const OPERATION_TIMEOUT = 10_000; // 10s max per operation
@@ -36,7 +42,11 @@ export class WriteQueue {
   }
 
   /** Enqueue a write operation with optional label for debugging */
-  enqueue<T>(execute: (db: Database.Database) => T, label?: string): Promise<T> {
+  enqueue<T>(
+    execute: (db: Database.Database) => T,
+    label?: string,
+    options: WriteQueueOptions = {},
+  ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       this.queue.push({
         execute: execute as (db: Database.Database) => unknown,
@@ -44,6 +54,7 @@ export class WriteQueue {
         reject,
         enqueuedAt: Date.now(),
         retries: 0,
+        retryOnFailure: options.retryOnFailure ?? true,
         label,
       });
       this.processNext();
@@ -73,9 +84,12 @@ export class WriteQueue {
       if (!completed) {
         completed = true;
         this.stats.timedOut++;
-        // Move to DLQ for retry
-        this.addToDLQ(operation, 'Timeout after 10s');
-        operation.reject(new Error('Write operation timed out (10s). Moved to retry queue.'));
+        if (operation.retryOnFailure) {
+          this.addToDLQ(operation, 'Timeout after 10s');
+          operation.reject(new Error('Write operation timed out (10s). Moved to retry queue.'));
+        } else {
+          operation.reject(new Error('Write operation timed out (10s).'));
+        }
         this.processing = false;
         this.processNext();
       }
@@ -96,7 +110,11 @@ export class WriteQueue {
         const errMsg = error instanceof Error ? error.message : String(error);
 
         // Retryable errors go to DLQ
-        if (this.isRetryable(errMsg) && operation.retries < DLQ_MAX_RETRIES) {
+        if (
+          operation.retryOnFailure
+          && this.isRetryable(errMsg)
+          && operation.retries < DLQ_MAX_RETRIES
+        ) {
           this.addToDLQ(operation, errMsg);
           operation.reject(new Error(`Write failed: ${errMsg}. Queued for retry.`));
         } else {
@@ -129,6 +147,7 @@ export class WriteQueue {
       enqueuedAt: op.enqueuedAt,
       failedAt: Date.now(),
       retries: op.retries + 1,
+      retryOnFailure: op.retryOnFailure,
       label: op.label,
     });
   }
@@ -157,6 +176,7 @@ export class WriteQueue {
         },
         enqueuedAt: Date.now(),
         retries: item.retries,
+        retryOnFailure: item.retryOnFailure,
         label: item.label ? `${item.label} (retry ${item.retries})` : undefined,
       });
       this.processNext();

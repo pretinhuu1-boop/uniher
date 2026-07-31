@@ -100,6 +100,30 @@ describe('upload replacement lifecycle', () => {
     expect(uploadDeps.removeUploadedFile).toHaveBeenCalledWith('/uploads/avatars/newUpload.png');
   });
 
+  it.each(routes)('makes a retryable $name pointer failure safe before compensating', async ({
+    handler,
+    field,
+  }) => {
+    uploadDeps.enqueue.mockImplementation(async (operation: any) => operation({
+      prepare: (sql: string) => sql.includes(`SELECT ${field}`)
+        ? { get: () => { throw new Error('SQLITE_BUSY'); } }
+        : { run: () => ({ changes: 1 }) },
+    }));
+
+    const response = await handler(uploadRequest(), { params: Promise.resolve({}) });
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body.error).toContain('Tente novamente');
+    expect(body.error).not.toContain('SQLITE_BUSY');
+    expect(uploadDeps.removeUploadedFile).toHaveBeenCalledWith('/uploads/avatars/newUpload.png');
+    expect(uploadDeps.enqueue).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.stringContaining('upload pointer'),
+      { retryOnFailure: false },
+    );
+  });
+
   it.each(routes)('removes the previous $name only after its pointer update succeeds', async ({
     handler,
     field,
@@ -132,5 +156,24 @@ describe('upload replacement lifecycle', () => {
     expect(response.status).toBe(200);
     expect(uploadDeps.removeUploadedFile).toHaveBeenCalledWith(previousUrl);
     expect(uploadDeps.removeUploadedFile).not.toHaveBeenCalledWith('/uploads/avatars/newUpload.png');
+  });
+
+  it.each(routes)('keeps a successful $name update successful when old-file cleanup fails', async ({
+    handler,
+    field,
+    previousUrl,
+  }) => {
+    uploadDeps.enqueue.mockImplementation(async (operation: any) => operation({
+      prepare: (sql: string) => sql.includes(`SELECT ${field}`)
+        ? { get: () => ({ [field]: previousUrl }) }
+        : { run: () => ({ changes: 1 }) },
+    }));
+    uploadDeps.removeUploadedFile.mockRejectedValue(new Error('old file unavailable'));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const response = await handler(uploadRequest(), { params: Promise.resolve({}) });
+
+    expect(response.status).toBe(200);
+    expect(uploadDeps.removeUploadedFile).toHaveBeenCalledWith(previousUrl);
   });
 });

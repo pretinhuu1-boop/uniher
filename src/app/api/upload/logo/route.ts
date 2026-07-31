@@ -3,6 +3,33 @@ import { withRole } from '@/lib/auth/middleware';
 import { removeUploadedFile, saveUploadedFile } from '@/lib/upload';
 import { getWriteQueue } from '@/lib/db';
 import { checkUploadRateLimit } from '@/lib/security/rate-limit';
+import { handleApiError, RateLimitError } from '@/lib/errors';
+
+function uploadErrorResponse(error: unknown): NextResponse {
+  if (error instanceof RateLimitError) return handleApiError(error);
+
+  const message = error instanceof Error ? error.message : '';
+  if (
+    message.includes('permitido')
+    || message.includes('muito grande')
+    || message.includes('corresponde')
+    || message.includes('Limite de armazenamento')
+  ) {
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  const retryable = message.includes('SQLITE_BUSY')
+    || message.includes('SQLITE_LOCKED')
+    || message.includes('database is locked');
+  return NextResponse.json(
+    {
+      error: retryable
+        ? 'Upload temporariamente indisponivel. Tente novamente.'
+        : 'Erro ao fazer upload.',
+    },
+    { status: retryable ? 503 : 500 },
+  );
+}
 
 export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) => {
   try {
@@ -35,7 +62,7 @@ export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) =>
         }
 
         return previous?.logo_url ?? null;
-      });
+      }, 'replace logo upload pointer', { retryOnFailure: false });
     } catch (updateError) {
       try {
         await removeUploadedFile(url);
@@ -49,13 +76,15 @@ export const POST = withRole('rh', 'admin')(async (req: NextRequest, context) =>
     }
 
     if (previousUrl && previousUrl !== url) {
-      await removeUploadedFile(previousUrl);
+      try {
+        await removeUploadedFile(previousUrl);
+      } catch {
+        console.error('[UPLOAD] Falha ao remover o logo anterior');
+      }
     }
 
     return NextResponse.json({ success: true, url });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Erro ao fazer upload';
-    const status = message.includes('não permitido') || message.includes('muito grande') ? 400 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return uploadErrorResponse(err);
   }
 });
