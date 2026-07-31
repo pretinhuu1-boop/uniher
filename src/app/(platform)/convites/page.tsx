@@ -60,17 +60,20 @@ function getDefaultExpiry() {
 export default function ConvitesPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const canManageInvites = user?.role === 'rh' || isAdmin;
   const roleOptions = isAdmin ? ROLE_OPTIONS : ROLE_OPTIONS.filter(r => r.value !== 'rh');
   const [tab, setTab] = useState<Tab>('invites');
 
   const { data, mutate } = useSWR<{ invites: any[] }>('/api/invites', fetcher, {
     revalidateOnFocus: false,
   });
-  const { data: deptData, mutate: mutateDepts } = useSWR<{ departments: any[] }>('/api/departments', fetcher, {
-    revalidateOnFocus: false,
-  });
+  const { data: deptData, mutate: mutateDepts } = useSWR<{ departments: any[] }>(
+    canManageInvites ? '/api/departments' : null,
+    fetcher,
+    { revalidateOnFocus: false },
+  );
   const { data: pendingData, mutate: mutatePending } = useSWR<{ users: any[] }>(
-    '/api/invites/pending',
+    canManageInvites ? '/api/invites/pending' : null,
     fetcher,
     { revalidateOnFocus: false, refreshInterval: 30_000 }
   );
@@ -256,6 +259,7 @@ export default function ConvitesPage() {
       </div>
 
       {/* ── Tabs ── */}
+      {canManageInvites && (
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <button
           onClick={() => setTab('invites')}
@@ -293,9 +297,10 @@ export default function ConvitesPage() {
           )}
         </button>
       </div>
+      )}
 
       {/* ── Aprovações pendentes ── */}
-      {tab === 'pending' && (
+      {canManageInvites && tab === 'pending' && (
         <div>
           <div className={styles.sectionTitle}>
             <span>⏳</span> Aguardando aprovação
@@ -365,6 +370,7 @@ export default function ConvitesPage() {
 
       {/* ── Aba: Convites enviados ── */}
       {tab === 'invites' && <>
+      {canManageInvites && <>
       <div className={styles.formCard}>
         <div className={styles.formTitle}>
           <span>✉️</span> Enviar novo convite
@@ -610,6 +616,7 @@ export default function ConvitesPage() {
           </div>
         )}
       </div>
+      </>}
 
       {/* ── Lista de convites ── */}
       <div className={styles.sectionTitle}>
@@ -696,7 +703,7 @@ export default function ConvitesPage() {
     </div>
 
     {/* Modal: Criar novo setor */}
-    {showNewDept && (
+    {canManageInvites && showNewDept && (
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowNewDept(false)}>
         <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: 380, maxWidth: '90vw', boxShadow: '0 8px 30px rgba(0,0,0,0.15)' }} onClick={e => e.stopPropagation()}>
           <h3 style={{ margin: '0 0 16px', fontFamily: 'var(--ff-display)', fontSize: 20, color: '#1a3a6b' }}>Novo Setor</h3>
