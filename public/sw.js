@@ -49,8 +49,7 @@ self.addEventListener('message', event => {
   }
 });
 
-// Never cache Next internals or API. For HTML/navigation, prefer network to avoid
-// stale documents referencing old chunk names after deploys.
+// Never cache Next internals, APIs, or authenticated HTML navigation.
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) return;
@@ -60,18 +59,7 @@ self.addEventListener('fetch', event => {
     || event.request.headers.get('accept')?.includes('text/html');
 
   if (isNavigation) {
-    event.respondWith((async () => {
-      try {
-        const fresh = await fetch(event.request);
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(event.request, fresh.clone());
-        return fresh;
-      } catch {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-        return Response.error();
-      }
-    })());
+    event.respondWith(fetch(event.request));
     return;
   }
 

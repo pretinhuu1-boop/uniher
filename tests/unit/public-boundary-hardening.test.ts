@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { NextRequest } from 'next/server';
+import fs from 'node:fs';
+import path from 'node:path';
 import { proxy } from '@/proxy';
 import { getClientIp } from '@/lib/security/rate-limit';
 import { saveUploadedFile } from '@/lib/upload';
@@ -21,6 +23,30 @@ describe('public boundary hardening', () => {
     const response = await proxy(new NextRequest('http://localhost/_next/static/chunk.js'));
 
     expect(response.headers.get('x-middleware-next')).toBe('1');
+  });
+
+  it.each(['/sw.js', '/manifest.json', '/robots.txt', '/sitemap.xml'])(
+    'keeps required public PWA and discovery asset accessible: %s',
+    async (route) => {
+      const response = await proxy(new NextRequest(`http://localhost${route}`));
+
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+    },
+  );
+
+  it('does not expose internal API documentation as a generic static asset', async () => {
+    const response = await proxy(new NextRequest('http://localhost/api-docs.json'));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toContain('/auth');
+  });
+
+  it('never stores authenticated HTML navigation in the service worker cache', () => {
+    const source = fs.readFileSync(path.join(process.cwd(), 'public', 'sw.js'), 'utf8');
+
+    expect(source).toContain(
+      "if (isNavigation) {\n    event.respondWith(fetch(event.request));\n    return;\n  }",
+    );
   });
 
   it('uses the trusted reverse-proxy address instead of a spoofed forwarded IP', () => {
