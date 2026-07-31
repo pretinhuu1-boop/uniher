@@ -3,11 +3,16 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('health check-in navigation surface', () => {
-  it('exposes the exam quiz as an authenticated platform page in the collaborator menu', () => {
-    const pagePath = path.join(process.cwd(), 'src/app/(platform)/health-checkin/page.tsx');
+  it('keeps the exam quiz inside the existing Semaforo page without a parallel section', () => {
+    const semaforoPagePath = path.join(process.cwd(), 'src/app/(platform)/semaforo/page.tsx');
+    const parallelPagePath = path.join(process.cwd(), 'src/app/(platform)/health-checkin/page.tsx');
     const sidebarPath = path.join(process.cwd(), 'src/components/platform/Sidebar.tsx');
+    const semaforoPage = readFileSync(semaforoPagePath, 'utf8');
+    const sidebar = readFileSync(sidebarPath, 'utf8');
 
-    expect(existsSync(pagePath)).toBe(true);
-    expect(readFileSync(sidebarPath, 'utf8')).toContain("href: '/health-checkin'");
+    expect(semaforoPage).toContain('ExamSemaphoreQuiz');
+    expect(sidebar).toContain("href: '/semaforo'");
+    expect(sidebar).not.toContain("href: '/health-checkin'");
+    expect(existsSync(parallelPagePath)).toBe(false);
   });
 });

@@ -5,7 +5,6 @@ import { handleApiError } from '@/lib/errors';
 import { mapHealthCheckinToSemaphore } from '@/lib/health-checkin/mapper';
 import { healthCheckinSchema } from '@/lib/validation/schemas';
 import { recordHealthCheckinConsent, recordHealthCheckinExams } from '@/repositories/health-checkin.repository';
-import { recordHealthScore } from '@/repositories/health-score.repository';
 
 export const POST = withRole('colaboradora', 'lideranca')(async (req: NextRequest, { auth }) => {
   try {
@@ -26,10 +25,6 @@ export const POST = withRole('colaboradora', 'lideranca')(async (req: NextReques
 
     await recordHealthCheckinConsent({ userId: auth.userId, ipAddress, userAgent });
     await recordHealthCheckinExams(auth.userId, result.examItems);
-
-    for (const score of result.semaforoScores) {
-      await recordHealthScore(auth.userId, score.dimension, score.score);
-    }
 
     return NextResponse.json({
       success: true,

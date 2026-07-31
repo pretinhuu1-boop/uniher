@@ -30,16 +30,16 @@ describe('health check-in exam persistence', () => {
     await recordHealthCheckinExams('user-1', [
       { examName: 'Mamografia', status: 'overdue', priority: 'urgent' },
       { examName: 'Papanicolau', status: 'overdue', priority: 'urgent' },
-      { examName: 'Consulta ginecologica', status: 'pending', priority: 'attention' },
+      { examName: 'Hemograma completo e ferritina', status: 'pending', priority: 'attention' },
     ]);
 
     expect(enqueue).toHaveBeenCalledTimes(1);
     expect(prepare).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM user_exams'));
-    expect(deleteRun).toHaveBeenCalledWith('user-1', 'health_checkin_exam_quiz');
+    expect(deleteRun).toHaveBeenCalledWith('user-1', 'semaforo_exam_quiz');
     expect(prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO user_exams'));
-    expect(insertRun).toHaveBeenCalledWith('exam-1', 'user-1', 'Mamografia', 'overdue', null, null, 'health_checkin_exam_quiz');
-    expect(insertRun).toHaveBeenCalledWith('exam-2', 'user-1', 'Papanicolau', 'overdue', null, null, 'health_checkin_exam_quiz');
-    expect(insertRun).toHaveBeenCalledWith('exam-3', 'user-1', 'Consulta ginecologica', 'pending', null, null, 'health_checkin_exam_quiz');
+    expect(insertRun).toHaveBeenCalledWith('exam-1', 'user-1', 'Mamografia', 'overdue', null, null, 'semaforo_exam_quiz');
+    expect(insertRun).toHaveBeenCalledWith('exam-2', 'user-1', 'Papanicolau', 'overdue', null, null, 'semaforo_exam_quiz');
+    expect(insertRun).toHaveBeenCalledWith('exam-3', 'user-1', 'Hemograma completo e ferritina', 'pending', null, null, 'semaforo_exam_quiz');
   });
 
   it('records an auditable consent receipt for the health check-in quiz', async () => {
@@ -53,7 +53,7 @@ describe('health check-in exam persistence', () => {
     expect(insertRun).toHaveBeenCalledWith(
       'exam-1',
       'user-1',
-      'health-checkin-v1',
+      'semaforo-exams-v1',
       1,
       '203.0.113.10',
       'Playwright'

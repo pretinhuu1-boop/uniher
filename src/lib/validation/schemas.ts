@@ -52,22 +52,18 @@ export const quizSubmitSchema = z.object({
 });
 
 export const healthCheckinAnswersSchema = z.object({
-  lastGynecologist: z.enum(['recent', 'moderate', 'delayed', 'overdue', 'never']),
-  mammography: z.enum(['current', 'delayed', 'never_needed', 'na']),
-  papanicolau: z.enum(['recent', 'moderate', 'delayed', 'never']),
-  familyHistory: z.enum(['no', 'distant', 'close', 'unknown']),
-  diabetesHistory: z.enum(['no', 'distant', 'close', 'self']),
-  menstrualCycle: z.enum(['regular', 'irregular', 'painful', 'menopause', 'contraceptive']),
-  mentalHealth: z.enum(['great', 'good', 'regular', 'concerning']),
-  lifestyle: z.enum(['active', 'moderate', 'sedentary', 'inactive']),
-  smoking: z.enum(['never', 'quit_long', 'quit_recent', 'current']),
+  age: z.number().int().min(20).max(120),
+  exams: z.record(
+    z.string(),
+    z.enum(['in_day', 'due_soon', 'overdue', 'not_sure', 'not_applicable'])
+  ),
 });
 
 export const healthCheckinSchema = z.object({
-  source: z.literal('exam_quiz_v1'),
+  source: z.literal('semaforo_exam_quiz_v1'),
   consent: z.object({
     accepted: z.boolean().refine((value) => value === true, 'consent is required'),
-    version: z.literal('health-checkin-v1'),
+    version: z.literal('semaforo-exams-v1'),
   }),
   answers: healthCheckinAnswersSchema,
 });

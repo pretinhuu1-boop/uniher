@@ -30,7 +30,6 @@ vi.mock('@/repositories/health-checkin.repository', () => ({
 
 import { POST } from '@/app/api/collaborator/health-checkin/route';
 import { recordHealthCheckinConsent, recordHealthCheckinExams } from '@/repositories/health-checkin.repository';
-import { recordHealthScore } from '@/repositories/health-score.repository';
 
 describe('POST /api/collaborator/health-checkin', () => {
   beforeEach(() => {
@@ -38,26 +37,24 @@ describe('POST /api/collaborator/health-checkin', () => {
     vi.clearAllMocks();
   });
 
-  it('records private semaphore scores from the exam quiz without auto-creating Concierge cases', async () => {
+  it('records private exam statuses without writing a clinical health score', async () => {
     const response = await POST(
       new Request('http://local/api/collaborator/health-checkin', {
         method: 'POST',
         body: JSON.stringify({
-          source: 'exam_quiz_v1',
+          source: 'semaforo_exam_quiz_v1',
           consent: {
             accepted: true,
-            version: 'health-checkin-v1',
+            version: 'semaforo-exams-v1',
           },
           answers: {
-            lastGynecologist: 'never',
-            mammography: 'never_needed',
-            papanicolau: 'never',
-            familyHistory: 'close',
-            diabetesHistory: 'self',
-            menstrualCycle: 'painful',
-            mentalHealth: 'concerning',
-            lifestyle: 'inactive',
-            smoking: 'current',
+            age: 45,
+            exams: {
+              papanicolau: 'overdue',
+              mammography: 'overdue',
+              clinical_breast_exam: 'due_soon',
+              cbc_ferritin: 'in_day',
+            },
           },
         }),
         headers: {
@@ -76,15 +73,14 @@ describe('POST /api/collaborator/health-checkin', () => {
       ipAddress: '203.0.113.10',
       userAgent: 'Vitest',
     });
-    expect(recordHealthScore).toHaveBeenCalledWith('user-1', 'Prevencao', 1);
     expect(recordHealthCheckinExams).toHaveBeenCalledWith('user-1', expect.arrayContaining([
-      expect.objectContaining({ examName: 'Consulta ginecologica', status: 'overdue', priority: 'urgent' }),
       expect.objectContaining({ examName: 'Papanicolau', status: 'overdue', priority: 'urgent' }),
+      expect.objectContaining({ examName: 'Mamografia', status: 'overdue', priority: 'urgent' }),
     ]));
     expect(body).toMatchObject({
       success: true,
       result: {
-        source: 'exam_quiz_v1',
+        source: 'semaforo_exam_quiz_v1',
         overallStatus: 'urgent',
         nextAction: 'offer_concierge',
         createConciergeCase: false,
@@ -105,7 +101,6 @@ describe('POST /api/collaborator/health-checkin', () => {
 
     expect(response.status).toBe(403);
     expect(recordHealthCheckinConsent).not.toHaveBeenCalled();
-    expect(recordHealthScore).not.toHaveBeenCalled();
   });
 
   it('returns 400 for invalid health check-in payloads without writing private data', async () => {
@@ -113,8 +108,8 @@ describe('POST /api/collaborator/health-checkin', () => {
       new Request('http://local/api/collaborator/health-checkin', {
         method: 'POST',
         body: JSON.stringify({
-          source: 'exam_quiz_v1',
-          consent: { accepted: false, version: 'health-checkin-v1' },
+          source: 'semaforo_exam_quiz_v1',
+          consent: { accepted: false, version: 'semaforo-exams-v1' },
           answers: {},
         }),
       }) as any,
@@ -124,6 +119,5 @@ describe('POST /api/collaborator/health-checkin', () => {
     expect(response.status).toBe(400);
     expect(recordHealthCheckinConsent).not.toHaveBeenCalled();
     expect(recordHealthCheckinExams).not.toHaveBeenCalled();
-    expect(recordHealthScore).not.toHaveBeenCalled();
   });
 });

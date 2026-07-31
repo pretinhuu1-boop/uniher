@@ -1,8 +1,8 @@
 import { getWriteQueue } from '@/lib/db';
 import { nanoid } from 'nanoid';
 
-const HEALTH_CHECKIN_EXAM_SOURCE = 'health_checkin_exam_quiz';
-const HEALTH_CHECKIN_CONSENT_TYPE = 'health-checkin-v1';
+const HEALTH_CHECKIN_EXAM_SOURCE = 'semaforo_exam_quiz';
+const HEALTH_CHECKIN_CONSENT_TYPE = 'semaforo-exams-v1';
 
 export interface HealthCheckinExamItem {
   examName: string;
