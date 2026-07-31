@@ -4,7 +4,8 @@ Date: 2026-07-31
 Production base: `bb30d75`
 Candidate branch: `codex/security-public-api-hardening`
 Candidate code commit: `ec81a14`
-Decision: `PASS_LOCAL / READY_FOR_PROMOTION`
+Deployed commit: `201586f`
+Decision: `PASS_PRODUCTION`
 
 ## Scope
 
@@ -83,9 +84,11 @@ Machine-readable evidence:
 - Final independent review of `ec81a14`: `PASS`, no P0/P1.
 - Final Claude review of `ec81a14`: `PASS`, no P0/P1.
 
-## Production Preflight
+## Production Evidence
 
 - Online backup: `/var/backups/uniher-security-20260731-114505`.
+- Post-rotation backup used for deployment:
+  `/var/backups/uniher-security-post-rotation-20260731-122507`.
 - Backup integrity: `ok`; permissions `0700` for the directory and `0600` for the
   database and environment copy.
 - The historical Master Admin password was rotated through the authenticated flow;
@@ -94,8 +97,26 @@ Machine-readable evidence:
   demo accounts using the retired password. All four were rotated, their refresh
   tokens were deleted, and the repeated comparison returned zero matches.
 - The pre-deploy backup contains five legacy foreign-key violations. Candidate
-  migration `071_repair_challenge_archetype_ids.sql` is expected to repair them and
-  production must report zero violations after migration.
+  migration `071_repair_challenge_archetype_ids.sql` repaired them; production now
+  reports integrity `ok`, zero foreign-key violations and 68 preserved tables.
+- Migration `070_security_session_version.sql` is live. Session versions were
+  incremented for all five rotated accounts and their refresh-token count is zero.
+- All five secured accounts passed fresh login, `/api/auth/me` and logout requests.
+- Anonymous production audit: 65 of 65 GET routes passed; write probes were disabled.
+- PM2 is online on commit `201586f`; the process listens only on
+  `127.0.0.1:3000`, and external port 3000 is unreachable.
+- Both active Nginx configurations overwrite `X-Forwarded-For` with `$remote_addr`;
+  `nginx -t` passed and HTTPS health returns only `{"status":"healthy"}`.
+- Landing, mobile landing and auth screenshots returned 200 with no console errors.
+  Anonymous `/semaforo` redirected to `/auth?redirect=%2Fsemaforo`.
+
+Production artifacts:
+
+- `artifacts/security/public-api-production-audit.json`
+- `artifacts/security/production-visual-smoke.json`
+- `artifacts/security/screenshots/production-landing-20260731.png`
+- `artifacts/security/screenshots/production-landing-mobile-20260731.png`
+- `artifacts/security/screenshots/production-auth-20260731.png`
 
 ## Promotion Policy
 
@@ -114,11 +135,9 @@ Machine-readable evidence:
 - Claude recorded three non-blocking P2 observations: soft-deleted users remain visible
   to Master Admin, one objective side-effect does not await its queue promise, and the
   development-only guard accepts an optional request but fails closed.
-- The currently deployed schema predates `session_version`; access-token revocation for
-  the four demo accounts is completed only when migration `070_security_session_version.sql`
-  and the new middleware are live.
 - Retired credentials remain visible in historical Git objects even though they are
   absent from the current tree and no production password hash matches them. Rewriting
   shared history is deferred because it requires a coordinated force-push and fresh clones.
-- Production remains `HOLD` until migration, build, restart, read-only scanner and fresh
-  target evidence are recorded.
+- Nginx still emits the existing duplicate protocol-options warning for `[::]:443`.
+- The VPS filesystem remains at approximately 90% usage and should be cleaned in a
+  separate operational maintenance window.

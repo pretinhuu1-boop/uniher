@@ -1,0 +1,21 @@
+{
+  "landing": {
+    "status": 200,
+    "finalUrl": "https://uniher.com.br/",
+    "consoleErrors": []
+  },
+  "landing-mobile": {
+    "status": 200,
+    "finalUrl": "https://uniher.com.br/",
+    "consoleErrors": []
+  },
+  "auth": {
+    "status": 200,
+    "finalUrl": "https://uniher.com.br/auth",
+    "consoleErrors": []
+  },
+  "protectedRedirect": {
+    "finalUrl": "https://uniher.com.br/auth?redirect=%2Fsemaforo"
+  },
+  "passed": true
+}
