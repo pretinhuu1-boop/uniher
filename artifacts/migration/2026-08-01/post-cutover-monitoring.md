@@ -44,6 +44,36 @@ Result: `PASS`
 
 There remains exactly one writable UniHER application/database on the target. The source is only a verified TLS rollback edge.
 
+## Checkpoint T+39 minutes
+
+Observed: 2026-08-01 16:24 BRT / 19:24 UTC
+Result: `PASS`
+
+### Fresh Backup And Isolated Restore
+
+- Backup service result: `success`
+- Backup: `/var/backups/uniher/automatic/uniher-20260801T192407Z.db`
+- Backup SHA-256: `4abc3ff4c7192a38a5b34ee04733e8868bb3535bb32c4ae4a2df101719a77e46`
+- Backup checksum verification: `OK`
+- Backup integrity: `ok`
+- Isolated restore: `/var/backups/uniher/restore-verification/20260801T192407Z/uniher-restored.db`
+- Restore integrity: `ok`
+- Application tables compared: `68`
+- Row-count differences between live and restored databases: `0`
+- Restored users: `9`
+- Restored migrations: `71`
+- Target health after verification: `{"status":"healthy"}`
+
+### Secret-Rotation Readiness
+
+- Guarded script: `scripts/operations/uniher-rotate-runtime-secrets.sh`
+- Target Bash syntax check: `PASS`
+- Read-only target preflight: `PASS`
+- Target commit: `3c4d1081466d2af9c38c95863996c71334868c83`
+- PM2 remained on PID `2608`
+- No secret, environment file, database, or process was changed by the preflight.
+- Real rotation remains blocked until the T+2 stability gate and acknowledged session invalidation.
+
 ## Pending Checkpoints
 
 - T+1 TTL: 2026-08-01 16:45 BRT or later

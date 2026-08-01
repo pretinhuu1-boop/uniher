@@ -316,6 +316,7 @@ New-owner handoff and secret-rotation contract: `docs/operations/2026-08-01-new-
 - Daily target backup timer `uniher-backup.timer` is enabled and active.
 - Backup output: `/var/backups/uniher/automatic`, mode 700, 14-day retention.
 - Target backups passed integrity and SHA-256 verification, including the post-final-sync backup `/var/backups/uniher/automatic/uniher-20260801T181052Z.db`.
+- Post-DNS backup `/var/backups/uniher/automatic/uniher-20260801T192407Z.db` restored into an isolated database with integrity `ok`, all 68 table counts equal, 9 users, and 71 migrations.
 - Latest validated backup used standalone journal mode `delete` and left zero WAL/SHM/temp sidecars.
 
 ### Functional, visual, and security gates
