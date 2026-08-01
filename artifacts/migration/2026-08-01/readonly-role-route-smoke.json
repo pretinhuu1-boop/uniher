@@ -1,0 +1,437 @@
+{
+  "generatedAt": "2026-08-01T16:58:00.637Z",
+  "baseUrl": "https://srv1872618.hstgr.cloud",
+  "policy": "Login POST only; all subsequent API mutations aborted",
+  "profiles": [
+    {
+      "name": "admin",
+      "loginStatus": 200,
+      "returnedRole": "admin",
+      "blockedMutations": [],
+      "routes": [
+        {
+          "path": "/admin",
+          "status": 200,
+          "finalPath": "/admin",
+          "heading": "Painel UniHER",
+          "bodyTextLength": 481,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/analytics-emails",
+          "status": 200,
+          "finalPath": "/analytics-emails",
+          "heading": "Analytics de Comunicacao",
+          "bodyTextLength": 601,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/configuracoes",
+          "status": 200,
+          "finalPath": "/configuracoes",
+          "heading": "Configurações",
+          "bodyTextLength": 1821,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        }
+      ]
+    },
+    {
+      "name": "rh",
+      "loginStatus": 200,
+      "returnedRole": "rh",
+      "blockedMutations": [],
+      "routes": [
+        {
+          "path": "/dashboard",
+          "status": 200,
+          "finalPath": "/dashboard",
+          "heading": "Dashboard",
+          "bodyTextLength": 1327,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/colaboradoras-gestao",
+          "status": 200,
+          "finalPath": "/colaboradoras-gestao",
+          "heading": "Gestão de Colaboradoras",
+          "bodyTextLength": 1507,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/departamentos",
+          "status": 200,
+          "finalPath": "/departamentos",
+          "heading": "Departamentos",
+          "bodyTextLength": 568,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/campanhas",
+          "status": 200,
+          "finalPath": "/campanhas",
+          "heading": "Campanhas Temáticas",
+          "bodyTextLength": 710,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/objetivos",
+          "status": 200,
+          "finalPath": "/objetivos",
+          "heading": "Objetivos & Recompensas",
+          "bodyTextLength": 539,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/desafios/gerenciar",
+          "status": 200,
+          "finalPath": "/desafios/gerenciar",
+          "heading": "Gerenciar Desafios",
+          "bodyTextLength": 1599,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/liga/gerenciar",
+          "status": 200,
+          "finalPath": "/liga/gerenciar",
+          "heading": "Gerenciar Ligas",
+          "bodyTextLength": 719,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/gamificacao-config",
+          "status": 200,
+          "finalPath": "/gamificacao-config",
+          "heading": "Configuração de Gamificação",
+          "bodyTextLength": 3817,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/convites",
+          "status": 200,
+          "finalPath": "/convites",
+          "heading": "Convites",
+          "bodyTextLength": 1355,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/agenda",
+          "status": 200,
+          "finalPath": "/agenda",
+          "heading": "📅 Indicadores da Agenda",
+          "bodyTextLength": 921,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/historico",
+          "status": 200,
+          "finalPath": "/historico",
+          "heading": "Historico de Competicoes",
+          "bodyTextLength": 545,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/analytics-emails",
+          "status": 200,
+          "finalPath": "/analytics-emails",
+          "heading": "Analytics de Comunicacao",
+          "bodyTextLength": 818,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/company-profile",
+          "status": 200,
+          "finalPath": "/company-profile",
+          "heading": "UniHER Plataforma",
+          "bodyTextLength": 1097,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/configuracoes",
+          "status": 200,
+          "finalPath": "/configuracoes",
+          "heading": "Configurações",
+          "bodyTextLength": 2038,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        }
+      ]
+    },
+    {
+      "name": "colaboradora",
+      "loginStatus": 200,
+      "returnedRole": "colaboradora",
+      "blockedMutations": [],
+      "routes": [
+        {
+          "path": "/colaboradora",
+          "status": 200,
+          "finalPath": "/colaboradora",
+          "heading": "Check-in Diário",
+          "bodyTextLength": 3671,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/semaforo",
+          "status": 200,
+          "finalPath": "/semaforo",
+          "heading": "Semaforo da Saude",
+          "bodyTextLength": 563,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/campanhas",
+          "status": 200,
+          "finalPath": "/campanhas",
+          "heading": "Campanhas Temáticas",
+          "bodyTextLength": 612,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/objetivos",
+          "status": 200,
+          "finalPath": "/objetivos",
+          "heading": "Objetivos & Recompensas",
+          "bodyTextLength": 457,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/desafios",
+          "status": 200,
+          "finalPath": "/desafios",
+          "heading": "Meus Desafios",
+          "bodyTextLength": 532,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/conquistas",
+          "status": 200,
+          "finalPath": "/conquistas",
+          "heading": "Conquistas",
+          "bodyTextLength": 1245,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/liga",
+          "status": 200,
+          "finalPath": "/liga",
+          "heading": "Liga Semanal",
+          "bodyTextLength": 1234,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/agenda",
+          "status": 200,
+          "finalPath": "/agenda",
+          "heading": "📅 Minha Agenda de Saúde",
+          "bodyTextLength": 531,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/configuracoes",
+          "status": 200,
+          "finalPath": "/configuracoes",
+          "heading": "Configurações",
+          "bodyTextLength": 1952,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        }
+      ]
+    },
+    {
+      "name": "lideranca",
+      "loginStatus": 200,
+      "returnedRole": "lideranca",
+      "blockedMutations": [],
+      "routes": [
+        {
+          "path": "/dashboard",
+          "status": 200,
+          "finalPath": "/dashboard",
+          "heading": "Dashboard",
+          "bodyTextLength": 1257,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/campanhas",
+          "status": 200,
+          "finalPath": "/campanhas",
+          "heading": "Campanhas Temáticas",
+          "bodyTextLength": 626,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/objetivos",
+          "status": 200,
+          "finalPath": "/objetivos",
+          "heading": "Objetivos & Recompensas",
+          "bodyTextLength": 469,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/desafios",
+          "status": 200,
+          "finalPath": "/desafios",
+          "heading": "Meus Desafios",
+          "bodyTextLength": 546,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/agenda",
+          "status": 200,
+          "finalPath": "/agenda",
+          "heading": "📅 Indicadores da Agenda",
+          "bodyTextLength": 851,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/historico",
+          "status": 200,
+          "finalPath": "/historico",
+          "heading": "Historico de Competicoes",
+          "bodyTextLength": 475,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        },
+        {
+          "path": "/configuracoes",
+          "status": 200,
+          "finalPath": "/configuracoes",
+          "heading": "Configurações",
+          "bodyTextLength": 1974,
+          "horizontalOverflow": false,
+          "navigationError": null,
+          "consoleErrors": [],
+          "pageErrors": [],
+          "serverErrors": []
+        }
+      ]
+    }
+  ],
+  "totalRoutes": 33,
+  "failures": []
+}
