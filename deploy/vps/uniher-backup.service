@@ -1,0 +1,10 @@
+[Unit]
+Description=UniHER consistent SQLite backup
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/uniher-sqlite-backup.sh
+User=root
+Group=root
+Nice=10

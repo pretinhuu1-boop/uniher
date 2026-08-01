@@ -294,7 +294,9 @@ New-owner handoff and secret-rotation contract: `docs/operations/2026-08-01-new-
 - Source Nginx now forwards the official domains to `76.13.165.185` with SNI, certificate verification, and forwarded request metadata; the legacy `uniher.axialagents.com` redirects to the official domain.
 - A unique read-only trace appeared once in both source and target access logs, proving the public request traversed the source edge and was processed by the target.
 - Final independent Claude review passed with no remaining P0/P1 after the `/nova` fallback, PM2 rollback receipt, and canonical probe-path findings were corrected.
-- Hostinger post-migration snapshot `320800` was refreshed at `2026-08-01T18:19:16Z`; API action `107225119` completed with state `success` and the snapshot expires at `2026-08-02T18:19:16Z`.
+- Hostinger post-migration snapshot `320800` was refreshed again after the T+2
+  gate at `2026-08-01T20:53:16Z`; API action `107238690` completed with state
+  `success` and the snapshot expires at `2026-08-02T20:53:16Z`.
 
 ### Registro.br DNS cutover
 
@@ -317,6 +319,11 @@ New-owner handoff and secret-rotation contract: `docs/operations/2026-08-01-new-
 - Backup output: `/var/backups/uniher/automatic`, mode 700, 14-day retention.
 - Target backups passed integrity and SHA-256 verification, including the post-final-sync backup `/var/backups/uniher/automatic/uniher-20260801T181052Z.db`.
 - Post-DNS backup `/var/backups/uniher/automatic/uniher-20260801T192407Z.db` restored into an isolated database with integrity `ok`, all 68 table counts equal, 9 users, and 71 migrations.
+- T+2 and post-rotation backups `uniher-20260801T205226Z.db` and
+  `uniher-20260801T205746Z.db` restored with integrity `ok`, zero logical
+  differences across 68 tables, 9 users, and 71 migrations.
+- The systemd backup job is now reproducible from `deploy/vps/`; `umask 077`
+  and explicit chmod keep both database and checksum files at mode 600.
 - Latest validated backup used standalone journal mode `delete` and left zero WAL/SHM/temp sidecars.
 
 ### Functional, visual, and security gates
@@ -326,6 +333,11 @@ New-owner handoff and secret-rotation contract: `docs/operations/2026-08-01-new-
 - Final anonymous audit through the active production bridge passed 63/63 GET routes with 0 failures and no state-changing probes.
 - Post-DNS anonymous audit passed 63/63 GET routes directly through the target resolution, with 0 failures and state-changing probes disabled.
 - T+1 TTL checkpoint passed DNS, direct HTTPS, runtime, logical database parity across 68 tables, landing hash, public 63/63 GET routes, and source rollback invariants.
+- T+2 TTL checkpoint passed the same gates; the required two-TTL stability
+  window is complete.
+- JWT access and refresh secrets were rotated after the T+2 snapshot. Old
+  cookies returned 401, a fresh login succeeded, health remained green, and a
+  post-rotation public audit passed 63/63 GET routes.
 - Authenticated read-only role smoke passed 33/33 platform routes across admin, RH, collaborator, and leadership with 0 failures and 0 unexpected mutations.
 - Master, two RH profiles, collaborator, and leadership credentials authenticated successfully.
 - Master system endpoint returned 200; role and cookie security checks passed (`HttpOnly`, `Secure`, `SameSite`).
@@ -345,7 +357,7 @@ New-owner handoff and secret-rotation contract: `docs/operations/2026-08-01-new-
 
 ## Remaining Approval Gates
 
-1. Monitor at least two TTL windows from the 2026-08-01 15:45 BRT cutover while retaining the verified source bridge as rollback.
-2. Receive the exact new GitHub username, invite it as collaborator, require acceptance and 2FA, and prove clone/push from the new account.
-3. Retire the source only after a separate stability approval.
-4. Rotate the Hostinger API token and application secrets after migration operations are complete.
+1. Receive the exact new GitHub username, invite it as collaborator, require acceptance and 2FA, and prove clone/push from the new account.
+2. Install and independently test the new owner's SSH public key.
+3. Revoke the temporary migration Hostinger API token in hPanel.
+4. Retire the source only after separate operator approval.

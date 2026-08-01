@@ -74,10 +74,10 @@ not printed or copied.
 
 | Item | Current state | Rotation impact |
 | --- | --- | --- |
-| `JWT_SECRET` | set, 64 characters | Invalidates current 15-minute access tokens |
-| `JWT_REFRESH_SECRET` | set, 64 characters | Invalidates current refresh tokens, maximum life 48 hours |
+| `JWT_SECRET` | rotated after T+2, 64 characters | Previous access tokens are invalid |
+| `JWT_REFRESH_SECRET` | rotated after T+2, 64 characters | Previous refresh tokens are invalid |
 | `UNIHER_EMPLOYEE_IMPORT_HMAC_SECRET` | set, 64 characters | Present in the environment; no reference exists in the deployed branch source, so verify before remove or rotate |
-| `UNIHER_RELEASE_SMOKE_ACCOUNTS` | set | Operational credential bundle; replace or remove after handoff validation |
+| `UNIHER_RELEASE_SMOKE_ACCOUNTS` | one generated RH test account | Replace or remove after new-owner validation; value is only on the target |
 | `RESEND_API_KEY` | empty | Email provider is not active in this environment |
 | VAPID public/private keys | empty | Push provider is not active in this environment |
 | Sentry DSNs | empty | Sentry is not active in this environment |
@@ -112,6 +112,23 @@ requires `--execute`, `--acknowledge-session-invalidation`, and
 
 Rollback is the root-only environment copy followed by a PM2 restart with the
 previous environment. Never place either environment file in Git or an artifact.
+
+## Rotation Receipt
+
+Completed after the T+2 checkpoint on 2026-08-01. The four stale credential
+entries were removed and replaced with one generated credential for the
+dedicated `teste@uniher.com` RH smoke account. JWT access and refresh secrets
+were then replaced atomically. Old cookies returned 401; a fresh login and
+authenticated request passed. The final public audit passed 63/63 GET routes.
+
+- Smoke-account rollback:
+  `/var/backups/uniher/smoke-account-rotation/20260801T205657Z`
+- JWT rollback:
+  `/var/backups/uniher/secret-rotation/20260801T205709Z`
+- Final application backup:
+  `/var/backups/uniher/automatic/uniher-20260801T205746Z.db`
+- Final isolated restore:
+  `/var/backups/uniher/restore-verification/20260801T205746Z/uniher-restored.db`
 
 ## Source Retirement Gate
 
