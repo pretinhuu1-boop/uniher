@@ -292,6 +292,7 @@ GitHub collaborator access is `BLOCKED` until the operator provides the exact Gi
 - Source Nginx now forwards the official domains to `76.13.165.185` with SNI, certificate verification, and forwarded request metadata; the legacy `uniher.axialagents.com` redirects to the official domain.
 - A unique read-only trace appeared once in both source and target access logs, proving the public request traversed the source edge and was processed by the target.
 - Final independent Claude review passed with no remaining P0/P1 after the `/nova` fallback, PM2 rollback receipt, and canonical probe-path findings were corrected.
+- Hostinger post-migration snapshot `320800` was refreshed at `2026-08-01T18:19:16Z`; API action `107225119` completed with state `success` and the snapshot expires at `2026-08-02T18:19:16Z`.
 
 ### Backup and restore controls
 
