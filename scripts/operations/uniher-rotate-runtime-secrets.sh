@@ -9,8 +9,18 @@ DATABASE_PATH="$APP_DIR/data/uniher.db"
 BACKUP_ROOT="/var/backups/uniher/secret-rotation"
 EXECUTE=0
 ACK_SESSION_INVALIDATION=0
+VERIFY_AUTH_SESSION_INVALIDATION=0
 ROTATION_APPLIED=0
 BACKUP_DIR=""
+AUTH_TMP_DIR=""
+
+cleanup() {
+  if [[ -n "$AUTH_TMP_DIR" && "$AUTH_TMP_DIR" == /run/uniher-auth-rotation.* ]]; then
+    rm -rf -- "$AUTH_TMP_DIR"
+  fi
+}
+
+trap cleanup EXIT
 
 read_env_value() {
   local env_path="$1"
@@ -94,12 +104,18 @@ usage() {
   cat <<'USAGE'
 Usage:
   uniher-rotate-runtime-secrets.sh
-  uniher-rotate-runtime-secrets.sh --execute --acknowledge-session-invalidation
+  uniher-rotate-runtime-secrets.sh --execute --acknowledge-session-invalidation \
+    --verify-auth-session-invalidation
 
 Without --execute, the script performs read-only preflight checks.
 Execution rotates only JWT_SECRET and JWT_REFRESH_SECRET. It intentionally does
 not rotate Hostinger, Resend, VAPID, Sentry, employee-import HMAC, or smoke-account
 credentials.
+
+The verification flag logs in with one configured smoke account before rotation,
+requires both old access and refresh cookies to fail after rotation, and confirms
+that a fresh login works. Credentials, cookies, tokens, and response bodies are
+kept in a mode-700 temporary directory under /run and are never printed.
 USAGE
 }
 
@@ -110,6 +126,9 @@ for arg in "$@"; do
       ;;
     --acknowledge-session-invalidation)
       ACK_SESSION_INVALIDATION=1
+      ;;
+    --verify-auth-session-invalidation)
+      VERIFY_AUTH_SESSION_INVALIDATION=1
       ;;
     --help|-h)
       usage
@@ -180,6 +199,69 @@ if [[ "$ACK_SESSION_INVALIDATION" -ne 1 ]]; then
   echo "Execution requires --acknowledge-session-invalidation." >&2
   exit 1
 fi
+
+if [[ "$VERIFY_AUTH_SESSION_INVALIDATION" -ne 1 ]]; then
+  echo "Execution requires --verify-auth-session-invalidation." >&2
+  exit 1
+fi
+
+SMOKE_ACCOUNTS_VALUE="$(read_env_value "$ENV_FILE" UNIHER_RELEASE_SMOKE_ACCOUNTS)"
+FIRST_SMOKE_ACCOUNT="${SMOKE_ACCOUNTS_VALUE%%,*}"
+if [[ "$FIRST_SMOKE_ACCOUNT" != *:* ]]; then
+  echo "Smoke-account bundle has an invalid format." >&2
+  exit 1
+fi
+
+SMOKE_EMAIL="${FIRST_SMOKE_ACCOUNT%%:*}"
+SMOKE_PASSWORD="${FIRST_SMOKE_ACCOUNT#*:}"
+if [[ "$SMOKE_EMAIL" != *@* || -z "$SMOKE_PASSWORD" ]]; then
+  echo "First smoke-account entry is invalid." >&2
+  exit 1
+fi
+
+AUTH_TMP_DIR="$(mktemp -d /run/uniher-auth-rotation.XXXXXX)"
+chmod 700 "$AUTH_TMP_DIR"
+printf '%s\0%s\0' "$SMOKE_EMAIL" "$SMOKE_PASSWORD" | \
+  node -e 'const fs=require("fs"); const [email,password]=fs.readFileSync(0).toString("utf8").split("\0"); fs.writeFileSync(process.argv[1], JSON.stringify({email,password}), {mode:0o600});' \
+  "$AUTH_TMP_DIR/login.json"
+unset SMOKE_ACCOUNTS_VALUE FIRST_SMOKE_ACCOUNT SMOKE_EMAIL SMOKE_PASSWORD
+
+AUTH_CURL=(
+  curl
+  --silent
+  --show-error
+  --resolve uniher.com.br:443:127.0.0.1
+  --connect-timeout 10
+  --max-time 30
+)
+
+PRE_ROTATION_LOGIN_STATUS="$(
+  "${AUTH_CURL[@]}" \
+    --output "$AUTH_TMP_DIR/login-before-response.json" \
+    --cookie-jar "$AUTH_TMP_DIR/cookies-before.txt" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --data-binary "@$AUTH_TMP_DIR/login.json" \
+    https://uniher.com.br/api/auth/login
+)"
+if [[ "$PRE_ROTATION_LOGIN_STATUS" != "200" ]]; then
+  echo "Pre-rotation smoke login failed with HTTP $PRE_ROTATION_LOGIN_STATUS; no secret was changed." >&2
+  exit 1
+fi
+
+PRE_ROTATION_ME_STATUS="$(
+  "${AUTH_CURL[@]}" \
+    --output "$AUTH_TMP_DIR/me-before-response.json" \
+    --cookie "$AUTH_TMP_DIR/cookies-before.txt" \
+    --write-out '%{http_code}' \
+    https://uniher.com.br/api/auth/me
+)"
+if [[ "$PRE_ROTATION_ME_STATUS" != "200" ]]; then
+  echo "Pre-rotation authenticated request failed with HTTP $PRE_ROTATION_ME_STATUS; no secret was changed." >&2
+  exit 1
+fi
+
+echo "PRE-ROTATION AUTH PASS: smoke login and authenticated request succeeded."
 
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BACKUP_DIR="$BACKUP_ROOT/$TIMESTAMP"
@@ -263,8 +345,60 @@ for attempt in $(seq 1 30); do
   sleep 1
 done
 
+POST_ROTATION_OLD_ME_STATUS="$(
+  "${AUTH_CURL[@]}" \
+    --output "$AUTH_TMP_DIR/me-old-response.json" \
+    --cookie "$AUTH_TMP_DIR/cookies-before.txt" \
+    --write-out '%{http_code}' \
+    https://uniher.com.br/api/auth/me
+)"
+if [[ "$POST_ROTATION_OLD_ME_STATUS" != "401" ]]; then
+  echo "Old access cookie was not rejected after rotation (HTTP $POST_ROTATION_OLD_ME_STATUS)." >&2
+  false
+fi
+
+POST_ROTATION_OLD_REFRESH_STATUS="$(
+  "${AUTH_CURL[@]}" \
+    --output "$AUTH_TMP_DIR/refresh-old-response.json" \
+    --cookie "$AUTH_TMP_DIR/cookies-before.txt" \
+    --request POST \
+    --write-out '%{http_code}' \
+    https://uniher.com.br/api/auth/refresh
+)"
+if [[ "$POST_ROTATION_OLD_REFRESH_STATUS" != "401" ]]; then
+  echo "Old refresh cookie was not rejected after rotation (HTTP $POST_ROTATION_OLD_REFRESH_STATUS)." >&2
+  false
+fi
+
+POST_ROTATION_LOGIN_STATUS="$(
+  "${AUTH_CURL[@]}" \
+    --output "$AUTH_TMP_DIR/login-after-response.json" \
+    --cookie-jar "$AUTH_TMP_DIR/cookies-after.txt" \
+    --write-out '%{http_code}' \
+    --header 'Content-Type: application/json' \
+    --data-binary "@$AUTH_TMP_DIR/login.json" \
+    https://uniher.com.br/api/auth/login
+)"
+if [[ "$POST_ROTATION_LOGIN_STATUS" != "200" ]]; then
+  echo "Post-rotation smoke login failed with HTTP $POST_ROTATION_LOGIN_STATUS." >&2
+  false
+fi
+
+POST_ROTATION_ME_STATUS="$(
+  "${AUTH_CURL[@]}" \
+    --output "$AUTH_TMP_DIR/me-after-response.json" \
+    --cookie "$AUTH_TMP_DIR/cookies-after.txt" \
+    --write-out '%{http_code}' \
+    https://uniher.com.br/api/auth/me
+)"
+if [[ "$POST_ROTATION_ME_STATUS" != "200" ]]; then
+  echo "Post-rotation authenticated request failed with HTTP $POST_ROTATION_ME_STATUS." >&2
+  false
+fi
+
 pm2 save >/dev/null
 trap - ERR
 
+echo "AUTH ROTATION VERIFY PASS: old access/refresh cookies rejected; fresh login and authenticated request succeeded."
 echo "ROTATION PASS: JWT secrets replaced without printing values."
 echo "Rollback bundle: $BACKUP_DIR"
