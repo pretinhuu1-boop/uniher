@@ -86,7 +86,53 @@ Result: `PASS`
 - Certificate validity: 2026-07-21 17:17:07 UTC through 2026-10-19 17:17:06 UTC.
 - Certbot timer: `active` and `enabled`.
 
+## Checkpoint T+1 TTL
+
+Observed: 2026-08-01 16:45 BRT / 19:45 UTC
+Result: `PASS`
+
+### DNS And HTTPS
+
+- `b.sec.dns.br`, `c.sec.dns.br`, `1.1.1.1`, and `8.8.8.8`: apex A `76.13.165.185`, TTL 3600, `www CNAME uniher.com.br`.
+- Workstation resolver: `76.13.165.185`.
+- Apex, health, and `www`: HTTP 200 directly from `76.13.165.185`, TLS verification result 0.
+
+### Target Runtime And Data
+
+- Host: `srv1872618`.
+- Git HEAD: `2b8be831a3f5164f716b2c1c3dbf6bc816797cb8`.
+- Git status: clean.
+- PM2 `uniher` PID: `2608`.
+- Nginx and backup timer: `active`.
+- Database integrity: `ok`.
+- Application tables: `68`.
+- Users: `9`.
+- Migrations: `71`.
+- PM2 error log: `0` bytes.
+- Health: `{"status":"healthy"}`.
+- Landing SHA-256: `f3eaf03b48f39a68c745bfeb007e9803bea62db4f178e6d1ec0a0fc8c69b3837`, unchanged.
+- Latest backup checksum: `OK`; backup integrity: `ok`.
+
+The live SQLite file SHA-256 differed from the standalone backup because the
+live database uses journal mode `wal` and the backup uses `delete`. A per-table
+logical comparison found zero row-count changes and zero content-hash changes
+across all 68 application tables.
+
+### Public Route Audit
+
+- Anonymous GET-only audit: `63/63` passed, `0` failed.
+- State-changing method probes: disabled.
+- Evidence: `artifacts/migration/2026-08-01/post-cutover-public-api-tplus1.json`.
+
+### Source Rollback Edge
+
+- Host: `srv1373909`.
+- PM2 `uniher` PID: `0`.
+- Port 3000: closed.
+- Nginx: `active`.
+- TLS bridge health: HTTP 200, TLS verification result 0.
+- Source remains rollback-only; it is not a second writable application.
+
 ## Pending Checkpoints
 
-- T+1 TTL: 2026-08-01 16:45 BRT or later
 - T+2 TTL: 2026-08-01 17:45 BRT or later
