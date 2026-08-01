@@ -1,7 +1,7 @@
 # UniHER Hostinger Account Migration Runbook
 
 Date: 2026-08-01
-Status: FINAL DATA MIGRATED - SOURCE BRIDGE ACTIVE - DNS LOGIN REQUIRED - SOURCE RETIREMENT HOLD
+Status: DNS CUTOVER PUBLISHED - TARGET ACTIVE - PROPAGATION MONITORING - SOURCE RETIREMENT HOLD
 Coordinator: current Codex task
 
 ## Objective
@@ -32,7 +32,7 @@ This is a UniHER migration, not a whole-server clone. The source VPS hosts unrel
 - Active landing release: `/var/www/uniher-preview/releases/20260715-123659`
 - Nginx production contract: `/etc/nginx/sites-available/uniher-axial`
 - Production domains: `uniher.com.br`, `www.uniher.com.br`
-- Current DNS: apex A record to `187.77.42.199`, TTL 3600 seconds
+- Current DNS: apex A record to `76.13.165.185`, TTL 3600 seconds; `www` remains a CNAME to `uniher.com.br`
 
 Unrelated source services excluded from this migration include Catarina, Hermes/WhatsApp, model hosting, and the Canal Direto report site.
 
@@ -228,7 +228,7 @@ Gate: separate explicit approval to retire the source environment.
 
 ## Current Decision
 
-The final database and production runtime are active on the target. The source UniHER process is stopped and the source Nginx now forwards `uniher.com.br` traffic over verified TLS to the target, so there is only one writable application/database. DNS still resolves to the source IP until the operator completes login/2FA in Registro.br. Repository ownership transfer and source retirement remain `HOLD`.
+The final database and production runtime are active on the target. The source UniHER process is stopped and the source Nginx remains a verified TLS rollback bridge, so there is only one writable application/database. Registro.br published the apex A record to `76.13.165.185` on 2026-08-01 at approximately 15:45 BRT; both authoritative servers and the public resolvers `1.1.1.1` and `8.8.8.8` returned the target IP immediately after publication. Propagation monitoring, repository access for the new owner, secret rotation, and source retirement remain open gates.
 
 GitHub collaborator access is `BLOCKED` until the operator provides the exact GitHub username associated with the new account. The supplied email is not publicly associated with a GitHub username, and the supported API requires a username. No invitation or ownership transfer has been made.
 
@@ -294,6 +294,19 @@ GitHub collaborator access is `BLOCKED` until the operator provides the exact Gi
 - Final independent Claude review passed with no remaining P0/P1 after the `/nova` fallback, PM2 rollback receipt, and canonical probe-path findings were corrected.
 - Hostinger post-migration snapshot `320800` was refreshed at `2026-08-01T18:19:16Z`; API action `107225119` completed with state `success` and the snapshot expires at `2026-08-02T18:19:16Z`.
 
+### Registro.br DNS cutover
+
+- Operator authenticated in Registro.br and the zone was changed on 2026-08-01 at approximately 15:45 BRT.
+- Only the apex A record changed: `187.77.42.199` -> `76.13.165.185`.
+- `www.uniher.com.br` remained `CNAME uniher.com.br`; no nameserver or contact change was made.
+- Reopening the zone after save showed only the new apex A record and the preserved `www` CNAME; the DNS save control was disabled, proving there were no remaining unsaved changes.
+- Authoritative checks against `b.sec.dns.br` and `c.sec.dns.br` returned `76.13.165.185` with TTL 3600.
+- Public checks against `1.1.1.1` and `8.8.8.8` returned `76.13.165.185` with TTL 3600.
+- Direct target HTTPS checks for apex, health, and `www` returned 200 from `76.13.165.185` with certificate verification result 0; health returned `{"status":"healthy"}`.
+- The workstation resolver still had the old apex cached during the first post-cutover request, which returned 200 through the verified source bridge. This is expected within the TTL and does not create a second writable runtime.
+- Receipt: `artifacts/migration/2026-08-01/registrobr-dns-cutover-receipt.md`.
+- Visual evidence: `artifacts/migration/2026-08-01/registrobr-dns-cutover-20260801-154545.png`.
+
 ### Backup and restore controls
 
 - Initial source bundle restored and verified at `/var/backups/uniher/source-20260801T155506Z`.
@@ -322,11 +335,11 @@ GitHub collaborator access is `BLOCKED` until the operator provides the exact Gi
   - `artifacts/migration/2026-08-01/final-public-api-readonly-audit.json`
   - `artifacts/migration/2026-08-01/final-public-landing-desktop.png`
   - `artifacts/migration/2026-08-01/final-public-landing-mobile.png`
+  - `artifacts/migration/2026-08-01/registrobr-dns-cutover-20260801-154545.png`
 
 ## Remaining Approval Gates
 
-1. Complete login/2FA in Registro.br and change the apex A record from `187.77.42.199` to `76.13.165.185`; keep `www` pointing to the apex.
-2. Monitor at least two TTL windows while retaining the verified source bridge as rollback.
-3. Receive the exact new GitHub username, invite it as collaborator, require acceptance and 2FA, and prove clone/push from the new account.
-4. Retire the source only after a separate stability approval.
-5. Rotate the Hostinger API token and application secrets after migration operations are complete.
+1. Monitor at least two TTL windows from the 2026-08-01 15:45 BRT cutover while retaining the verified source bridge as rollback.
+2. Receive the exact new GitHub username, invite it as collaborator, require acceptance and 2FA, and prove clone/push from the new account.
+3. Retire the source only after a separate stability approval.
+4. Rotate the Hostinger API token and application secrets after migration operations are complete.
