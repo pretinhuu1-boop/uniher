@@ -305,6 +305,7 @@ GitHub collaborator access is `BLOCKED` until the operator provides the exact Gi
 - Direct target HTTPS checks for apex, health, and `www` returned 200 from `76.13.165.185` with certificate verification result 0; health returned `{"status":"healthy"}`.
 - The workstation resolver still had the old apex cached during the first post-cutover request, which returned 200 through the verified source bridge. This is expected within the TTL and does not create a second writable runtime.
 - Receipt: `artifacts/migration/2026-08-01/registrobr-dns-cutover-receipt.md`.
+- Stability checkpoints: `artifacts/migration/2026-08-01/post-cutover-monitoring.md`.
 - Visual evidence: `artifacts/migration/2026-08-01/registrobr-dns-cutover-20260801-154545.png`.
 
 ### Backup and restore controls
