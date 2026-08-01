@@ -93,6 +93,10 @@ marker. The local `.env.production.local` is covered by the `.env*` rule in
 Execute only after the two-TTL stability gate. JWT rotation signs out active
 users and therefore requires an announced maintenance window.
 
+The guarded script is `scripts/operations/uniher-rotate-runtime-secrets.sh`.
+Run it without arguments for read-only preflight. Real execution additionally
+requires both `--execute` and `--acknowledge-session-invalidation`.
+
 1. Take a fresh application backup and Hostinger snapshot.
 2. Copy `.env.production` to a root-only rollback file on the target.
 3. Generate replacement JWT secrets directly on the target without printing them.
