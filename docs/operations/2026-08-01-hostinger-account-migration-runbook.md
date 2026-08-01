@@ -1,12 +1,12 @@
 # UniHER Hostinger Account Migration Runbook
 
 Date: 2026-08-01
-Status: TARGET READY - DNS CUTOVER HOLD - GITHUB ACCESS BLOCKED
+Status: FINAL DATA MIGRATED - SOURCE BRIDGE ACTIVE - DNS LOGIN REQUIRED - SOURCE RETIREMENT HOLD
 Coordinator: current Codex task
 
 ## Objective
 
-Clone the complete UniHER production surface from the current Hostinger VPS to the new Hostinger account while both environments remain available. Production traffic must continue to use the source VPS until the target passes technical, data, security, functional, and visual gates and the operator explicitly approves cutover.
+Clone the complete UniHER production surface from the current Hostinger VPS to the new Hostinger account while retaining the source as a rollback edge. After operator approval, production processing and persistence move to the target first through a source-side TLS bridge, then by DNS after authenticated access to Registro.br.
 
 This is a UniHER migration, not a whole-server clone. The source VPS hosts unrelated services that must remain on the source and must not be copied to the target.
 
@@ -228,17 +228,17 @@ Gate: separate explicit approval to retire the source environment.
 
 ## Current Decision
 
-The target environment and the rehearsed data-sync path are technically ready. Production DNS, the source runtime, repository ownership transfer, and source retirement remain `HOLD`.
+The final database and production runtime are active on the target. The source UniHER process is stopped and the source Nginx now forwards `uniher.com.br` traffic over verified TLS to the target, so there is only one writable application/database. DNS still resolves to the source IP until the operator completes login/2FA in Registro.br. Repository ownership transfer and source retirement remain `HOLD`.
 
 GitHub collaborator access is `BLOCKED` until the operator provides the exact GitHub username associated with the new account. The supplied email is not publicly associated with a GitHub username, and the supported API requires a username. No invitation or ownership transfer has been made.
 
 ## Execution Receipts
 
-### Source preservation
+### Source preservation before final migration
 
 - Production host remained `srv1373909` / `187.77.42.199` throughout preparation.
 - `uniher.com.br` and `www.uniher.com.br` still resolve to `187.77.42.199` with TTL 3600.
-- Production PM2, Nginx, database, certificates, and unrelated services were not stopped or changed.
+- Production PM2, Nginx, database, certificates, and unrelated services were not stopped or changed before the approved final migration window.
 - Active landing release remained `/var/www/uniher-preview/releases/20260715-123659`.
 - Initial source backup: `/root/uniher-migration-20260801/20260801T155506Z`.
 - Backup contents include a consistent SQLite copy, active landing archive, UniHER certificate archive, environment file, PM2/Nginx contracts, manifest, and SHA-256 checksums.
@@ -261,7 +261,7 @@ GitHub collaborator access is `BLOCKED` until the operator provides the exact Gi
 
 ### Application and parity
 
-- Target checkout: `/var/www/uniher`, branch `codex/security-public-api-hardening`, commit `807ffc06d48587faec1a7e391710dffef0e557e7`.
+- Target checkout: `/var/www/uniher`, branch `codex/security-public-api-hardening`, commit `7f1bdb4f0bfcfac93158a15954b8128ac59b829c` before this receipt wave.
 - Production commit remains `1efc1403c1c3e3848508ac3ac308328aa92f0391`; the delta to target contains only tests and evidence, not runtime code.
 - `npm ci`, migrations, and production build passed; build produced 129 routes.
 - PM2 `uniher` runs under `pm2-root.service` and binds only to `127.0.0.1:3000`.
@@ -277,18 +277,35 @@ GitHub collaborator access is `BLOCKED` until the operator provides the exact Gi
 - Independent Claude review passed with no remaining P0/P1 after canonical-path hardening on both scripts.
 - Target negative guards passed for an invalid checksum and a symlink escape; both attempts exited before service interruption, while PM2 stayed active and database integrity remained `ok`.
 
+### Final data migration and logical cutover
+
+- Operator authorized the complete data migration on 2026-08-01.
+- Source PM2 process `uniher` was stopped before the final export; its PID is `0` and source port 3000 has no listener.
+- Final source snapshot: `/root/uniher-migration-20260801-final/source-20260801T180136Z/uniher.db`.
+- Final source and installed target SHA-256 matched exactly: `4abc3ff4c7192a38a5b34ee04733e8868bb3535bb32c4ae4a2df101719a77e46`.
+- Final snapshot size: 2,273,280 bytes; integrity `ok`; 9 users; 71 migrations.
+- Target rollback copy before final sync: `/var/backups/uniher/pre-sync/20260801T180207Z`.
+- Source and target matched across all 68 application tables with zero row-count differences; manifest SHA-256 `5320ed2b8cc3ef1bf604180662f95e53bd4d128258eeddbbc19385f50b537e41`.
+- The valid `uniher.com.br` certificate lineage was transferred directly between servers, checksum-verified, and installed on the target without local persistence.
+- Direct target TLS checks for `uniher.com.br` and `www.uniher.com.br` returned 200 with the correct certificate and no public `X-Robots-Tag`.
+- Source bridge probe passed health, landing, and upstream certificate verification before activation.
+- Source Nginx now forwards the official domains to `76.13.165.185` with SNI, certificate verification, and forwarded request metadata; the legacy `uniher.axialagents.com` redirects to the official domain.
+- A unique read-only trace appeared once in both source and target access logs, proving the public request traversed the source edge and was processed by the target.
+- Final independent Claude review passed with no remaining P0/P1 after the `/nova` fallback, PM2 rollback receipt, and canonical probe-path findings were corrected.
+
 ### Backup and restore controls
 
 - Initial source bundle restored and verified at `/var/backups/uniher/source-20260801T155506Z`.
 - Daily target backup timer `uniher-backup.timer` is enabled and active.
 - Backup output: `/var/backups/uniher/automatic`, mode 700, 14-day retention.
-- Two consecutive target backups passed integrity and SHA-256 verification.
+- Target backups passed integrity and SHA-256 verification, including the post-final-sync backup `/var/backups/uniher/automatic/uniher-20260801T181052Z.db`.
 - Latest validated backup used standalone journal mode `delete` and left zero WAL/SHM/temp sidecars.
 
 ### Functional, visual, and security gates
 
 - Unit suite: 50 files passed, 259 tests passed.
 - Anonymous public API audit passed twice, including after data rehearsal: 63/63 GET routes, 0 failures.
+- Final anonymous audit through the active production bridge passed 63/63 GET routes with 0 failures and no state-changing probes.
 - Authenticated read-only role smoke passed 33/33 platform routes across admin, RH, collaborator, and leadership with 0 failures and 0 unexpected mutations.
 - Master, two RH profiles, collaborator, and leadership credentials authenticated successfully.
 - Master system endpoint returned 200; role and cookie security checks passed (`HttpOnly`, `Secure`, `SameSite`).
@@ -301,12 +318,14 @@ GitHub collaborator access is `BLOCKED` until the operator provides the exact Gi
   - `artifacts/migration/2026-08-01/target-colaboradora-desktop.png`
   - `tests/artifacts/migration/2026-08-01/semaforo-playwright/`
   - `artifacts/migration/2026-08-01/readonly-role-route-smoke.json`
+  - `artifacts/migration/2026-08-01/final-public-api-readonly-audit.json`
+  - `artifacts/migration/2026-08-01/final-public-landing-desktop.png`
+  - `artifacts/migration/2026-08-01/final-public-landing-mobile.png`
 
 ## Remaining Approval Gates
 
-1. Receive the exact new GitHub username, invite it as collaborator, require acceptance and 2FA, and prove clone/push from the new account.
-2. Obtain explicit operator approval for the cutover window.
-3. At cutover, freeze writes on the source, run a new export/transfer/import, and verify fresh data parity.
-4. Change DNS only after the final sync passes; monitor at least two TTL windows while keeping the source online.
-5. Retire the source only after a separate stability approval.
-6. Rotate the Hostinger API token after migration operations are complete.
+1. Complete login/2FA in Registro.br and change the apex A record from `187.77.42.199` to `76.13.165.185`; keep `www` pointing to the apex.
+2. Monitor at least two TTL windows while retaining the verified source bridge as rollback.
+3. Receive the exact new GitHub username, invite it as collaborator, require acceptance and 2FA, and prove clone/push from the new account.
+4. Retire the source only after a separate stability approval.
+5. Rotate the Hostinger API token and application secrets after migration operations are complete.
