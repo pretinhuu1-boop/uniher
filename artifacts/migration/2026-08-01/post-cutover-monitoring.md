@@ -74,6 +74,18 @@ Result: `PASS`
 - No secret, environment file, database, or process was changed by the preflight.
 - Real rotation remains blocked until the T+2 stability gate and acknowledged session invalidation.
 
+### Public Routes And TLS
+
+- Anonymous GET-only audit: `63/63` passed, `0` failed.
+- State-changing method probes: disabled.
+- Evidence: `artifacts/migration/2026-08-01/post-cutover-public-api-tplus39.json`.
+- Workstation resolver: `76.13.165.185`.
+- Apex and health through the workstation resolver: HTTP 200, TLS verification result 0.
+- Certificate subject: `CN = uniher.com.br`.
+- Certificate issuer: Let's Encrypt `YE2`.
+- Certificate validity: 2026-07-21 17:17:07 UTC through 2026-10-19 17:17:06 UTC.
+- Certbot timer: `active` and `enabled`.
+
 ## Pending Checkpoints
 
 - T+1 TTL: 2026-08-01 16:45 BRT or later

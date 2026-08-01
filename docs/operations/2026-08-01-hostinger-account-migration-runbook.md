@@ -324,6 +324,7 @@ New-owner handoff and secret-rotation contract: `docs/operations/2026-08-01-new-
 - Unit suite: 50 files passed, 259 tests passed.
 - Anonymous public API audit passed twice, including after data rehearsal: 63/63 GET routes, 0 failures.
 - Final anonymous audit through the active production bridge passed 63/63 GET routes with 0 failures and no state-changing probes.
+- Post-DNS anonymous audit passed 63/63 GET routes directly through the target resolution, with 0 failures and state-changing probes disabled.
 - Authenticated read-only role smoke passed 33/33 platform routes across admin, RH, collaborator, and leadership with 0 failures and 0 unexpected mutations.
 - Master, two RH profiles, collaborator, and leadership credentials authenticated successfully.
 - Master system endpoint returned 200; role and cookie security checks passed (`HttpOnly`, `Secure`, `SameSite`).
