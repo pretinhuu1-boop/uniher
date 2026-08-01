@@ -51,6 +51,11 @@ export default defineConfig({
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'off',
+    // Permite rodar a suíte em ambientes com Chromium já instalado fora do
+    // cache do Playwright (ex.: containers de CI sem download de browser).
+    ...(process.env.PLAYWRIGHT_CHROMIUM_PATH
+      ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
+      : {}),
   },
   projects: [
     {
