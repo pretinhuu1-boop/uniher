@@ -20,6 +20,16 @@ Não inclui:
 - Diretório esperado na VPS: `/var/www/uniher`
 - Processo PM2: `uniher`
 - Porta interna da app: `127.0.0.1:3000`
+- VPS de producao: `srv1872618` / `76.13.165.185`
+- Branch de producao: `codex/security-public-api-hardening`
+
+Fonte de verdade da migracao atual:
+
+- `docs/operations/2026-08-01-hostinger-account-migration-runbook.md`
+- `docs/operations/2026-08-01-new-owner-handoff.md`
+
+O branch `main` diverge da producao e nao deve ser usado em deploy ate uma
+integracao separada e revisada.
 
 ## Estrutura de deploy
 
@@ -33,14 +43,18 @@ Arquivos principais:
 
 ## Deploy padrão
 
-Atualizar o servidor com o estado atual do `main`:
+Atualizar o servidor com o estado do branch de producao:
 
 ```bash
 cd /var/www/uniher
 git fetch origin
-git reset --hard origin/main
-bash deploy/vps/deploy.sh main
+git checkout codex/security-public-api-hardening
+git pull --ff-only origin codex/security-public-api-hardening
+bash deploy/vps/deploy.sh codex/security-public-api-hardening
 ```
+
+Atencao: `deploy.sh` executa `git reset --hard` e `git clean -fd`. Use somente
+no checkout dedicado de deploy, nunca como forma de preservar alteracoes locais.
 
 O script de deploy faz:
 
@@ -205,8 +219,8 @@ Se o navegador continuar com versão antiga:
 Antes de dizer que a VPS está correta:
 
 - `git fetch origin` concluído
-- `git reset --hard origin/main` concluído
-- `bash deploy/vps/deploy.sh main` concluído
+- branch `codex/security-public-api-hardening` sincronizado
+- `bash deploy/vps/deploy.sh codex/security-public-api-hardening` concluido
 - `pm2 status` com `uniher` online
 - `curl -I http://127.0.0.1:3000/api/health` respondendo
 - host externo respondendo

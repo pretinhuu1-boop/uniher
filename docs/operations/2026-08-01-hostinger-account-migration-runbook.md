@@ -232,6 +232,8 @@ The final database and production runtime are active on the target. The source U
 
 GitHub collaborator access is `BLOCKED` until the operator provides the exact GitHub username associated with the new account. The supplied email is not publicly associated with a GitHub username, and the supported API requires a username. No invitation or ownership transfer has been made.
 
+New-owner handoff and secret-rotation contract: `docs/operations/2026-08-01-new-owner-handoff.md`.
+
 ## Execution Receipts
 
 ### Source preservation before final migration

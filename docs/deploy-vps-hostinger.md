@@ -13,8 +13,17 @@ Este projeto roda melhor nessa VPS com:
 
 - VPS Ubuntu 24.04
 - acesso root
-- IP atual: `187.77.42.199`
+- IP atual: `76.13.165.185`
 - repositório: `https://github.com/pretinhuu1-boop/uniher`
+- branch de producao atual: `codex/security-public-api-hardening`
+
+Para a migracao e entrega de 2026-08-01, use tambem:
+
+- `docs/operations/2026-08-01-hostinger-account-migration-runbook.md`
+- `docs/operations/2026-08-01-new-owner-handoff.md`
+
+O branch `main` nao e o artefato atualmente implantado e nao deve ser promovido
+automaticamente durante a janela de estabilidade.
 
 Importante:
 
@@ -190,12 +199,17 @@ Há um script pronto no projeto:
 
 ```bash
 cd /var/www/uniher
-bash deploy/vps/deploy.sh main
+bash deploy/vps/deploy.sh codex/security-public-api-hardening
 ```
 
-Esse script:
+Esse script executa `git reset --hard` e `git clean -fd`: substitui o checkout
+local pelo branch remoto selecionado e remove arquivos nao rastreados. Execute
+apenas em um checkout de deploy dedicado, limpo e depois de confirmar o backup
+do banco e dos arquivos operacionais externos ao Git.
 
-- faz `git pull`
+O script:
+
+- faz `git fetch`, forca o checkout ao branch selecionado e limpa nao rastreados
 - roda `npm ci --include=dev`
 - garante `data/` e `backups/`
 - roda `build`
